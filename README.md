@@ -843,6 +843,147 @@ setCustomComponents({
 })
 ```
 
+### Custom Image Component Example: Overriding the Internal Image Node
+
+The following example demonstrates how to create a custom image component with preview functionality to replace the default `image` node rendering.
+
+#### Overridable Internal Node Types
+
+This library supports overriding rendering components for the following node types:
+
+**Block Elements**
+- `text`: Plain text
+- `paragraph`: Paragraph
+- `heading`: Heading (lines starting with `#`)
+- `code_block`: Code block (code wrapped in ` ``` `)
+- `list`: List (ordered and unordered lists)
+- `blockquote`: Blockquote (paragraphs starting with `>`)
+- `table`: Table
+- `definition_list`: Definition list (combination of terms and definitions)
+- `footnote`: Footnote
+- `admonition`: Admonition block (such as note, warning, etc.)
+- `thematic_break`: Horizontal rule (such as `---` or `***`)
+- `math_block`: Math formula block (formulas wrapped in `$$`)
+- `mermaid`: Mermaid diagram code block
+
+**Inline Elements**
+- `hardbreak`: Hard line break
+- `link`: Link
+- `image`: Image
+- `math_inline`: Inline math formula (formulas wrapped in `$`)
+- `strong`: Bold text
+- `emphasis`: Italic text
+- `strikethrough`: Strikethrough text
+- `highlight`: Highlighted text
+- `insert`: Inserted text
+- `subscript`: Subscript text
+- `superscript`: Superscript text
+- `emoji`: Emoji
+- `checkbox`: Checkbox
+- `inline_code`: Inline code
+- `reference`: Reference (in the form `[id]: URL`)
+
+#### Implementation Steps
+
+**1. Create a Custom Image Component**
+
+Create an `ImageViewer.vue` component to implement image preview functionality:
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue'
+
+// Define image node type
+interface ImageNode {
+  type: 'image'
+  src: string
+  alt: string
+  title: string | null
+  raw: string
+}
+
+const props = defineProps<{
+  node: ImageNode & { loading?: boolean }
+}>()
+
+// Extract src and alt from the node object
+const src = computed(() => props.node.src)
+const alt = computed(() => props.node.alt || '')
+
+</script>
+
+<template>
+  <div class="image-wrapper">
+    <!-- Thumbnail -->
+    <img
+      :src="src"
+      :alt="alt"
+      :title="node.title || undefined"
+      class="image-thumbnail"
+      :class="{ loading: isLoading }"
+      @click="openPreview"
+    >
+  </div>
+</template>
+```
+
+**2. Register the Custom Component**
+
+Register the custom component in the page where you use the Markdown renderer:
+
+```vue
+<script setup lang="ts">
+import { onUnmounted } from 'vue'
+import MarkdownRender, { removeCustomComponents, setCustomComponents } from 'vue-renderer-markdown'
+import ImageViewer from './components/ImageViewer.vue'
+
+// Register the custom image component (using a unique ID)
+setCustomComponents('custom-image-demo', {
+  image: ImageViewer
+})
+
+const markdown = `
+# Image Preview Example
+
+Click the image below to enlarge:
+
+![Example Image](https://picsum.photos/800/600)
+
+Supports mouse wheel zoom and ESC key to close.
+`
+
+// Clean up the custom component registration when component unmounts
+onUnmounted(() => {
+  removeCustomComponents('custom-image-demo')
+})
+</script>
+
+<template>
+  <MarkdownRender
+    :content="markdown"
+    custom-id="custom-image-demo"
+  />
+</template>
+```
+
+#### Key Points
+
+1. **Node Interface Definition**: Custom components must accept a `node` prop whose type matches the node type being overridden. For example, `ImageNode` contains `src`, `alt`, `title`, and `raw` properties.
+
+2. **Scoped Registration**: It is recommended to use `setCustomComponents(id, mapping)` for scoped registration and specify the corresponding `custom-id` on the `MarkdownRender` component. This avoids global pollution and allows different renderer instances to use different custom components.
+
+3. **Cleanup Registration**: Use `removeCustomComponents(id)` to clean up the registration when the component unmounts to prevent memory leaks.
+
+4. **Feature Enhancement**: Custom components can add any functionality you need, such as image preview, zoom, keyboard shortcuts, etc.
+
+5. **Style Customization**: You have complete control over the styles of custom components without being restricted by default styles.
+
+#### Complete Example
+
+For a complete implementation example, refer to the `playground/src/pages/customImage.vue` and `playground/src/components/imageViewer.vue` files in the repository.
+
+Live demo: https://vue-markdown-renderer.simonhe.me/customImage
+
 #### MarkdownCodeBlockNode: Alternative Code Block Renderer
 
 The library now includes `MarkdownCodeBlockNode` - an alternative code block component that provides markdown-style syntax highlighting instead of Monaco Editor integration. This gives you the flexibility to choose between two rendering approaches for code blocks:

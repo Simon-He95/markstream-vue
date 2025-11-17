@@ -400,6 +400,147 @@ setCustomComponents('docs-page', {
 
 如果动态创建/销毁映射，请使用 `removeCustomComponents(id)` 释放内存。
 
+### 自定义图片渲染组件覆盖内部 image 节点示例
+
+以下示例展示如何创建一个带有图片预览功能的自定义图片组件来替换默认的 `image` 节点渲染。
+
+#### 可覆盖的内部节点类型
+
+本库支持覆盖以下节点类型的渲染组件：
+
+**块级元素**
+- `text`: 普通文本
+- `paragraph`: 段落
+- `heading`: 标题（如 `#` 开头的行）
+- `code_block`: 代码块（如 ` ``` ` 包裹的代码）
+- `list`: 列表（包括有序和无序列表）
+- `blockquote`: 块引用（如 `>` 开头的段落）
+- `table`: 表格
+- `definition_list`: 定义列表（如术语和定义的组合）
+- `footnote`: 脚注
+- `admonition`: 提示块（如 note、warning 等）
+- `thematic_break`: 分隔线（如 `---` 或 `***`）
+- `math_block`: 数学公式块（如 `$$` 包裹的公式）
+- `mermaid`: Mermaid 图表代码块
+
+**内联元素**
+- `hardbreak`: 强制换行
+- `link`: 链接
+- `image`: 图片
+- `math_inline`: 行内数学公式（如 `$` 包裹的公式）
+- `strong`: 加粗文本
+- `emphasis`: 斜体文本
+- `strikethrough`: 删除线文本
+- `highlight`: 高亮文本
+- `insert`: 插入文本
+- `subscript`: 下标文本
+- `superscript`: 上标文本
+- `emoji`: 表情符号
+- `checkbox`: 复选框
+- `inline_code`: 行内代码
+- `reference`: 引用（如 `[id]: URL` 的形式）
+
+#### 实现步骤
+
+**1. 创建自定义图片组件**
+
+创建一个 `ImageViewer.vue` 组件，实现图片预览功能：
+
+```vue
+<script setup lang="ts">
+import { computed } from 'vue'
+
+// 定义图片节点类型
+interface ImageNode {
+  type: 'image'
+  src: string
+  alt: string
+  title: string | null
+  raw: string
+}
+
+const props = defineProps<{
+  node: ImageNode & { loading?: boolean }
+}>()
+
+// 从 node 对象中提取 src 和 alt
+const src = computed(() => props.node.src)
+const alt = computed(() => props.node.alt || '')
+
+</script>
+
+<template>
+  <div class="image-wrapper">
+    <!-- 缩略图 -->
+    <img
+      :src="src"
+      :alt="alt"
+      :title="node.title || undefined"
+      class="image-thumbnail"
+      :class="{ loading: isLoading }"
+      @click="openPreview"
+    >
+  </div>
+</template>
+```
+
+**2. 注册自定义组件**
+
+在使用 Markdown 渲染器的页面中注册自定义组件：
+
+```vue
+<script setup lang="ts">
+import { onUnmounted } from 'vue'
+import MarkdownRender, { removeCustomComponents, setCustomComponents } from 'vue-renderer-markdown'
+import ImageViewer from './components/ImageViewer.vue'
+
+// 注册自定义图片组件（使用唯一 ID）
+setCustomComponents('custom-image-demo', {
+  image: ImageViewer
+})
+
+const markdown = `
+# 图片预览示例
+
+点击下方图片可以放大预览：
+
+![示例图片](https://picsum.photos/800/600)
+
+支持鼠标滚轮缩放和 ESC 键关闭。
+`
+
+// 组件卸载时清理自定义组件注册
+onUnmounted(() => {
+  removeCustomComponents('custom-image-demo')
+})
+</script>
+
+<template>
+  <MarkdownRender
+    :content="markdown"
+    custom-id="custom-image-demo"
+  />
+</template>
+```
+
+#### 关键要点
+
+1. **节点接口定义**：自定义组件必须接收一个 `node` prop，其类型与要覆盖的节点类型匹配。例如，`ImageNode` 包含 `src`、`alt`、`title` 和 `raw` 属性。
+
+2. **范围化注册**：推荐使用 `setCustomComponents(id, mapping)` 进行范围化注册，并在 `MarkdownRender` 组件上指定对应的 `custom-id`。这样可以避免全局污染，不同的渲染实例可以使用不同的自定义组件。
+
+3. **清理注册**：在组件卸载时使用 `removeCustomComponents(id)` 清理注册，防止内存泄漏。
+
+4. **功能增强**：自定义组件可以添加任何你需要的功能，例如图片预览、缩放、键盘快捷键等。
+
+5. **样式自定义**：你可以完全控制自定义组件的样式，不受默认样式限制。
+
+#### 完整示例
+
+完整的实现示例请参考仓库中的 `playground/src/pages/customImage.vue` 和 `playground/src/components/imageViewer.vue` 文件。
+
+在线演示：https://vue-markdown-renderer.simonhe.me/customImage
+
 ### MarkdownCodeBlockNode（替代轻量代码块渲染）
 
 `MarkdownCodeBlockNode` 提供了基于 Shiki 的语法高亮替代 Monaco 的展示方式，适合只需展示且希望 SSR 友好的场景。

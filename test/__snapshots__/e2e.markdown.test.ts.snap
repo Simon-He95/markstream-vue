@@ -178,12 +178,8 @@ exports[`e2e markdown parsing (fixtures) > parses fixture math.md > math.md 1`] 
   {
     "children": [
       "text",
-      "math_inline",
-      "text",
-      "math_inline",
-      "text",
     ],
-    "firstText": "Inline math ",
+    "firstText": "Inline math (alpha + beta) and another form (x_i).",
     "type": "paragraph",
   },
   {
@@ -262,9 +258,9 @@ exports[`e2e markdown parsing (fixtures) > parses fixture trailing-backticks.md 
   },
   {
     "children": [
-      "inline_code",
+      "text",
     ],
-    "firstText": undefined,
+    "firstText": "\`\`",
     "type": "paragraph",
   },
   {

@@ -46,7 +46,7 @@ describe('math plugin (inline & block)', () => {
     const inline = tokens.filter(token => token.type === 'inline')[0]
     console.log({ children: inline.children })
     expect(inline.content).toBe('**二项式展开**（((m) 为实数）：')
-    expect(inline.children?.slice(-1)[0].content).toMatchInlineSnapshot(`"**二项式展开**（((m) 为实数）："`)
+    expect(inline.children?.slice(-1)[0].content).toMatchInlineSnapshot(`"（((m) 为实数）："`)
   })
 
   it('parses list_item', () => {

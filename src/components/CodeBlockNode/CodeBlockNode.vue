@@ -8,9 +8,9 @@ import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useViewportPriority } from '../../composables/viewportPriority'
 import { getLanguageIcon, languageMap } from '../../utils'
+import { getCustomNodeComponents } from '../../utils/nodeComponents'
 import { safeCancelRaf, safeRaf } from '../../utils/safeRaf'
 import PreCodeNode from '../PreCodeNode'
-import { getUseMonaco } from './monaco'
 
 const props = withDefaults(
   defineProps<CodeBlockNodeProps>(),
@@ -97,6 +97,13 @@ const usePreCodeRender = ref(false)
 if (typeof window !== 'undefined') {
   ;(async () => {
     try {
+      const customComponent = getCustomNodeComponents(props.customId)
+      if (customComponent.code_block) {
+        usePreCodeRender.value = false
+        return
+      }
+
+      const { getUseMonaco } = await import('./monaco')
       const mod = await getUseMonaco()
       // If mod is null, stream-monaco is not available
       if (!mod) {

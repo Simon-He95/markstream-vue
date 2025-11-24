@@ -198,18 +198,14 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
   // Inline rule for \(...\) and $$...$$ and $...$
   const mathInline = (state: unknown, silent: boolean) => {
     const s = state as any
-    const strict = !!mathOpts?.strictDelimiters
 
     if (/^\*[^*]+/.test(s.src)) {
       return false
     }
     const delimiters: [string, string][] = [
       ['$', '$'],
-      // Support explicit TeX inline delimiters only: \( ... \)
       ['\\(', '\\)'],
-      // Do NOT treat plain parentheses as math delimiters. Using ['\(', '\)']
-      // accidentally becomes ['(', ')'] in JS/TS strings and over-matches
-      // regular text like "(0 <= t < S-1)", causing false math detection.
+      ['\(', '\)'],
     ]
 
     let searchPos = 0
@@ -280,8 +276,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
             continue
           }
           if (endIdx === -1) {
-            // Do not treat segments containing inline code as math
-            if (!strict && isMathLike(content) && !content.includes('`')) {
+            if (isMathLike(content)) {
               searchPos = index + open.length
               foundAny = true
               if (!silent) {
@@ -326,13 +321,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
           }
         }
         const content = src.slice(index + open.length, endIdx)
-        // Skip treating as math when the content contains inline-code backticks
-        // Always accept explicit dollar-delimited math ($...$) even if the
-        // heuristic deems it not math-like (to support cases like $H$, $CO_2$).
-        const hasBacktick = content.includes('`')
-        const isDollar = open === '$'
-        const shouldSkip = strict ? hasBacktick : (hasBacktick || (!isDollar && !isMathLike(content)))
-        if (shouldSkip) {
+        if (!isMathLike(content)) {
           // push remaining text after last match
           // not math-like; skip this match and continue scanning
           searchPos = endIdx + close.length
@@ -438,17 +427,11 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     silent: boolean,
   ) => {
     const s = state as any
-    const strict = !!mathOpts?.strictDelimiters
-    const delimiters: [string, string][] = strict
-      ? [
-          ['\\[', '\\]'],
-          ['$$', '$$'],
-        ]
-      : [
-          ['\\[', '\\]'],
-          ['\[', '\]'],
-          ['$$', '$$'],
-        ]
+    const delimiters: [string, string][] = [
+      ['\\[', '\\]'],
+      ['\[', '\]'],
+      ['$$', '$$'],
+    ]
     const startPos = s.bMarks[startLine] + s.tShift[startLine]
     const lineText = s.src.slice(startPos, s.eMarks[startLine]).trim()
     let matched = false
@@ -541,10 +524,6 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         content += (content ? '\n' : '') + currentLine
       }
     }
-
-    // In strict mode, do not emit mid-state (unclosed) block math
-    if (strict && !found)
-      return false
 
     const token: any = s.push('math_block', 'math', 0)
     token.content = normalizeStandaloneBackslashT(content)

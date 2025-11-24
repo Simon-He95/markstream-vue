@@ -84,6 +84,15 @@ export default defineConfig(({ mode }) => {
             return true
           return [
             'vue',
+            'markdown-it-ts',
+            'markdown-it-container',
+            'markdown-it-emoji',
+            'markdown-it-footnote',
+            'markdown-it-ins',
+            'markdown-it-mark',
+            'markdown-it-sub',
+            'markdown-it-sup',
+            'markdown-it-task-checkbox',
             'vue-i18n',
             'katex',
             'stream-monaco',

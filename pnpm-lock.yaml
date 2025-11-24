@@ -24,7 +24,7 @@ importers:
         specifier: '>=0.0.10'
         version: 0.0.10(shiki@3.15.0)
       stream-markdown-parser:
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:packages/markdown-parser
       stream-monaco:
         specifier: '>=0.0.6'

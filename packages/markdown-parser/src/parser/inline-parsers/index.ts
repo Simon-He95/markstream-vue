@@ -39,29 +39,12 @@ export function isLikelyUrl(href?: string) {
 }
 
 // Process inline tokens (for text inside paragraphs, headings, etc.)
-export function parseInlineTokens(
-  tokens: MarkdownToken[],
-  raw?: string,
-  pPreToken?: MarkdownToken,
-  opts?: { insideLink?: boolean },
-): ParsedNode[] {
+export function parseInlineTokens(tokens: MarkdownToken[], raw?: string, pPreToken?: MarkdownToken): ParsedNode[] {
   if (!tokens || tokens.length === 0)
     return []
 
   const result: ParsedNode[] = []
   let currentTextNode: TextNode | null = null
-
-  // Fallback: markdown-it sometimes mis-tokenizes code_inline around CJK text
-  // yielding code_inline nodes that contain non-ASCII prose (e.g. "方法会根据").
-  // When detected, prefer re-parsing from the original raw string to rebuild
-  // inline_code spans and basic strong emphasis segments in a stable way.
-  // eslint-disable-next-line no-control-regex
-  const hasSuspiciousCodeInline = tokens.some(t => t.type === 'code_inline' && /[^\x00-\x7F]/.test(String(t.content ?? '')))
-  const hasBackticksInRaw = typeof raw === 'string' && /`/.test(raw)
-  const hasMathInlineUsingBackticks = tokens.some(t => t.type === 'math_inline' && /`/.test(String((t as any).raw ?? t.content ?? '')))
-  if (hasBackticksInRaw && (hasSuspiciousCodeInline || hasMathInlineUsingBackticks)) {
-    return parseFromRawWithCodeAndStrong(String(raw ?? ''))
-  }
 
   let i = 0
   // Note: strong-token normalization and list-item normalization are
@@ -75,10 +58,6 @@ export function parseInlineTokens(
   }
 
   function handleEmphasisAndStrikethrough(content: string, token: MarkdownToken): boolean {
-    const insideLink = !!opts?.insideLink
-    // When inside link labels, keep markup literal (do not parse ~~/*/**)
-    if (insideLink)
-      return false
     // strikethrough (~~)
     if (/[^~]*~{2,}[^~]+/.test(content)) {
       let idx = content.indexOf('~~')
@@ -192,71 +171,60 @@ export function parseInlineTokens(
   }
 
   function handleInlineCodeContent(content: string, _token: MarkdownToken): boolean {
-    // Need at least one backtick to consider inline code
-    if (!content.includes('`'))
+    if (!/`[^`]*/.test(content))
       return false
 
-    const codeStart = content.indexOf('`')
-    // Determine the length of the opening backtick run (supports ``code``)
-    let runLen = 1
-    for (let k = codeStart + 1; k < content.length && content[k] === '`'; k++)
-      runLen++
-
-    // Find a matching closing run of the same length
-    const closingSeq = '`'.repeat(runLen)
-    const searchFrom = codeStart + runLen
-    const codeEnd = content.indexOf(closingSeq, searchFrom)
-
-    // If no matching closing run is found within this token stream, treat as mid-state.
-    if (codeEnd === -1) {
-      // Mid-state handling: for single backtick, emit an inline_code node so
-      // editors can style it while typing; for multi-backtick runs, keep it as
-      // plain text to avoid over-eager code spans.
-      if (runLen === 1) {
-        const beforeText = content.slice(0, codeStart)
-        const codeContent = content.slice(codeStart + 1)
-        if (beforeText)
-          pushText(beforeText, beforeText)
-        pushParsed({ type: 'inline_code', code: codeContent, raw: String(codeContent) } as ParsedNode)
-        i++
-        return true
-      }
-
-      // For `` or longer mid-states, treat as text fallback (non-recursive)
-      let merged = content
-      for (let j = i + 1; j < tokens.length; j++)
-        merged += String((tokens[j].content ?? '') + (tokens[j].markup ?? ''))
-      i = tokens.length - 1
-      pushText(merged, merged)
-      i++
-      return true
-    }
-
-    // Close any current text node and handle the text before the code span
+    // Close any current text node and handle inline code
     resetCurrentTextNode()
-    const beforeText = content.slice(0, codeStart)
-    const codeContent = content.slice(codeStart + runLen, codeEnd)
-    const after = content.slice(codeEnd + runLen)
-
-    if (beforeText) {
-      // Try to parse emphasis/strong inside the pre-code fragment, without
-      // advancing the outer token index `i` permanently.
-      const handled = handleEmphasisAndStrikethrough(beforeText, _token)
-      if (!handled)
-        pushText(beforeText, beforeText)
-      else
+    const code_start = content.indexOf('`')
+    const code_end = content.indexOf('`', code_start + 1)
+    const _text = content.slice(0, code_start)
+    const codeContent = code_end === -1 ? content.slice(code_start) : content.slice(code_start, code_end)
+    const after = code_end === -1 ? '' : content.slice(code_end + 1)
+    if (_text) {
+      // Try to re-run emphasis/strong parsing on the fragment before the code span
+      // but avoid mutating the outer token index `i` (handlers sometimes increment it).
+      const handled = handleEmphasisAndStrikethrough(_text, _token)
+      // restore index so we don't skip tokens in the outer loop
+      if (!handled) {
+        pushText(_text, _text)
+      }
+      else {
         i--
+      }
     }
 
+    const code = codeContent.replace(/`/g, '')
     pushParsed({
       type: 'inline_code',
-      code: codeContent,
-      raw: String(codeContent ?? ''),
+      code,
+      raw: String(code ?? ''),
     } as ParsedNode)
 
+    // afterCode 可能也存在很多情况包括多个 code，我们递归处理 --- IGNORE ---
     if (after) {
-      handleToken({ type: 'text', content: after, raw: after } as unknown as MarkdownToken)
+      handleToken({
+        type: 'text',
+        content: after,
+        raw: String(after ?? ''),
+      })
       i--
+    }
+    else if (code_end === -1) {
+      // 要把下一个 token 也合并进来，把类型变成 text
+      const nextToken = tokens[i + 1]
+      if (nextToken) {
+        let fixedAfter = after
+        for (let j = i + 1; j < tokens.length; j++) {
+          fixedAfter += String(((tokens[j].content ?? '') + (tokens[j].markup ?? '')))
+        }
+        i = tokens.length - 1
+        handleToken({
+          type: 'text',
+          content: fixedAfter,
+          raw: String(fixedAfter ?? ''),
+        })
+      }
     }
     i++
     return true
@@ -348,98 +316,17 @@ export function parseInlineTokens(
 
       case 'strong_open': {
         resetCurrentTextNode()
-        if (opts?.insideLink) {
-          // Flatten strong inside link label into literal text with ** markers,
-          // preserving inner literals like backticks and nested * markers.
-          let j = i + 1
-          let depth = 1
-          let out = '**'
-          while (j < tokens.length && depth > 0) {
-            const t = tokens[j] as MarkdownToken
-            if (t.type === 'strong_open') {
-              out += '**'
-              depth++
-            }
-            else if (t.type === 'strong_close') {
-              depth--
-              out += '**'
-              if (depth === 0)
-                break
-            }
-            else if (t.type === 'em_open' || t.type === 'em_close') {
-              out += String(t.markup ?? '*')
-            }
-            else if (t.type === 'code_inline') {
-              const mark = String((t as any).markup ?? '`')
-              out += mark + String(t.content ?? '') + mark
-            }
-            else if (t.type === 'text') {
-              out += String(t.content ?? '')
-            }
-            else if (typeof (t as any).content === 'string') {
-              out += String((t as any).content ?? '')
-            }
-            j++
-          }
-          // append closing if loop ended without adding it
-          if (!out.endsWith('**'))
-            out += '**'
-          pushText(out, out)
-          i = Math.min(j + 1, tokens.length)
-        }
-        else {
-          const { node, nextIndex } = parseStrongToken(tokens, i, token.content)
-          pushNode(node)
-          i = nextIndex
-        }
+        const { node, nextIndex } = parseStrongToken(tokens, i, token.content)
+        pushNode(node)
+        i = nextIndex
         break
       }
 
       case 'em_open': {
         resetCurrentTextNode()
-        if (opts?.insideLink) {
-          // Flatten emphasis inside link label into literal text with * markers,
-          // preserving inner literals like backticks and nested * markers.
-          let j = i + 1
-          let depth = 1
-          let out = '*'
-          while (j < tokens.length && depth > 0) {
-            const t = tokens[j] as MarkdownToken
-            if (t.type === 'em_open') {
-              out += '*'
-              depth++
-            }
-            else if (t.type === 'em_close') {
-              depth--
-              out += '*'
-              if (depth === 0)
-                break
-            }
-            else if (t.type === 'strong_open' || t.type === 'strong_close') {
-              out += String(t.markup ?? '**')
-            }
-            else if (t.type === 'code_inline') {
-              const mark = String((t as any).markup ?? '`')
-              out += mark + String(t.content ?? '') + mark
-            }
-            else if (t.type === 'text') {
-              out += String(t.content ?? '')
-            }
-            else if (typeof (t as any).content === 'string') {
-              out += String((t as any).content ?? '')
-            }
-            j++
-          }
-          if (!out.endsWith('*'))
-            out += '*'
-          pushText(out, out)
-          i = Math.min(j + 1, tokens.length)
-        }
-        else {
-          const { node, nextIndex } = parseEmphasisToken(tokens, i)
-          pushNode(node)
-          i = nextIndex
-        }
+        const { node, nextIndex } = parseEmphasisToken(tokens, i)
+        pushNode(node)
+        i = nextIndex
         break
       }
 
@@ -618,7 +505,7 @@ export function parseInlineTokens(
       i++
       return
     }
-    if (!opts?.insideLink && (content === '`' || content === '|' || content === '$' || /^\*+$/.test(content))) {
+    if (content === '`' || content === '|' || content === '$' || /^\*+$/.test(content)) {
       i++
       return
     }
@@ -638,32 +525,23 @@ export function parseInlineTokens(
     if (handleInlineImageContent(content, token))
       return
 
-    // Avoid synthesizing links from raw text only when the next token is
-    // already a structured link_open. This prevents duplicates while still
-    // allowing fallback for later tricky links in the same inline run.
-    if (tokens[i + 1]?.type !== 'link_open' && handleInlineLinkContent(content, token))
+    if (handleInlineLinkContent(content, token))
       return
 
     if (handleEmphasisAndStrikethrough(content, token))
       return
 
-    // Drop empty text tokens to avoid spurious empty nodes before emphasis
-    if (!content) {
-      i++
-      return
-    }
     const textNode = parseTextToken({ ...token, content })
-    const insideLink = !!opts?.insideLink
     if (currentTextNode) {
       // Merge with the previous text node
-      currentTextNode.content += insideLink ? textNode.content : textNode.content.replace(/(\*+|\(|\\)$/, '')
+      currentTextNode.content += textNode.content.replace(/(\*+|\(|\\)$/, '')
       currentTextNode.raw += textNode.raw
     }
     else {
       const maybeMath = preToken?.tag === 'br' && tokens[i - 2]?.content === '['
       // Start a new text node
       const nextToken = tokens[i + 1]
-      if (!insideLink && !nextToken)
+      if (!nextToken)
         textNode.content = textNode.content.replace(/(\*+|\(|\\)$/, '')
 
       currentTextNode = textNode
@@ -983,112 +861,5 @@ export function parseInlineTokens(
     return false
   }
 
-  return normalizeSingleLinkResult(raw, result)
-}
-
-// If the raw text is exactly a single Markdown link like "[label](href)",
-// ensure we return exactly one link node and drop any accidental duplicates
-// produced by fallback heuristics.
-function normalizeSingleLinkResult(raw: string | undefined, nodes: ParsedNode[]): ParsedNode[] {
-  if (!raw)
-    return nodes
-  const trimmed = raw.trim()
-  const m = /^\[([\s\S]+?)\]\(([^)]+)\)$/.exec(trimmed)
-  if (!m)
-    return nodes
-  const label = m[1]
-  const href = m[2]
-  // Find a link node with matching href; prefer the one whose text equals the label
-  const candidates = nodes.filter(n => n.type === 'link') as any[]
-  const preferred = candidates.find(n => String(n.href || '') === href && String(n.text || '') === label)
-    || candidates.find(n => String(n.href || '') === href)
-  if (preferred)
-    return [preferred]
-  return nodes
-}
-
-// Minimal, robust fallback parser: split raw by backticks into
-// text and inline_code, and parse simple **strong** inside text.
-function parseFromRawWithCodeAndStrong(raw: string): ParsedNode[] {
-  // Tokenize raw handling two constructs: backticks `...` and strong **...**
-  // Build a small AST allowing code inside strong and vice versa.
-  const root: ParsedNode[] = []
-  const stack: Array<{ type: 'root' | 'strong', children: ParsedNode[] }> = [{ type: 'root', children: root }]
-  let i = 0
-
-  function cur() {
-    return stack[stack.length - 1].children
-  }
-
-  function pushText(s: string) {
-    if (!s)
-      return
-    const last = cur()[cur().length - 1]
-    if (last && last.type === 'text') {
-      (last as any).content += s
-      ;(last as any).raw += s
-    }
-    else {
-      cur().push({ type: 'text', content: s, raw: s } as ParsedNode)
-    }
-  }
-
-  while (i < raw.length) {
-    // strong open/close (only when both ** are present)
-    if (raw[i] === '*' && raw[i + 1] === '*') {
-      // If already inside strong, close it; otherwise open new strong
-      const isClosing = stack.length > 1 && stack[stack.length - 1].type === 'strong'
-      i += 2
-      if (isClosing) {
-        const nodeChildren = stack.pop()!.children
-        cur().push({ type: 'strong', children: nodeChildren, raw: `**${nodeChildren.map(n => (n as any).raw ?? '').join('')}**` } as ParsedNode)
-      }
-      else {
-        stack.push({ type: 'strong', children: [] })
-      }
-      continue
-    }
-
-    // inline code with variable-length backtick runs
-    if (raw[i] === '`') {
-      // count opening run
-      let runLen = 1
-      let k = i + 1
-      while (k < raw.length && raw[k] === '`') {
-        runLen++
-        k++
-      }
-      const closingSeq = '`'.repeat(runLen)
-      const codeStart = i + runLen
-      const close = raw.indexOf(closingSeq, codeStart)
-      if (close === -1) {
-        // no closing run; treat the rest as text
-        pushText(raw.slice(i))
-        break
-      }
-      const code = raw.slice(codeStart, close)
-      cur().push({ type: 'inline_code', code, raw: code } as ParsedNode)
-      i = close + runLen
-      continue
-    }
-
-    // regular text: read until next special
-    let next = raw.indexOf('`', i)
-    const nextStrong = raw.indexOf('**', i)
-    if (nextStrong !== -1 && (next === -1 || nextStrong < next))
-      next = nextStrong
-    if (next === -1)
-      next = raw.length
-    pushText(raw.slice(i, next))
-    i = next
-  }
-
-  // If there are unclosed strongs, degrade them into plain text with ** markers
-  while (stack.length > 1) {
-    const dangling = stack.pop()!
-    const content = dangling.children.map(n => (n as any).raw ?? (n as any).content ?? '').join('')
-    pushText(`**${content}`)
-  }
-
-  return root
+  return result
 }

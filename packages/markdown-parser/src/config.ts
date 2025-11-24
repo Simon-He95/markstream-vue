@@ -12,13 +12,6 @@ export interface MathOptions {
   commands?: readonly string[]
   /** Whether to escape standalone '!' (default: true). */
   escapeExclamation?: boolean
-  /**
-   * Strict delimiter mode.
-   * - When true, only explicit TeX delimiters are recognized as math:
-   *   inline: `$...$` and `\(...\)`; block: `$$...$$` and `\[...\]`.
-   * - Heuristics and mid-state (unclosed) math detection are disabled.
-   */
-  strictDelimiters?: boolean
 }
 
 let defaultMathOptions: MathOptions | undefined

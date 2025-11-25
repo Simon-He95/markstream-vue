@@ -1,0 +1,1 @@
+import{_ as a,c as t,o as r,ag as i}from"./chunks/framework.C0wiDQbp.js";const h=JSON.parse('{"title":"markstream-vue","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),s={name:"index.md"};function o(n,e,l,d,m,c){return r(),t("div",null,[...e[0]||(e[0]=[i("",9)])])}const k=a(s,[["render",o]]);export{h as __pageData,k as default};

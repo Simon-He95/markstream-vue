@@ -4,9 +4,8 @@ import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from '..
 import { getKatex } from './katex'
 
 export function MathBlockNode({ node }: MathBlockNodeProps) {
-  const containerRef = useRef<HTMLDivElement | null>(null)
   const mathRef = useRef<HTMLDivElement | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [rendering, setRendering] = useState(true)
   const renderIdRef = useRef(0)
 
   useEffect(() => {
@@ -15,7 +14,7 @@ export function MathBlockNode({ node }: MathBlockNodeProps) {
     const renderId = ++renderIdRef.current
     const content = node.content ?? ''
     if (!content) {
-      setLoading(false)
+      setRendering(false)
       return () => controller.abort()
     }
 
@@ -28,10 +27,9 @@ export function MathBlockNode({ node }: MathBlockNodeProps) {
       .then((html) => {
         if (aborted || renderId !== renderIdRef.current)
           return
-        if (mathRef.current) {
+        if (mathRef.current)
           mathRef.current.innerHTML = html
-          setLoading(false)
-        }
+        setRendering(false)
       })
       .catch(async (err: any) => {
         if (aborted || renderId !== renderIdRef.current)
@@ -51,7 +49,7 @@ export function MathBlockNode({ node }: MathBlockNodeProps) {
               })
               if (!aborted && renderId === renderIdRef.current && mathRef.current) {
                 mathRef.current.innerHTML = html
-                setLoading(false)
+                setRendering(false)
                 setKaTeXCache(content, true, html)
               }
               return
@@ -61,7 +59,7 @@ export function MathBlockNode({ node }: MathBlockNodeProps) {
         }
         if (!node.loading) {
           mathRef.current.textContent = node.raw
-          setLoading(false)
+          setRendering(false)
         }
       })
 
@@ -72,13 +70,8 @@ export function MathBlockNode({ node }: MathBlockNodeProps) {
   }, [node.content, node.loading, node.raw])
 
   return (
-    <div ref={containerRef} className="math-block text-center overflow-x-auto relative min-h-[40px]">
-      {loading && (
-        <div className="math-loading-overlay">
-          <div className="math-loading-spinner" />
-        </div>
-      )}
-      <div ref={mathRef} className={loading ? 'math-rendering' : undefined} />
+    <div className="math-block text-center overflow-x-auto relative min-h-[40px]">
+      <div ref={mathRef} className={rendering ? 'math-rendering' : undefined} />
     </div>
   )
 }

@@ -1,8 +1,8 @@
 {
   "name": "markstream-vue",
   "type": "module",
-  "version": "0.0.2-beta.8",
-  "packageManager": "pnpm@10.24.0",
+  "version": "0.0.4-beta.5",
+  "packageManager": "pnpm@10.26.1",
   "description": "Vue 3 Markdown renderer optimized for large docs: progressive Mermaid, streaming diff code blocks, and fast real-time preview.",
   "author": "Simon He",
   "license": "MIT",
@@ -22,7 +22,16 @@
     "markdown-to-html",
     "markdown-renderer",
     "vue-markdown",
+    "vue-markdown-renderer",
+    "vue-markdown-component",
+    "markdown-preview",
+    "markdown-viewer",
     "vue-component",
+    "nuxt",
+    "vite",
+    "sse",
+    "ai-chat",
+    "streaming-markdown",
     "html",
     "renderer",
     "custom-component",
@@ -36,7 +45,7 @@
     "markstream-vue"
   ],
   "sideEffects": [
-    "src/index.css"
+    "**/*.css"
   ],
   "exports": {
     ".": {
@@ -68,7 +77,9 @@
     "check:ssr": "vitest --run -t \"SSR import safety\"",
     "prepublishOnly": "npm run build",
     "play": "pnpm run -C playground dev",
+    "play:vue2": "pnpm run -C playground-vue2 dev",
     "play:build": "pnpm run -C playground build",
+    "play:vue2:build": "pnpm run -C playground-vue2 build",
     "play:nuxt": "pnpm run -C playground-nuxt dev",
     "play:nuxt:build": "pnpm run -C playground-nuxt build",
     "play:nuxt:preview": "pnpm run -C playground-nuxt preview",
@@ -76,7 +87,7 @@
     "play:react:build": "pnpm run -C playground-react build",
     "play:react:preview": "pnpm run -C playground-react preview",
     "preview": "pnpm run -C playground preview",
-    "build": "vite build --mode npm && vite build --config vite.config.tailwind.ts --mode npm && pnpm run build:dts",
+    "build": "vite build --mode npm && vite build --config vite.config.tailwind.ts --mode npm && node scripts/copy-tailwind-css.mjs && pnpm run build:dts",
     "docs:dev": "vitepress dev docs",
     "docs:sync-zh": "node scripts/sync-zh-docs.mjs",
     "docs:check-zh": "node scripts/check-zh-parity.mjs",
@@ -96,8 +107,8 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "shiki": "^3.13.0",
-    "stream-markdown": ">=0.0.10",
-    "stream-monaco": ">=0.0.7",
+    "stream-markdown": ">=0.0.11",
+    "stream-monaco": ">=0.0.8",
     "vue": ">=3.0.0",
     "vue-i18n": ">=9"
   },
@@ -123,19 +134,19 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.4",
-    "stream-markdown-parser": "^0.0.34"
+    "stream-markdown-parser": "^0.0.51"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/node": "^18.19.130",
     "@vitejs/plugin-vue": "^5.2.4",
-    "@vitest/ui": "^4.0.14",
+    "@vitest/ui": "^4.0.16",
     "@vue/test-utils": "^2.4.6",
-    "autoprefixer": "^10.4.22",
+    "autoprefixer": "^10.4.23",
     "bumpp": "^8.2.1",
     "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.39.1",
+    "eslint": "^9.39.2",
     "lint-staged": "^13.3.0",
     "lz-string": "^1.5.0",
     "markdown-it-emoji": "^3.0.0",
@@ -144,19 +155,19 @@
     "rollup": "^3.29.5",
     "rollup-plugin-dts": "^5.3.1",
     "rollup-plugin-visualizer": "^6.0.5",
-    "tailwindcss": "^3.4.18",
+    "tailwindcss": "^3.4.19",
     "terser": "^5.44.1",
-    "tsx": "^4.20.6",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "unplugin-class-extractor": "^0.0.22",
     "unplugin-vue-components": "^28.8.0",
-    "vite": "^7.2.4",
+    "vite": "^7.3.0",
     "vite-plugin-dts": "^4.5.4",
-    "vite-plugin-pages": "^0.33.1",
+    "vite-plugin-pages": "^0.33.2",
     "vite-svg-loader": "^5.1.0",
     "vitepress": "^1.6.4",
-    "vitest": "^4.0.14",
-    "vue": "^3.5.25",
+    "vitest": "^4.0.16",
+    "vue": "^3.5.26",
     "vue-tsc": "^2.2.12"
   },
   "pnpm": {
@@ -164,7 +175,8 @@
       "@vue/reactivity": "3.5.25",
       "@vue/runtime-core": "3.5.25",
       "@vue/runtime-dom": "3.5.25",
-      "vue": "3.5.25"
+      "vue@^2": "2.7.16",
+      "vue@^3": "3.5.25"
     }
   },
   "lint-staged": {

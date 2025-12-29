@@ -32,22 +32,46 @@ const doc = '# Usage example\n\nSupports **streaming** nodes.'
 }
 ```
 
+## VitePress + custom tags
+
+In VitePress, register your custom node component once in `enhanceApp`, then use `custom-html-tags` on `MarkdownRender` to let the parser emit custom nodes automatically.
+
+```ts
+import MarkdownRender, { setCustomComponents } from 'markstream-vue'
+// docs/.vitepress/theme/index.ts
+import DefaultTheme from 'vitepress/theme'
+import ThinkingNode from './components/ThinkingNode.vue'
+import 'markstream-vue/index.css'
+
+export default {
+  extends: DefaultTheme,
+  enhanceApp() {
+    setCustomComponents('docs', { thinking: ThinkingNode })
+  },
+}
+```
+
+```md
+<!-- in a VitePress page -->
+<MarkdownRender
+  custom-id="docs"
+  :custom-html-tags="['thinking']"
+  :content="source"
+/>
+```
+
 ## Parser pipeline
 
 ```ts
 import { getMarkdown, parseMarkdownToStructure } from 'markstream-vue'
 
-const md = getMarkdown({
-  markdownIt: {
-    html: true,
-  },
-})
+const md = getMarkdown()
 
 const nodes = parseMarkdownToStructure('# Title', md)
 // pass nodes to <MarkdownRender :nodes="nodes" />
 ```
 
-- `getMarkdown(options?)` returns a configured `markdown-it-ts` instance.
+- `getMarkdown(msgId?, options?)` returns a configured `markdown-it-ts` instance.
 - `parseMarkdownToStructure()` transforms the Markdown string/tokens to the AST consumed by the renderer.
 - Combine with `setCustomComponents(id?, mapping)` to swap node renderers for a given `custom-id`.
 
@@ -55,7 +79,7 @@ const nodes = parseMarkdownToStructure('# Title', md)
 
 For a full list of components and props, visit [Components & node renderers](/guide/components). Highlights:
 
-- `CodeBlockNode` — Monaco-powered blocks; import `stream-monaco/esm/index.css`.
+- `CodeBlockNode` — Monaco-powered blocks (requires `stream-monaco`).
 - `MarkdownCodeBlockNode` — Shiki-based lightweight highlighting.
 - `MermaidBlockNode` — requires `mermaid` ≥ 11 + CSS.
 - `ImageNode` — emits `click`, `load`, `error` for custom previews.
@@ -65,6 +89,21 @@ For a full list of components and props, visit [Components & node renderers](/gu
 1. **Reset first** (`modern-css-reset`, `@tailwind base`, `@unocss/reset`), then import `markstream-vue` styles.
 2. **Use CSS layers** when Tailwind/UnoCSS is active (`@layer components { @import 'markstream-vue/index.css' }`).
 3. **UNO/Tailwind conflicts** — follow the [Tailwind guide](/guide/tailwind) (includes UnoCSS examples) to prevent utilities from overriding renderer styles.
-4. **Peer CSS** — Monaco, KaTeX, Mermaid each need their own CSS files; missing imports → blank editors/graphs.
+4. **Peer CSS** — KaTeX and Mermaid need their own CSS; Monaco does not.
+
+## CSS scoping (important)
+
+The package CSS is scoped under an internal `.markstream-vue` container to minimize global style conflicts (Tailwind utilities and theme variables included).
+
+- When you use `MarkdownRender`, you get this container automatically.
+- If you render exported node components on their own (e.g. `PreCodeNode`, `FootnoteNode`), wrap them with a container element:
+
+```vue
+<template>
+  <div class="markstream-vue">
+    <PreCodeNode :node="node" />
+  </div>
+</template>
+```
 
 If visuals still look wrong, reproduce the issue inside the playground (`pnpm play`) and cross-check with the troubleshooting guide before filing a bug.

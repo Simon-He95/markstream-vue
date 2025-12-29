@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "paths": {
+      "stream-markdown-parser": ["../markdown-parser/dist/index.d.ts"],
+      "stream-markdown-parser/*": ["../markdown-parser/dist/*"]
+    },
+    "types": [],
+    "declaration": true,
+    "declarationMap": false,
+    "emitDeclarationOnly": true,
+    "outDir": "./dist"
+  },
+  "include": ["src/**/*", "src/**/*.vue"]
+}

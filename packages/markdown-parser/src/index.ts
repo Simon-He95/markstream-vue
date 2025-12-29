@@ -143,9 +143,11 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
   md.core.ruler.after('block', 'mark_fence_closed', (state: unknown) => {
     const s = state as unknown as {
       src: string
+      env?: Record<string, unknown>
       tokens: Array<{ type?: string, map?: number[], markup?: string, meta?: Record<string, unknown> }>
     }
     const src: string = s.src
+    const envFinal = !!s.env?.__markstreamFinal
     const lines = src.split(/\r?\n/)
     for (const token of s.tokens) {
       if (token.type !== 'fence' || !token.map || !token.markup)
@@ -164,7 +166,7 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
       while (i + count < line.length && line[i + count] === marker) count++
       let j = i + count
       while (j < line.length && (line[j] === ' ' || line[j] === '\t')) j++
-      const closed = endLine > openLine + 1 && count >= minLen && j === line.length
+      const closed = envFinal ? true : (endLine > openLine + 1 && count >= minLen && j === line.length)
       const tokenShape = token as unknown as { meta?: Record<string, unknown> }
       tokenShape.meta = tokenShape.meta ?? {}
       ; (tokenShape.meta as Record<string, unknown>).unclosed = !closed

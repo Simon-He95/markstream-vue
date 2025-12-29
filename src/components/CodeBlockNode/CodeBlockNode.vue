@@ -2,14 +2,15 @@
 import type { CodeBlockNodeProps } from '../../types/component-props'
 // Avoid static import of `stream-monaco` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
-import { computed, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue'
+import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 // Tooltip is provided as a singleton via composable to avoid many DOM nodes
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useViewportPriority } from '../../composables/viewportPriority'
-import { getLanguageIcon, languageMap } from '../../utils'
+import { getLanguageIcon, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../../utils'
 import { safeCancelRaf, safeRaf } from '../../utils/safeRaf'
 import PreCodeNode from '../PreCodeNode'
+import HtmlPreviewFrame from './HtmlPreviewFrame.vue'
 import { getUseMonaco } from './monaco'
 
 const props = withDefaults(
@@ -33,6 +34,69 @@ const props = withDefaults(
 )
 
 const emits = defineEmits(['previewCode', 'copy'])
+
+// Chrome warns when Monaco registers non-passive touchstart listeners.
+// Patch the editor host so touch handlers default to passive for Monaco roots.
+const MONACO_TOUCH_PATCH_FLAG = '__markstreamMonacoPassiveTouch__'
+
+if (typeof window !== 'undefined')
+  ensureMonacoPassiveTouchListeners()
+
+function ensureMonacoPassiveTouchListeners() {
+  try {
+    const globalObj = window as any
+    if (globalObj[MONACO_TOUCH_PATCH_FLAG])
+      return
+    const proto = window.Element?.prototype
+    const nativeAdd = proto?.addEventListener
+    if (!proto || !nativeAdd)
+      return
+    proto.addEventListener = function patchedMonacoTouchStart(
+      this: Element,
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) {
+      if (type === 'touchstart' && shouldForcePassiveForMonaco(this, options))
+        return nativeAdd.call(this, type, listener, withPassiveOptions(options))
+      return nativeAdd.call(this, type, listener, options)
+    }
+    globalObj[MONACO_TOUCH_PATCH_FLAG] = true
+  }
+  catch {}
+}
+
+function shouldForcePassiveForMonaco(target: EventTarget | null, options?: boolean | AddEventListenerOptions) {
+  if (!target)
+    return false
+  const el = target as Element
+  if (typeof el.closest !== 'function')
+    return false
+  if (!el.closest('.monaco-editor, .monaco-diff-editor'))
+    return false
+  if (options && typeof options === 'object' && 'passive' in options)
+    return false
+  return true
+}
+
+function withPassiveOptions(options?: boolean | AddEventListenerOptions): AddEventListenerOptions {
+  if (options == null)
+    return { passive: true }
+  if (typeof options === 'boolean')
+    return { capture: options, passive: true }
+  if (typeof options === 'object') {
+    if ('passive' in options)
+      return options
+    return { ...options, passive: true }
+  }
+  return { passive: true }
+}
+
+const instance = getCurrentInstance()
+const hasPreviewListener = computed(() => {
+  const props = instance?.vnode.props as Record<string, unknown> | null | undefined
+  return !!(props && (props.onPreviewCode || props.onPreviewCode))
+})
 const { t } = useSafeI18n()
 // No mermaid-specific handling here; NodeRenderer routes mermaid blocks.
 const codeEditor = ref<HTMLElement | null>(null)
@@ -40,7 +104,8 @@ const container = ref<HTMLElement | null>(null)
 const copyText = ref(false)
 // local tooltip logic removed; use shared `showTooltipForAnchor` / `hideTooltip`
 
-const codeLanguage = ref(String(props.node.language ?? ''))
+const codeLanguage = ref(normalizeLanguageIdentifier(props.node.language))
+const monacoLanguage = computed(() => resolveMonacoLanguageId(codeLanguage.value))
 const isExpanded = ref(false)
 const isCollapsed = ref(false)
 const editorCreated = ref(false)
@@ -93,6 +158,7 @@ let detectLanguage: (code: string) => string = () => String(props.node.language 
 let setTheme: (theme: any) => Promise<void> = async () => {}
 const isDiff = computed(() => props.node.diff)
 const usePreCodeRender = ref(false)
+const showInlinePreview = ref(false)
 // Defer client-only editor initialization to the browser to avoid SSR errors
 if (typeof window !== 'undefined') {
   ;(async () => {
@@ -288,6 +354,8 @@ function computeContentHeight(): number | null {
     if (isDiff.value && ed?.getOriginalEditor && ed?.getModifiedEditor) {
       const o = ed.getOriginalEditor?.()
       const m = ed.getModifiedEditor?.()
+      o?.layout?.()
+      m?.layout?.()
       const oh = (o?.getContentHeight?.() as number) || 0
       const mh = (m?.getContentHeight?.() as number) || 0
       const h = Math.max(oh, mh)
@@ -301,6 +369,7 @@ function computeContentHeight(): number | null {
       return Math.ceil(lc * (lh + LINE_EXTRA_PER_LINE) + CONTENT_PADDING + PIXEL_EPSILON)
     }
     else if (ed?.getContentHeight) {
+      ed?.layout?.()
       const h = ed.getContentHeight()
       if (h > 0)
         return Math.ceil(h + PIXEL_EPSILON)
@@ -491,20 +560,15 @@ function getMaxHeightValue(): number {
 }
 
 // Check if the language is previewable (HTML or SVG)
-const isPreviewable = computed(() => {
-  const lang = codeLanguage.value.trim().toLowerCase()
-  return props.isShowPreview && (lang === 'html' || lang === 'svg')
-})
+const isPreviewable = computed(() => props.isShowPreview && (codeLanguage.value === 'html' || codeLanguage.value === 'svg'))
 
 // Check if the code block is a Mermaid diagram
-const isMermaid = computed(
-  () => codeLanguage.value.trim().toLowerCase() === 'mermaid',
-)
+const isMermaid = computed(() => codeLanguage.value === 'mermaid')
 
 watch(
   () => props.node.language,
   (newLanguage) => {
-    codeLanguage.value = newLanguage
+    codeLanguage.value = normalizeLanguageIdentifier(newLanguage)
   },
 )
 
@@ -514,7 +578,7 @@ watch(
     if (props.stream === false)
       return
     if (!codeLanguage.value)
-      codeLanguage.value = detectLanguage(newCode)
+      codeLanguage.value = normalizeLanguageIdentifier(detectLanguage(newCode))
 
     // If the editor helpers exist but the editor hasn't been created yet,
     // ensure creation first so update calls don't get lost.
@@ -526,9 +590,9 @@ watch(
     }
 
     if (isDiff.value)
-      updateDiffCode(String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), codeLanguage.value)
+      updateDiffCode(String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), monacoLanguage.value)
     else
-      updateCode(newCode, codeLanguage.value)
+      updateCode(newCode, monacoLanguage.value)
 
     if (isExpanded.value) {
       safeRaf(() => updateExpandedHeight())
@@ -538,15 +602,14 @@ watch(
 
 // 计算用于显示的语言名称
 const displayLanguage = computed(() => {
-  const lang = codeLanguage.value.trim().toLowerCase()
+  const lang = codeLanguage.value
+  if (!lang)
+    return languageMap[''] || 'Plain Text'
   return languageMap[lang] || lang.charAt(0).toUpperCase() + lang.slice(1)
 })
 
 // Computed property for language icon
-const languageIcon = computed(() => {
-  const lang = codeLanguage.value.trim().toLowerCase()
-  return getLanguageIcon(lang.split(':')[0])
-})
+const languageIcon = computed(() => getLanguageIcon(codeLanguage.value || ''))
 
 // Compute inline style for container to respect optional min/max width
 const containerStyle = computed(() => {
@@ -687,18 +750,24 @@ function previewCode() {
   if (!isPreviewable.value)
     return
 
-  const lowerLang = (codeLanguage.value || props.node.language).toLowerCase()
-  const artifactType = lowerLang === 'html' ? 'text/html' : 'image/svg+xml'
-  const artifactTitle
-    = lowerLang === 'html'
-      ? t('artifacts.htmlPreviewTitle') || 'HTML Preview'
-      : t('artifacts.svgPreviewTitle') || 'SVG Preview'
-  emits('previewCode', {
-    node: props.node,
-    artifactType,
-    artifactTitle,
-    id: `temp-${lowerLang}-${Date.now()}`,
-  })
+  const lowerLang = codeLanguage.value
+  if (hasPreviewListener.value) {
+    const artifactType = lowerLang === 'html' ? 'text/html' : 'image/svg+xml'
+    const artifactTitle
+      = lowerLang === 'html'
+        ? t('artifacts.htmlPreviewTitle') || 'HTML Preview'
+        : t('artifacts.svgPreviewTitle') || 'SVG Preview'
+    emits('previewCode', {
+      node: props.node,
+      artifactType,
+      artifactTitle,
+      id: `temp-${lowerLang}-${Date.now()}`,
+    })
+    return
+  }
+
+  if (lowerLang === 'html')
+    showInlinePreview.value = !showInlinePreview.value
 }
 
 function setAutomaticLayout(expanded: boolean) {
@@ -722,12 +791,12 @@ async function runEditorCreation(el: HTMLElement) {
   if (isDiff.value) {
     safeClean()
     if (createDiffEditor)
-      await createDiffEditor(el as HTMLElement, String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), codeLanguage.value)
+      await createDiffEditor(el as HTMLElement, String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), monacoLanguage.value)
     else
-      await createEditor(el as HTMLElement, props.node.code, codeLanguage.value)
+      await createEditor(el as HTMLElement, props.node.code, monacoLanguage.value)
   }
   else {
-    await createEditor(el as HTMLElement, props.node.code, codeLanguage.value)
+    await createEditor(el as HTMLElement, props.node.code, monacoLanguage.value)
   }
 
   const editor = isDiff.value ? getDiffEditorView() : getEditorView()
@@ -1037,6 +1106,12 @@ onUnmounted(() => {
       </slot>
     </div>
     <div v-show="!isCollapsed && (stream ? true : !loading)" ref="codeEditor" class="code-editor-container" :class="[stream ? '' : 'code-height-placeholder']" />
+    <HtmlPreviewFrame
+      v-if="showInlinePreview && !hasPreviewListener && isPreviewable && codeLanguage === 'html'"
+      :code="node.code"
+      :is-dark="props.isDark"
+      :on-close="() => (showInlinePreview = false)"
+    />
     <!-- Loading placeholder (non-streaming mode) can be overridden via slot -->
     <div v-show="!stream && loading" class="code-loading-placeholder">
       <slot name="loading" :loading="loading" :stream="stream">

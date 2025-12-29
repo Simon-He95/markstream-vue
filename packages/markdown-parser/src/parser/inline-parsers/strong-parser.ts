@@ -33,7 +33,10 @@ export function parseStrongToken(
   }
 
   // Parse inner tokens to handle nested elements
-  children.push(...parseInlineTokens(innerTokens, raw, undefined, { requireClosingStrong: options?.requireClosingStrong }))
+  children.push(...parseInlineTokens(innerTokens, raw, undefined, {
+    requireClosingStrong: options?.requireClosingStrong,
+    customHtmlTags: options?.customHtmlTags,
+  }))
 
   const node: StrongNode = {
     type: 'strong',

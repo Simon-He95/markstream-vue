@@ -5,6 +5,7 @@
 - 指南：/zh/guide/
 - Nuxt SSR：/zh/nuxt-ssr
 - e2e 测试与分析：/e2e-testing-report.md (英文)
+- AI/LLM 项目索引（中文）：/llms.zh-CN
 
 更多文档项正在逐步添加到中文版本。如果你愿意帮忙翻译或改进中文文档，欢迎提交 PR 。
 

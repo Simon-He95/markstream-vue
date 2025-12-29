@@ -27,7 +27,10 @@ export function parseStrikethroughToken(
   }
 
   // Parse inner tokens to handle nested elements
-  children.push(...parseInlineTokens(innerTokens, undefined, undefined, { requireClosingStrong: options?.requireClosingStrong }))
+  children.push(...parseInlineTokens(innerTokens, undefined, undefined, {
+    requireClosingStrong: options?.requireClosingStrong,
+    customHtmlTags: options?.customHtmlTags,
+  }))
 
   const node: StrikethroughNode = {
     type: 'strikethrough',

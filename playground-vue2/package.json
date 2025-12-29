@@ -1,0 +1,27 @@
+{
+  "name": "playground-vue2",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite --port 3334 --open",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "katex": "^0.16.27",
+    "markstream-vue2": "workspace:*",
+    "mermaid": "^11.12.0",
+    "stream-monaco": "latest",
+    "vue": "2.7.16"
+  },
+  "devDependencies": {
+    "@unocss/reset": "^0.61.9",
+    "@vitejs/plugin-vue2": "^2.3.1",
+    "@vue/compiler-sfc": "2.7.16",
+    "monaco-editor": "^0.52.2",
+    "postcss-nesting": "^13.0.2",
+    "vite": "^4.5.3",
+    "vite-plugin-monaco-editor-esm": "^2.0.2",
+    "vue-template-compiler": "^2.7.16"
+  }
+}

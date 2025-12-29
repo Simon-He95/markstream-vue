@@ -4,21 +4,14 @@ import process from 'node:process'
 import Vue from '@vitejs/plugin-vue'
 import autoprefixer from 'autoprefixer'
 import { visualizer } from 'rollup-plugin-visualizer'
-import UnpluginClassExtractor from 'unplugin-class-extractor/vite'
 import { defineConfig } from 'vite'
 import { name } from './package.json'
 
 // https://vitejs.dev/config/
-const pluginsArr: any[] = [
-  Vue(),
-  UnpluginClassExtractor({
-    output: 'dist/tailwind.ts',
-    include: [/\/src\/components\/(?:[^/]+\/)*[^/]+\.vue(\?.*)?$/],
-  }) as any,
-]
+const pluginsArr: any[] = [Vue()]
 
 if (process.env.ANALYZE === 'true') {
-  pluginsArr.push(visualizer({ filename: 'dist/bundle-visualizer-tailwind.html', gzipSize: true }) as any)
+  pluginsArr.push(visualizer({ filename: 'dist-tw/bundle-visualizer-tailwind.html', gzipSize: true }) as any)
 }
 
 export default defineConfig({
@@ -28,13 +21,13 @@ export default defineConfig({
     target: 'es2015',
     cssTarget: 'chrome61',
     copyPublicDir: false,
-    outDir: 'dist', // 修改输出路径为 dist
-    // Don't clear `dist` before this build — we may run this after the
-    // main library build and we don't want to remove generated types.
-    emptyOutDir: false,
+    // Build into a temporary folder; we copy only `index.tailwind.css`
+    // into `dist/` and delete the rest.
+    outDir: 'dist-tw',
+    emptyOutDir: true,
     lib: {
       entry: './src/exports.ts',
-      formats: ['cjs', 'es'],
+      formats: ['es'],
       name,
       fileName: 'index',
     },
@@ -76,6 +69,8 @@ export default defineConfig({
           vue: 'Vue',
         },
         exports: 'named',
+        entryFileNames: 'index.js',
+        chunkFileNames: 'chunks/[name].js',
         // Emit CSS asset with a distinct name so consumers can pick the
         // "tailwind-ready" CSS separately (index.tailwind.css).
         assetFileNames: (assetInfo: any) => {

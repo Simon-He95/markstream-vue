@@ -16,10 +16,11 @@ interface BlockquoteNode {
   cite?: string
 }
 
-defineProps<{
+const props = defineProps<{
   node: BlockquoteNode
   indexKey: string | number
   typewriter?: boolean
+  customId?: string
 }>()
 
 // typed emit for better DX and type-safety when forwarding copy events
@@ -31,10 +32,11 @@ defineEmits<{
 <template>
   <blockquote class="blockquote" dir="auto" :cite="node.cite">
     <NodeRenderer
-      v-memo="[node.children]"
-      :index-key="`blockquote-${indexKey}`"
-      :nodes="node.children || []"
-      :typewriter="typewriter"
+      v-memo="[props.node.children]"
+      :index-key="`blockquote-${props.indexKey}`"
+      :nodes="props.node.children || []"
+      :custom-id="props.customId"
+      :typewriter="props.typewriter"
       @copy="$emit('copy', $event)"
     />
   </blockquote>

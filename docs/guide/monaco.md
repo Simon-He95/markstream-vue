@@ -13,6 +13,7 @@ Use `CodeBlockNode` (default) to render Monaco-powered code blocks. For read-onl
 Tips:
 - Defer Monaco initialization for offscreen code blocks
 - Use `codeBlockStream: false` to avoid partial updates if desired
+- No additional CSS import is required
 
 ![Monaco demo](/screenshots/codeblock-demo.svg)
 
@@ -65,3 +66,63 @@ const node = { type: 'code_block', language: 'js', raw: 'console.log(123)', code
   <CodeBlockNode :node="node" />
 </template>
 ```
+
+### Add extra languages & themes
+
+Only a minimal set of Monaco languages ships with the default integration to keep the first render fast. When you need additional grammars (Rust, Go, Bash, etc.) or want to ship your own VS Code themes, pass them through `monacoOptions` — either directly on `CodeBlockNode` or globally via `MarkdownRender`'s `codeBlockMonacoOptions` prop. The object is forwarded to `useMonaco()` unchanged.
+
+> `languages` is **not** appended to the built-in defaults from `stream-monaco`; providing this array replaces the internal `defaultLanguages`. Include every language you need (even the original ones) whenever you override it.
+
+```vue
+<script setup lang="ts">
+import type { MonacoTheme } from 'stream-monaco'
+import MarkdownRender from 'markstream-vue'
+
+const docsDark: MonacoTheme = {
+  name: 'docs-dark',
+  base: 'vs-dark',
+  inherit: true,
+  colors: {
+    'editor.background': '#05060a',
+  },
+  rules: [],
+}
+
+const docsLight: MonacoTheme = {
+  name: 'docs-light',
+  base: 'vs',
+  inherit: true,
+  colors: {
+    'editor.background': '#ffffff',
+  },
+  rules: [],
+}
+
+const monacoOptions = {
+  languages: ['javascript', 'python', 'rust', 'shell'],
+  themes: [docsDark, docsLight],
+  theme: 'docs-dark',
+  MAX_HEIGHT: 640,
+}
+
+const markdown = `
+\`\`\`python
+print("extra languages go here")
+\`\`\`
+
+\`\`\`rust
+fn main() {}
+\`\`\`
+`
+</script>
+
+<template>
+  <MarkdownRender
+    custom-id="docs"
+    :content="markdown"
+    :code-block-monaco-options="monacoOptions"
+  />
+</template>
+```
+
+> Each entry in `languages` can be a Monaco language id string or the loader signature that `stream-monaco` documents (for lazy language bundles). When not using `MarkdownRender`, pass the same `monacoOptions` object directly to `CodeBlockNode` via `:monaco-options`.

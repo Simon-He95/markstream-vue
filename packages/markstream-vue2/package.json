@@ -1,0 +1,79 @@
+{
+  "name": "markstream-vue2",
+  "type": "module",
+  "version": "0.0.1",
+  "description": "Vue 2 Markdown renderer optimized for large docs: progressive Mermaid, streaming diff code blocks, and fast real-time preview.",
+  "author": "Simon He",
+  "license": "MIT",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./index.css": "./dist/index.css",
+    "./workers/katexRenderer.worker": "./dist/workers/katexRenderer.worker.js",
+    "./workers/mermaidParser.worker": "./dist/workers/mermaidParser.worker.js"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build -c vite.config.ts --mode npm && pnpm run build:dts && pnpm run copy:css",
+    "build:dts": "rollup -c ./scripts/rollup.dts.config.mjs && node ./scripts/clean-dts.cjs",
+    "copy:css": "node ./scripts/copy-css.mjs"
+  },
+  "peerDependencies": {
+    "@vue/composition-api": ">=1.7.2",
+    "katex": ">=0.16.22",
+    "mermaid": ">=11",
+    "shiki": "^3.13.0",
+    "stream-markdown": ">=0.0.11",
+    "stream-monaco": ">=0.0.8",
+    "vue": ">=2.6.14 <3",
+    "vue-i18n": ">=9"
+  },
+  "peerDependenciesMeta": {
+    "@vue/composition-api": {
+      "optional": true
+    },
+    "katex": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    },
+    "shiki": {
+      "optional": true
+    },
+    "stream-markdown": {
+      "optional": true
+    },
+    "stream-monaco": {
+      "optional": true
+    },
+    "vue-i18n": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.7.4",
+    "stream-markdown-parser": "^0.0.51"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue2": "^2.3.4",
+    "@vue/compiler-sfc": "2.7.16",
+    "rollup": "^3.29.5",
+    "rollup-plugin-dts": "^5.3.1",
+    "typescript": "^5.9.3",
+    "vite": "^4.5.14",
+    "vite-plugin-dts": "^4.5.4",
+    "vue-tsc": "^2.2.12"
+  }
+}

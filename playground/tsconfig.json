@@ -7,7 +7,9 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "paths": {
-      "~/*": ["src/*"]
+      "~/*": ["src/*"],
+      "stream-markdown-parser": ["../packages/markdown-parser/src/index.ts"],
+      "stream-markdown-parser/*": ["../packages/markdown-parser/src/*"]
     },
     "resolveJsonModule": true,
     "types": ["vite/client", "vite-plugin-pages/client"],

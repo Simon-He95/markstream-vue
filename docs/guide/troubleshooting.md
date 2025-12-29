@@ -5,23 +5,26 @@ If something breaks, here are common fixes:
 - If you get `window is not defined` during SSR, wrap components in `<client-only>` for Nuxt and use the `onMounted` guard for Vite SSR.
 - Install `katex` when math rendering fails, and import `katex/dist/katex.min.css` in your app entry.
 - For Mermaid issues, upgrade or pin `mermaid` to a version >= 11 and check asynchronous render logs.
+- If you load KaTeX/Mermaid via CDN `<script>`, make sure `window.katex` / `window.mermaid` exist before first render, or call `setKatexLoader(() => window.katex)` / `setMermaidLoader(() => window.mermaid)` once after they load.
 - For performance concerns, check that `viewportPriority` is true and avoid too many heavy nodes in a single mount.
 
 If unsure, reproduce issue using the playground (or the hosted quick test) and then open an issue with stack trace and minimal markdown sample.
 
-Hosted quick test: https://markstream-vue.netlify.app/test
+Hosted quick test: https://markstream-vue.simonhe.me/test
 
-Open a new issue (quick link): https://github.com/Simon-He95/markstream-vueer/issues/new?template=bug_report.yml
+Open a new issue (quick link): https://github.com/Simon-He95/markstream-vue/issues/new?template=bug_report.yml
 
 ## Common problems (FAQ)
 
-- Tailwind / CSS utilities overriding styling: If your project uses Tailwind or a component library (e.g., shadcn), utility classes or global styles may override the library's styles. See the Tailwind integration guide for recommended import ordering and strategies: `/guide/tailwind`.
+- Tailwind / CSS utilities overriding styling: If your project uses Tailwind or a component library (e.g., shadcn), utility classes or global styles may override the library's styles. See the Tailwind integration guide for recommended import ordering and strategies: [/guide/tailwind](/guide/tailwind).
 
   Quick fixes:
 
   - Import `markstream-vue/index.css` inside a `@layer components { ... }` block (see the Tailwind page). This controls style ordering.
   - Consider setting a `prefix` in Tailwind config (e.g., `tw-`) to avoid collisions with component library class names.
   - Use scoped selectors or `:deep` to target only the elements you need to override.
+
+  Note: `markstream-vue` scopes its packaged CSS under an internal `.markstream-vue` container (including theme variables and Tailwind utilities), so most conflicts come from ordering/resets inside the renderer area rather than global leakage.
 
 - Want to tweak looks? You can customize via CSS variables in `src/index.css` (e.g., `--vscode-editor-background`, `--vscode-editor-foreground`) or override component classes in your app's stylesheet. Use the `@apply` helper or your own stylesheet to keep style rules isolated.
 

@@ -15,6 +15,11 @@ export interface FactoryOptions extends Record<string, unknown> {
   enableMath?: boolean
   enableContainers?: boolean
   mathOptions?: { commands?: string[], escapeExclamation?: boolean }
+  /**
+   * Custom HTML-like tag names that should participate in streaming mid-state
+   * suppression and be emitted as custom nodes (e.g. ['thinking']).
+   */
+  customHtmlTags?: readonly string[]
 }
 
 export function factory(opts: FactoryOptions = {}) {
@@ -42,7 +47,9 @@ export function factory(opts: FactoryOptions = {}) {
   // Apply table token normalization at block stage.
   applyFixTableTokens(md)
   applyRenderRules(md)
-  applyFixHtmlInlineTokens(md)
+  applyFixHtmlInlineTokens(md, {
+    customHtmlTags: opts.customHtmlTags,
+  })
 
   return md
 }

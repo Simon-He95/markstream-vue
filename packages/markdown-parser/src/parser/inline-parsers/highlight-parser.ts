@@ -22,7 +22,10 @@ export function parseHighlightToken(
   }
 
   // Parse inner tokens to handle nested elements
-  children.push(...parseInlineTokens(innerTokens, undefined, undefined, { requireClosingStrong: options?.requireClosingStrong }))
+  children.push(...parseInlineTokens(innerTokens, undefined, undefined, {
+    requireClosingStrong: options?.requireClosingStrong,
+    customHtmlTags: options?.customHtmlTags,
+  }))
 
   const node: HighlightNode = {
     type: 'highlight',

@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import type { MarkdownIt } from 'markdown-it-ts'
 import { Icon } from '@iconify/vue'
-import { full as markdownItEmoji } from 'markdown-it-emoji'
-import MarkdownRender from 'markstream-vue'
 import { useRouter } from 'vue-router'
 import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
+import MarkdownRender from '../../../src/components/NodeRenderer'
 import { setCustomComponents } from '../../../src/utils/nodeComponents'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
 import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
@@ -31,6 +29,12 @@ function goToTest() {
   // Prefer router navigation, fallback to full redirect if it fails.
   router.push('/test').catch(() => {
     window.location.href = '/test'
+  })
+}
+
+function goToCdnPeers() {
+  router.push('/cdn-peers').catch(() => {
+    window.location.href = '/cdn-peers'
   })
 }
 
@@ -68,47 +72,6 @@ useInterval(streamDelay, {
 })
 
 setCustomComponents('playground-demo', { thinking: ThinkingNode })
-const parseOptions = {
-  preTransformTokens: (tokens: any[]) => {
-    // Example: Log tokens during parsing
-    // console.log('Pre-transform tokens:', tokens)
-    return tokens.map((token) => {
-      if (token.type === 'inline' && token.content.includes('<thinking')) {
-        token.children = token.children.map((t: any) => {
-          if (t.type === 'html_block' && t.tag === 'thinking') {
-            const m = t.content.match(/<thinking([^>]*)>/)
-            const attrs = []
-            if (m) {
-              const attrString = m[1]
-              const attrRegex = /([^\s=]+)(?:="([^"]*)")?/g
-              let match
-              while ((match = attrRegex.exec(attrString)) !== null) {
-                const attrName = match[1]
-                const attrValue = match[2] || true
-                attrs.push({ name: attrName, value: attrValue })
-              }
-            }
-            // eslint-disable-next-line regexp/no-super-linear-backtracking
-            const content = t.content.replace(/<thinking[^>]*>/, '').replace(/<\/*t*h*i*n*k*i*n*g*>*\n*$/, '')
-            return {
-              type: 'thinking',
-              loading: t.loading,
-              attrs,
-              content,
-            }
-          }
-          return t
-        })
-      }
-      return token
-    })
-  },
-}
-
-function enableEmoji(md: MarkdownIt) {
-  md.use(markdownItEmoji)
-  return md
-}
 
 // 主题切换
 const isDark = useDark()
@@ -200,7 +163,21 @@ let __roContainer: ResizeObserver | null = null
 let __roContent: ResizeObserver | null = null
 let __mo: MutationObserver | null = null
 let __scheduled = false
+let __minHeightDisabled = false
+let __overflowConfirmations = 0
+let __clearConfirmations = 0
 // Observers and scheduler
+
+// Streaming updates can change the rendered height without reliably triggering
+// ResizeObserver (e.g. due to layout containment / virtualization). Ensure we
+// re-check after Vue has flushed DOM updates.
+watch(
+  () => content.value.length,
+  () => {
+    scheduleCheckMinHeight()
+  },
+  { flush: 'post' },
+)
 
 function scheduleCheckMinHeight() {
   if (__scheduled)
@@ -211,12 +188,59 @@ function scheduleCheckMinHeight() {
     const container = messagesContainer.value
     if (!container)
       return
-    const contentEl = container.querySelector('.markdown-renderer') as HTMLElement | null
+    // IMPORTANT: pick the direct child renderer; the page can contain nested
+    // `.markdown-renderer` instances (e.g. inside custom nodes). The CSS rule
+    // targets `.chatbot-messages > .markdown-renderer`, so we must toggle the
+    // class on the direct child.
+    const contentEl = Array.from(container.children).find(el =>
+      (el as HTMLElement).classList?.contains('markdown-renderer'),
+    ) as HTMLElement | undefined
     if (!contentEl)
       return
-    const shouldRemove = contentEl.scrollHeight > container.clientHeight
-    if (shouldRemove) {
+    const hadClass = contentEl.classList.contains('disable-min-height')
+
+    // Hysteresis thresholds:
+    // - Require overflow to persist for a couple of checks before latching.
+    // - Require a few clear checks before undoing a latched state.
+    const REQUIRED_OVERFLOW_CONFIRMATIONS = 2
+    const REQUIRED_CLEAR_CONFIRMATIONS = 3
+
+    // If currently latched (or DOM already has class), keep class and only
+    // consider clearing after several consecutive non-overflow readings.
+    if (__minHeightDisabled || hadClass) {
       contentEl.classList.add('disable-min-height')
+      const containerDelta = container.scrollHeight - container.clientHeight
+      const shouldRemove = containerDelta > 1
+
+      if (shouldRemove) {
+        __clearConfirmations = 0
+        __minHeightDisabled = true
+      }
+      else {
+        __clearConfirmations++
+        if (__clearConfirmations >= REQUIRED_CLEAR_CONFIRMATIONS) {
+          __minHeightDisabled = false
+          __overflowConfirmations = 0
+          contentEl.classList.remove('disable-min-height')
+        }
+      }
+      return
+    }
+
+    // Not latched: probe by temporarily unsetting min-height (same rAF tick).
+    contentEl.classList.add('disable-min-height')
+    const containerDelta = container.scrollHeight - container.clientHeight
+    const probeOverflow = containerDelta > 1
+    if (probeOverflow)
+      __overflowConfirmations++
+    else
+      __overflowConfirmations = 0
+
+    const shouldRemove = __overflowConfirmations >= REQUIRED_OVERFLOW_CONFIRMATIONS
+
+    if (shouldRemove) {
+      __minHeightDisabled = true
+      __clearConfirmations = 0
       // 内容已超出：不再需要继续监听，断开所有 observer 以节省开销
       try {
         __roContainer?.disconnect()
@@ -230,6 +254,7 @@ function scheduleCheckMinHeight() {
       }
     }
     else {
+      // Revert probe change before paint.
       contentEl.classList.remove('disable-min-height')
     }
   })
@@ -249,7 +274,9 @@ onMounted(() => {
 
   // 观察渲染内容尺寸变化（markdown 内容动态变化）
   const tryObserveContent = () => {
-    const el = container.querySelector('.markdown-renderer') as HTMLElement | null
+    const el = Array.from(container.children).find(child =>
+      (child as HTMLElement).classList?.contains('markdown-renderer'),
+    ) as HTMLElement | undefined
     if (el) {
       if (__roContent)
         __roContent.disconnect()
@@ -497,6 +524,18 @@ onBeforeUnmount(() => {
               <span>Star</span>
             </a>
 
+            <!-- Docs Page Link -->
+            <a
+              class="ml-2 flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-md transition-all duration-200 hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 docs-page-btn"
+              title="Open Docs"
+              href="https://markstream-vue-docs.simonhe.me/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Icon icon="carbon:book" class="w-4 h-4" />
+              <span>Docs</span>
+            </a>
+
             <!-- Test Page Button -->
             <button
               class="ml-2 test-page-btn flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -506,20 +545,29 @@ onBeforeUnmount(() => {
               <Icon icon="carbon:rocket" class="w-4 h-4" />
               <span>Test</span>
             </button>
+
+            <!-- CDN peers demo -->
+            <button
+              class="ml-2 flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              title="Go to CDN peers demo"
+              @click="goToCdnPeers"
+            >
+              <Icon icon="carbon:cloud" class="w-4 h-4" />
+              <span>CDN</span>
+            </button>
           </div>
         </div>
       </div>
 
       <!-- Messages area with scroll (use column-reverse on the scroll container) -->
-      <main ref="messagesContainer" class="chatbot-messages flex-1 overflow-y-auto mr-[1px] mb-4 flex flex-col-reverse">
+      <main ref="messagesContainer" class="mb-4 mr-[1px] flex flex-1 flex-col-reverse overflow-y-auto chatbot-messages">
         <MarkdownRender
           :content="content"
           :code-block-dark-theme="selectedTheme || undefined"
           :code-block-light-theme="selectedTheme || undefined"
           :themes="themes"
-          :custom-markdown-it="enableEmoji"
+          :custom-html-tags="['thinking']"
           :is-dark="isDark"
-          :parse-options="parseOptions"
           custom-id="playground-demo"
           class="p-6"
         />
@@ -551,6 +599,7 @@ onBeforeUnmount(() => {
 }
 .chatbot-messages > .markdown-renderer {
   min-height: 100%;
+  box-sizing: border-box;
 }
 
 /* 当真实内容高度超出容器时，移除默认 min-height（由 JS 切换类名） */

@@ -57,7 +57,9 @@ export function parseHtmlBlock(token: MarkdownToken): HtmlBlockNode {
   // Already closed somewhere in the block (case-insensitive)
   let closeRe = CLOSE_TAG_RE_CACHE.get(tag)
   if (!closeRe) {
-    closeRe = new RegExp(`<\\/\\s*${tag}\\b`, 'i')
+    // Require a complete closing tag. In streaming mode, a partial prefix like
+    // `</tag` should NOT finalize the block.
+    closeRe = new RegExp(`<\\s*\\/\\s*${tag}\\s*>`, 'i')
     CLOSE_TAG_RE_CACHE.set(tag, closeRe)
   }
   const hasClosing = closeRe.test(raw)

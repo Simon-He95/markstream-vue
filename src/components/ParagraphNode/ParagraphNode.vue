@@ -8,6 +8,7 @@ import FootnoteAnchorNode from '../FootnoteAnchorNode'
 import FootnoteReferenceNode from '../FootnoteReferenceNode'
 import HardBreakNode from '../HardBreakNode'
 import HighlightNode from '../HighlightNode'
+import HtmlInlineNode from '../HtmlInlineNode'
 import ImageNode from '../ImageNode'
 import InlineCodeNode from '../InlineCodeNode'
 import InsertNode from '../InsertNode'
@@ -35,6 +36,8 @@ const props = defineProps<{
   customId?: string
   indexKey?: number | string
 }>()
+const overrides = getCustomNodeComponents(props.customId)
+
 const nodeComponents = {
   inline_code: InlineCodeNode,
   image: ImageNode,
@@ -47,6 +50,7 @@ const nodeComponents = {
   insert: InsertNode,
   subscript: SubscriptNode,
   superscript: SuperscriptNode,
+  html_inline: HtmlInlineNode,
   emoji: EmojiNode,
   checkbox: CheckboxNode,
   math_inline: MathInlineNodeAsync,
@@ -54,8 +58,7 @@ const nodeComponents = {
   reference: ReferenceNode,
   footnote_anchor: FootnoteAnchorNode,
   footnote_reference: FootnoteReferenceNode,
-  // 添加其他内联元素组件
-  ...getCustomNodeComponents(props.customId),
+  ...overrides,
 }
 const katexReady = useKatexReady()
 </script>

@@ -22,7 +22,10 @@ export function parseSubscriptToken(
   }
 
   // Parse inner tokens to handle nested elements
-  children.push(...parseInlineTokens(innerTokens, undefined, undefined, { requireClosingStrong: options?.requireClosingStrong }))
+  children.push(...parseInlineTokens(innerTokens, undefined, undefined, {
+    requireClosingStrong: options?.requireClosingStrong,
+    customHtmlTags: options?.customHtmlTags,
+  }))
 
   const startContent = String(tokens[startIndex].content ?? '')
   const display = subText || startContent

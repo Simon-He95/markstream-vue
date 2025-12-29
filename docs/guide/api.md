@@ -20,7 +20,7 @@ You can jump in at any stage:
 
 | Helper | Purpose | When to use |
 | ------ | ------- | ----------- |
-| `getMarkdown(options?)` | Returns a configured `markdown-it-ts` instance with the plugins this package expects. | Customize parser options (HTML toggles, additional plugins) before transforming tokens. |
+| `getMarkdown(msgId?, options?)` | Returns a configured `markdown-it-ts` instance with the plugins this package expects. | Customize parser options (HTML toggles, additional plugins) before transforming tokens. |
 | `parseMarkdownToStructure(content, md?)` | Generates the AST consumed by `MarkdownRender`. Accepts either a markdown string or tokens. | Pre-parse on the server, run validations, or reuse the AST across renders. |
 
 Both helpers are framework-agnostic and can run in Node or the browser. For large documents you can reuse the `md` instance between parses to avoid re-initializing plugins.
@@ -56,25 +56,24 @@ Hooks:
 - `postTransformTokens(tokens)` — inspect/adjust tokens before node generation.
 - `postTransformNodes(nodes)` — modify the AST right before rendering.
 
-Example: flag AI “thinking” blocks before rendering:
+Example: render AI “thinking” tags as custom components (no hooks needed):
 
 ```ts
-const parseOptions = {
-  postTransformNodes(nodes) {
-    return nodes.map((node) =>
-      node.type === 'html_block' && /<thinking>/.test(node.value)
-        ? { ...node, meta: { type: 'thinking' } }
-        : node,
-    )
-  },
-}
+import { setCustomComponents } from 'markstream-vue'
+import ThinkingNode from './ThinkingNode.vue'
+
+setCustomComponents('docs', { thinking: ThinkingNode })
 ```
 
 ```vue
-<MarkdownRender :content="doc" :parse-options="parseOptions" />
+<MarkdownRender
+  custom-id="docs"
+  :custom-html-tags="['thinking']"
+  :content="doc"
+/>
 ```
 
-Inside your custom node component you can check `node.meta?.type`.
+Hooks remain useful if you want to reshape the emitted `thinking` node (strip wrappers, remap attrs, merge blocks, etc.).
 
 ## Utility exports
 
@@ -83,7 +82,7 @@ Besides the core renderer and parser helpers, the package exposes:
 - `CodeBlockNode`, `MarkdownCodeBlockNode`, `MermaidBlockNode`, `MathBlockNode`, `ImageNode`, etc. — see [Components](/guide/components) for their props and CSS requirements.
 - `VisibilityWrapper`, `NodeRenderer`, and type exports under `types`.
 
-Refer to `packages/markdown-parser/README.md` for the canonical TypeScript interfaces.
+For parser types and hooks, see [/guide/parser-api](/guide/parser-api) (or the `stream-markdown-parser` README on npm).
 
 ## Styling + troubleshooting reminders
 

@@ -8,6 +8,13 @@ export interface BaseNode {
   diff?: boolean
 }
 
+/**
+ * A catch‑all node type for user extensions.
+ * Must still satisfy the renderer contract (`type` + `raw`), but may carry
+ * arbitrary extra fields.
+ */
+export type UnknownNode = BaseNode & Record<string, unknown>
+
 export interface TextNode extends BaseNode {
   type: 'text'
   content: string
@@ -72,8 +79,36 @@ export interface HtmlBlockNode extends BaseNode {
 
 export interface HtmlInlineNode extends BaseNode {
   type: 'html_inline'
+  tag?: string
   content: string
   children: ParsedNode[]
+  /**
+   * True when the parser auto-appended a closing tag for streaming stability.
+   * The original source is still incomplete (no explicit close typed yet).
+   */
+  autoClosed?: boolean
+}
+
+export type CustomComponentAttrs
+  = | [string, string][]
+    | Record<string, string | boolean>
+    | Array<{ name: string, value: string | boolean }>
+    | null
+
+/**
+ * A generic node shape for custom HTML-like components.
+ * When a tag name is included in `customHtmlTags`, the parser emits a node
+ * whose `type` equals that tag name and carries the raw HTML `content`
+ * plus any extracted `attrs` from user transforms.
+ */
+export interface CustomComponentNode extends BaseNode {
+  /** The custom tag name (same as `tag`) */
+  type: string
+  tag: string
+  content: string
+  attrs?: CustomComponentAttrs
+  children?: ParsedNode[]
+  autoClosed?: boolean
 }
 
 export interface InlineCodeNode extends BaseNode {
@@ -172,6 +207,13 @@ export interface AdmonitionNode extends BaseNode {
   type: 'admonition'
   kind: string // 'note' | 'warning' | 'danger' | 'info' | 'tip' 等
   title: string
+  children: ParsedNode[]
+}
+
+export interface VmrContainerNode extends BaseNode {
+  type: 'vmr_container'
+  name: string
+  attrs?: Record<string, string>
   children: ParsedNode[]
 }
 
@@ -296,12 +338,15 @@ export type ParsedNode
     | FootnoteNode
     | FootnoteReferenceNode
     | AdmonitionNode
+    | VmrContainerNode
     | HardBreakNode
     | MathInlineNode
     | MathBlockNode
     | ReferenceNode
     | HtmlBlockNode
-    | Record<string, unknown>
+    | HtmlInlineNode
+    | CustomComponentNode
+    | UnknownNode
 export interface CustomComponents {
   text: unknown
   paragraph: unknown
@@ -330,6 +375,7 @@ export interface CustomComponents {
   emoji: unknown
   checkbox: unknown
   inline_code: unknown
+  html_inline: unknown
   reference: unknown
   mermaid: unknown
   [key: string]: unknown
@@ -343,6 +389,21 @@ export interface ParseOptions {
   postTransformTokens?: TransformTokensHook
   // When true, require a closing `**` to parse strong; otherwise allow mid-state strong
   requireClosingStrong?: boolean
+  /**
+   * When true, indicates the input buffer is complete (end-of-stream).
+   * This disables "mid-state" streaming behavior (e.g. unclosed math/link/code
+   * tokens staying in a loading state) and keeps trailing markers as literal text.
+   */
+  final?: boolean
+  /**
+   * Custom HTML-like tag names that should be emitted as custom nodes
+   * instead of `html_inline` when encountered (e.g. ['thinking']).
+   * Used by inline parsing; pair with `getMarkdown({ customHtmlTags })`
+   * to enable mid-state suppression for the same tags during streaming.
+   */
+  customHtmlTags?: string[]
+  // When true, log the parsed tree structure for debugging
+  debug?: boolean
 }
 
 export type PostTransformNodesHook = (nodes: ParsedNode[]) => ParsedNode[]

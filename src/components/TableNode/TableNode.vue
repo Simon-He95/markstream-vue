@@ -36,6 +36,7 @@ const props = defineProps<{
   indexKey: string | number
   isDark?: boolean
   typewriter?: boolean
+  customId?: string
 }>()
 
 // 定义事件
@@ -83,7 +84,8 @@ const bodyRows = computed(() => props.node.rows ?? [])
           >
             <NodeRenderer
               :nodes="cell.children"
-              :index-key="`table-th-${indexKey}`"
+              :index-key="`table-th-${props.indexKey}`"
+              :custom-id="props.customId"
               :typewriter="props.typewriter"
               @copy="$emit('copy', $event)"
             />
@@ -112,7 +114,8 @@ const bodyRows = computed(() => props.node.rows ?? [])
           >
             <NodeRenderer
               :nodes="cell.children"
-              :index-key="`table-td-${indexKey}`"
+              :index-key="`table-td-${props.indexKey}`"
+              :custom-id="props.customId"
               :typewriter="props.typewriter"
               @copy="$emit('copy', $event)"
             />

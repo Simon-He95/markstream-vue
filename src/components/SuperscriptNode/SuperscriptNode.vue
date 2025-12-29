@@ -4,6 +4,7 @@ import EmojiNode from '../EmojiNode'
 import EmphasisNode from '../EmphasisNode'
 import FootnoteReferenceNode from '../FootnoteReferenceNode'
 import HighlightNode from '../HighlightNode'
+import HtmlInlineNode from '../HtmlInlineNode'
 import InlineCodeNode from '../InlineCodeNode'
 import InsertNode from '../InsertNode'
 import LinkNode from '../LinkNode'
@@ -30,11 +31,14 @@ const props = defineProps<{
   indexKey?: number | string
 }>()
 
-// Available node components for child rendering
+const overrides = getCustomNodeComponents(props.customId)
+
+// Available node components for child rendering; prefer custom overrides
 const nodeComponents = {
   text: TextNode,
   inline_code: InlineCodeNode,
   link: LinkNode,
+  html_inline: HtmlInlineNode,
   strong: StrongNode,
   emphasis: EmphasisNode,
   footnote_reference: FootnoteReferenceNode,
@@ -45,8 +49,7 @@ const nodeComponents = {
   emoji: EmojiNode,
   math_inline: MathInlineNodeAsync,
   reference: ReferenceNode,
-  // 添加其他内联元素组件
-  ...getCustomNodeComponents(props.customId),
+  ...overrides,
 }
 </script>
 

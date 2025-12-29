@@ -102,3 +102,32 @@ describe('codeBlockNode editor creation locking', () => {
     wrapper.unmount()
   })
 })
+
+describe('codeBlockNode language normalization', () => {
+  beforeEach(() => {
+    resetStreamMonacoHelpers()
+  })
+
+  it('normalizes js aliases before invoking Monaco helpers', async () => {
+    const helpers = getStreamMonacoHelpers()
+
+    const wrapper = mount(CodeBlockNode, {
+      props: {
+        node: {
+          type: 'code_block',
+          language: 'js',
+          code: 'console.log(1)',
+          raw: '```js\nconsole.log(1)\n```',
+        },
+        loading: false,
+      },
+    })
+
+    await waitForCreateEditorCalls(1, helpers)
+
+    const createArgs = helpers.createEditor.mock.calls[0]
+    expect(createArgs[2]).toBe('javascript')
+
+    wrapper.unmount()
+  })
+})

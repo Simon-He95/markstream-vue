@@ -71,6 +71,7 @@ B-->C[End]
 ## 3. 进阶组件：`MermaidBlockNode`
 
 若需要头部控制、导出按钮、伪全屏等能力，请参考 [`MermaidBlockNode`](/zh/guide/mermaid-block-node) 或通过 [setCustomComponents 进行覆盖](/zh/guide/mermaid-block-node-override)。仓库内的 playground 提供 `/mermaid-export-demo` 路由可直接试用。
+如果渲染的 Mermaid 来自用户/LLM 等不可信来源，可加上 `:is-strict="true"` 启用严格模式与 SVG 清理，阻断 HTML labels 或内联事件混入渲染结果。
 
 ## 4. 常见问题排查
 
@@ -81,3 +82,23 @@ B-->C[End]
 5. **图表过大**：考虑在服务端预渲染或缓存 SVG，`MermaidBlockNode` 导出事件中提供 `svgString` 可直接上传或持久化。
 
 若问题仍存在，请在 playground (`pnpm play`) 中构造最小示例并附带链接提交 issue，方便复现与定位。
+
+## CDN 用法（无 bundler）
+
+如果你通过 CDN 引入 Mermaid，并希望流式场景下的解析（语法检查/前缀查找）在 worker 中进行，可以注入一个“CDN 加载 Mermaid”的 worker：
+
+```ts
+import { createMermaidWorkerFromCDN, enableMermaid, setMermaidLoader, setMermaidWorker } from 'markstream-vue'
+
+// 主线程使用 CDN 全局（UMD）
+setMermaidLoader(() => (window as any).mermaid)
+enableMermaid(() => (window as any).mermaid)
+
+// 可选：worker 用于流式解析/前缀查找（推荐 module worker）
+const { worker } = createMermaidWorkerFromCDN({
+  mode: 'module',
+  mermaidUrl: 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs',
+})
+if (worker)
+  setMermaidWorker(worker)
+```

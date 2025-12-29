@@ -1,3 +1,5 @@
+import { isKatexEnabled } from '../components/MathInlineNode/katex'
+
 interface Pending {
   resolve: (val: string) => void
   reject: (err: any) => void
@@ -134,6 +136,13 @@ export function setKaTeXWorkerDebug(enabled: boolean) {
 
 export async function renderKaTeXInWorker(content: string, displayMode = true, timeout = 2000, signal?: AbortSignal): Promise<string> {
   const startTime = performance.now()
+
+  if (!isKatexEnabled()) {
+    const err = new Error('KaTeX rendering disabled')
+    ;(err as any).name = 'KaTeXDisabled'
+    ;(err as any).code = 'KATEX_DISABLED'
+    return Promise.reject(err)
+  }
 
   if (workerInitError) {
     return Promise.reject(workerInitError)
@@ -377,6 +386,13 @@ export async function renderKaTeXWithBackpressure(
   displayMode = true,
   opts: BackpressureOptions = {},
 ): Promise<string> {
+  if (!isKatexEnabled()) {
+    const err = new Error('KaTeX rendering disabled')
+    ;(err as any).name = 'KaTeXDisabled'
+    ;(err as any).code = 'KATEX_DISABLED'
+    throw err
+  }
+
   const timeout = opts.timeout ?? defaultBackpressure.timeout
   const waitTimeout = opts.waitTimeout ?? defaultBackpressure.waitTimeout
   const backoffMs = opts.backoffMs ?? defaultBackpressure.backoffMs

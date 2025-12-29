@@ -25,6 +25,8 @@ declare module 'vue' {
     HeadingNode: typeof import('./src/components/HeadingNode/HeadingNode.vue')['default']
     HighlightNode: typeof import('./src/components/HighlightNode/HighlightNode.vue')['default']
     HtmlBlockNode: typeof import('./src/components/HtmlBlockNode/HtmlBlockNode.vue')['default']
+    HtmlInlineNode: typeof import('./src/components/HtmlInlineNode/HtmlInlineNode.vue')['default']
+    HtmlPreviewFrame: typeof import('./src/components/CodeBlockNode/HtmlPreviewFrame.vue')['default']
     ImageNode: typeof import('./src/components/ImageNode/ImageNode.vue')['default']
     InlineCodeNode: typeof import('./src/components/InlineCodeNode/InlineCodeNode.vue')['default']
     InsertNode: typeof import('./src/components/InsertNode/InsertNode.vue')['default']
@@ -49,5 +51,6 @@ declare module 'vue' {
     TextNode: typeof import('./src/components/TextNode/TextNode.vue')['default']
     ThematicBreakNode: typeof import('./src/components/ThematicBreakNode/ThematicBreakNode.vue')['default']
     Tooltip: typeof import('./src/components/Tooltip/Tooltip.vue')['default']
+    VmrContainerNode: typeof import('./src/components/VmrContainerNode/VmrContainerNode.vue')['default']
   }
 }

@@ -14,6 +14,27 @@ Import KaTeX styles in your entry file (e.g., `main.ts`):
 import 'katex/dist/katex.min.css'
 ```
 
+## CDN usage (no bundler)
+
+If you load KaTeX via `<script>` tags (so `window.katex` exists), the library can use it. If KaTeX loads after the first render, reset the loader once:
+
+```ts
+import { createKaTeXWorkerFromCDN, enableKatex, setKatexLoader, setKaTeXWorker } from 'markstream-vue'
+
+// use the CDN global (UMD) on the main thread
+setKatexLoader(() => (window as any).katex)
+enableKatex(() => (window as any).katex)
+
+// optional: offload renderToString into a worker (CDN-loaded inside worker)
+const { worker } = createKaTeXWorkerFromCDN({
+  mode: 'classic',
+  katexUrl: 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js',
+  mhchemUrl: 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/mhchem.min.js',
+})
+if (worker)
+  setKaTeXWorker(worker)
+```
+
 Customize math parsing behaviour with `getMarkdown` options or `setDefaultMathOptions`:
 
 ```ts

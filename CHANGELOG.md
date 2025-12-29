@@ -1,3 +1,231 @@
+## [0.0.4-beta.5](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.4...v0.0.4-beta.5) (2025-12-27)
+
+
+### Features
+
+* enhance ::: container parsing to support whitespace and variant syntax ([0ed7e34](https://github.com/Simon-He95/markstream-vue/commit/0ed7e348292baf8f3de04c9943138b291eb95b36)), closes [#212](https://github.com/Simon-He95/markstream-vue/issues/212)
+* update AI/LLM context links in documentation for consistency ([6efb1b2](https://github.com/Simon-He95/markstream-vue/commit/6efb1b26d8e8df08f6c75c8785c4aae3e90805ba))
+
+
+
+## [0.0.4-beta.4](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.3...v0.0.4-beta.4) (2025-12-25)
+
+
+### Bug Fixes
+
+* **math:** some case stuck ([f525b5c](https://github.com/Simon-He95/markstream-vue/commit/f525b5c66f82bd0be707db4d2150ab841a65972e)), closes [#214](https://github.com/Simon-He95/markstream-vue/issues/214)
+
+
+### Features
+
+* add AI/LLM context links to documentation and README files ([ce01981](https://github.com/Simon-He95/markstream-vue/commit/ce019811deb31809b7a3e22e3cb71f6f34c9f297))
+
+
+
+## [0.0.4-beta.3](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.2...v0.0.4-beta.3) (2025-12-24)
+
+
+### Features
+
+* implement final mode for parser to handle end-of-stream scenarios and improve rendering stability ([c2ef2c1](https://github.com/Simon-He95/markstream-vue/commit/c2ef2c15259b54b8971216da4c09066418d0dd31)), closes [#213](https://github.com/Simon-He95/markstream-vue/issues/213)
+
+
+
+## [0.0.4-beta.2](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.1...v0.0.4-beta.2) (2025-12-24)
+
+
+### Features
+
+* add CDN support for KaTeX and Mermaid with dedicated workers ([7973cbc](https://github.com/Simon-He95/markstream-vue/commit/7973cbcb1aee3fc0a2b934ddf261309ab7a67492))
+
+
+
+## [0.0.4-beta.1](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.0...v0.0.4-beta.1) (2025-12-24)
+
+
+### Bug Fixes
+
+* update rendering description for custom container blocks in documentation ([a93f371](https://github.com/Simon-He95/markstream-vue/commit/a93f3714a754e83b28b0a76fe3f4f25306a3e109))
+
+
+### Features
+
+* update VmrContainerNode component to support additional node types and improve rendering logic ([0a2b4a8](https://github.com/Simon-He95/markstream-vue/commit/0a2b4a82f167cda95d017515a91366fdb7e9ea8d)), closes [#212](https://github.com/Simon-He95/markstream-vue/issues/212)
+
+
+
+## [0.0.4-beta.0](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.9...v0.0.4-beta.0) (2025-12-23)
+
+
+### Features
+
+* add fenced code block handling to stripDanglingHtmlLikeTail and implement regression tests ([89ea8e6](https://github.com/Simon-He95/markstream-vue/commit/89ea8e6ad51947208bca2c630409d88c72668c3f)), closes [#206](https://github.com/Simon-He95/markstream-vue/issues/206)
+* implement VmrContainerNode component and parser for custom ::: containers ([fe07067](https://github.com/Simon-He95/markstream-vue/commit/fe0706745fa2478ad1d5c857efdae7fef135e10f))
+
+
+
+## [0.0.3-beta.9](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.8...v0.0.3-beta.9) (2025-12-20)
+
+
+
+## [0.0.3-beta.8](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.7...v0.0.3-beta.8) (2025-12-20)
+
+
+### Bug Fixes
+
+* enhance handling of inline math within strong markup and add related tests ([1397496](https://github.com/Simon-He95/markstream-vue/commit/139749660ca4ffbba966085abc914bcd2311f118))
+* improve viewport priority handling and add tests for node deferral behavior ([da9c8e0](https://github.com/Simon-He95/markstream-vue/commit/da9c8e0c964e0f4f45383a4dc5c45ab4d3291fa7)), closes [#206](https://github.com/Simon-He95/markstream-vue/issues/206)
+* update .gitignore to include dist-tw and refactor MermaidBlockNode loading ([2cc87dd](https://github.com/Simon-He95/markstream-vue/commit/2cc87ddd01db13b9b55e726816624c30af6f4ffe))
+* update package versions for improved compatibility and performance ([36ec68f](https://github.com/Simon-He95/markstream-vue/commit/36ec68fc0a1cb6d9a8e22a0a9e85aa90dff75851))
+* update packageManager and dependencies to latest versions ([bb2778a](https://github.com/Simon-He95/markstream-vue/commit/bb2778a22831ccb4d79987aceb1324359abf8609))
+
+
+
+## [0.0.3-beta.7](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.6...v0.0.3-beta.7) (2025-12-18)
+
+
+### Bug Fixes
+
+* **type:**  parseMarkdownToStructure ([65b2b6d](https://github.com/Simon-He95/markstream-vue/commit/65b2b6d335441e8296899775cea713b0cb95ac5e)), closes [#204](https://github.com/Simon-He95/markstream-vue/issues/204)
+* update MermaidBlockNode to load asynchronously and handle missing dependencies ([ff67177](https://github.com/Simon-He95/markstream-vue/commit/ff67177d1bee5403b4741a1294d6c7e1ba808d2d))
+
+
+
+## [0.0.3-beta.6](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.5...v0.0.3-beta.6) (2025-12-16)
+
+
+### Bug Fixes
+
+* custom html token ([f89c9d1](https://github.com/Simon-He95/markstream-vue/commit/f89c9d1ece23b5bcb01838b9d8a2b511787ea7f9)), closes [#202](https://github.com/Simon-He95/markstream-vue/issues/202)
+* update snapshot tests to reflect changes in class names for markdown renderer ([17991df](https://github.com/Simon-He95/markstream-vue/commit/17991dfdb9582f7a2950d1a3800a959d03cdd511))
+
+
+
+## [0.0.3-beta.5](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.4...v0.0.3-beta.5) (2025-12-15)
+
+
+### Bug Fixes
+
+* correct node_version format in CI configuration ([50e32a8](https://github.com/Simon-He95/markstream-vue/commit/50e32a878d160fe801c4dc29ce11cf0d7c6a6507))
+* handle 'text_special' token type as plain text in parseInlineTokens function ([8106e01](https://github.com/Simon-He95/markstream-vue/commit/8106e0182730d0b7523735c27fc6ac322c43b200))
+* merge 'text_special' token type into adjacent text nodes in parseInlineTokens function ([2d70bc0](https://github.com/Simon-He95/markstream-vue/commit/2d70bc0779e497b528959a8b33ddfbd587e553c2))
+* update dependencies in package.json and pnpm-lock.yaml ([8fd5a2b](https://github.com/Simon-He95/markstream-vue/commit/8fd5a2ba3b43db3c0d6c6670ca6cb4e0ff8de06d))
+* update license links and improve documentation consistency across files ([01b840b](https://github.com/Simon-He95/markstream-vue/commit/01b840bdef4db118cf221b3247977f10f8b660c9))
+* update stream-markdown-parser to version 0.0.42 and add tests for inline text_special tokens ([895e8ab](https://github.com/Simon-He95/markstream-vue/commit/895e8ab4c7e22c7105ffc91a714538f2e6eb84fc)), closes [#198](https://github.com/Simon-He95/markstream-vue/issues/198)
+
+
+
+## [0.0.3-beta.4](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.3...v0.0.3-beta.4) (2025-12-12)
+
+
+### Features
+
+* add support for custom HTML-like tags in markdown parser ([5850170](https://github.com/Simon-He95/markstream-vue/commit/5850170eb452b8c09ee805ff0102b9bb1e53c40e))
+* enhance HTML inline handling and support for custom tags in markdown parser ([6864479](https://github.com/Simon-He95/markstream-vue/commit/68644791db7402da6d7297d0eef8fe8be3c56a98))
+
+
+
+## [0.0.3-beta.3](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.2...v0.0.3-beta.3) (2025-12-12)
+
+
+### Bug Fixes
+
+* correct formatting of node_version in CI configuration ([3bea48c](https://github.com/Simon-He95/markstream-vue/commit/3bea48c6354124129dad63a02cc7a8b2220bed15))
+* resolve issue with extraneous text being included in links ([98b4677](https://github.com/Simon-He95/markstream-vue/commit/98b467735a38444b9f896b265c9ecad3d496c0c3)), closes [#195](https://github.com/Simon-He95/markstream-vue/issues/195)
+
+
+### Features
+
+* add isPlainBracketMathLike function to improve math parsing logic and enhance mid-state handling in tests ([6613da9](https://github.com/Simon-He95/markstream-vue/commit/6613da96f9320fa5f639b5fbac9bfcc16df1efcd)), closes [#197](https://github.com/Simon-He95/markstream-vue/issues/197)
+* add isStrict prop for enhanced security in Mermaid rendering ([7121966](https://github.com/Simon-He95/markstream-vue/commit/71219662772620b041e4abec68b4d018ba9ddc25))
+* add KaTeX to dependencies in README files ([3073ef6](https://github.com/Simon-He95/markstream-vue/commit/3073ef6642ff832471d6970b46bee7c3bbc3800a))
+* implement streaming inline HTML mid-states with auto-closing support and suppress partial tags ([aa0635f](https://github.com/Simon-He95/markstream-vue/commit/aa0635f5b2dd1ceaf7421ec4bfbace1ede480cab)), closes [#194](https://github.com/Simon-He95/markstream-vue/issues/194)
+
+
+
+## [0.0.3-beta.2](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.1...v0.0.3-beta.2) (2025-12-11)
+
+
+### Bug Fixes
+
+* correct formatting and translation inconsistencies in performance analysis document ([320b879](https://github.com/Simon-He95/markstream-vue/commit/320b879351f0049681f44a745c6d8c44c0a355f6))
+* ensure passive touch listeners for Monaco editor to prevent Chrome warnings ([d544d8f](https://github.com/Simon-He95/markstream-vue/commit/d544d8fbc1cc151381f6b71156627c33ccd3ad4f))
+* remove unused mermaidWrapper reference in MermaidBlockNode component ([6585105](https://github.com/Simon-He95/markstream-vue/commit/6585105c0f110f28610d00f714cb543b565966f3))
+* viewport render ([9ae63a2](https://github.com/Simon-He95/markstream-vue/commit/9ae63a20bfcf37019b59abd1dbe474dce7df586c)), closes [#192](https://github.com/Simon-He95/markstream-vue/issues/192)
+
+
+### Features
+
+* add contribution guidelines, code of conduct, and security policy ([4283a9a](https://github.com/Simon-He95/markstream-vue/commit/4283a9a00141f0f94d743ab4ad960d9bbc43cc58))
+* add strict mode for enhanced security in MermaidBlockNode ([8cfdbd2](https://github.com/Simon-He95/markstream-vue/commit/8cfdbd28e0328142b6999df5e4eea8aca6ab659c))
+* enhance Markdown code block rendering with fallback and improved state management ([5a71844](https://github.com/Simon-He95/markstream-vue/commit/5a71844df29f150894c277da205f0c6075a00afe))
+* implement HtmlInlineNode component and enhance inline HTML parsing ([fe6cb48](https://github.com/Simon-He95/markstream-vue/commit/fe6cb48afc722930f0c0ae645de208e757a79959)), closes [#119](https://github.com/Simon-He95/markstream-vue/issues/119)
+
+
+
+## [0.0.3-beta.1](https://github.com/Simon-He95/markstream-vue/compare/v0.0.3-beta.0...v0.0.3-beta.1) (2025-12-10)
+
+
+### Bug Fixes
+
+* update stream-markdown-parser dependency to version 0.0.36 ([12bd02b](https://github.com/Simon-He95/markstream-vue/commit/12bd02bc7fbb03c4f406ba24ce09bb2fd1d38a2a))
+
+
+
+## [0.0.3-beta.0](https://github.com/Simon-He95/markstream-vue/compare/v0.0.2-beta.9...v0.0.3-beta.0) (2025-12-09)
+
+
+### Bug Fixes
+
+* **CodeBlockNode:** language ([d244304](https://github.com/Simon-He95/markstream-vue/commit/d2443046a3fded18d182d87f80daf231e1dc25ef))
+* **MarkdownCodeBlockNode:** render empty ([f7b2948](https://github.com/Simon-He95/markstream-vue/commit/f7b294879621b150ad9014c8feca38fe45d2a761))
+* update node components to prioritize default components over custom overrides ([ea39635](https://github.com/Simon-He95/markstream-vue/commit/ea39635e6092a3a91f57f34457441ccb012fd705)), closes [#185](https://github.com/Simon-He95/markstream-vue/issues/185)
+* update stream-markdown and stream-monaco dependencies to latest versions ([3586f5f](https://github.com/Simon-He95/markstream-vue/commit/3586f5f1297d51a7515fd4b6d954312e94a551eb))
+* update stream-markdown-parser and markdown-it-ts to latest versions ([f6d262e](https://github.com/Simon-He95/markstream-vue/commit/f6d262e36e7d1215b7a61d37f16628bb08d63080))
+
+
+### Features
+
+* add debug option for parsed tree structure and update playground for testing ([ff01c1e](https://github.com/Simon-He95/markstream-vue/commit/ff01c1ed6c07bbd203766089741ebb4b51e52c67))
+* add HTML/SVG preview dialog with customizable behavior ([ba2efd5](https://github.com/Simon-He95/markstream-vue/commit/ba2efd5a12ea30fd8de516ec2f54ca536537fd68))
+* add support for additional languages and themes in Monaco integration ([9953c6e](https://github.com/Simon-He95/markstream-vue/commit/9953c6ed886b7c7f95488f9e160f2b44bb0110f4))
+* enhance documentation and performance features for incremental rendering and virtualization ([f734969](https://github.com/Simon-He95/markstream-vue/commit/f73496924affe3b540f006c12090c22cb3d79bdc))
+* update markstream-vue dependency to latest version ([313ddfe](https://github.com/Simon-He95/markstream-vue/commit/313ddfe491a9071689c3d3a0f7c612b7529b2592))
+
+
+
+## [0.0.2-beta.9](https://github.com/Simon-He95/markstream-vue/compare/v0.0.2-beta.8...v0.0.2-beta.9) (2025-12-05)
+
+
+### Bug Fixes
+
+* adjust math parsing logic to correctly handle text before math commands ([2c69750](https://github.com/Simon-He95/markstream-vue/commit/2c6975066355fa9b25ef5cf207b925e97731a84f)), closes [#182](https://github.com/Simon-He95/markstream-vue/issues/182)
+* **fixLinkToken:** remove unnecessary increment for link token processing ([6889eea](https://github.com/Simon-He95/markstream-vue/commit/6889eea2801393767c0fc46db460e23ac06f3acf))
+* **html-inline:** br -> hardbreak ([3508b4e](https://github.com/Simon-He95/markstream-vue/commit/3508b4ec9b908328b38e5d3040dcfa69e4196cb6))
+* **LinkNode:** improve tooltip text fallback logic and conditionally set title attribute ([88726a6](https://github.com/Simon-He95/markstream-vue/commit/88726a67ac2402b6f3f81b4a4cc83756e3c442f5))
+* **setCustomNodeComponents:** cover all deep components ([e4ae1fb](https://github.com/Simon-He95/markstream-vue/commit/e4ae1fbe8251dd23c7df419428458349346e26ad)), closes [#181](https://github.com/Simon-He95/markstream-vue/issues/181)
+* the CodeBlockNode component should have its expansion length recalculated ([2f9537a](https://github.com/Simon-He95/markstream-vue/commit/2f9537af5e8a1b8ad7a3ba04d0db6e87f355e4c0))
+* update markdown-it-ts to version 0.0.2-beta.9 in package.json and pnpm-lock.yaml ([5e38502](https://github.com/Simon-He95/markstream-vue/commit/5e38502f4458fb8d1c9e1f909a04f1b64d455df0))
+
+
+### Features
+
+* add HtmlPreviewFrame component for inline HTML previews ([240e2e8](https://github.com/Simon-He95/markstream-vue/commit/240e2e8cafd27e410bf8091c8860df75ed0e4ca9)), closes [#180](https://github.com/Simon-He95/markstream-vue/issues/180)
+* Enhance Mermaid integration and documentation ([0a1e746](https://github.com/Simon-He95/markstream-vue/commit/0a1e746da50a37d7e8276a2da3c6380c724855d6))
+* **test:** enabling mermaid, enabling katex, renderMode ([4446f2c](https://github.com/Simon-He95/markstream-vue/commit/4446f2c79232f9822f7eed56bb0dbc92abea5915)), closes [#183](https://github.com/Simon-He95/markstream-vue/issues/183)
+
+
+
+## [0.0.2-beta.8](https://github.com/Simon-He95/markstream-vue/compare/v0.0.2-beta.7...v0.0.2-beta.8) (2025-12-01)
+
+
+### Bug Fixes
+
+* **CodeBlockNode, MermaidBlockNode:** add overflow handling and text truncation for better layout ([1731e38](https://github.com/Simon-He95/markstream-vue/commit/1731e38e0c30ea8b276d66901a7ff84f1d80eab5))
+* update stream-markdown-parser to v0.0.34 and improve block parsing logic ([ebc7fad](https://github.com/Simon-He95/markstream-vue/commit/ebc7fad43213a46b1daaeb82d981ec0a6388a55c)), closes [#175](https://github.com/Simon-He95/markstream-vue/issues/175) [#176](https://github.com/Simon-He95/markstream-vue/issues/176)
+
+
+
 ## [0.0.2-beta.7](https://github.com/Simon-He95/markstream-vue/compare/v0.0.2-beta.6...v0.0.2-beta.7) (2025-12-01)
 
 

@@ -20,7 +20,10 @@ export function parseBlockquote(
         const contentToken = tokens[j + 1]
         blockquoteChildren.push({
           type: 'paragraph',
-          children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, { requireClosingStrong: options?.requireClosingStrong }),
+          children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, {
+            requireClosingStrong: options?.requireClosingStrong,
+            customHtmlTags: options?.customHtmlTags,
+          }),
           raw: String(contentToken.content ?? ''),
         })
         j += 3 // Skip paragraph_open, inline, paragraph_close

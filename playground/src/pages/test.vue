@@ -1,8 +1,15 @@
 <script setup lang="ts">
+import { useLocalStorage } from '@vueuse/core'
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
+import CodeBlockNode from '../../../src/components/CodeBlockNode'
 import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
+import MarkdownCodeBlockNode from '../../../src/components/MarkdownCodeBlockNode'
+import { disableKatex, enableKatex, isKatexEnabled } from '../../../src/components/MathInlineNode/katex'
+import { disableMermaid, enableMermaid, isMermaidEnabled } from '../../../src/components/MermaidBlockNode/mermaid'
 import MarkdownRender from '../../../src/components/NodeRenderer'
+import PreCodeNode from '../../../src/components/PreCodeNode'
+import { setCustomComponents } from '../../../src/utils/nodeComponents'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
 import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
 import MermaidWorker from '../../../src/workers/mermaidParser.worker?worker&inline'
@@ -42,9 +49,19 @@ graph TD
 // 流式渲染相关状态
 const streamContent = ref<string>('')
 const isStreaming = ref(false)
-const streamSpeed = ref(1) // 每次添加的字符数，可调整速度
-const streamInterval = ref(16) // 每次更新的时间间隔（毫秒）
-const showStreamSettings = ref(false) // 是否显示流式渲染设置
+const streamSpeed = useLocalStorage<number>('vmr-test-stream-speed', 1) // 每次添加的字符数，可调整速度
+const streamInterval = useLocalStorage<number>('vmr-test-stream-interval', 16) // 每次更新的时间间隔（毫秒）
+const showStreamSettings = useLocalStorage<boolean>('vmr-test-show-settings', false) // 是否显示流式渲染设置
+
+// 渲染配置相关（用于测试不同代码块/渲染模式）
+const renderMode = useLocalStorage<'monaco' | 'pre' | 'markdown'>('vmr-test-render-mode', 'monaco')
+const codeBlockStream = useLocalStorage<boolean>('vmr-test-code-stream', true)
+const viewportPriority = useLocalStorage<boolean>('vmr-test-viewport-priority', true)
+const batchRendering = useLocalStorage<boolean>('vmr-test-batch-rendering', true)
+const typewriter = useLocalStorage<boolean>('vmr-test-typewriter', true)
+const debugParse = useLocalStorage<boolean>('vmr-test-debug-parse', false)
+const mathEnabled = useLocalStorage<boolean>('vmr-test-math-enabled', isKatexEnabled())
+const mermaidEnabled = useLocalStorage<boolean>('vmr-test-mermaid-enabled', isMermaidEnabled())
 
 // 预加载 Monaco 编辑器和 worker
 getUseMonaco()
@@ -210,6 +227,32 @@ onMounted(() => {
   shareUrl.value = window.location.href
 })
 
+watch(() => renderMode.value, (mode: string) => {
+  if (mode === 'pre') {
+    setCustomComponents({ code_block: PreCodeNode })
+  }
+  else if (mode === 'markdown') {
+    setCustomComponents({ code_block: MarkdownCodeBlockNode })
+  }
+  else {
+    setCustomComponents({ code_block: CodeBlockNode })
+  }
+}, { immediate: true })
+
+watch(mathEnabled, (enabled) => {
+  if (enabled)
+    enableKatex()
+  else
+    disableKatex()
+}, { immediate: true })
+
+watch(mermaidEnabled, (enabled) => {
+  if (enabled)
+    enableMermaid()
+  else
+    disableMermaid()
+}, { immediate: true })
+
 // 流式渲染函数
 let streamTimer: number | null = null
 
@@ -293,48 +336,104 @@ function toggleStreamSettings() {
         </div>
       </div>
 
-      <!-- 流式渲染设置面板 -->
-      <div v-if="showStreamSettings" class="mb-4 p-4 bg-white dark:bg-gray-800 rounded border border-purple-300 dark:border-purple-700 shadow-md">
-        <h3 class="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">
-          流式渲染设置
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              每次截取字符数: <span class="text-purple-600 dark:text-purple-400 font-semibold">{{ streamSpeed }}</span>
-            </label>
-            <input
-              v-model.number="streamSpeed"
-              type="range"
-              min="1"
-              max="100"
-              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-            >
-            <div class="flex justify-between text-xs text-gray-500 mt-1">
-              <span>1 (慢)</span>
-              <span>100 (快)</span>
+      <!-- 设置面板：流式渲染 + 渲染配置 -->
+      <div v-if="showStreamSettings" class="mb-4 p-4 bg-white dark:bg-gray-800 rounded border border-purple-300 dark:border-purple-700 shadow-md space-y-4">
+        <div>
+          <h3 class="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">
+            流式渲染设置
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                每次截取字符数: <span class="text-purple-600 dark:text-purple-400 font-semibold">{{ streamSpeed }}</span>
+              </label>
+              <input
+                v-model.number="streamSpeed"
+                type="range"
+                min="1"
+                max="100"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              >
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>1 (慢)</span>
+                <span>100 (快)</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                更新间隔(毫秒): <span class="text-purple-600 dark:text-purple-400 font-semibold">{{ streamInterval }}ms</span>
+              </label>
+              <input
+                v-model.number="streamInterval"
+                type="range"
+                min="10"
+                max="500"
+                step="10"
+                class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+              >
+              <div class="flex justify-between text-xs text-gray-500 mt-1">
+                <span>10ms (快)</span>
+                <span>500ms (慢)</span>
+              </div>
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              更新间隔(毫秒): <span class="text-purple-600 dark:text-purple-400 font-semibold">{{ streamInterval }}ms</span>
-            </label>
-            <input
-              v-model.number="streamInterval"
-              type="range"
-              min="10"
-              max="500"
-              step="10"
-              class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
-            >
-            <div class="flex justify-between text-xs text-gray-500 mt-1">
-              <span>10ms (快)</span>
-              <span>500ms (慢)</span>
-            </div>
+          <div class="mt-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs text-gray-600 dark:text-gray-400">
+            💡 提示：字符数越大或间隔越小，渲染速度越快
           </div>
         </div>
-        <div class="mt-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded text-xs text-gray-600 dark:text-gray-400">
-          💡 提示：字符数越大或间隔越小，渲染速度越快
+
+        <div class="border-t border-gray-200 dark:border-gray-700 pt-4">
+          <h3 class="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">
+            渲染配置（用于调试不同模式）
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div class="space-y-2">
+              <div>
+                <label class="block font-medium mb-1 text-gray-700 dark:text-gray-300">代码块模式</label>
+                <select
+                  v-model="renderMode"
+                  class="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
+                >
+                  <option value="monaco">
+                    Monaco 编辑器
+                  </option>
+                  <option value="markdown">
+                    MarkdownCodeBlock (stream-markdown)
+                  </option>
+                  <option value="pre">
+                    纯 PreCodeNode
+                  </option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="toggle-code-stream" v-model="codeBlockStream" type="checkbox" class="rounded border-gray-300 dark:border-gray-600">
+                <label for="toggle-code-stream" class="cursor-pointer">代码块流式渲染</label>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <input id="toggle-viewport" v-model="viewportPriority" type="checkbox" class="rounded border-gray-300 dark:border-gray-600">
+                <label for="toggle-viewport" class="cursor-pointer">启用 viewportPriority</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="toggle-batch" v-model="batchRendering" type="checkbox" class="rounded border border-gray-300 dark:border-gray-600">
+                <label for="toggle-batch" class="cursor-pointer">启用批量渲染 (batchRendering)</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="toggle-typewriter" v-model="typewriter" type="checkbox" class="rounded border-gray-300 dark:border-gray-600">
+                <label for="toggle-typewriter" class="cursor-pointer">启用打字机过渡 (typewriter)</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="toggle-math" v-model="mathEnabled" type="checkbox" class="rounded border-gray-300 dark:border-gray-600">
+                <label for="toggle-math" class="cursor-pointer">启用数学 (KaTeX)</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="toggle-debug-parse" v-model="debugParse" type="checkbox" class="rounded border-gray-300 dark:border-gray-600">
+                <label for="toggle-debug-parse" class="cursor-pointer">调试解析树结构（console）</label>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -352,7 +451,14 @@ function toggleStreamSettings() {
             </span>
           </label>
           <div class="max-w-none p-3 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 min-h-[14rem] overflow-auto flex-1">
-            <MarkdownRender :content="streamContent || input" />
+            <MarkdownRender
+              :content="streamContent || input"
+              :viewport-priority="viewportPriority"
+              :batch-rendering="batchRendering"
+              :typewriter="typewriter"
+              :code-block-stream="codeBlockStream"
+              :parse-options="{ debug: debugParse }"
+            />
           </div>
           <div class="mt-2 text-xs text-gray-500 break-words shrink-0">
             <template v-if="tooLong">

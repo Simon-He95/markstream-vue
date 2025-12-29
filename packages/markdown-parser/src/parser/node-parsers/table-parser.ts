@@ -64,7 +64,10 @@ export function parseTable(
           cells.push({
             type: 'table_cell',
             header: isHeaderCell || isHeader,
-            children: parseInlineTokens(contentToken.children || [], content, undefined, { requireClosingStrong: options?.requireClosingStrong }),
+            children: parseInlineTokens(contentToken.children || [], content, undefined, {
+              requireClosingStrong: options?.requireClosingStrong,
+              customHtmlTags: options?.customHtmlTags,
+            }),
             raw: content,
             align,
           })

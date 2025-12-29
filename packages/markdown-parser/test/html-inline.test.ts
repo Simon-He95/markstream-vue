@@ -15,16 +15,16 @@ describe('html_inline parsing', () => {
     expect(linkChild.children[0].content).toBe('Example')
   })
 
-  it('falls back to inline_code for unknown inline html (e.g., <span>)', () => {
+  it('creates html_inline nodes for generic inline html like <span>', () => {
     const md = getMarkdown()
     const markdown = `Before <span>inner span</span> After`
     const nodes = parseMarkdownToStructure(markdown, md)
     const para = nodes[0]
-    const spanNode = (para as any).children.find((c: any) => c.type === 'inline_code')
+    const spanNode = (para as any).children.find((c: any) => c.type === 'html_inline')
     expect(spanNode).toBeDefined()
-    // fallback at least preserves the tag in code/raw (inner text may be emitted as a separate text node)
-    expect(spanNode.code).toContain('<span')
-    expect(spanNode.raw).toContain('<span')
+    expect(spanNode.content).toContain('<span')
+    expect(spanNode.content).toContain('</span>')
+    expect(spanNode.children?.[0]?.content).toBe('inner span')
   })
 
   it('handles attribute values that include ">" characters', () => {

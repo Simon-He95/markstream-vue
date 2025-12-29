@@ -30,7 +30,10 @@ export function parseLinkToken(
   }
 
   // Parse the collected tokens as inline content
-  const children = parseInlineTokens(linkTokens, undefined, undefined, { requireClosingStrong: options?.requireClosingStrong })
+  const children = parseInlineTokens(linkTokens, undefined, undefined, {
+    requireClosingStrong: options?.requireClosingStrong,
+    customHtmlTags: options?.customHtmlTags,
+  })
   const linkText = children
     .map((node) => {
       const nodeAny = node as unknown as { content?: string, raw?: string }

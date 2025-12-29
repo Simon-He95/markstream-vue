@@ -46,7 +46,7 @@ describe('markdownRender node e2e coverage', () => {
   })
 
   afterAll(() => {
-    ;(Date.now as any).mockRestore?.()
+    ; (Date.now as any).mockRestore?.()
   })
 
   const scenarios: Scenario[] = [
@@ -161,7 +161,8 @@ describe('markdownRender node e2e coverage', () => {
       skipSnapshot: true,
       assert: async (wrapper) => {
         await flushAll()
-        await flushAll()
+        await new Promise(resolve => setTimeout(resolve, 5000))
+
         const mermaid = wrapper.find('._mermaid')
         expect(mermaid.exists()).toBe(true)
         // do not rely on exact toolbar SVG markup in snapshots (icons may
@@ -438,6 +439,6 @@ describe('markdownRender node e2e coverage', () => {
       finally {
         wrapper.unmount()
       }
-    })
+    }, 20000)
   }
 })

@@ -7,6 +7,7 @@
 - `isDark?: boolean` — 暗色模式开关
 - `loading?: boolean` — 初始加载占位
 - `maxHeight?: string | null` — 最大高度
+- `isStrict?: boolean` — 开启 `securityLevel: 'strict'` + DOMPurify，并禁用 HTML labels；用于渲染不可信的 Mermaid 输入（例如用户/LLM 生成的内容），防止 `<script>`、`javascript:` 链接或内联事件落入最终 SVG
 - Header/按钮控制（全部可选，默认 `true`）:
   - `showHeader` / `showModeToggle` / `showCopyButton` / `showExportButton` / `showFullscreenButton` / `showCollapseButton` / `showZoomControls`
 
@@ -64,6 +65,7 @@ function onExport(ev: any /* MermaidBlockEvent */) {
 ## 推荐用法
 - 如果你要实现自定义导出/上传，最佳做法是：在 `export` 监听器中 `preventDefault()`，并在监听回调中直接从组件渲染的 DOM 中读取 `svg`。
 - 如果你想要完全替换头部的 UI，使用 `header-*` 插槽并把相应 `show*` props 设为 `false` 来隐藏默认按钮。
+- 若 Mermaid 内容来自用户/LLM 或任何不可信来源，建议加上 `:is-strict="true"`，组件会对 SVG 进行清理并禁用 HTML labels，从而堵住恶意 `<script>` 或 `javascript:` 链接注入的风险。
 
 ---
 

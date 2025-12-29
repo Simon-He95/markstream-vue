@@ -4,11 +4,11 @@
 [![English Docs](https://img.shields.io/badge/docs-English-blue)](README.md)
 [![NPM downloads](https://img.shields.io/npm/dm/stream-markdown-parser)](https://www.npmjs.com/package/stream-markdown-parser)
 [![Bundle size](https://img.shields.io/bundlephobia/minzip/stream-markdown-parser)](https://bundlephobia.com/package/stream-markdown-parser)
-[![License](https://img.shields.io/npm/l/stream-markdown-parser)](./LICENSE)
+[![License](https://img.shields.io/npm/l/stream-markdown-parser)](https://github.com/Simon-He95/markstream-vue/blob/main/license)
 
 纯 JavaScript Markdown 解析器和渲染工具，支持流式处理 - 框架无关。
 
-该包包含从 `stream-markdown-parser` 中提取的核心 Markdown 解析逻辑，使其可以在任何 JavaScript/TypeScript 项目中使用，无需 Vue 依赖。
+该包包含从 `markstream-vue` 中提取的核心 Markdown 解析逻辑，使其可以在任何 JavaScript/TypeScript 项目中使用，无需 Vue 依赖。
 
 ## 特性
 
@@ -42,7 +42,7 @@ yarn add stream-markdown-parser
 
 ## 快速 API 速览
 
-- `getMarkdown(options)` — 返回一个预配置的 `markdown-it-ts` 实例；支持 `plugin`、`apply`、`i18n` 等选项（内置任务列表、上下标、数学等插件）。
+- `getMarkdown(msgId?, options?)` — 返回一个预配置的 `markdown-it-ts` 实例；支持 `plugin`、`apply`、`i18n` 等选项（内置任务列表、上下标、数学等插件）。
 - `registerMarkdownPlugin(plugin)` / `clearRegisteredMarkdownPlugins()` — 全局注册/清除插件，在所有 `getMarkdown()` 调用中生效（适合特性开关或测试环境）。
 - `parseMarkdownToStructure(markdown, md, parseOptions)` — 将 Markdown 转换为可供 `markstream-vue` 等渲染器使用的 AST。
 - `processTokens(tokens)` / `parseInlineTokens(children, content)` — 更底层的 token → 节点工具，方便自定义管线。
@@ -59,7 +59,7 @@ parseMarkdownToStructure() → AST (ParsedNode[])
    ↓ 交给你的渲染器（markstream-vue、自定义 UI、Worker 等）
 ```
 
-多次解析时复用同一个 `md` 实例可以避免重复注册插件。与 [`markstream-vue`](../../README.zh-CN.md) 一起使用时，你可以把 AST 传给 `<MarkdownRender :nodes="nodes" />`，或仅传入原始 `content` 并共享同一套解析配置。
+多次解析时复用同一个 `md` 实例可以避免重复注册插件。与 [`markstream-vue`](https://www.npmjs.com/package/markstream-vue) 一起使用时，你可以把 AST 传给 `<MarkdownRender :nodes="nodes" />`，或仅传入原始 `content` 并共享同一套解析配置。
 
 ### 增量 / 流式示例
 
@@ -78,7 +78,7 @@ async function handleChunk(chunk: string) {
 }
 ```
 
-在前端通过 `<MarkdownRender :nodes="nodes" />` 渲染即可避免重复解析。具体串联示例见[文档用法指南](../../docs/zh/guide/usage.md)。
+在前端通过 `<MarkdownRender :nodes="nodes" />` 渲染即可避免重复解析。具体串联示例见[文档用法指南](https://markstream-vue-docs.simonhe.me/zh/guide/usage)。
 
 ### 基础示例
 
@@ -166,8 +166,8 @@ const md = getMarkdown('editor-1', {
 
 ```ts
 import {
-  registerMarkdownPlugin,
   clearRegisteredMarkdownPlugins,
+  registerMarkdownPlugin,
 } from 'stream-markdown-parser'
 
 registerMarkdownPlugin(myPlugin)
@@ -250,9 +250,9 @@ interface MathOptions {
 
 ```ts
 interface ParseOptions {
-  preTransformTokens?(tokens: Token[]): Token[]
-  postTransformTokens?(tokens: Token[]): Token[]
-  postTransformNodes?(nodes: ParsedNode[]): ParsedNode[]
+  preTransformTokens?: (tokens: Token[]) => Token[]
+  postTransformTokens?: (tokens: Token[]) => Token[]
+  postTransformNodes?: (nodes: ParsedNode[]) => ParsedNode[]
 }
 ```
 
@@ -261,7 +261,7 @@ interface ParseOptions {
 ```ts
 const parseOptions = {
   postTransformNodes(nodes) {
-    return nodes.map((node) =>
+    return nodes.map(node =>
       node.type === 'html_block' && /<thinking>/.test(node.value)
         ? { ...node, meta: { type: 'thinking' } }
         : node,
@@ -300,7 +300,7 @@ const parseOptions = {
 - **复用解析实例**：缓存 `getMarkdown()` 的结果，避免重复注册插件。
 - **服务端解析**：在服务端运行 `parseMarkdownToStructure` 后把 AST 下发给客户端，配合 `markstream-vue` 实现确定性输出。
 - **自定义 HTML 组件**：在解析前先把 `<MyWidget>` 这类片段替换为占位符，渲染时再注入，避免在 `html_block` 上进行脆弱的字符串操作。
-- **样式提示**：如果将节点交给 `markstream-vue`，务必按照文档的 [CSS 排查清单](../../docs/zh/guide/troubleshooting.md#css-looks-wrong-start-here) 调整 reset / layer，防止 Tailwind/UnoCSS 覆盖样式。
+- **样式提示**：如果将节点交给 `markstream-vue`，务必按照文档的 [CSS 排查清单](https://markstream-vue-docs.simonhe.me/zh/guide/troubleshooting#css-looks-wrong-start-here) 调整 reset / layer，防止 Tailwind/UnoCSS 覆盖样式。
 - **错误处理**：`apply` 钩子内部默认捕获异常后打印日志，如需在 CI/生产中抛出错误，可在传入前自行封装并 rethrow。
 
 #### `parseFenceToken(token)`
@@ -327,10 +327,11 @@ const parseOptions = {
 需要更细粒度地控制 token → AST 流程时，可直接使用以下导出：
 
 ```ts
+import type { MarkdownToken } from 'stream-markdown-parser'
 import {
+
   parseInlineTokens,
-  processTokens,
-  type MarkdownToken,
+  processTokens
 } from 'stream-markdown-parser'
 
 const tokens: MarkdownToken[] = md.parse(markdown, {})
@@ -422,31 +423,35 @@ import type {
 虽然该包与框架无关，但它被设计为可以无缝配合以下框架使用：
 
 - ✅ **Node.js** - 服务器端渲染
-- ✅ **Vue 3** - 配合 `stream-markdown-parser` 使用
+- ✅ **Vue 3** - 配合 `markstream-vue`（或你的自定义渲染层）使用
 - ✅ **React** - 使用解析的节点进行自定义渲染
 - ✅ **Vanilla JS** - 直接 HTML 渲染
 - ✅ **任何框架** - 解析为 AST 并按需渲染
 
-## 从 `stream-markdown-parser` 迁移
+## 从 `markstream-vue` 迁移（解析器导出）
 
-如果你正在从 `stream-markdown-parser` 中的 markdown 工具迁移：
+如果你当前是从 `markstream-vue` 引入解析器相关 helper，可以切换为使用独立包：
 
 ```typescript
+// 之前
+import { getMarkdown } from 'markstream-vue'
+
+// 现在
 import { getMarkdown } from 'stream-markdown-parser'
 ```
 
-所有 API 保持不变。详见[迁移指南](../../docs/monorepo-migration.md)。
+所有 API 保持不变。详见[迁移指南](https://markstream-vue-docs.simonhe.me/zh/monorepo-migration)。
 
 ## 性能
 
 - **轻量级**: ~65KB 压缩后（13KB gzipped）
 - **快速**: 针对实时解析优化
 - **Tree-shakeable**: 只导入你需要的部分
-- **零依赖**: 除了 markdown-it 及其插件
+- **依赖很少**: `markdown-it-ts` + 少量 markdown-it 插件
 
 ## 贡献
 
-欢迎提交 Issues 和 PRs！请阅读[贡献指南](../../AGENTS.md)。
+欢迎提交 Issues 和 PRs！请阅读[贡献指南](https://github.com/Simon-He95/markstream-vue/blob/main/CONTRIBUTING.md)。
 
 ## 许可证
 
@@ -454,4 +459,4 @@ MIT © Simon He
 
 ## 相关项目
 
-- [stream-markdown-parser](https://github.com/Simon-He95/markstream-vue) - 功能完整的 Vue 3 Markdown 渲染器
+- [markstream-vue](https://www.npmjs.com/package/markstream-vue) - 功能完整的 Vue 3 Markdown 渲染器

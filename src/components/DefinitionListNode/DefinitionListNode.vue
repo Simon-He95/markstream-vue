@@ -17,10 +17,11 @@ interface DefinitionListNode {
 }
 
 // 接收props
-defineProps<{
+const props = defineProps<{
   node: DefinitionListNode
   indexKey: string | number
   typewriter?: boolean
+  customId?: string
 }>()
 
 // 定义事件
@@ -29,20 +30,22 @@ defineEmits(['copy'])
 
 <template>
   <dl class="definition-list">
-    <template v-for="(item, index) in node.items" :key="index">
+    <template v-for="(item, index) in props.node.items" :key="index">
       <dt class="definition-term">
         <NodeRenderer
-          :index-key="`definition-term-${indexKey}-${index}`"
+          :index-key="`definition-term-${props.indexKey}-${index}`"
           :nodes="item.term"
-          :typewriter="typewriter"
+          :custom-id="props.customId"
+          :typewriter="props.typewriter"
           @copy="$emit('copy', $event)"
         />
       </dt>
       <dd class="definition-desc">
         <NodeRenderer
-          :index-key="`definition-desc-${indexKey}-${index}`"
+          :index-key="`definition-desc-${props.indexKey}-${index}`"
           :nodes="item.definition"
-          :typewriter="typewriter"
+          :custom-id="props.customId"
+          :typewriter="props.typewriter"
           @copy="$emit('copy', $event)"
         />
       </dd>

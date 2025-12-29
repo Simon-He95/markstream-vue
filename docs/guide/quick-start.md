@@ -15,9 +15,13 @@ const md = `# Hello World\n\nThis is **bold** and this is *italic*.`
 </template>
 ```
 
+Note: the packaged CSS is scoped under an internal `.markstream-vue` container to reduce global style conflicts. You normally don't need to do anything—`MarkdownRender` renders inside that container.
+
+For dark theme variables, either add `.dark` on an ancestor or pass `:is-dark="true"` to scope dark mode to the renderer.
+
 Optional: wrap with `<client-only>` for Nuxt/SSR.
 
-See `/nuxt-ssr.md` for Nuxt-specific instructions.
+See `/nuxt-ssr` for Nuxt-specific instructions.
 
 Try this quickly in your app:
 

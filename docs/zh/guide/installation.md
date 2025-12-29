@@ -21,6 +21,25 @@ markstream-vue 通过可选的 peer 依赖支持各种功能。按需安装：
 | Mermaid 图表 | `mermaid` | `pnpm add mermaid` |
 | 数学公式渲染（KaTeX） | `katex` | `pnpm add katex` |
 
+## 启用功能加载器（Mermaid / KaTeX）
+
+安装可选 peer 后，需要在客户端入口显式启用 loader：
+
+```ts
+import { enableKatex, enableMermaid } from 'markstream-vue'
+
+enableMermaid()
+enableKatex()
+```
+
+同时别忘了导入必需的 CSS（Monaco 不需要额外导入 CSS）：
+
+```ts
+import 'markstream-vue/index.css'
+import 'katex/dist/katex.min.css'
+import 'mermaid/dist/mermaid.css'
+```
+
 ### 快速安装：全部功能
 
 一次性启用所有功能：
@@ -91,3 +110,5 @@ const md = '# 你好，markstream-vue！'
   <MarkdownRender :content="md" />
 </template>
 ```
+
+补充说明：`markstream-vue/index.css` 已限定在内部 `.markstream-vue` 容器中，用于降低全局样式冲突。`MarkdownRender` 默认渲染在容器内部；如果你独立使用节点组件，请外层包一层 `<div class="markstream-vue">...</div>`。

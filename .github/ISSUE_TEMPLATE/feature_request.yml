@@ -1,5 +1,5 @@
-name: 🚀 New feature proposal
-description: Propose a new feature to be added to vitepress
+name: 🚀 Feature proposal
+description: Propose a feature or improvement for markstream-vue
 labels: ['enhancement: pending triage']
 body:
   - type: markdown
@@ -10,24 +10,29 @@ body:
     id: feature-description
     attributes:
       label: Description
-      description: 'Clear and concise description of the problem. Please make the reason and usecases as detailed as possible. If you intend to submit a PR for this issue, tell us in the description. Thanks!'
-      placeholder: As a developer using Vite I want [goal / wish] so that [benefit].
+      description: 'What problem does this solve? Please describe the use case (AI/chat/SSE, docs, diff viewer, custom node, etc.). If you intend to submit a PR for this issue, tell us in the description. Thanks!'
+      placeholder: As a developer using markstream-vue I want [goal] so that [benefit].
     validations:
       required: true
   - type: textarea
+    id: current-config
+    attributes:
+      label: Current config (if applicable)
+      description: 'Renderer props or parser options you are using (e.g., max-live-nodes, batchRendering, renderBatchSize, enableMermaid/Katex/Monaco, custom components).'
+  - type: textarea
     id: suggested-solution
     attributes:
-      label: Suggested solution
-      description: 'In module [xy] we could provide following implementation...'
+      label: Suggested solution / API shape
+      description: What would the API/prop/config look like?
     validations:
       required: true
   - type: textarea
     id: alternative
     attributes:
-      label: Alternative
-      description: Clear and concise description of any alternative solutions or features you've considered.
+      label: Alternatives
+      description: Clear and concise description of any alternative solutions or workarounds you've considered.
   - type: textarea
     id: additional-context
     attributes:
       label: Additional context
-      description: Any other context or screenshots about the feature request here.
+      description: Any other context or screenshots about the feature request here (include sample Markdown or mockups if relevant).

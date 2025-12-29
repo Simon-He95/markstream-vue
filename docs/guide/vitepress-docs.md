@@ -71,6 +71,8 @@ Style bugs are the number one source of issues, especially when combining the re
 @import 'markstream-vue/index.css';
 ```
 
+- Mention that the packaged CSS is scoped under an internal `.markstream-vue` container. `MarkdownRender` renders inside that container by default; standalone node components should be wrapped with `<div class="markstream-vue">...</div>` so styles and variables apply.
+
 - Explain that most “styles look wrong” bugs come from the **browser default stylesheet** (margin on `p`, `pre`, `code`, `table`). Encourage importing a reset (`modern-css-reset`, `tailwindcss base`, UnoCSS `preflight`) *before* the library CSS.
 - Mention that Tailwind/UnoCSS run in different CSS layers. If the renderer styles are inserted before `@layer base/components/utilities`, utilities might override them, so wrap the import:
 
@@ -112,5 +114,7 @@ Document issues by grouping them into three buckets:
 - **Browser defaults** — padding/margins on headings, buttons, `<details>`. Recommend `@unocss/reset` or `modern-css-reset`.
 - **Utility frameworks** — Tailwind or UnoCSS classes overriding component CSS. Outline the layer strategy and prefix recommendation (`prefix: 'tw-'`).
 - **Third-party CSS** — UI libraries injecting `:root` variables or `body` styles. Suggest scoping overrides via the `custom-id` prop and `setCustomComponents`.
+
+Even with container-scoped package CSS, third-party global styles can still affect the renderer (e.g., resets, `body` typography, global `a` styles). Prefer scoping your overrides to the renderer instance via `custom-id` and `[data-custom-id="..."]` selectors.
 
 Each bucket should have its own section inside `docs/guide/troubleshooting.md` so readers can skim and jump directly to the fix.

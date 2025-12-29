@@ -14,6 +14,7 @@ import FootnoteReferenceNode from './components/FootnoteReferenceNode'
 import HardBreakNode from './components/HardBreakNode'
 import HeadingNode from './components/HeadingNode'
 import HighlightNode from './components/HighlightNode'
+import HtmlInlineNode from './components/HtmlInlineNode'
 import ImageNode from './components/ImageNode'
 import InlineCodeNode from './components/InlineCodeNode'
 import InsertNode from './components/InsertNode'
@@ -21,7 +22,8 @@ import LinkNode from './components/LinkNode'
 import ListItemNode from './components/ListItemNode'
 import ListNode from './components/ListNode'
 import MarkdownCodeBlockNode from './components/MarkdownCodeBlockNode'
-import MermaidBlockNode from './components/MermaidBlockNode'
+import { disableKatex, enableKatex, isKatexEnabled, setKatexLoader } from './components/MathInlineNode/katex'
+import { disableMermaid, enableMermaid, isMermaidEnabled, setMermaidLoader } from './components/MermaidBlockNode/mermaid'
 import MarkdownRender from './components/NodeRenderer'
 import ParagraphNode from './components/ParagraphNode'
 import PreCodeNode from './components/PreCodeNode'
@@ -44,11 +46,16 @@ import './workers/mermaidParser.worker?worker'
 const CodeBlockNode = defineAsyncComponent(() => import('./components/CodeBlockNode'))
 const MathBlockNode = defineAsyncComponent(() => import('./components/MathBlockNode'))
 const MathInlineNode = defineAsyncComponent(() => import('./components/MathInlineNode'))
+const MermaidBlockNode = defineAsyncComponent(() => import('./components/MermaidBlockNode'))
 
+export type { KatexLoader } from './components/MathInlineNode/katex'
+
+export type { MermaidLoader } from './components/MermaidBlockNode/mermaid'
 // Export centralized props interfaces so they appear in package d.ts
 export * from './utils'
-
+export * from './workers/katexCdnWorker'
 export * from './workers/katexWorkerClient'
+export * from './workers/mermaidCdnWorker'
 export * from './workers/mermaidWorkerClient'
 export { KATEX_COMMANDS, normalizeStandaloneBackslashT, setDefaultMathOptions } from 'stream-markdown-parser'
 export type { MathOptions } from 'stream-markdown-parser'
@@ -60,7 +67,11 @@ export {
   clearGlobalCustomComponents,
   CodeBlockNode,
   DefinitionListNode,
+  disableKatex,
+  disableMermaid,
   EmojiNode,
+  enableKatex,
+  enableMermaid,
   FootnoteAnchorNode,
   FootnoteNode,
   FootnoteReferenceNode,
@@ -68,9 +79,12 @@ export {
   HardBreakNode,
   HeadingNode,
   HighlightNode,
+  HtmlInlineNode,
   ImageNode,
   InlineCodeNode,
   InsertNode,
+  isKatexEnabled,
+  isMermaidEnabled,
   LinkNode,
   ListItemNode,
   ListNode,
@@ -85,6 +99,8 @@ export {
   removeCustomComponents,
   setCustomComponents,
   setDefaultI18nMap,
+  setKatexLoader,
+  setMermaidLoader,
   StrikethroughNode,
   StrongNode,
   SubscriptNode,
@@ -108,6 +124,7 @@ const componentMap: Record<string, Component> = {
   FootnoteAnchorNode,
   HardBreakNode,
   HeadingNode,
+  HtmlInlineNode,
   HighlightNode,
   ImageNode,
   InlineCodeNode,

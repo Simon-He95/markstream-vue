@@ -29,3 +29,31 @@
 - **必要时降级代码块**：在突发大块传输时暂时关闭 `codeBlockStream` 或启用 `renderCodeBlocksAsPre`，避免语法高亮抢占时间片。
 
 这些组合可以把 DOM 工作量稳定在可控范围，哪怕服务端一次发送很多文本，用户也会感知为持续、丝滑的逐字输出。
+
+## 虚拟化与 DOM 窗口
+
+`NodeRenderer` 会维护一个滑动窗口，只让一部分节点常驻 DOM，从而在极长的对话或文档中保持流畅：
+
+- `maxLiveNodes`（默认 `320`）定义了 DOM 中最多保留多少个已完全渲染的节点。减小可以省内存、增大可以保留更多回溯内容。
+- `liveNodeBuffer` 控制窗口前后的超前/超后范围（默认 `60`）。如果节点高度差异巨大，可增大该值以避免快速滚动时闪烁。
+- `deferNodesUntilVisible` 搭配 `viewportPriority` 使用，可以让 Mermaid、Monaco、KaTeX 等重型节点在进入视口之前保持占位骨架。
+- `batchRendering` 以及 `initialRenderBatchSize`、`renderBatchSize`、`renderBatchDelay`、`renderBatchBudgetMs` 控制每一帧有多少节点从占位态切换为真实组件。该增量模式仅在关闭虚拟化（`:max-live-nodes="0"`）时生效；默认开启虚拟化时，所有节点会立即渲染，依靠窗口裁剪来限制 DOM 工作量。
+
+示例：在保持可滚动回溯的同时降低 DOM 开销。
+
+```vue
+<MarkdownRender
+  :content="md"
+  :max-live-nodes="220"
+  :live-node-buffer="40"
+  :batch-rendering="true"
+  :initial-render-batch-size="24"
+  :render-batch-size="48"
+  :render-batch-delay="24"
+  :render-batch-budget-ms="8"
+  :defer-nodes-until-visible="true"
+  :viewport-priority="true"
+/>
+```
+
+利用这些旋钮，可以把超长 AI 对话或技术文档维持在一个稳定的 CPU / 内存预算中，同时保持滚动与输入的流畅体验。

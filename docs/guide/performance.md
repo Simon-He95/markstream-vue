@@ -31,3 +31,31 @@ Try this — tune rendering performance by enabling `viewportPriority`:
 ```vue
 <MarkdownRender :content="md" :viewport-priority="true" />
 ```
+
+## Virtualization & DOM windows
+
+`NodeRenderer` keeps a moving window of nodes in memory so extremely long documents stay responsive:
+
+- `maxLiveNodes` (default `320`) caps how many fully rendered nodes remain in the DOM. Tune this based on your layout — lower values reduce memory but require slightly more placeholder churn; higher values prioritise scrollback.
+- `liveNodeBuffer` controls overscan on both sides of the focus window (default `60`). Increase it when nodes vary wildly in height to avoid visible pop-in while scrolling fast.
+- `deferNodesUntilVisible` together with `viewportPriority` defers mounting heavy nodes (Mermaid, Monaco, KaTeX) until an observer reports they are close to the viewport.
+- `batchRendering`, `initialRenderBatchSize`, `renderBatchSize`, `renderBatchDelay`, and `renderBatchBudgetMs` govern how many nodes switch from placeholders to full components per frame. This incremental mode only runs when virtualization is disabled (`:max-live-nodes="0"`); otherwise the virtual window already limits DOM work, so nodes are rendered immediately without placeholders.
+
+Example: Give the user a lighter DOM footprint while keeping scrollback smooth.
+
+```vue
+<MarkdownRender
+  :content="md"
+  :max-live-nodes="220"
+  :live-node-buffer="40"
+  :batch-rendering="true"
+  :initial-render-batch-size="24"
+  :render-batch-size="48"
+  :render-batch-delay="24"
+  :render-batch-budget-ms="8"
+  :defer-nodes-until-visible="true"
+  :viewport-priority="true"
+/>
+```
+
+With these knobs you can keep large AI transcripts or docs under a predictable CPU budget while still presenting consistent scroll behaviour.

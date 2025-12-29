@@ -7,6 +7,7 @@
 - `isDark?: boolean` — dark mode flag
 - `loading?: boolean` — initial loading placeholder
 - `maxHeight?: string | null` — maximum height
+- `isStrict?: boolean` — run Mermaid in `securityLevel: 'strict'` with DOMPurify + HTML-label hardening; use this when rendering untrusted diagrams to strip inline scripts/`javascript:` URLs that could otherwise leak into the SVG
 - Header / control props (all optional, default `true`):
   - `showHeader`, `showModeToggle`, `showCopyButton`, `showExportButton`, `showFullscreenButton`, `showCollapseButton`, `showZoomControls`
 
@@ -64,6 +65,7 @@ function onExport(ev: any /* MermaidBlockEvent */) {
 ## Recommended usage
 - To implement custom export/upload behavior, call `preventDefault()` in the `export` listener and extract the SVG from the rendered DOM in your handler.
 - To fully replace the header UI, use the `header-*` slots and set the corresponding `show*` props to `false` to hide the default controls.
+- If Mermaid content originates from users/LLMs or any untrusted source, set `:is-strict="true"` so the component sanitizes the SVG and disables HTML labels; this closes the gap where crafted `javascript:` URLs or event handlers could sneak into the rendered output.
 
 ---
 

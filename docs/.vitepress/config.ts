@@ -9,15 +9,19 @@ export default defineConfig({
   // Support deploying under a sub-path (for GitHub Pages like /username/repo/)
   base: process.env.VITEPRESS_BASE || '/',
   locales: {
-    '/': {
+    root: {
+      label: 'English',
       lang: 'en-US',
       title: 'markstream-vue',
       description: 'Streaming-friendly Markdown renderer for Vue 3',
+      link: '/',
     },
-    '/zh/': {
+    zh: {
+      label: '简体中文',
       lang: 'zh-CN',
       title: 'markstream-vue',
       description: '适用于 Vue 3 的流式 Markdown 渲染器',
+      link: '/zh/',
     },
   },
   themeConfig: {
@@ -92,7 +96,6 @@ export default defineConfig({
         { text: 'Performance', link: '/guide/performance' },
         { text: 'Monaco', link: '/guide/monaco' },
         { text: 'Troubleshooting', link: '/guide/troubleshooting' },
-        { text: 'Nuxt SSR', link: '/zh/nuxt-ssr' },
         {
           text: 'Investigations',
           items: [
@@ -181,7 +184,6 @@ export default defineConfig({
           ],
         },
         { text: 'Nuxt SSR', link: '/nuxt-ssr' },
-        { text: 'Nuxt SSR', link: '/zh/nuxt-ssr' },
         { text: 'Performance', link: '/guide/performance' },
         { text: 'Monaco', link: '/guide/monaco' },
         { text: 'Troubleshooting', link: '/guide/troubleshooting' },
@@ -196,7 +198,7 @@ export default defineConfig({
       ],
     },
     locales: {
-      '/': {
+      root: {
         selectText: 'Languages',
         label: 'English',
         ariaLabel: 'Select language',
@@ -209,7 +211,7 @@ export default defineConfig({
           { text: 'GitHub', link: 'https://github.com/Simon-He95/markstream-vue' },
         ],
       },
-      '/zh/': {
+      zh: {
         selectText: '选择语言',
         label: '简体中文',
         ariaLabel: '选择语言',

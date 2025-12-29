@@ -266,10 +266,9 @@ function fixLinkToken(tokens: MarkdownToken[]): MarkdownToken[] {
     }
     if (curToken.type === 'link_close' && curToken.nesting === -1 && tokens[i + 1]?.type === 'text' && tokens[i - 1]?.type === 'text') {
       // 修复链接后多余文本被包含在链接内的问题
-      let loading = true
       const text = tokens[i - 1].content || ''
       const attrs = tokens[i - 2].attrs || []
-      let href = attrs.find(a => a[0] === 'href')?.[1] || ''
+      const href = attrs.find(a => a[0] === 'href')?.[1] || ''
       const title = attrs.find(a => a[0] === 'title')?.[1] || ''
       let count = 3
       let deleteCount = 2
@@ -281,50 +280,30 @@ function fixLinkToken(tokens: MarkdownToken[]): MarkdownToken[] {
         const type = emphasisMatch[1].length
         pushEmOpen(replacerTokens, type)
       }
-      if (curToken.markup === '' || (tokens[i + 1].type === 'text' && (tokens[i + 1].content === '.' || tokens[i + 1].content === '?'))) {
-        loading = false
-      }
 
-      if (curToken.markup === 'linkify' && tokens[i + 1]?.type === 'text' && !tokens[i + 1]?.content?.startsWith(' ')) {
-        const m = (tokens[i + 1]?.content ?? '').indexOf(')')
-        if (m === -1) {
-          href += (tokens[i + 1]?.content?.slice(0, m) || '')
-          tokens[i + 1].content = ''
-          count += 1
-        }
-        else {
-          loading = false
-        }
-      }
-      else if (tokens[i + 1].type === 'text' && tokens[i + 1]?.content?.startsWith('](')) {
+      if (curToken.markup !== 'linkify' && tokens[i + 1].type === 'text' && tokens[i + 1]?.content?.startsWith('](')) {
         count += 1
         for (let j = i + 1; j < tokens.length; j++) {
           const type = emphasisMatch ? emphasisMatch[1].length : tokens[i - 3].markup!.length
           const t = tokens[j]
           if (type === 1 && t.type === 'em_close') {
-            loading = false
             break
           }
           else if (type === 2 && t.type === 'strong_close') {
-            loading = false
             break
           }
           else if (type === 3) {
             if (t.type === 'em_close' || t.type === 'strong_close') {
-              loading = false
               break
             }
           }
           count += 1
         }
       }
-      else {
-        loading = false
-      }
 
       replacerTokens.push({
         type: 'link',
-        loading,
+        loading: false,
         href,
         title,
         text,
@@ -383,7 +362,6 @@ function fixLinkToken(tokens: MarkdownToken[]): MarkdownToken[] {
     }
     else if (curToken.content?.startsWith('](') && tokens[i - 1].type === 'strong_close' && tokens[i - 4]?.type === 'text' && tokens[i - 4]?.content?.includes('**[')) {
       // 此时的场景是 link 被 strong 包裹，link 中又包含了强调符号
-      i++
       const replacerTokens = []
       const beforeText = tokens[i - 4].content!.split('**[')[0]
       if (beforeText)

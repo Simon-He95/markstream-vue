@@ -11,6 +11,17 @@ export function collect(nodes: any[], type: string) {
       n.children.forEach(walk)
     if (Array.isArray(n.items))
       n.items.forEach(walk)
+    // table nodes store content under header/rows/cells rather than children
+    if (n.type === 'table') {
+      if (n.header)
+        walk(n.header)
+      if (Array.isArray(n.rows))
+        n.rows.forEach(walk)
+    }
+    else if (n.type === 'table_row') {
+      if (Array.isArray(n.cells))
+        n.cells.forEach(walk)
+    }
   }
   ;(nodes || []).forEach(walk)
   return out
@@ -101,6 +112,25 @@ export function textIncludes(nodes: any[], s: string | RegExp) {
       for (const it of n.items) {
         if (walk(it))
           return true
+      }
+    }
+    // table content traversal
+    if (n.type === 'table') {
+      if (n.header && walk(n.header))
+        return true
+      if (Array.isArray(n.rows)) {
+        for (const r of n.rows) {
+          if (walk(r))
+            return true
+        }
+      }
+    }
+    else if (n.type === 'table_row') {
+      if (Array.isArray(n.cells)) {
+        for (const c of n.cells) {
+          if (walk(c))
+            return true
+        }
       }
     }
     return false

@@ -4,11 +4,11 @@
 [![中文版](https://img.shields.io/badge/docs-中文文档-blue)](README.zh-CN.md)
 [![NPM downloads](https://img.shields.io/npm/dm/stream-markdown-parser)](https://www.npmjs.com/package/stream-markdown-parser)
 [![Bundle size](https://img.shields.io/bundlephobia/minzip/stream-markdown-parser)](https://bundlephobia.com/package/stream-markdown-parser)
-[![License](https://img.shields.io/npm/l/stream-markdown-parser)](./LICENSE)
+[![License](https://img.shields.io/npm/l/stream-markdown-parser)](https://github.com/Simon-He95/markstream-vue/blob/main/license)
 
 Pure markdown parser and renderer utilities with streaming support - framework agnostic.
 
-This package contains the core markdown parsing logic extracted from `stream-markdown-parser`, making it usable in any JavaScript/TypeScript project without Vue dependencies.
+This package contains the core markdown parsing logic extracted from `markstream-vue`, making it usable in any JavaScript/TypeScript project without Vue dependencies.
 
 ## Features
 
@@ -42,7 +42,7 @@ yarn add stream-markdown-parser
 
 ## Quick API (TL;DR)
 
-- `getMarkdown(options)` — create a `markdown-it-ts` instance with built-in plugins (task lists, sub/sup, math helpers, etc.). Also accepts `plugin`, `apply`, and `i18n` options.
+- `getMarkdown(msgId?, options?)` — create a `markdown-it-ts` instance with built-in plugins (task lists, sub/sup, math helpers, etc.). Also accepts `plugin`, `apply`, and `i18n` options.
 - `registerMarkdownPlugin(plugin)` / `clearRegisteredMarkdownPlugins()` — add or remove global plugins that run for every `getMarkdown()` call (useful for feature flags or tests).
 - `parseMarkdownToStructure(markdown, md, parseOptions)` — convert Markdown into the streaming-friendly AST consumed by `markstream-vue` and other renderers.
 - `processTokens(tokens)` / `parseInlineTokens(children, content)` — low-level helpers if you want to bypass the built-in AST pipeline.
@@ -59,7 +59,7 @@ parseMarkdownToStructure() → AST (ParsedNode[])
    ↓ feed into your renderer (markstream-vue, custom UI, workers)
 ```
 
-Reuse the same `md` instance when parsing multiple documents—plugin setup is the heaviest step. When integrating with [`markstream-vue`](../../README.md), pass the AST to `<MarkdownRender :nodes="nodes" />` or supply raw `content` and hand it the same parser options.
+Reuse the same `md` instance when parsing multiple documents—plugin setup is the heaviest step. When integrating with [`markstream-vue`](https://www.npmjs.com/package/markstream-vue), pass the AST to `<MarkdownRender :nodes="nodes" />` or supply raw `content` and hand it the same parser options.
 
 ### Incremental / streaming example
 
@@ -78,7 +78,7 @@ async function handleChunk(chunk: string) {
 }
 ```
 
-In the UI layer, render `nodes` with `<MarkdownRender :nodes="nodes" />` to avoid re-parsing. See the [docs usage guide](../../docs/guide/usage.md) for end-to-end wiring.
+In the UI layer, render `nodes` with `<MarkdownRender :nodes="nodes" />` to avoid re-parsing. See the [docs usage guide](https://markstream-vue-docs.simonhe.me/guide/usage) for end-to-end wiring.
 
 ### Basic example
 
@@ -167,8 +167,8 @@ Need to add a plugin everywhere without touching each call site? Use the helper 
 
 ```ts
 import {
-  registerMarkdownPlugin,
   clearRegisteredMarkdownPlugins,
+  registerMarkdownPlugin,
 } from 'stream-markdown-parser'
 
 registerMarkdownPlugin(myPlugin)
@@ -251,9 +251,9 @@ Both `parseMarkdownToStructure()` and `<MarkdownRender :parse-options>` accept t
 
 ```ts
 interface ParseOptions {
-  preTransformTokens?(tokens: Token[]): Token[]
-  postTransformTokens?(tokens: Token[]): Token[]
-  postTransformNodes?(nodes: ParsedNode[]): ParsedNode[]
+  preTransformTokens?: (tokens: Token[]) => Token[]
+  postTransformTokens?: (tokens: Token[]) => Token[]
+  postTransformNodes?: (nodes: ParsedNode[]) => ParsedNode[]
 }
 ```
 
@@ -262,7 +262,7 @@ Example — flag AI “thinking” blocks:
 ```ts
 const parseOptions = {
   postTransformNodes(nodes) {
-    return nodes.map((node) =>
+    return nodes.map(node =>
       node.type === 'html_block' && /<thinking>/.test(node.value)
         ? { ...node, meta: { type: 'thinking' } }
         : node,
@@ -301,7 +301,7 @@ Find the matching closing delimiter in a string, handling nested pairs.
 - **Reuse parser instances**: cache `getMarkdown()` results per worker/request to avoid re-registering plugins.
 - **Server-side parsing**: run `parseMarkdownToStructure` on the server, ship the AST to the client, and hydrate with `markstream-vue` for deterministic output.
 - **Custom HTML widgets**: pre-extract `<MyWidget>` blocks before parsing (replace with placeholders) and reinject them during rendering instead of mutating `html_block` nodes post-parse.
-- **Styling**: when piping nodes into `markstream-vue`, follow the docs [CSS checklist](../../docs/guide/troubleshooting.md#css-looks-wrong-start-here) so Tailwind/UnoCSS don’t override library styles.
+- **Styling**: when piping nodes into `markstream-vue`, follow the docs [CSS checklist](https://markstream-vue-docs.simonhe.me/guide/troubleshooting#css-looks-wrong-start-here) so Tailwind/UnoCSS don’t override library styles.
 - **Error handling**: the `apply` hook swallows exceptions to maintain backwards compatibility. If you want strict mode, wrap your mutators before passing them in and rethrow/log as needed.
 
 #### `parseFenceToken(token)`
@@ -328,10 +328,11 @@ Normalize backslash-t sequences in math content.
 If you need full control over how tokens are transformed, you can import the primitive builders directly:
 
 ```ts
+import type { MarkdownToken } from 'stream-markdown-parser'
 import {
+
   parseInlineTokens,
-  processTokens,
-  type MarkdownToken,
+  processTokens
 } from 'stream-markdown-parser'
 
 const tokens: MarkdownToken[] = md.parse(markdown, {})
@@ -423,7 +424,7 @@ This package comes with the following markdown-it plugins pre-configured:
 While this package is framework-agnostic, it's designed to work seamlessly with:
 
 - ✅ **Node.js** - Server-side rendering
-- ✅ **Vue 3** - Use with `stream-markdown-parser`
+- ✅ **Vue 3** - Use with `markstream-vue` (or your own renderer)
 - ✅ **React** - Use parsed nodes for custom rendering
 - ✅ **Vanilla JS** - Direct HTML rendering
 - ✅ **Any framework** - Parse to AST and render as needed
@@ -439,11 +440,11 @@ import { getMarkdown, parseMarkdownToStructure } from 'stream-markdown-parser'
 const md = getMarkdown()
 let buffer = ''
 
-self.addEventListener('message', (event) => {
+globalThis.addEventListener('message', (event) => {
   if (event.data.type === 'chunk') {
     buffer += event.data.value
     const nodes = parseMarkdownToStructure(buffer, md)
-    self.postMessage({ type: 'update', nodes })
+    globalThis.postMessage({ type: 'update', nodes })
   }
 })
 ```
@@ -463,26 +464,30 @@ worker.addEventListener('message', (event) => {
 
 This pattern keeps Markdown-it work off the main thread and lets you reuse the same AST in any framework.
 
-## Migration from `stream-markdown-parser`
+## Migration from `markstream-vue` (parser exports)
 
-If you're migrating from using the markdown utils in `stream-markdown-parser`:
+If you're currently importing parser helpers from `markstream-vue`, you can switch to the dedicated package:
 
 ```typescript
+// before
+import { getMarkdown } from 'markstream-vue'
+
+// after
 import { getMarkdown } from 'stream-markdown-parser'
 ```
 
-All APIs remain the same. See [migration guide](../../docs/monorepo-migration.md) for details.
+All APIs remain the same. See the [migration guide](https://markstream-vue-docs.simonhe.me/monorepo-migration) for details.
 
 ## Performance
 
 - **Lightweight**: ~65KB minified (13KB gzipped)
 - **Fast**: Optimized for real-time parsing
 - **Tree-shakeable**: Only import what you need
-- **Zero dependencies**: Except for markdown-it and its plugins
+- **Few dependencies**: `markdown-it-ts` + a small set of markdown-it plugins
 
 ## Contributing
 
-Issues and PRs welcome! Please read the [contribution guidelines](../../AGENTS.md).
+Issues and PRs welcome! Please read the [contribution guidelines](https://github.com/Simon-He95/markstream-vue/blob/main/CONTRIBUTING.md).
 
 ## License
 
@@ -490,4 +495,4 @@ MIT © Simon He
 
 ## Related
 
-- [stream-markdown-parser](https://github.com/Simon-He95/markstream-vue) - Full-featured Vue 3 Markdown renderer
+- [markstream-vue](https://www.npmjs.com/package/markstream-vue) - Full-featured Vue 3 Markdown renderer

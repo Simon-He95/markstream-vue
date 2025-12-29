@@ -28,15 +28,13 @@ const ariaLabel = computed(() => {
     :aria-label="ariaLabel"
     :data-language="normalizedLanguage"
     tabindex="0"
-  >
-    <code translate="no" v-text="node.code" />
-  </pre>
+  ><code translate="no" v-text="node.code" /></pre>
 </template>
 
 <style>
 /* Minimal, safe defaults to reduce flicker during frequent text updates */
-pre[class^='language-'],
-pre[class*=' language-'] {
+.markstream-vue pre[class^='language-'],
+.markstream-vue pre[class*=' language-'] {
   /* Ensure code layout is stable */
   white-space: pre;
   overflow: auto;
@@ -49,14 +47,14 @@ pre[class*=' language-'] {
   transform: translateZ(0);
   -webkit-font-smoothing: antialiased;
 }
-pre[class^='language-'] > code,
-pre[class*=' language-'] > code {
+.markstream-vue pre[class^='language-'] > code,
+.markstream-vue pre[class*=' language-'] > code {
   display: block;
 }
 
 /* Keyboard accessibility: visible focus when scroll container is focused */
-pre[class^='language-']:focus,
-pre[class*=' language-']:focus {
+.markstream-vue pre[class^='language-']:focus,
+.markstream-vue pre[class*=' language-']:focus {
   outline: 2px solid var(--vmdr-focus, #3b82f6);
   outline-offset: 2px;
 }

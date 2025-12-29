@@ -171,6 +171,19 @@ function countUnescapedStrong(s: string) {
   return c
 }
 
+function findLastUnescapedStrongMarker(s: string) {
+  const re = /(^|[^\\])(__|\*\*)/g
+  let m: RegExpExecArray | null
+  let last: { marker: string, index: number } | null = null
+
+  while ((m = re.exec(s)) !== null) {
+    const marker = m[2]
+    const index = m.index + (m[1]?.length ?? 0)
+    last = { marker, index }
+  }
+  return last
+}
+
 export function normalizeStandaloneBackslashT(s: string, opts?: MathOptions) {
   const commands = opts?.commands ?? KATEX_COMMANDS
   const escapeExclamation = opts?.escapeExclamation ?? true
@@ -225,11 +238,33 @@ export function normalizeStandaloneBackslashT(s: string, opts?: MathOptions) {
 
   return result
 }
+
+function isPlainBracketMathLike(content: string) {
+  const stripped = content.trim()
+  if (!isMathLike(stripped))
+    return false
+
+  const hasStrongSignal = /\\[a-z]+/i.test(stripped)
+    || /\d/.test(stripped)
+    || /[=+*/^<>]|\\times|\\pm|\\cdot|\\le|\\ge|\\neq/.test(stripped)
+    || /[_^]/.test(stripped)
+
+  // In non-strict mode, plain `[...]` is allowed as a display-math delimiter.
+  // During streaming, incomplete links like `[label]` may transiently appear
+  // as a full line before the following `(` arrives. Natural-language labels
+  // often use spaced hyphens ("foo - bar"), which should not be treated as math.
+  if (!hasStrongSignal && /\s-\s/.test(stripped))
+    return false
+
+  return true
+}
+
 export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
   // Inline rule for `\\(...\\)` and `$$...$$` and `$...$`
   const mathInline = (state: unknown, silent: boolean) => {
     const s = state as any
     const strict = !!mathOpts?.strictDelimiters
+    const allowLoading = !s?.env?.__markstreamFinal
 
     if (/^\*[^*]+/.test(s.src)) {
       return false
@@ -253,6 +288,12 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
       // We'll scan the entire inline source and tokenize all occurrences
       const src = s.src
       let foundAny = false
+      // Guard against non-advancing loops: if we ever end up repeatedly
+      // matching the same opener at the same position, force `searchPos`
+      // to advance so the inline rule can't hang the UI.
+      let lastIndex = -1
+      let lastSearchPos = -1
+      let stallCount = 0
       const pushText = (text: string) => {
         // sanitize unexpected values
         if (text === 'undefined' || text == null) {
@@ -287,6 +328,18 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         const index = src.indexOf(open, searchPos)
         if (index === -1)
           break
+        if (index === lastIndex && searchPos === lastSearchPos) {
+          stallCount++
+          if (stallCount > 2) {
+            searchPos = index + Math.max(1, open.length)
+            continue
+          }
+        }
+        else {
+          stallCount = 0
+          lastIndex = index
+          lastSearchPos = searchPos
+        }
         // If the delimiter is immediately preceded by a ']' (possibly with
         // intervening spaces), it's likely part of a markdown link like
         // `[text](...)`, so we should not treat this '(' as the start of
@@ -313,7 +366,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
           }
           if (endIdx === -1) {
             // Do not treat segments containing inline code as math
-            if (!strict && isMathLike(content) && !content.includes('`')) {
+            if (allowLoading && !strict && isMathLike(content) && !content.includes('`')) {
               searchPos = index + open.length
               foundAny = true
               if (!silent) {
@@ -331,8 +384,9 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
                   pushText(text)
                 }
                 if (isStrongPrefix) {
+                  const strongMarker = findLastUnescapedStrongMarker(toPushBefore)?.marker ?? '**'
                   const strongToken = s.push('strong_open', '', 0)
-                  strongToken.markup = src.slice(0, index + 2)
+                  strongToken.markup = strongMarker
                   const token = s.push('math_inline', 'math', 0)
                   token.content = normalizeStandaloneBackslashT(content, mathOpts)
                   token.markup = open === '$$' ? '$$' : open === '\\(' ? '\\(\\)' : open === '$' ? '$' : '()'
@@ -362,8 +416,11 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         // Always accept explicit dollar-delimited math ($...$) even if the
         // heuristic deems it not math-like (to support cases like $H$, $CO_2$).
         const hasBacktick = content.includes('`')
+        const isEmpty = !content || !content.trim()
         const isDollar = open === '$'
-        const shouldSkip = strict ? hasBacktick : (hasBacktick || (!isDollar && !isMathLike(content)))
+        const shouldSkip = strict
+          ? (hasBacktick || isEmpty)
+          : (hasBacktick || isEmpty || (!isDollar && !isMathLike(content)))
         if (shouldSkip) {
           // push remaining text after last match
           // not math-like; skip this match and continue scanning
@@ -377,7 +434,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
 
         if (!silent) {
           // push text before this math
-          const before = src.slice(0, index)
+          const before = src.slice(s.pos - s.pending.length, index)
           // 如果 before 包含 单边的 ` ** 或 __ ，则直接跳过，交给 md 处理
 
           // const m = before.match(/(^|[^\\])(`+|__|\*\*)/)
@@ -399,19 +456,25 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
           if (index !== s.pos && isStrongPrefix) {
             toPushBefore = s.pending + src.slice(s.pos, index)
           }
+          const strongMarkerInfo = isStrongPrefix ? findLastUnescapedStrongMarker(toPushBefore) : null
+          const strongMarker = strongMarkerInfo?.marker ?? '**'
 
           // strong prefix handling (preserve previous behavior)
           if (s.pending !== toPushBefore) {
             s.pending = ''
             if (isStrongPrefix) {
-              const _match = toPushBefore.match(/(\*+)/)
-              const after = toPushBefore.slice(_match!.index! + _match![0].length)
-              pushText(toPushBefore.slice(0, _match!.index!))
-              const strongToken = s.push('strong_open', '', 0)
-              strongToken.markup = _match![0]
-              const textToken = s.push('text', '', 0)
-              textToken.content = after
-              s.push('strong_close', '', 0)
+              if (strongMarkerInfo) {
+                const after = toPushBefore.slice(strongMarkerInfo.index + strongMarker.length)
+                pushText(toPushBefore.slice(0, strongMarkerInfo.index))
+                const strongToken = s.push('strong_open', '', 0)
+                strongToken.markup = strongMarker
+                const textToken = s.push('text', '', 0)
+                textToken.content = after
+                s.push('strong_close', '', 0)
+              }
+              else {
+                pushText(toPushBefore)
+              }
             }
             else {
               pushText(toPushBefore)
@@ -419,23 +482,23 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
           }
           if (isStrongPrefix) {
             const strongToken = s.push('strong_open', '', 0)
-            strongToken.markup = '**'
+            strongToken.markup = strongMarker
             const token = s.push('math_inline', 'math', 0)
             token.content = normalizeStandaloneBackslashT(content, mathOpts)
             token.markup = open === '$$' ? '$$' : open === '\\(' ? '\\(\\)' : open === '$' ? '$' : '()'
             token.raw = `${open}${content}${close}`
             token.loading = false
             const raw = src.slice(endIdx + close.length)
-            const isBeforeClose = raw.startsWith('*')
+            const isBeforeClose = raw.startsWith(strongMarker)
             if (isBeforeClose) {
               s.push('strong_close', '', 0)
             }
-            if (raw) {
-              // 这里的 raw 可能还会有 math_inline, 应该交给后续的规则处理，直接 s.pos 到当前位置
-              s.pos = endIdx + close.length
-              searchPos = s.pos
-              preMathPos = searchPos
-            }
+            // Always advance cursor past the math span; otherwise when the math
+            // is at end-of-line (raw === ''), we'd loop forever on the same opener.
+            // 这里的 raw 可能还会有 math_inline, 应该交给后续的规则处理，直接 s.pos 到当前位置
+            s.pos = endIdx + close.length
+            searchPos = s.pos
+            preMathPos = searchPos
             if (!isBeforeClose)
               s.push('strong_close', '', 0)
             continue
@@ -482,6 +545,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     silent: boolean,
   ) => {
     const s = state as any
+    const allowLoading = !s?.env?.__markstreamFinal
     const strict = mathOpts?.strictDelimiters
     const delimiters: [string, string][] = strict
       ? [
@@ -536,7 +600,9 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
                 if (lineText.slice(closeIndex).trim() !== ']') {
                   continue
                 }
-                if (isMathLike(lineText.slice(open.length, closeIndex))) {
+                const inner = lineText.slice(open.length, closeIndex)
+                const looksMath = open === '[' ? isPlainBracketMathLike(inner) : isMathLike(inner)
+                if (looksMath) {
                   matched = true
                   openDelim = open
                   closeDelim = close
@@ -637,11 +703,12 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
       }
     }
 
-    // In strict mode, do not emit mid-state (unclosed) block math
-    if (strict && !found)
+    // In strict mode or final mode, do not emit mid-state (unclosed) block math
+    if ((!allowLoading || strict) && !found)
       return false
     // 追加检测内容是否是 math
-    if (!isMathLike(content))
+    const looksMath = openDelim === '[' ? isPlainBracketMathLike(content) : isMathLike(content)
+    if (!looksMath)
       return false
 
     const token: any = s.push('math_block', 'math', 0)

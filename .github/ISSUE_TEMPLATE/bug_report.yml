@@ -1,11 +1,14 @@
 name: 🐞 Bug report
-description: Report an issue with vitepress
+description: Report an issue with markstream-vue (renderer or parser)
 labels: [pending triage]
 body:
   - type: markdown
     attributes:
       value: |
         Thanks for taking the time to fill out this bug report!
+        - Please attach a shareable repro link from the test page when possible: https://markstream-vue.simonhe.me/test
+        - Or provide a minimal StackBlitz/GitHub repo with the failing case.
+        - Raw Markdown samples help us reproduce quickly.
   - type: textarea
     id: bug-description
     attributes:
@@ -17,9 +20,32 @@ body:
   - type: input
     id: reproduction
     attributes:
-      label: Reproduction
-      description: Please provide a link via [vite.new](https://vite.new/) or a link to a repo that can reproduce the problem you ran into. `npm create vite@latest` and `npm create vite-extra@latest` (for SSR or library repros) can be used as a starter template. A [minimal reproduction](https://stackoverflow.com/help/minimal-reproducible-example) is required ([Why?](https://antfu.me/posts/why-reproductions-are-required)). If a report is vague (e.g. just a generic error message) and has no reproduction, it will receive a "need reproduction" label. If no reproduction is provided after 3 days, it will be auto-closed.
-      placeholder: Reproduction URL and steps
+      label: Reproduction link
+      description: Shareable link from the test page (preferred) or a minimal StackBlitz/repo. Reports without a repro may be closed after 3 days.
+      placeholder: https://markstream-vue.simonhe.me/test#...
+    validations:
+      required: true
+  - type: textarea
+    id: markdown
+    attributes:
+      label: Markdown / content sample
+      description: Provide the exact Markdown (or nodes JSON) that triggers the issue.
+      placeholder: |
+        ## Example
+        - [ ] task
+        ```js
+        console.log('hello')
+        ```
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
     validations:
       required: true
   - type: dropdown
@@ -33,22 +59,18 @@ body:
         - pnpm
     validations:
       required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: markstream-vue version, Vue version, and browser/runtime (if applicable).
+      placeholder: markstream-vue 0.0.x, Vue 3.x, Chrome 131 / SSR
   - type: textarea
     id: logs
     attributes:
       label: Logs
       description: |
-        Optional if provided reproduction. Please try not to insert an image but copy paste the log text.
+        Optional if provided reproduction. Please avoid screenshots; copy/paste text instead.
 
-        1. Run `vite` or `vite build` with the `--debug` flag.
-        2. Provide the error log here in the format below.
-
-        ````
-        <details>
-        <summary>Click to expand!</summary>
-
-        ```shell
-        // paste the log text here
-        ```
-        </details>
-        ````
+        - If using the playground/nuxt playground, run with `pnpm dev` / `pnpm play:nuxt` and capture console output.
+        - For build issues, run `pnpm build` with `DEBUG=*` and include the stack trace.

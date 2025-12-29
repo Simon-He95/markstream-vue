@@ -92,6 +92,7 @@ export default defineConfig(({ mode }) => {
             'vue',
             'vue-i18n',
             'katex',
+            'mermaid',
             'katex/contrib/mhchem',
             'stream-monaco',
             'stream-markdown',

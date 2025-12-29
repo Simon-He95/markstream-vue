@@ -1,6 +1,6 @@
 # Nuxt 3 SSR usage (example)
 
-> 中文版请查看 [nuxt-ssr.zh-CN.md](./nuxt-ssr.zh-CN.md)。
+> 中文版请查看 [Nuxt 3 SSR（中文）](/zh/nuxt-ssr)。
 
 This short recipe shows a minimal, safe way to use `markstream-vue` in Nuxt 3 so that client-only features (Monaco, Mermaid, Web Workers) are only initialized in the browser.
 

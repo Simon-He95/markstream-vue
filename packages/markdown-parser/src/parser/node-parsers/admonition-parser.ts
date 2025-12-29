@@ -21,7 +21,10 @@ export function parseAdmonition(
       if (contentToken) {
         admonitionChildren.push({
           type: 'paragraph',
-          children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, { requireClosingStrong: options?.requireClosingStrong }),
+          children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, {
+            requireClosingStrong: options?.requireClosingStrong,
+            customHtmlTags: options?.customHtmlTags,
+          }),
           raw: String(contentToken.content ?? ''),
         })
       }

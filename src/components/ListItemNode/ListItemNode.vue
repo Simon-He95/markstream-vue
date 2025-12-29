@@ -20,6 +20,7 @@ const props = defineProps<{
   item: ListItem
   indexKey?: number | string
   value?: number
+  customId?: string
   /** Forwarded flag to enable/disable non-code node enter transition */
   typewriter?: boolean
 }>()
@@ -39,6 +40,7 @@ const liValueAttr = computed(() =>
       v-memo="[props.item.children]"
       :index-key="`list-item-${props.indexKey}`"
       :nodes="props.item.children"
+      :custom-id="props.customId"
       :typewriter="props.typewriter"
       :batch-rendering="false"
       @copy="$emit('copy', $event)"

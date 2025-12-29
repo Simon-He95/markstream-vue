@@ -1,8 +1,8 @@
 {
   "name": "stream-markdown-parser",
   "type": "module",
-  "version": "0.0.34",
-  "packageManager": "pnpm@10.24.0",
+  "version": "0.0.51",
+  "packageManager": "pnpm@10.26.1",
   "description": "Pure markdown parser and renderer utilities with streaming support - framework agnostic",
   "author": "Simon He",
   "license": "MIT",
@@ -59,10 +59,10 @@
     "markdown-it-sub": "^2.0.0",
     "markdown-it-sup": "^2.0.0",
     "markdown-it-task-checkbox": "^1.0.6",
-    "markdown-it-ts": "0.0.2-beta.9"
+    "markdown-it-ts": "0.0.3"
   },
   "devDependencies": {
-    "@types/node": "^22.19.1",
+    "@types/node": "^22.19.3",
     "tsdown": "^0.15.12",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4"

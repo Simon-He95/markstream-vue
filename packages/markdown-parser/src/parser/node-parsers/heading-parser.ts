@@ -16,7 +16,10 @@ export function parseHeading(
     type: 'heading',
     level: headingLevel,
     text: headingContent,
-    children: parseInlineTokens(headingContentToken.children || [], headingContent, undefined, { requireClosingStrong: options?.requireClosingStrong }),
+    children: parseInlineTokens(headingContentToken.children || [], headingContent, undefined, {
+      requireClosingStrong: options?.requireClosingStrong,
+      customHtmlTags: options?.customHtmlTags,
+    }),
     raw: headingContent,
   }
 }

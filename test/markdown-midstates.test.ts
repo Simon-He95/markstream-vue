@@ -131,6 +131,18 @@ describe('parseMarkdownToStructure - incremental/mid-typing states', () => {
       }
     })
 
+    it('"[知乎 - 有问题就会有答案]" mid-state should not be parsed as math', () => {
+      const mid = parseMarkdownToStructure('[知乎 - 有问题就会有答案]', md)
+      expect(collect(mid, 'math_block').length).toBe(0)
+      expect(textIncludes(mid, '知乎 - 有问题就会有答案')).toBe(true)
+
+      const full = parseMarkdownToStructure('[知乎 - 有问题就会有答案](https://www.zhihu.com)', md)
+      const ls = collect(full, 'link') as any[]
+      expect(ls.length).toBe(1)
+      expect(ls[0].href).toBe('https://www.zhihu.com')
+      expect(ls[0].loading).toBe(false)
+    })
+
     it('"[x](http://a" produces a loading link (no closing paren)', () => {
       const nodes = parseMarkdownToStructure('[x](http://a', md)
       // Accept either provisional loading link or tolerant fallback

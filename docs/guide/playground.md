@@ -16,10 +16,10 @@ The playground demonstrates:
 - Custom components mapping and `setCustomComponents`
 - Monaco streaming integration and code block examples
 
- Example pages (open from the playground):
+Example pages (open from the playground):
 
- - `https://markstream-vue.netlify.app/test` — quick playground for stress-testing streaming features (hosted demo)
- - `/markdown` — Markdown vs static rendering comparison
+- `https://markstream-vue.simonhe.me/test` — shareable repro page for stress-testing streaming features (hosted demo)
+- `/markdown` — Markdown vs static rendering comparison
 
 ![Playground demo](/screenshots/playground-demo.svg)
 

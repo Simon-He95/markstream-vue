@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import MarkdownRender from 'markstream-vue'
 import { useRouter } from 'vue-router'
 import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
 import MarkdownCodeBlockNode from '../../../src/components/MarkdownCodeBlockNode'
+import MarkdownRender from '../../../src/components/NodeRenderer'
 import { setCustomComponents } from '../../../src/utils/nodeComponents'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
 import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
@@ -29,6 +29,12 @@ function goToTest() {
   // Prefer router navigation, fallback to full redirect if it fails.
   router.push('/test').catch(() => {
     window.location.href = '/test'
+  })
+}
+
+function goToCdnPeers() {
+  router.push('/cdn-peers').catch(() => {
+    window.location.href = '/cdn-peers'
   })
 }
 
@@ -498,6 +504,16 @@ onBeforeUnmount(() => {
             >
               <Icon icon="carbon:rocket" class="w-4 h-4" />
               <span>Test</span>
+            </button>
+
+            <!-- CDN peers demo -->
+            <button
+              class="ml-2 flex items-center gap-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+              title="Go to CDN peers demo"
+              @click="goToCdnPeers"
+            >
+              <Icon icon="carbon:cloud" class="w-4 h-4" />
+              <span>CDN</span>
             </button>
           </div>
         </div>

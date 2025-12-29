@@ -20,8 +20,8 @@ npm i stream-monaco
 
 - Behavior: when `stream-monaco` is present the built-in `CodeBlockNode` will use Monaco-based streaming updates for large or frequently-updated code blocks.
 
-- Vite worker note: Monaco and some worker-backed features require appropriate worker bundling configuration in your bundler (Vite) so the editor/workers are available at runtime. See `docs/nuxt-ssr.md` for guidance and examples of configuring workers and client-only initialization.
-- See also: `docs/guide/monaco.md` for Vite `?worker` examples and explicit worker registration snippets.
+- Vite worker note: Monaco and some worker-backed features require appropriate worker bundling configuration in your bundler (Vite) so the editor/workers are available at runtime. See [/nuxt-ssr](/nuxt-ssr) for guidance and examples of configuring workers and client-only initialization.
+- See also: [/guide/monaco](/guide/monaco) for Vite `?worker` examples and explicit worker registration snippets.
 
 ## Markdown mode (use stream-markdown)
 
@@ -50,8 +50,8 @@ If you don't install either optional package the renderer falls back to a simple
 
 ## Links & further reading
 
-- Worker / SSR guidance: `docs/nuxt-ssr.md`
-- Installation notes: `docs/guide/installation.md`
+- Worker / SSR guidance: [/nuxt-ssr](/nuxt-ssr)
+- Installation notes: [/guide/installation](/guide/installation)
 
 Try this — simple CodeBlock render:
 

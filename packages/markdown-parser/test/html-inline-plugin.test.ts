@@ -34,10 +34,10 @@ describe('fixHtmlInline core plugin', () => {
     const nodes = parseMarkdownToStructure(markdown, md)
     const para = nodes[0] as any
     expect(para.type).toBe('paragraph')
-    const inlineCode = para.children.find((c: any) => c.type === 'inline_code')
-    expect(inlineCode).toBeDefined()
-    expect(inlineCode.code).toContain('<img')
+    const htmlInline = para.children.find((c: any) => c.type === 'html_inline')
+    expect(htmlInline).toBeDefined()
+    expect(htmlInline.content).toContain('<img')
     // Ensure no weird closing tag was synthesized in output
-    expect(String(inlineCode.code)).not.toContain('</img>')
+    expect(String(htmlInline.content)).not.toContain('</img>')
   })
 })

@@ -1,4 +1,5 @@
 dist
+dist-tw
 node_modules
 .nuxt
 .output

@@ -28,4 +28,25 @@ describe('fixStrongTokens plugin (parse-token assertions)', () => {
     expect(emphasis.children?.[0].content).toBe('a test ')
     expect(emphasis.raw).toBe('*a test *')
   })
+
+  it('parses strong around inline HTML tag: `**<font color="red">hi</font>**`', () => {
+    const md = getMarkdown('t')
+    const content = '**<font color="red">hi</font>**'
+    const nodes = parseMarkdownToStructure(content, md)
+
+    const para = nodes[0] as any
+    expect(para).toBeDefined()
+    expect(para.type).toBe('paragraph')
+
+    const strong = para.children?.find((c: any) => c.type === 'strong')
+    expect(strong).toBeDefined()
+
+    // inner should contain an html_inline node (font) with text child
+    const html = strong.children?.find((c: any) => c.type === 'html_inline' && c.tag === 'font')
+    expect(html).toBeDefined()
+    expect(html.loading).toBe(false)
+    expect(html.autoClosed).toBeFalsy()
+    const innerText = html.children?.find((c: any) => c.type === 'text')
+    expect(innerText?.content).toBe('hi')
+  })
 })

@@ -1,43 +1,42 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `src/` – library source
-  - `components/*/` (PascalCase dirs, `*.vue` + `index.ts` exports)
-  - `utils/` (parsers, helpers), `types/`, `composables/`
-  - Entry: `exports.ts`, styles: `index.css`
-- `test/` – Vitest specs (e.g., `index.test.ts`, `plugins/*.test.ts`)
-- `playground/` – local demo app used during development
-- `scripts/` – maintenance utilities (e.g., peer-deps check)
-- Config: `vite.config.ts`, `tailwind.config.js`, `eslint.config.mjs`, `.editorconfig`
+- `src/` is the Vue 3 library source.
+  - `src/components/*/` contains SFC components (PascalCase folders, `*.vue` files) and `index.ts` barrel exports.
+  - `src/utils/`, `src/types/`, `src/composables/` contain shared helpers, types, and composables.
+  - Library entry points and styles are exported via `src/exports.ts` and `src/index.css`.
+- `test/` contains Vitest specs (e.g. `test/index.test.ts`, `test/plugins/*.test.ts`).
+- `playground/` and `playground-nuxt/` are local demo apps for manual testing.
+- `docs/` is the VitePress documentation site.
+- `scripts/` contains maintenance utilities (DTS build, peer-deps checks, doc sync scripts).
 
 ## Build, Test, and Development Commands
-- `pnpm dev` – run playground locally (Vite dev server)
-- `pnpm play` / `pnpm preview` – alias dev / preview demo build
-- `pnpm build` – build library (Vite) + CSS (`build-css.ts`)
-- `pnpm build:demo` / `pnpm build:view` – build/preview the demo site
-- `pnpm test` / `pnpm test:ui` – run tests (CLI/UI)
-- `pnpm typecheck` – TypeScript check
-- `pnpm lint` / `pnpm lint:fix` – ESLint validate/fix
-- `pnpm run check:peer-deps` – verify required peers are installed
+Use `pnpm` (see `package.json#packageManager`). Key commands:
+- `pnpm dev` / `pnpm play`: run the Vite playground.
+- `pnpm build`: build the library bundles and generate `.d.ts`.
+- `pnpm test` / `pnpm test:ui`: run tests (CLI/UI).
+- `pnpm typecheck`: run `vue-tsc --noEmit`.
+- `pnpm lint` / `pnpm lint:fix`: ESLint checks/fixes.
+- `pnpm docs:dev` / `pnpm docs:build`: run/build VitePress.
 
 ## Coding Style & Naming Conventions
-- Follow TypeScript-first, Vue 3 SFCs.
-- Components: PascalCase dir and SFC names (`CodeBlockNode/CodeBlockNode.vue`).
-- Utils/functions: camelCase; files in `utils/` are kebab/camel case as existing.
-- Indentation 2 spaces, LF endings, UTF‑8 (see `.editorconfig`).
-- Linting via `@antfu/eslint-config`; run `pnpm lint` before commits.
+- TypeScript-first, Vue 3 SFCs.
+- Indentation: 2 spaces, LF endings (see `.editorconfig`).
+- Components: `PascalCase` folder + file names (e.g. `src/components/CodeBlockNode/CodeBlockNode.vue`).
+- Helpers: `camelCase` functions; follow existing file naming in `src/utils/`.
+- Linting uses `@antfu/eslint-config` via `eslint.config.mjs`.
 
 ## Testing Guidelines
-- Framework: Vitest. Place specs under `test/` with `*.test.ts`.
-- Prefer small, focused tests for parsers and node components.
-- Run `pnpm test` locally; update snapshots when needed with `pnpm test:update`.
+- Framework: Vitest (`pnpm test`).
+- Prefer small, focused unit tests for parsers/components; name files `*.test.ts` under `test/`.
+- Update snapshots with `pnpm test:update`.
 
 ## Commit & Pull Request Guidelines
-- Commit style: Conventional Commits (`feat:`, `fix:`, `perf:`, `chore:` …).
-- Link issues using GitHub keywords (`close: #123`).
-- Before PR: run `pnpm lint`, `pnpm typecheck`, `pnpm test`, and verify `pnpm dev` in playground.
-- PRs should include: clear description, rationale, screenshots/GIFs for UI-visible changes, and notes on API/prop changes (update README if needed).
+- Commit messages follow Conventional Commits (e.g. `feat:`, `fix:`, `docs:`, `chore:`).
+- Link issues using GitHub keywords when applicable (e.g. `close: #123`).
+- PRs should include: clear description/rationale, linked issues, and screenshots/GIFs for UI-visible changes.
+- Before requesting review: run `pnpm lint`, `pnpm typecheck`, and `pnpm test`, then sanity-check the playground.
 
 ## Security & Configuration Tips
-- Keep `peerDependencies` accurate; avoid bundling heavy peers—declare as peers when appropriate.
-- If integrating Monaco/Tailwind changes, ensure related Vite/Tailwind configs remain consistent and demo still builds.
+- Keep `peerDependencies` accurate; large integrations (e.g. `mermaid`, `katex`) are peers and may be optional.
+- Verify local peer installs with `pnpm run check:peer-deps`.

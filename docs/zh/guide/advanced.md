@@ -9,18 +9,48 @@
 - `postTransformTokens?: (tokens: MarkdownToken[]) => MarkdownToken[]` — 进一步变换 tokens
 - `postTransformNodes?: (nodes: ParsedNode[]) => ParsedNode[]` — 操作最终节点树
 
-### 示例：token 变换
+### 示例：自定义 HTML‑like 标签（推荐）
+对于 `<thinking>...</thinking>` 这类简单自定义标签，现在不再需要先正则换行或重写 token。只要把标签加入白名单并注册组件即可：
+
 ```ts
-function pre(tokens) {
-  // 将 <thinking> HTML 块转换为 thinking 节点
-  return tokens.map(t => t.type === 'html_block' && /<thinking>/.test(t.content || '')
-    ? { ...t, type: 'thinking_block', content: t.content.replace(/<\/?.{2,}?>/g, '') }
-    : t
-  )
+import { setCustomComponents } from 'markstream-vue'
+import ThinkingNode from './ThinkingNode.vue'
+
+setCustomComponents('docs', { thinking: ThinkingNode })
+```
+
+```vue
+<MarkdownRender
+  custom-id="docs"
+  :custom-html-tags="['thinking']"
+  :content="markdown"
+/>
+```
+
+当 `custom-html-tags` 包含某个标签名时，解析器会：
+- 在流式场景下吞并未闭合中间态，直到 `<tag ...>` 完整出现；
+- 输出 `CustomComponentNode`（`type: '<tag>'`），并带上 `content`、可选 `attrs` 与 `loading/autoClosed` 标记。
+
+## 自定义组件解析示例
+
+上面的内置白名单 + 自定义节点管线已覆盖大多数“组件式”标签（内联或块级）。
+当你需要进一步改造节点（例如剥掉包裹、合并分段、手动映射 attrs）时，再使用钩子：
+
+```ts
+function preTransformTokens(tokens: MarkdownToken[]) {
+  return tokens.map((t) => {
+    if (t.type === 'html_block' && t.tag === 'thinking')
+      return { ...t, content: String(t.content ?? '').replace(/<\/?thinking[^>]*>/g, '').trim() }
+    return t
+  })
 }
 
-const nodes = parseMarkdownToStructure(markdown, md, { preTransformTokens: pre })
+const nodes = parseMarkdownToStructure(markdown, md, { preTransformTokens })
 ```
+
+其他可选方案（按复杂度递增）：
+- 后端将 `thinking` 拆成单独字段/类型：前端用两次 `MarkdownRender`，一个渲染 `thinking`，另一个渲染剩余正文，互不干扰。
+- 在进入解析前用正则占位：先 `replace` 掉 `<thinking>...</thinking>` 保存到数组；正文用 `MarkdownRender`；最后把占位符替换回自定义组件渲染结果。`thinking` 常在开头时可以直接截取头部做单独渲染。
 
 ## setCustomComponents(id, mapping)
 - 使用 `setCustomComponents('docs', { thinking: ThinkingComponent })` 作用于带 `custom-id="docs"` 的 `MarkdownRender` 实例。

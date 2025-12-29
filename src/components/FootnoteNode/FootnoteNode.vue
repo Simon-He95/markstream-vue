@@ -10,10 +10,11 @@ interface FootnoteNode {
 }
 
 // 接收props
-defineProps<{
+const props = defineProps<{
   node: FootnoteNode
   indexKey: string | number
   typewriter?: boolean
+  customId?: string
 }>()
 
 // 定义事件
@@ -28,10 +29,11 @@ defineEmits(['copy'])
     <!-- <span class="font-semibold mr-2 text-[#0366d6]">[{{ node.id }}]</span> -->
     <div class="flex-1">
       <NodeRenderer
-        v-memo="[node.children]"
-        :index-key="`footnote-${indexKey}`"
-        :nodes="node.children"
-        :typewriter="typewriter"
+        v-memo="[props.node.children]"
+        :index-key="`footnote-${props.indexKey}`"
+        :nodes="props.node.children"
+        :custom-id="props.customId"
+        :typewriter="props.typewriter"
         @copy="$emit('copy', $event)"
       />
     </div>
@@ -40,8 +42,8 @@ defineEmits(['copy'])
 
 <style>
 /* 脚注中嵌套 NodeRenderer 关闭 content-visibility 占位，防止空白内容 */
-[class*="footnote-"] :deep(.markdown-renderer),
-.flex-1 :deep(.markdown-renderer) {
+.markstream-vue [class*="footnote-"] :deep(.markdown-renderer),
+.markstream-vue .flex-1 :deep(.markdown-renderer) {
   content-visibility: visible;
   contain: content;
   contain-intrinsic-size: 0px 0px;

@@ -43,7 +43,7 @@ export function parseInlineTokens(
   tokens: MarkdownToken[],
   raw?: string,
   pPreToken?: MarkdownToken,
-  options?: { requireClosingStrong?: boolean },
+  options?: { requireClosingStrong?: boolean, customHtmlTags?: readonly string[] },
 ): ParsedNode[] {
   if (!tokens || tokens.length === 0)
     return []
@@ -94,7 +94,10 @@ export function parseInlineTokens(
     }
 
     // strong (**)
-    if (/\*\*/.test(content) && !content.endsWith('**')) {
+    // Note: markdown-it may sometimes leave `**...**` as a plain text token
+    // (e.g. when wrapping inline HTML like `<font>...</font>`). In that case,
+    // we still want to recognize and parse the first strong pair.
+    if (/\*\*/.test(content)) {
       const openIdx = content.indexOf('**')
       const beforeText = openIdx > -1 ? content.slice(0, openIdx) : ''
       if (beforeText) {
@@ -333,7 +336,15 @@ export function parseInlineTokens(
         i++
         break
       case 'html_inline': {
-        const [node, index] = parseHtmlInlineCodeToken(token, tokens, i)
+        const [node, index] = parseHtmlInlineCodeToken(
+          token,
+          tokens,
+          i,
+          parseInlineTokens,
+          raw,
+          pPreToken,
+          options,
+        )
         pushNode(node)
         i = index
         break
@@ -517,6 +528,13 @@ export function parseInlineTokens(
 
       case 'reference': {
         handleReference(token)
+        break
+      }
+
+      case 'text_special':{
+        // treat as plain text (merge into adjacent text nodes)
+        pushText(String(token.content ?? ''), String(token.content ?? ''))
+        i++
         break
       }
 

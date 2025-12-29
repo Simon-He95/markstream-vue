@@ -1,6 +1,6 @@
 # E2E Testing Report
 
-> 中文版请查看 [e2e-testing-report.zh-CN.md](./e2e-testing-report.zh-CN.md)。
+> 中文版请查看 [E2E 测试报告（中文）](/zh/guide/e2e-testing-report)。
 
 This document summarizes the end-to-end markdown parsing tests added to this repository.
 

@@ -129,7 +129,7 @@ export function fixTableTokens(tokens: MarkdownToken[]): MarkdownToken[] {
     const tcontent = String(token.content ?? '')
     const childContent = String(token.children?.[0]?.content ?? '')
 
-    if (/^\|(?:[^|\n]+\|?)+/.test(tcontent)) {
+    if (!tcontent.includes('\n') && /^\|(?:[^|\n]+\|?)+/.test(tcontent)) {
       // 解析 table
       const body = childContent.slice(1).split('|').map(i => i.trim()).filter(Boolean).flatMap(i => createTh(i))
       const insert = ([

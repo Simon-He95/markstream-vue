@@ -171,6 +171,9 @@ let __roContainer: ResizeObserver | null = null
 let __roContent: ResizeObserver | null = null
 let __mo: MutationObserver | null = null
 let __scheduled = false
+let __minHeightDisabled = false
+let __overflowConfirmations = 0
+let __clearConfirmations = 0
 
 function scheduleCheckMinHeight() {
   if (__scheduled)
@@ -181,12 +184,49 @@ function scheduleCheckMinHeight() {
     const container = messagesContainer.value
     if (!container)
       return
-    const contentEl = container.querySelector('.markdown-renderer') as HTMLElement | null
+    const contentEl = Array.from(container.children).find(child =>
+      (child as HTMLElement).classList?.contains('markdown-renderer'),
+    ) as HTMLElement | undefined
     if (!contentEl)
       return
-    const shouldRemove = contentEl.scrollHeight > container.clientHeight
-    if (shouldRemove) {
+
+    const REQUIRED_OVERFLOW_CONFIRMATIONS = 2
+    const REQUIRED_CLEAR_CONFIRMATIONS = 3
+
+    const hadClass = contentEl.classList.contains('disable-min-height')
+
+    if (__minHeightDisabled || hadClass) {
       contentEl.classList.add('disable-min-height')
+      const containerDelta = container.scrollHeight - container.clientHeight
+      const shouldRemove = containerDelta > 1
+      if (shouldRemove) {
+        __clearConfirmations = 0
+        __minHeightDisabled = true
+      }
+      else {
+        __clearConfirmations++
+        if (__clearConfirmations >= REQUIRED_CLEAR_CONFIRMATIONS) {
+          __minHeightDisabled = false
+          __overflowConfirmations = 0
+          contentEl.classList.remove('disable-min-height')
+        }
+      }
+      return
+    }
+
+    // Not latched: probe by temporarily unsetting min-height (same rAF tick).
+    contentEl.classList.add('disable-min-height')
+    const containerDelta = container.scrollHeight - container.clientHeight
+    const probeOverflow = containerDelta > 1
+    if (probeOverflow)
+      __overflowConfirmations++
+    else
+      __overflowConfirmations = 0
+
+    const shouldRemove = __overflowConfirmations >= REQUIRED_OVERFLOW_CONFIRMATIONS
+    if (shouldRemove) {
+      __minHeightDisabled = true
+      __clearConfirmations = 0
       try {
         __roContainer?.disconnect()
         __roContent?.disconnect()
@@ -214,7 +254,9 @@ onMounted(() => {
   __roContainer.observe(container)
 
   const tryObserveContent = () => {
-    const el = container.querySelector('.markdown-renderer') as HTMLElement | null
+    const el = Array.from(container.children).find(child =>
+      (child as HTMLElement).classList?.contains('markdown-renderer'),
+    ) as HTMLElement | undefined
     if (el) {
       if (__roContent)
         __roContent.disconnect()
@@ -444,6 +486,7 @@ onBeforeUnmount(() => {
 }
 .chatbot-messages > .markdown-renderer {
   min-height: 100%;
+  box-sizing: border-box;
 }
 
 .chatbot-messages > .markdown-renderer.disable-min-height {

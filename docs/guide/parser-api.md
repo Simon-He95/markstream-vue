@@ -15,6 +15,7 @@ Options include:
 - `plugin`: list of Markdown-it plugins
 - `apply`: functions to mutate the `MarkdownIt` instance
 - `i18n`: translator map or function
+- `customHtmlTags`: custom HTML-like tags treated as common during streaming mid‑state handling (e.g. `['thinking']`)
 
 ### `parseMarkdownToStructure(content, md?, options?)`
 Parse a Markdown string into a streaming-friendly AST used by the renderer.
@@ -24,7 +25,25 @@ Parameters:
 - `md` (MarkdownItCore, optional): a markdown-it-ts instance — created if not provided
 - `options` (ParseOptions, optional): contains transform hooks described below
 
+> Tip for custom components: for simple HTML‑like tags such as `<thinking>`, prefer the built‑in `customHtmlTags` / `custom-html-tags` allowlist so the parser emits custom nodes directly. Use `preTransformTokens` only when you need to reshape `content`/`attrs`. See [custom component parsing](/guide/advanced#custom-component-parsing) for details.
+
 Returns: `ParsedNode[]`
+
+### ParseOptions: `final` (end-of-stream mode)
+
+In streaming contexts (SSE / AI chat), the parser intentionally emits some **mid-state (`loading`) nodes** to reduce flicker and keep rendering stable while content is incomplete, for example:
+- Unclosed block math (starts with `$$` but the closing `$$` hasn’t arrived yet)
+- Unclosed code fences (only the opening ``` has arrived)
+
+When you know the message is complete, switch the parser to “final” mode:
+
+```ts
+const nodes = parseMarkdownToStructure(buffer, md, { final: true })
+```
+
+What `final: true` does:
+- Disables mid-state loading behavior for unclosed constructs (so trailing `$$...` won’t produce perpetual `math_block/loading` nodes).
+- Treats EOF as an implicit closing fence so code blocks don’t get stuck in loading.
 
 ### `processTokens(tokens)`
 Converts raw markdown-it tokens into a processed token list ready for the AST phase.
@@ -68,7 +87,7 @@ These hooks are also available via `parseOptions` prop on the `MarkdownRender` c
 Example — strict parsing (default):
 
 ```ts
-import { parseMarkdownToStructure } from 'packages/markdown-parser'
+import { parseMarkdownToStructure } from 'stream-markdown-parser'
 
 const nodes = parseMarkdownToStructure('[**cxx](xxx)', undefined, { requireClosingStrong: true })
 // the text `[**cxx](xxx)` will be preserved without creating a dangling strong node
@@ -80,6 +99,48 @@ Example — editor-friendly parsing:
 const nodes = parseMarkdownToStructure('[**cxx](xxx)', undefined, { requireClosingStrong: false })
 // allows creating a temporary/"mid-state" strong node for live-edit previews
 ```
+
+### Stray `$$` delimiters (empty math)
+
+Sometimes streams contain an accidental `$$` sequence, e.g.
+
+```md
+adasd $$ dasdsa
+dasdsad
+```
+
+If `$$` is misinterpreted as a math delimiter with empty content, the renderer can appear “stuck” because there is no math content to render. The parser now treats empty `$$` as plain text to avoid perpetual loading spinners.
+
+### Streaming inline HTML mid-states (`html_inline`)
+
+For streaming/chat/editor scenarios, inline HTML often arrives in partial chunks. The parser applies a conservative mid‑state strategy to reduce flicker while still rendering stable HTML as soon as possible.
+
+Behavior:
+- **Suppress incomplete tags** in text tokens until `>` arrives. Examples of suppressed fragments: `<span class="a"`, trailing `<`, `</sp`, trailing `</`. These fragments are not emitted as plain text nodes to avoid jitter.
+- **Recognize complete open tags** for common HTML tags (conservative allowlist). Once `<tag ...>` is complete, it becomes an `html_inline` node.
+- **If no explicit closing tag exists yet**, the parser:
+  - Treats all following inline tokens as that tag’s inner content.
+  - Auto‑appends `</tag>` to `content/raw` so the fragment is valid HTML for rendering.
+  - Marks the node as `loading: true` and `autoClosed: true` to indicate the source is still incomplete.
+- **When the real closing tag arrives**, `autoClosed` disappears and `loading` becomes `false`.
+
+Extending the allowlist:
+To apply the same mid‑state suppression for custom tags (for example `<thinking>`), pass `customHtmlTags` when creating the markdown instance:
+
+```ts
+const md = getMarkdown('chat', { customHtmlTags: ['thinking'] })
+```
+
+Emitting custom nodes:
+If you want those tags to become custom node types (so `setCustomComponents` can map them directly), also pass `customHtmlTags` in `ParseOptions` or use the `custom-html-tags` prop on `MarkdownRender` (which wires this automatically):
+
+```ts
+const nodes = parseMarkdownToStructure(source, md, { customHtmlTags: ['thinking'] })
+```
+
+Renderer note:
+- `HtmlInlineNode` renders raw text only when `loading === true` and `autoClosed !== true`.
+  Auto‑closed mid‑states still render HTML (via `innerHTML`) but keep `loading=true` for UX/state.
 
 ## Types
 A condensed list of exported types to reference in your code:
@@ -116,7 +177,7 @@ function enableEmoji(md: MarkdownIt) {
 ```
 
 ## Examples
-Use the playground to test your parse transforms quickly. For instance, use a `preTransformTokens` hook to transform custom `html_block` tokens into a `thinking_block` type, then register a custom component for the new node type via `setCustomComponents`.
+Use the playground to test custom‑tag parsing quickly. For simple tags like `<thinking>`, pass `customHtmlTags` (or `custom-html-tags` on the component) so the parser emits `type: 'thinking'` nodes automatically, then map them via `setCustomComponents`.
 
 For full details and more examples, see `packages/markdown-parser/README.md` in the repository.
 

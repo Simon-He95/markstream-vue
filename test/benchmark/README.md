@@ -10,7 +10,7 @@ This directory contains tools and documentation for analyzing the performance of
 
 ### Documentation
 - **`katex-worker-performance-analysis.md`** - Complete guide on measuring performance
-- **`katex-cache-analysis.zh-CN.md`** - Quick summary (Chinese)
+- **`docs/zh/katex-cache-analysis.md`** - Quick summary (Chinese)
 
 ## Quick Start
 

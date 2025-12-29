@@ -29,27 +29,192 @@ const props = withDefaults(
     showFullscreenButton: true,
     showCollapseButton: true,
     showZoomControls: true,
+    enableWheelZoom: false,
+    isStrict: false,
   },
 )
+
 const emits = defineEmits(['copy', 'export', 'openModal', 'toggleMode'])
+
+const DOMPURIFY_CONFIG = {
+  USE_PROFILES: { svg: true },
+  FORBID_TAGS: ['script'],
+  FORBID_ATTR: [/^on/i],
+  ADD_TAGS: ['style'],
+  ADD_ATTR: ['style'],
+  SAFE_FOR_TEMPLATES: true,
+} as const
+
+const mermaidAvailable = ref(false)
+const mermaidSecurityLevel = computed(() => props.isStrict ? 'strict' : 'loose')
+const mermaidInitConfig = computed(() => ({
+  startOnLoad: false,
+  securityLevel: mermaidSecurityLevel.value,
+  dompurifyConfig: mermaidSecurityLevel.value === 'strict' ? DOMPURIFY_CONFIG : undefined,
+  flowchart: mermaidSecurityLevel.value === 'strict' ? { htmlLabels: false } : undefined,
+}))
+
+function neutralizeScriptProtocols(raw: string) {
+  return raw
+    .replace(/["']\s*javascript:/gi, '#')
+    .replace(/\bjavascript:/gi, '#')
+    .replace(/["']\s*vbscript:/gi, '#')
+    .replace(/\bvbscript:/gi, '#')
+    .replace(/\bdata:text\/html/gi, '#')
+}
+
+const DISALLOWED_STYLE_PATTERNS = [/javascript:/i, /expression\s*\(/i, /url\s*\(\s*javascript:/i, /@import/i]
+const SAFE_URL_PROTOCOLS = /^(?:https?:|mailto:|tel:|#|\/|data:image\/(?:png|gif|jpe?g|webp);)/i
+
+function sanitizeUrl(value: string | null | undefined) {
+  if (!value)
+    return ''
+  const trimmed = value.trim()
+  if (SAFE_URL_PROTOCOLS.test(trimmed))
+    return trimmed
+  return ''
+}
+
+function scrubSvgElement(svgEl: SVGElement) {
+  const forbiddenTags = new Set(['script'])
+  const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll<SVGElement>('*'))]
+  for (const node of nodes) {
+    if (forbiddenTags.has(node.tagName.toLowerCase())) {
+      node.remove()
+      continue
+    }
+    const attrs = Array.from(node.attributes)
+    for (const attr of attrs) {
+      const name = attr.name
+      if (/^on/i.test(name)) {
+        node.removeAttribute(name)
+        continue
+      }
+      if (name === 'style' && attr.value) {
+        const val = attr.value
+        if (DISALLOWED_STYLE_PATTERNS.some(re => re.test(val))) {
+          node.removeAttribute(name)
+          continue
+        }
+      }
+      if ((name === 'href' || name === 'xlink:href') && attr.value) {
+        const safe = sanitizeUrl(attr.value)
+        if (!safe) {
+          node.removeAttribute(name)
+          continue
+        }
+        // ensure sanitized value is applied
+        if (safe !== attr.value)
+          node.setAttribute(name, safe)
+      }
+    }
+  }
+}
+
+function toSafeSvgElement(svg: string | null | undefined): SVGElement | null {
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined')
+    return null
+  if (!svg)
+    return null
+  const neutralized = neutralizeScriptProtocols(svg)
+  // DOMPurify may strip harmless label styles/text; rely on manual scrub after parse
+  const parsed = new DOMParser().parseFromString(neutralized, 'image/svg+xml')
+  const svgEl = parsed.documentElement
+  if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
+    return null
+  const svgElement = svgEl as unknown as SVGElement
+  scrubSvgElement(svgElement)
+  return svgElement
+}
+
+function setSafeSvg(target: HTMLElement | null | undefined, svg: string | null | undefined) {
+  if (!target)
+    return ''
+  try {
+    target.replaceChildren()
+  }
+  catch {
+    // fallback for older environments
+    target.innerHTML = ''
+  }
+  const safeElement = toSafeSvgElement(svg)
+  if (safeElement) {
+    target.appendChild(safeElement)
+    return target.innerHTML
+  }
+  return ''
+}
+
+function clearElement(target: HTMLElement | null | undefined) {
+  if (!target)
+    return
+  try {
+    target.replaceChildren()
+  }
+  catch {
+    target.innerHTML = ''
+  }
+}
+
+function renderSvgToTarget(target: HTMLElement | null | undefined, svg: string | null | undefined) {
+  if (!target)
+    return ''
+  if (mermaidSecurityLevel.value === 'strict') {
+    return setSafeSvg(target, svg)
+  }
+  try {
+    target.replaceChildren()
+  }
+  catch {
+    target.innerHTML = ''
+  }
+  if (svg) {
+    try {
+      target.insertAdjacentHTML('afterbegin', svg)
+    }
+    catch {
+      target.innerHTML = svg
+    }
+  }
+  return target.innerHTML
+}
+
 const { t } = useSafeI18n()
 
-let mermaid: any = null
-const mermaidAvailable = ref(false)
+async function resolveMermaidInstance() {
+  try {
+    const instance = await getMermaid()
+    mermaidAvailable.value = !!instance
+    return instance
+  }
+  catch (err) {
+    mermaidAvailable.value = false
+    throw err
+  }
+}
 
 // Only initialize mermaid on the client to avoid SSR errors
 if (typeof window !== 'undefined') {
   ;(async () => {
-    mermaid = await getMermaid()
-    mermaidAvailable.value = !!mermaid
-    mermaid?.initialize?.({ startOnLoad: false, securityLevel: 'loose' })
+    try {
+      const instance = await resolveMermaidInstance()
+      if (!instance)
+        return
+      instance?.initialize?.({
+        ...mermaidInitConfig.value,
+        // dompurifyConfig: { ...DOMPURIFY_CONFIG },
+      })
+    }
+    catch (err) {
+      mermaidAvailable.value = false
+      console.warn('[markstream-vue] Failed to initialize mermaid renderer. Call enableMermaid() to configure a loader.', err)
+    }
   })()
 }
 
 const copyText = ref(false)
 const isCollapsed = ref(false)
 const mermaidContainer = ref<HTMLElement>()
-const mermaidWrapper = ref<HTMLElement>()
 const mermaidContent = ref<HTMLElement>()
 const modalContent = ref<HTMLElement>()
 const modalCloneWrapper = ref<HTMLElement | null>(null)
@@ -65,8 +230,8 @@ const baseFixedCode = computed(() => {
 })
 
 // get the code with the theme configuration
-function getCodeWithTheme(theme: 'light' | 'dark') {
-  const baseCode = baseFixedCode.value
+function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
+  const baseCode = code
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
   if (baseCode.trim().startsWith('%%{')) {
@@ -90,6 +255,43 @@ const CONTENT_STABLE_DELAY = 500
 const lastContentLength = ref(0)
 const isContentGenerating = ref(false)
 let contentStableTimer: number | null = null
+let renderRetryTimer: ReturnType<typeof setTimeout> | null = null
+let consecutiveRenderTimeouts = 0
+const MAX_RENDER_TIMEOUT_RETRIES = 3
+// Schedule progressive work in idle time
+const requestIdle
+  = (globalThis as any).requestIdleCallback
+    ?? ((cb: any, _opts?: any) => setTimeout(() => cb({ didTimeout: true }), 16))
+
+const debouncedProgressiveRender = debounce(() => {
+  requestIdle(() => {
+    progressiveRender()
+  }, { timeout: 500 })
+}, RENDER_DEBOUNCE_DELAY)
+
+function clearRenderRetryTimer() {
+  if (renderRetryTimer != null) {
+    (globalThis as any).clearTimeout(renderRetryTimer)
+    renderRetryTimer = null
+  }
+}
+
+function scheduleRenderRetry(delayMs = 600) {
+  if (typeof globalThis === 'undefined')
+    return
+  const safeDelay = Math.max(0, delayMs)
+  clearRenderRetryTimer()
+  const run = () => {
+    renderRetryTimer = null
+    if (props.loading || isRendering.value || !viewportReady.value) {
+      const nextDelay = Math.min(1200, Math.max(300, safeDelay * 1.2))
+      scheduleRenderRetry(nextDelay)
+      return
+    }
+    debouncedProgressiveRender()
+  }
+  renderRetryTimer = (globalThis as any).setTimeout(run, safeDelay)
+}
 
 const containerHeight = ref<string>('360px') // 初始值与 min-h 保持一致
 let resizeObserver: ResizeObserver | null = null
@@ -116,6 +318,7 @@ const savedTransformState = ref({
   translateY: 0,
   containerHeight: '360px',
 })
+const wheelListeners = computed(() => (props.enableWheelZoom ? { wheel: handleWheel } : {}))
 
 // Timeouts (ms) - configurable via props and reactive
 const timeouts = computed(() => ({
@@ -237,12 +440,22 @@ function renderErrorToContainer(error: unknown) {
   const errorSpan = document.createElement('span')
   errorSpan.textContent = error instanceof Error ? error.message : 'Unknown error'
   errorDiv.appendChild(errorSpan)
-  mermaidContent.value.innerHTML = ''
+  clearElement(mermaidContent.value)
   mermaidContent.value.appendChild(errorDiv)
   containerHeight.value = '360px'
   hasRenderError.value = true
   // 在错误显示时，停止任何预览轮询，避免错误被覆盖
   stopPreviewPolling()
+}
+
+function isTimeoutError(error: unknown) {
+  const message
+    = typeof error === 'string'
+      ? error
+      : typeof (error as any)?.message === 'string'
+        ? (error as any).message
+        : ''
+  return typeof message === 'string' && /timed out/i.test(message)
 }
 
 // Tooltip helpers (singleton)
@@ -326,11 +539,10 @@ async function canParseOnMain(
   theme: 'light' | 'dark',
   opts?: { signal?: AbortSignal, timeoutMs?: number },
 ) {
-  // Ensure mermaid instance is available; initial async load may not have completed yet
-  if (!mermaid) {
+  const mermaidInstance = await resolveMermaidInstance()
+  if (!mermaidInstance)
     return
-  }
-  const anyMermaid = mermaid as any
+  const anyMermaid = mermaidInstance as any
   const themed = applyThemeTo(code, theme)
   if (typeof anyMermaid.parse === 'function') {
     await withTimeoutSignal(() => anyMermaid.parse(themed), {
@@ -341,7 +553,7 @@ async function canParseOnMain(
   }
   // Fallback: try a headless render (no target element) just to validate
   const id = `mermaid-parse-${Math.random().toString(36).slice(2, 9)}`
-  await withTimeoutSignal(() => (mermaid as any).render(id, themed), {
+  await withTimeoutSignal(() => (mermaidInstance as any).render(id, themed), {
     timeoutMs: opts?.timeoutMs ?? timeouts.value.render,
     signal: opts?.signal,
   })
@@ -524,7 +736,7 @@ function openModal() {
       }
 
       // clear any previous content and append the clone
-      modalContent.value.innerHTML = ''
+      clearElement(modalContent.value)
       modalContent.value.appendChild(clone)
     }
   })
@@ -534,7 +746,7 @@ function closeModal() {
   isModalOpen.value = false
   // remove the cloned modal content and clear clone ref
   if (modalContent.value) {
-    modalContent.value.innerHTML = ''
+    clearElement(modalContent.value)
   }
   modalCloneWrapper.value = null
   if (typeof document !== 'undefined') {
@@ -673,6 +885,8 @@ function stopDrag() {
 
 // Wheel zoom functionality
 function handleWheel(event: WheelEvent) {
+  if (!props.enableWheelZoom)
+    return
   if (event.ctrlKey || event.metaKey) {
     event.preventDefault()
     if (!mermaidContainer.value)
@@ -852,41 +1066,37 @@ async function initMermaid() {
   isRendering.value = true
 
   renderQueue.value = (async () => {
-    // Ensure mermaid is loaded before attempting render
-    if (!mermaid) {
-      return
-    }
     if (mermaidContent.value) {
       mermaidContent.value.style.opacity = '0'
     }
 
     try {
+      const mermaidInstance = await resolveMermaidInstance()
+      if (!mermaidInstance)
+        return
       const id = `mermaid-${Date.now()}-${Math.random()
         .toString(36)
         .substring(2, 11)}`
 
       if (!hasRenderedOnce.value && !isThemeRendering.value) {
-        mermaid.initialize?.({
-          securityLevel: 'loose',
-          startOnLoad: false,
+        mermaidInstance.initialize?.({
+          ...mermaidInitConfig.value,
+          dompurifyConfig: { ...DOMPURIFY_CONFIG },
         })
       }
       const currentTheme = props.isDark ? 'dark' : 'light'
       const codeWithTheme = getCodeWithTheme(currentTheme)
       const res: any = await withTimeoutSignal(
-        () => (mermaid as any).render(
+        () => (mermaidInstance as any).render(
           id,
           codeWithTheme,
-          // mermaidContent.value,
         ),
         { timeoutMs: timeouts.value.fullRender },
       )
       const svg = res?.svg
-      const bindFunctions = res?.bindFunctions
 
       if (mermaidContent.value) {
-        mermaidContent.value.innerHTML = svg
-        bindFunctions?.(mermaidContent.value)
+        const rendered = renderSvgToTarget(mermaidContent.value, svg)
         // Successful full render clears Partial preview state
         if (!hasRenderedOnce.value && !isThemeRendering.value) {
           updateContainerHeight()
@@ -899,18 +1109,34 @@ async function initMermaid() {
           }
         }
         const currentTheme = props.isDark ? 'dark' : 'light'
-        svgCache.value[currentTheme] = svg
+        if (rendered)
+          svgCache.value[currentTheme] = rendered
         if (isThemeRendering.value) {
           isThemeRendering.value = false
         }
         // clear error state on successful render
         hasRenderError.value = false
+        consecutiveRenderTimeouts = 0
+        clearRenderRetryTimer()
       }
     }
     catch (error) {
-      console.error('Failed to render mermaid diagram:', error)
-      if (props.loading === false)
-        renderErrorToContainer(error)
+      const timedOut = isTimeoutError(error)
+      const nextAttempt = consecutiveRenderTimeouts + 1
+      if (timedOut && nextAttempt <= MAX_RENDER_TIMEOUT_RETRIES) {
+        consecutiveRenderTimeouts = nextAttempt
+        const backoff = Math.min(1200, 600 * nextAttempt)
+        scheduleRenderRetry(backoff)
+        if (typeof import.meta !== 'undefined' && import.meta.env?.DEV)
+          console.warn('[markstream-vue] Mermaid render timed out, retry scheduled:', nextAttempt)
+      }
+      else {
+        consecutiveRenderTimeouts = 0
+        clearRenderRetryTimer()
+        console.error('Failed to render mermaid diagram:', error)
+        if (props.loading === false)
+          renderErrorToContainer(error)
+      }
     }
     finally {
       await nextTick()
@@ -941,10 +1167,9 @@ async function renderPartial(code: string) {
 
   isRendering.value = true
   try {
-    // Ensure mermaid is loaded before attempting render
-    if (!mermaid) {
+    const mermaidInstance = await resolveMermaidInstance()
+    if (!mermaidInstance)
       return
-    }
     const id = `mermaid-partial-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
     const theme = props.isDark ? 'dark' : 'light'
     // 如果最后一行是不完整的（如以 |、-、> 等连接符结尾），则剪裁到上一行，
@@ -956,14 +1181,12 @@ async function renderPartial(code: string) {
       mermaidContent.value.style.opacity = '0'
 
     const res: any = await withTimeoutSignal(
-      () => (mermaid as any).render(id, codeWithTheme),
+      () => (mermaidInstance as any).render(id, codeWithTheme),
       { timeoutMs: timeouts.value.render },
     )
     const svg = res?.svg
-    const bindFunctions = res?.bindFunctions
     if (mermaidContent.value && svg) {
-      mermaidContent.value.innerHTML = svg
-      bindFunctions?.(mermaidContent.value)
+      renderSvgToTarget(mermaidContent.value, svg)
       updateContainerHeight()
     }
   }
@@ -977,11 +1200,6 @@ async function renderPartial(code: string) {
     isRendering.value = false
   }
 }
-
-// Schedule progressive work in idle time
-const requestIdle
-  = (globalThis as any).requestIdleCallback
-    ?? ((cb: any, _opts?: any) => setTimeout(() => cb({ didTimeout: true }), 16))
 
 // Progressive render: if full parse passes -> run initMermaid; else restore last success (no prefix render)
 // Progressive render: if full parse passes -> run initMermaid; else try safe prefix preview; else restore last success
@@ -1000,7 +1218,7 @@ async function progressiveRender() {
   const normalizedBase = base.replace(/\s+/g, '')
   if (!base.trim()) {
     if (mermaidContent.value)
-      mermaidContent.value.innerHTML = ''
+      clearElement(mermaidContent.value)
     lastSvgSnapshot.value = null
     lastRenderedCode.value = ''
     hasRenderError.value = false
@@ -1047,16 +1265,10 @@ async function progressiveRender() {
   // If we cannot apply partial and also shouldn't restore cached (e.g., error state), bail
   const cached = svgCache.value[theme]
   if (cached && mermaidContent.value) {
-    mermaidContent.value.innerHTML = cached
+    renderSvgToTarget(mermaidContent.value, cached)
   }
   // else: keep current DOM (could be empty on very first run)
 }
-
-const debouncedProgressiveRender = debounce(() => {
-  requestIdle(() => {
-    progressiveRender()
-  }, { timeout: 500 })
-}, RENDER_DEBOUNCE_DELAY)
 
 function stopPreviewPolling() {
   if (!isPreviewPolling)
@@ -1102,6 +1314,8 @@ function cleanupAfterLoadingSettled() {
   }
   // terminate parser worker to free resources; it will be recreated on demand
   terminateMermaidWorker()
+  clearRenderRetryTimer()
+  consecutiveRenderTimeouts = 0
 }
 
 function scheduleNextPreviewPoll(delay = 800) {
@@ -1182,9 +1396,10 @@ watch(() => props.isDark, async () => {
     return
   }
   const targetTheme = props.isDark ? 'dark' : 'light'
-  if (svgCache.value[targetTheme]) {
+  const cachedForTheme = svgCache.value[targetTheme]
+  if (cachedForTheme) {
     if (mermaidContent.value) {
-      mermaidContent.value.innerHTML = svgCache.value[targetTheme]!
+      renderSvgToTarget(mermaidContent.value, cachedForTheme)
     }
     return
   }
@@ -1227,7 +1442,7 @@ watch(
       if (hasRenderedOnce.value && svgCache.value[currentTheme]) {
         await nextTick()
         if (mermaidContent.value) {
-          mermaidContent.value.innerHTML = svgCache.value[currentTheme]!
+          renderSvgToTarget(mermaidContent.value, svgCache.value[currentTheme]!)
         }
         // Restoring full render from cache -> hide Partial badge
         zoom.value = savedTransformState.value.zoom
@@ -1275,7 +1490,7 @@ watch(
         await nextTick()
         // 保险：如果 DOM 被清空但有缓存，恢复一次，不触发重新渲染
         if (mermaidContent.value && !mermaidContent.value.querySelector('svg') && svgCache.value[theme]) {
-          mermaidContent.value.innerHTML = svgCache.value[theme]!
+          renderSvgToTarget(mermaidContent.value, svgCache.value[theme]!)
         }
         // 渲染已完成，清理后台任务
         cleanupAfterLoadingSettled()
@@ -1378,6 +1593,7 @@ onUnmounted(() => {
   }
   terminateMermaidWorker()
   stopPreviewPolling()
+  clearRenderRetryTimer()
 })
 
 watch(
@@ -1576,7 +1792,7 @@ const computedButtonStyle = computed(() => {
           class="min-h-[360px] relative transition-all duration-100 overflow-hidden block"
           :class="props.isDark ? 'bg-gray-900' : 'bg-gray-50'"
           :style="{ height: containerHeight }"
-          @wheel="handleWheel"
+          v-on="wheelListeners"
           @mousedown="startDrag"
           @mousemove="onDrag"
           @mouseup="stopDrag"
@@ -1586,7 +1802,6 @@ const computedButtonStyle = computed(() => {
           @touchend.passive="stopDrag"
         >
           <div
-            ref="mermaidWrapper"
             data-mermaid-wrapper
             class="absolute inset-0 cursor-grab"
             :class="{ 'cursor-grabbing': isDragging }"
@@ -1600,57 +1815,59 @@ const computedButtonStyle = computed(() => {
         </div>
         <!-- Modal pseudo-fullscreen overlay (teleported to body) -->
         <teleport to="body">
-          <transition name="mermaid-dialog" appear>
-            <div
-              v-if="isModalOpen"
-              class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-              @click.self="closeModal"
-            >
+          <div class="markstream-vue">
+            <transition name="mermaid-dialog" appear>
               <div
-                class="dialog-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
-                :class="props.isDark ? 'bg-gray-900' : 'bg-white'"
+                v-if="isModalOpen"
+                class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+                @click.self="closeModal"
               >
-                <div class="absolute top-6 right-6 z-50 flex items-center gap-2">
-                  <button
-                    class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
-                    @click="zoomIn"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M11 8v6m-3-3h6" /></g></svg>
-                  </button>
-                  <button
-                    class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
-                    @click="zoomOut"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M8 11h6" /></g></svg>
-                  </button>
-                  <button
-                    class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
-                    @click="resetZoom"
-                  >
-                    {{ Math.round(zoom * 100) }}%
-                  </button>
-                  <button
-                    class="inline-flex items-center justify-center p-2 rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
-                    @click="closeModal"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6L6 18M6 6l12 12" /></svg>
-                  </button>
-                </div>
                 <div
-                  ref="modalContent"
-                  class="w-full h-full flex items-center justify-center p-4 overflow-hidden"
-                  @wheel="handleWheel"
-                  @mousedown="startDrag"
-                  @mousemove="onDrag"
-                  @mouseup="stopDrag"
-                  @mouseleave="stopDrag"
-                  @touchstart="startDrag"
-                  @touchmove="onDrag"
-                  @touchend="stopDrag"
-                />
+                  class="dialog-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
+                  :class="props.isDark ? 'bg-gray-900' : 'bg-white'"
+                >
+                  <div class="absolute top-6 right-6 z-50 flex items-center gap-2">
+                    <button
+                      class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      @click="zoomIn"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M11 8v6m-3-3h6" /></g></svg>
+                    </button>
+                    <button
+                      class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      @click="zoomOut"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M8 11h6" /></g></svg>
+                    </button>
+                    <button
+                      class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      @click="resetZoom"
+                    >
+                      {{ Math.round(zoom * 100) }}%
+                    </button>
+                    <button
+                      class="inline-flex items-center justify-center p-2 rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      @click="closeModal"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6L6 18M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                  <div
+                    ref="modalContent"
+                    class="w-full h-full flex items-center justify-center p-4 overflow-hidden"
+                    v-on="wheelListeners"
+                    @mousedown="startDrag"
+                    @mousemove="onDrag"
+                    @mouseup="stopDrag"
+                    @mouseleave="stopDrag"
+                    @touchstart.passive="startDrag"
+                    @touchmove.passive="onDrag"
+                    @touchend.passive="stopDrag"
+                  />
+                </div>
               </div>
-            </div>
-          </transition>
+            </transition>
+          </div>
         </teleport>
       </div>
     </div>

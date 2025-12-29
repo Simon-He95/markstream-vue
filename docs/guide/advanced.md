@@ -9,18 +9,48 @@ This page explains how to customize parsing and provide scoped custom components
 - `postTransformTokens?: (tokens: MarkdownToken[]) => MarkdownToken[]` — further token transforms
 - `postTransformNodes?: (nodes: ParsedNode[]) => ParsedNode[]` — manipulate final node tree
 
-### Example: token transform
+### Example: custom HTML-like tags (recommended)
+For simple custom tags like `<thinking>...</thinking>`, you no longer need to normalize the source or rewrite tokens. Just opt the tag into the allowlist and register a component:
+
 ```ts
-function pre(tokens) {
-  // Convert <thinking> HTML blocks to thinking node
-  return tokens.map(t => t.type === 'html_block' && /<thinking>/.test(t.content || '')
-    ? { ...t, type: 'thinking_block', content: t.content.replace(/<\/?.+?>/g, '') }
-    : t
-  )
+import { setCustomComponents } from 'markstream-vue'
+import ThinkingNode from './ThinkingNode.vue'
+
+setCustomComponents('docs', { thinking: ThinkingNode })
+```
+
+```vue
+<MarkdownRender
+  custom-id="docs"
+  :custom-html-tags="['thinking']"
+  :content="markdown"
+/>
+```
+
+When `custom-html-tags` includes a tag name, the parser:
+- suppresses streaming mid‑states until `<tag ...>` is complete,
+- emits a `CustomComponentNode` with `type: '<tag>'`, `content`, optional `attrs`, and `loading/autoClosed` flags.
+
+## Custom component parsing
+
+The built‑in custom tag pipeline above handles most “component‑like” tags (inline or block).
+Hooks are still useful when you need to reshape the node — for example, to strip wrappers, merge adjacent blocks, or map attributes:
+
+```ts
+function preTransformTokens(tokens: MarkdownToken[]) {
+  return tokens.map((t) => {
+    if (t.type === 'html_block' && t.tag === 'thinking')
+      return { ...t, content: String(t.content ?? '').replace(/<\/?thinking[^>]*>/g, '').trim() }
+    return t
+  })
 }
 
-const nodes = parseMarkdownToStructure(markdown, md, { preTransformTokens: pre })
+const nodes = parseMarkdownToStructure(markdown, md, { preTransformTokens })
 ```
+
+Alternative flows (pick what fits your pipeline):
+- Have the backend split `thinking` into its own field/type; render `thinking` with one `MarkdownRender` and the remaining content with another, so the parser never sees raw custom HTML inline.
+- Replace custom blocks with placeholders before parsing: capture `<thinking>...</thinking>` via regex, render the cleaned body with `MarkdownRender`, then swap placeholders back to your custom component. When `thinking` is always at the top, you can also slice the head section out for dedicated rendering.
 
 ## setCustomComponents(id, mapping)
 - Use `setCustomComponents('docs', { thinking: ThinkingComponent })` to scope to `MarkdownRender` instances with `custom-id="docs"`.

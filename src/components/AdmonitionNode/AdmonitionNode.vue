@@ -18,7 +18,7 @@ interface AdmonitionNode {
 }
 
 // 接收 props（并在 script 中使用）
-const props = defineProps<{ node: AdmonitionNode, indexKey: number | string, isDark?: boolean, typewriter?: boolean }>()
+const props = defineProps<{ node: AdmonitionNode, indexKey: number | string, isDark?: boolean, typewriter?: boolean, customId?: string }>()
 // 定义事件
 const emit = defineEmits(['copy'])
 
@@ -84,6 +84,7 @@ const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
         v-memo="[props.node.children]"
         :index-key="`admonition-${indexKey}`"
         :nodes="props.node.children"
+        :custom-id="props.customId"
         :typewriter="props.typewriter"
         @copy="emit('copy', $event)"
       />

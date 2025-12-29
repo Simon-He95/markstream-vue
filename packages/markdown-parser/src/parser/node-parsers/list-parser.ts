@@ -43,7 +43,10 @@ export function parseList(
           }
           itemChildren.push({
             type: 'paragraph',
-            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), preToken, { requireClosingStrong: options?.requireClosingStrong }),
+            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), preToken, {
+              requireClosingStrong: options?.requireClosingStrong,
+              customHtmlTags: options?.customHtmlTags,
+            }),
             raw: String(contentToken.content ?? ''),
           })
           k += 3 // Skip paragraph_open, inline, paragraph_close

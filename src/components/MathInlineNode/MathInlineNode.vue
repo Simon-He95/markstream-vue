@@ -7,7 +7,6 @@ import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from '..
 import { getKatex } from './katex'
 
 const props = defineProps<MathInlineNodeProps>()
-let katex = null
 
 const containerEl = ref<HTMLElement | null>(null)
 const mathElement = ref<HTMLElement | null>(null)
@@ -20,8 +19,14 @@ const registerVisibility = useViewportPriority()
 let visibilityHandle: ReturnType<typeof registerVisibility> | null = null
 
 async function renderMath() {
-  if (!props.node.content || !mathElement.value || isUnmounted)
+  if (!mathElement.value || isUnmounted)
     return
+  if (!props.node.content) {
+    renderingLoading.value = false
+    mathElement.value.textContent = props.node.raw
+    hasRenderedOnce = true
+    return
+  }
 
   if (currentAbortController) {
     currentAbortController.abort()
@@ -72,10 +77,10 @@ async function renderMath() {
       const code = err?.code || err?.name
       const isWorkerInitFailure = code === 'WORKER_INIT_ERROR' || err?.fallbackToRenderer
       const isBusyOrTimeout = code === WORKER_BUSY_CODE || code === 'WORKER_TIMEOUT'
+      const isDisabled = code === 'KATEX_DISABLED'
+
       if (isWorkerInitFailure || isBusyOrTimeout) {
-        if (!katex) {
-          katex = await getKatex()
-        }
+        const katex = await getKatex()
         if (katex) {
           try {
             const html = katex.renderToString(props.node.content, { throwOnError: props.node.loading, displayMode: false })
@@ -91,14 +96,22 @@ async function renderMath() {
           return
         }
       }
+      if (isDisabled) {
+        renderingLoading.value = false
+        mathElement.value.textContent = props.node.raw
+        return
+      }
       // If we reach here, the worker render failed and sync fallback was not possible.
       // Stop the spinner and show raw text when we have not rendered once yet
       // or the node isn't in loading mode.
       if (!hasRenderedOnce) {
-        renderingLoading.value = true
+        renderingLoading.value = !isDisabled
       }
       if (!props.node.loading) {
         renderingLoading.value = false
+        mathElement.value.textContent = props.node.raw
+      }
+      else if (isDisabled) {
         mathElement.value.textContent = props.node.raw
       }
     })

@@ -2,7 +2,7 @@
 @tailwind utilities;
 
 /* CSS variables for theme colors */
-:root {
+.markstream-vue {
   --border: 214.3 31.8% 91.4%;
   --background: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
@@ -11,11 +11,22 @@
   --muted-foreground: 215.4 16.3% 46.9%;
 }
 
-.dark {
+.dark .markstream-vue,
+.markstream-vue.dark {
   --border: 217.2 32.6% 17.5%;
   --background: 222.2 84% 4.9%;
   --foreground: 210 40% 98%;
   --secondary: 217.2 32.6% 17.5%;
   --muted: 217.2 32.6% 17.5%;
   --muted-foreground: 215 20.2% 65.1%;
+}
+
+/* Reset button defaults so utilities control appearance. */
+.markstream-vue button {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
 }

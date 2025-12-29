@@ -9,6 +9,7 @@ export default simon(
   },
   {
     rules: {
+      'vue/no-v-for-template-key-on-child': 'off',
       'no-console': 'off',
       'ts/ban-types': 'off',
       'jsdoc/require-returns-description': 'off',

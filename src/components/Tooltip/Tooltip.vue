@@ -132,18 +132,20 @@ onBeforeUnmount(() => {
 
 <template>
   <teleport to="body">
-    <transition name="tooltip" appear>
-      <div
-        v-show="visible && ready"
-        :id="props.id"
-        ref="tooltip"
-        :style="{ position: 'fixed', left: style.left, top: style.top, transform: style.transform }"
-        class="z-[9999] inline-block text-base py-2 px-3 rounded-md shadow-md whitespace-nowrap pointer-events-none tooltip-element border" :class="[isDarkEffective ? 'bg-gray-900 text-white border-gray-700 border is-dark' : 'bg-white text-gray-900 border-gray-200 border']"
-        role="tooltip"
-      >
-        {{ content }}
-      </div>
-    </transition>
+    <div class="markstream-vue">
+      <transition name="tooltip" appear>
+        <div
+          v-show="visible && ready"
+          :id="props.id"
+          ref="tooltip"
+          :style="{ position: 'fixed', left: style.left, top: style.top, transform: style.transform }"
+          class="z-[9999] inline-block text-base py-2 px-3 rounded-md shadow-md whitespace-nowrap pointer-events-none tooltip-element border" :class="[isDarkEffective ? 'bg-gray-900 text-white border-gray-700 border is-dark' : 'bg-white text-gray-900 border-gray-200 border']"
+          role="tooltip"
+        >
+          {{ content }}
+        </div>
+      </transition>
+    </div>
   </teleport>
 </template>
 

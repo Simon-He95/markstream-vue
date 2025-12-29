@@ -7,7 +7,6 @@ import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from '..
 import { getKatex } from '../MathInlineNode/katex'
 
 const props = defineProps<MathBlockNodeProps>()
-let katex = null
 const containerEl = ref<HTMLElement | null>(null)
 const mathBlockElement = ref<HTMLElement | null>(null)
 let hasRenderedOnce = false
@@ -20,8 +19,14 @@ const renderingLoading = ref(true)
 
 // Function to render math using KaTeX
 async function renderMath() {
-  if (!props.node.content || !mathBlockElement.value || isUnmounted)
+  if (!mathBlockElement.value || isUnmounted)
     return
+  if (!props.node.content) {
+    renderingLoading.value = false
+    mathBlockElement.value.textContent = props.node.raw
+    hasRenderedOnce = true
+    return
+  }
 
   // Wait until near/in viewport to prioritize visible area
   if (!hasRenderedOnce) {
@@ -79,13 +84,12 @@ async function renderMath() {
       const code = err?.code || err?.name
       const isWorkerInitFailure = code === 'WORKER_INIT_ERROR' || err?.fallbackToRenderer
       const isBusyOrTimeout = code === WORKER_BUSY_CODE || code === 'WORKER_TIMEOUT'
+      const isDisabled = code === 'KATEX_DISABLED'
 
       // For blocks, also fall back to main-thread render when the worker is busy/timeout
       // under viewport bursts to avoid showing raw text.
       if (isWorkerInitFailure || isBusyOrTimeout) {
-        if (!katex) {
-          katex = await getKatex()
-        }
+        const katex = await getKatex()
         if (katex) {
           try {
             const html = katex.renderToString(props.node.content, {
@@ -105,6 +109,12 @@ async function renderMath() {
       }
 
       // show raw fallback when we never successfully rendered before or when loading flag is false
+
+      if (isDisabled) {
+        renderingLoading.value = false
+        mathBlockElement.value.textContent = props.node.raw
+        return
+      }
 
       if (!hasRenderedOnce) {
         renderingLoading.value = true

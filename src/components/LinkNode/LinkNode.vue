@@ -4,6 +4,7 @@ import type { LinkNodeProps } from '../../types/component-props'
 import { computed, useAttrs } from 'vue'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import EmphasisNode from '../EmphasisNode/EmphasisNode.vue'
+import HtmlInlineNode from '../HtmlInlineNode'
 import ImageNode from '../ImageNode'
 import StrikethroughNode from '../StrikethroughNode'
 
@@ -38,6 +39,7 @@ const nodeComponents = {
   strikethrough: StrikethroughNode,
   emphasis: EmphasisNode,
   image: ImageNode,
+  html_inline: HtmlInlineNode,
 }
 
 // forward any non-prop attributes (e.g. custom-id) to the rendered element

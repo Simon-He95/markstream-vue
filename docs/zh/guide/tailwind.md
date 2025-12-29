@@ -2,6 +2,8 @@
 
 如果你的项目使用 Tailwind 或基于 Tailwind 的组件库（如 shadcn），可能会遇到样式覆盖问题。推荐将 `markstream-vue` 的 CSS 导入置于 `@layer components { ... }` 中以控制样式优先级。
 
+另外，`markstream-vue` 的打包 CSS 会限定在内部 `.markstream-vue` 容器下以降低全局冲突；来自 `markstream-vue/index.css` 的 Tailwind 工具类只会在该容器内生效。
+
 示例：
 
 ```css

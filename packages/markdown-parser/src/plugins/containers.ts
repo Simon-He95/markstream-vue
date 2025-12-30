@@ -49,6 +49,7 @@ export function applyContainers(md: MarkdownIt) {
       const startPos = s.bMarks[startLine] + s.tShift[startLine]
       const lineMax = s.eMarks[startLine]
       const line = s.src.slice(startPos, lineMax)
+      console.log({ startPos, lineMax, line })
 
       // Match ::: container syntax: ::: name {"json"}
       // Using separate patterns to avoid backtracking issues
@@ -107,16 +108,7 @@ export function applyContainers(md: MarkdownIt) {
 
       // If JSON attributes are present, store them as data attributes
       if (jsonStr) {
-        try {
-          const attrs = JSON.parse(jsonStr)
-          for (const [key, value] of Object.entries(attrs)) {
-            tokenOpen.attrSet(`data-${key}`, String(value))
-          }
-        }
-        catch {
-          // If JSON parsing fails, store the raw string as a data attribute
-          tokenOpen.attrSet('data-attrs', jsonStr)
-        }
+        tokenOpen.attrSet('data-json-attrs', jsonStr)
       }
 
       // Parse inner content as full block markdown so block-level constructs

@@ -23,7 +23,7 @@ function parseVmrContainer(
   // Handle multiple class values by looking for vmr-container-* anywhere in the string
   const attrs = openToken.attrs as [string, string][] | null
   let name = ''
-  const containerAttrs: Record<string, string> = {}
+  let containerAttrs: Record<string, string> = {}
 
   if (attrs) {
     for (const [key, value] of attrs) {
@@ -37,7 +37,12 @@ function parseVmrContainer(
       else if (key.startsWith('data-')) {
         // Extract data attributes (e.g., "data-devId" -> "devId")
         const attrName = key.slice(5)
-        containerAttrs[attrName] = value
+        if (attrName === 'json-attrs') {
+          containerAttrs = { ...JSON.parse(value), ...containerAttrs }
+        }
+        else {
+          containerAttrs[attrName] = value
+        }
       }
     }
   }

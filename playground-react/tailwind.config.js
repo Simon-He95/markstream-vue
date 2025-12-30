@@ -7,6 +7,7 @@ export default {
   content: [
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
+    '../packages/markstream-react/src/**/*.{js,ts,jsx,tsx,css}',
     ...baseContent,
   ],
 }

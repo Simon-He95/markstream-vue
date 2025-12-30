@@ -4,8 +4,20 @@ import type { BaseNode, MarkdownIt, ParsedNode, ParseOptions } from 'stream-mark
 export interface NodeRendererProps {
   content?: string
   nodes?: BaseNode[]
+  /**
+   * Whether the input stream is complete (end-of-stream). When true, the parser
+   * can stop emitting streaming "loading" nodes for unfinished constructs.
+   */
+  final?: boolean
   parseOptions?: ParseOptions
   customMarkdownIt?: (md: MarkdownIt) => MarkdownIt
+  /** Log parse/render timing stats (dev only). */
+  debugPerformance?: boolean
+  /**
+   * Custom HTML-like tags that should be emitted as custom nodes (e.g. ['thinking']).
+   * Forwarded to `getMarkdown()` and merged into parseOptions.
+   */
+  customHtmlTags?: readonly string[]
   viewportPriority?: boolean
   codeBlockStream?: boolean
   codeBlockDarkTheme?: any
@@ -29,7 +41,7 @@ export interface NodeRendererProps {
   deferNodesUntilVisible?: boolean
   maxLiveNodes?: number
   liveNodeBuffer?: number
-  onCopy?: (payload: any) => void
+  onCopy?: (code: string) => void
   onHandleArtifactClick?: (payload: any) => void
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void
   onMouseOver?: (event: React.MouseEvent<HTMLElement>) => void
@@ -40,6 +52,7 @@ export interface RenderContext {
   customId?: string
   isDark?: boolean
   indexKey?: string
+  typewriter?: boolean
   codeBlockProps?: Record<string, any>
   codeBlockStream?: boolean
   renderCodeBlocksAsPre?: boolean
@@ -52,7 +65,7 @@ export interface RenderContext {
     maxWidth?: string | number
   }
   events: {
-    onCopy?: (payload: any) => void
+    onCopy?: (code: string) => void
     onHandleArtifactClick?: (payload: any) => void
   }
 }

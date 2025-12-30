@@ -1,11 +1,8 @@
 {
   "name": "markstream-react",
+  "type": "module",
   "version": "0.0.1",
   "description": "React renderer for stream-markdown based AST output used in markstream-vue.",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -16,6 +13,9 @@
     "./workers/katexRenderer.worker": "./dist/workers/katexRenderer.worker.js",
     "./workers/mermaidParser.worker": "./dist/workers/mermaidParser.worker.js"
   },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -26,10 +26,10 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18",
     "katex": ">=0.16.22",
     "mermaid": ">=11",
+    "react": ">=18",
+    "react-dom": ">=18",
     "stream-markdown": ">=0.0.10",
     "stream-monaco": ">=0.0.7"
   },
@@ -53,10 +53,10 @@
     "stream-markdown-parser": "workspace:*"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.22",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react-swc": "^3.7.1",
+    "autoprefixer": "^10.4.22",
     "tailwindcss": "^3.4.18",
     "typescript": "^5.9.3",
     "vite": "^7.2.4"

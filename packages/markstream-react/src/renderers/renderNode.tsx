@@ -1,105 +1,63 @@
-import type { ReactNode } from 'react'
-import React from 'react'
-import clsx from 'clsx'
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { RenderContext } from '../types'
-import { getCustomNodeComponents } from '../customComponents'
-import { MathInlineNode } from '../components/Math/MathInlineNode'
-import { MathBlockNode } from '../components/Math/MathBlockNode'
+import React from 'react'
+import { AdmonitionNode } from '../components/AdmonitionNode/AdmonitionNode'
+import { BlockquoteNode } from '../components/BlockquoteNode/BlockquoteNode'
+import { CheckboxNode } from '../components/CheckboxNode/CheckboxNode'
 import { CodeBlockNode as MonacoCodeBlockNode } from '../components/CodeBlockNode/CodeBlockNode'
 import { PreCodeNode } from '../components/CodeBlockNode/PreCodeNode'
-import { MermaidBlockNode } from '../components/MermaidBlockNode/MermaidBlockNode'
+import { DefinitionListNode } from '../components/DefinitionListNode/DefinitionListNode'
+import { EmojiNode } from '../components/EmojiNode/EmojiNode'
+import { EmphasisNode } from '../components/EmphasisNode/EmphasisNode'
+import { FootnoteAnchorNode } from '../components/FootnoteAnchorNode/FootnoteAnchorNode'
+import { FootnoteNode } from '../components/FootnoteNode/FootnoteNode'
+import { FootnoteReferenceNode } from '../components/FootnoteReferenceNode/FootnoteReferenceNode'
+import { HardBreakNode } from '../components/HardBreakNode/HardBreakNode'
+import { HeadingNode } from '../components/HeadingNode/HeadingNode'
+import { HighlightNode } from '../components/HighlightNode/HighlightNode'
+import { HtmlBlockNode } from '../components/HtmlBlockNode/HtmlBlockNode'
+import { HtmlInlineNode } from '../components/HtmlInlineNode/HtmlInlineNode'
 import { ImageNode } from '../components/ImageNode/ImageNode'
+import { InlineCodeNode } from '../components/InlineCodeNode/InlineCodeNode'
+import { InsertNode } from '../components/InsertNode/InsertNode'
+import { LinkNode } from '../components/LinkNode/LinkNode'
+import { ListItemNode } from '../components/ListItemNode/ListItemNode'
+import { ListNode } from '../components/ListNode/ListNode'
+import { MathBlockNode } from '../components/MathBlockNode/MathBlockNode'
+import { MathInlineNode } from '../components/MathInlineNode/MathInlineNode'
+import { MermaidBlockNode } from '../components/MermaidBlockNode/MermaidBlockNode'
+import { FallbackComponent } from '../components/NodeRenderer/FallbackComponent'
+import { ParagraphNode } from '../components/ParagraphNode/ParagraphNode'
+import { ReferenceNode } from '../components/ReferenceNode/ReferenceNode'
+import { StrikethroughNode } from '../components/StrikethroughNode/StrikethroughNode'
+import { StrongNode } from '../components/StrongNode/StrongNode'
+import { SubscriptNode } from '../components/SubscriptNode/SubscriptNode'
+import { SuperscriptNode } from '../components/SuperscriptNode/SuperscriptNode'
+import { TableNode } from '../components/TableNode/TableNode'
+import { TextNode } from '../components/TextNode/TextNode'
+import { ThematicBreakNode } from '../components/ThematicBreakNode/ThematicBreakNode'
+import { VmrContainerNode } from '../components/VmrContainerNode/VmrContainerNode'
+import { getCustomNodeComponents } from '../customComponents'
+import { normalizeLanguageIdentifier } from '../utils/languageIcon'
+import { renderNodeChildren } from './renderChildren'
 
-const BLOCK_LEVEL_TYPES = new Set([
-  'image',
-  'table',
-  'code_block',
-  'html_block',
-  'blockquote',
-  'list',
-  'list_item',
-  'definition_list',
-  'footnote',
-  'footnote_reference',
-  'footnote_anchor',
-  'admonition',
-  'thematic_break',
-  'math_block',
-  'thinking',
-])
-
-function tokenAttrsToProps(attrs?: [string, string | null][]) {
-  if (!Array.isArray(attrs) || attrs.length === 0)
-    return undefined
-  return attrs.reduce<Record<string, string | true>>((acc, [name, value]) => {
-    if (!name)
-      return acc
-    const attrName = name === 'for'
-      ? 'htmlFor'
-      : name === 'class'
-        ? 'className'
-        : name
-    acc[attrName] = value ?? true
-    return acc
-  }, {})
+function getHtmlTagFromContent(html: unknown) {
+  const raw = String(html ?? '')
+  const match = raw.match(/^\s*<\s*([A-Z][\w:-]*)/i)
+  return match ? match[1].toLowerCase() : ''
 }
 
-function renderChildren(children: ParsedNode[] | undefined, ctx: RenderContext, prefix: string) {
-  if (!Array.isArray(children) || children.length === 0)
-    return null
-
-  const result: ReactNode[] = []
-  for (let idx = 0; idx < children.length; idx++) {
-    const child = children[idx] as ParsedNode & { attrs?: [string, string | null][] }
-    if (!child)
-      continue
-    if (child.type === 'label_open') {
-      const labelChildren: ParsedNode[] = []
-      idx++
-      while (idx < children.length) {
-        const segment = children[idx]
-        if (segment?.type === 'label_close')
-          break
-        if (segment)
-          labelChildren.push(segment)
-        idx++
-      }
-      const key = `${prefix}-label-${idx}`
-      result.push(
-        <label key={key} {...tokenAttrsToProps(child.attrs)}>
-          {renderChildren(labelChildren, ctx, `${key}-child`)}
-        </label>,
-      )
-      continue
-    }
-    if (child.type === 'label_close')
-      continue
-    result.push(renderNode(child, `${prefix}-${idx}`, ctx))
-  }
-  return result
+function stripCustomHtmlWrapper(html: unknown, tag: string) {
+  const raw = String(html ?? '')
+  if (!tag)
+    return raw
+  const openRe = new RegExp(String.raw`^\s*<\s*${tag}(?:\s[^>]*)?>\s*`, 'i')
+  const closeRe = new RegExp(String.raw`\s*<\s*\/\s*${tag}\s*>\s*$`, 'i')
+  return raw.replace(openRe, '').replace(closeRe, '')
 }
 
-function renderInline(children: ParsedNode[] | undefined, ctx: RenderContext, prefix: string) {
-  return (
-    <>
-      {renderChildren(children, ctx, `${prefix}-inline`)}
-    </>
-  )
-}
-
-function renderHtmlBlock(node: any, key: React.Key): ReactNode {
-  return (
-    <div
-      key={key}
-      className="html-block-node"
-      dangerouslySetInnerHTML={{ __html: node.content ?? node.raw ?? '' }}
-    />
-  )
-}
-
-function renderCodeBlock(node: any, key: React.Key, ctx: RenderContext): ReactNode {
-  const language = String(node.language || '').toLowerCase()
+function renderCodeBlock(node: any, key: React.Key, ctx: RenderContext) {
+  const language = normalizeLanguageIdentifier(String(node.language || ''))
   if (language === 'mermaid') {
     const customMermaid = getCustomNodeComponents(ctx.customId).mermaid
     if (customMermaid)
@@ -110,6 +68,7 @@ function renderCodeBlock(node: any, key: React.Key, ctx: RenderContext): ReactNo
           key={key}
           node={node as any}
           isDark={ctx.isDark}
+          loading={Boolean(node.loading)}
         />
       )
     }
@@ -123,6 +82,7 @@ function renderCodeBlock(node: any, key: React.Key, ctx: RenderContext): ReactNo
     <MonacoCodeBlockNode
       key={key}
       node={node}
+      loading={Boolean(node.loading)}
       stream={ctx.codeBlockStream}
       darkTheme={ctx.codeBlockThemes?.darkTheme}
       lightTheme={ctx.codeBlockThemes?.lightTheme}
@@ -137,243 +97,76 @@ function renderCodeBlock(node: any, key: React.Key, ctx: RenderContext): ReactNo
   )
 }
 
-
-function renderTable(node: any, key: React.Key, ctx: RenderContext) {
-  const headerCells = Array.isArray(node?.header?.cells) ? node.header.cells : []
-  const columnCount = headerCells.length || Math.max(1, node?.rows?.[0]?.cells?.length || 0) || 1
-  const baseWidth = Math.floor(100 / columnCount)
-  const colWidths = Array.from({ length: columnCount }, (_, idx) => {
-    if (idx === columnCount - 1)
-      return `${100 - baseWidth * (columnCount - 1)}%`
-    return `${baseWidth}%`
-  })
-  const isLoading = Boolean(node?.loading)
-  const bodyRows = Array.isArray(node?.rows) ? node.rows : []
-
-  const getAlignClass = (align?: string) => {
-    if (align === 'right')
-      return 'table-node__cell--right'
-    if (align === 'center')
-      return 'table-node__cell--center'
-    return 'table-node__cell--left'
-  }
-
-  return (
-    <div key={key} className="table-node-wrapper">
-      <table
-        className={clsx(
-          'table-node w-full my-8 text-sm table-fixed',
-          isLoading && 'table-node--loading',
-        )}
-        aria-busy={isLoading}
-      >
-        <colgroup>
-          {colWidths.map((width, idx) => (
-            <col key={`col-${idx}`} style={{ width }} />
-          ))}
-        </colgroup>
-        <thead className="table-node__head">
-          <tr>
-            {headerCells.map((cell: any, idx: number) => (
-              <th
-                key={`header-${idx}`}
-                className={clsx('table-node__cell table-node__cell--header', getAlignClass(cell.align))}
-                dir="auto"
-              >
-                {renderInline(cell.children, ctx, `${key}-th-${idx}`)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {bodyRows.map((row: any, rowIdx: number) => (
-            <tr
-              key={`row-${rowIdx}`}
-              className={clsx(
-                'table-node__row',
-                rowIdx < bodyRows.length - 1 && 'table-node__row--bordered',
-              )}
-            >
-              {row.cells?.map((cell: any, cellIdx: number) => (
-                <td
-                  key={`cell-${rowIdx}-${cellIdx}`}
-                  className={clsx('table-node__cell', getAlignClass(cell.align))}
-                  dir="auto"
-                >
-                  {renderInline(cell.children, ctx, `${key}-row-${rowIdx}-${cellIdx}`)}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {isLoading && (
-        <div className="table-node__loading" role="status" aria-live="polite">
-          <span className="table-node__spinner" aria-hidden="true" />
-          <span className="sr-only">Loading</span>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function renderList(node: any, key: React.Key, ctx: RenderContext) {
-  const Tag = node.ordered ? 'ol' : 'ul'
-  const extraProps = node.ordered && node.start ? { start: node.start } : {}
-  return (
-    <Tag key={key} {...extraProps}>
-      {node.items?.map((item: any, idx: number) => (
-        <li key={`${key}-li-${idx}`}>
-          {renderChildren(item.children, ctx, `${key}-li-${idx}`)}
-        </li>
-      ))}
-    </Tag>
-  )
-}
-
-function renderLink(node: any, key: React.Key, ctx: RenderContext) {
-  return (
-    <a
-      key={key}
-      href={node.href}
-      title={node.title ?? undefined}
-      target="_blank"
-      rel="noreferrer"
-      className="link-node underline decoration-dashed decoration-1 underline-offset-4"
-    >
-      {renderChildren(node.children, ctx, `${key}-link`)}
-    </a>
-  )
-}
-
-function renderFootnote(node: any, key: React.Key, ctx: RenderContext) {
-  return (
-    <section key={key} className="footnote-node border-l pl-4 my-6 text-sm text-gray-600">
-      {renderChildren(node.children, ctx, `${key}-footnote`)}
-    </section>
-  )
-}
-
-function renderAdmonition(node: any, key: React.Key, ctx: RenderContext) {
-  return (
-    <div key={key} className={clsx('admonition-node border rounded-md px-4 py-3 my-6', `admonition-${node.kind || 'note'}`)}>
-      {node.title && <div className="font-semibold mb-2">{node.title}</div>}
-      {renderChildren(node.children, ctx, `${key}-admonition`)}
-    </div>
-  )
-}
-
-export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext): ReactNode {
+export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext) {
   const customComponents = getCustomNodeComponents(ctx.customId)
   const custom = (customComponents as Record<string, any>)[node.type]
-  if (custom)
-    return React.createElement(custom, { key, node, customId: ctx.customId, isDark: ctx.isDark })
+  if (custom) {
+    return React.createElement(custom, {
+      key,
+      node,
+      customId: ctx.customId,
+      isDark: ctx.isDark,
+      ctx,
+      renderNode,
+      indexKey: key,
+      typewriter: ctx.typewriter,
+    })
+  }
+
+  if (node.type === 'html_block' || node.type === 'html_inline') {
+    const tag = String((node as any).tag ?? '').trim().toLowerCase() || getHtmlTagFromContent((node as any).content)
+    const customForTag = tag ? (customComponents as Record<string, any>)[tag] : null
+    if (customForTag) {
+      const coerced = {
+        ...(node as any),
+        type: tag,
+        tag,
+        content: stripCustomHtmlWrapper((node as any).content, tag),
+      }
+      return React.createElement(customForTag as any, {
+        key,
+        node: coerced,
+        customId: ctx.customId,
+        isDark: ctx.isDark,
+        ctx,
+        renderNode,
+        indexKey: key,
+        typewriter: ctx.typewriter,
+      })
+    }
+  }
 
   switch (node.type) {
     case 'text':
-      return (
-        <span
-          key={key}
-          className={clsx(
-            'text-node whitespace-pre-wrap break-words',
-            node.center && 'flex justify-center w-full',
-          )}
-        >
-          {node.content}
-        </span>
-      )
+      return <TextNode key={key} node={node as any} typewriter={ctx.typewriter} />
     case 'text_special':
-      return (
-        <span
-          key={key}
-          className="text-node whitespace-pre-wrap break-words"
-        >
-          {(node as any).content ?? ''}
-        </span>
-      )
-    case 'paragraph': {
-      const result: ReactNode[] = []
-      const inlineBuffer: ParsedNode[] = []
-      const flushInline = () => {
-        if (!inlineBuffer.length)
-          return
-        const chunkIndex = result.length
-        result.push(
-          <p key={`${key}-inline-${chunkIndex}`} className="paragraph-node my-5 leading-relaxed">
-            {renderChildren(inlineBuffer.slice(), ctx, `${key}-paragraph-${chunkIndex}`)}
-          </p>,
-        )
-        inlineBuffer.length = 0
-      }
-      node.children?.forEach((child, childIndex) => {
-        if (BLOCK_LEVEL_TYPES.has(child.type)) {
-          flushInline()
-          result.push(
-            <React.Fragment key={`${key}-block-${childIndex}`}>
-              {renderNode(child, `${key}-block-${childIndex}`, ctx)}
-            </React.Fragment>,
-          )
-        }
-        else {
-          inlineBuffer.push(child)
-        }
-      })
-      flushInline()
-      if (!result.length) {
-        return (
-          <p key={key} className="paragraph-node my-5 leading-relaxed">
-            {renderChildren(node.children, ctx, `${key}-paragraph`)}
-          </p>
-        )
-      }
-      return (
-        <React.Fragment key={key}>
-          {result}
-        </React.Fragment>
-      )
-    }
-    case 'heading': {
-      const level = Math.min(6, Math.max(1, Number(node.level) || 1))
-      const Tag = (`h${level}`) as keyof JSX.IntrinsicElements
-      return (
-        <Tag key={key} className={clsx('heading-node font-semibold', `heading-${level}`)}>
-          {renderChildren(node.children, ctx, `${key}-heading`)}
-        </Tag>
-      )
-    }
+      return <TextNode key={key} node={{ type: 'text', content: (node as any).content ?? '', center: (node as any).center } as any} typewriter={ctx.typewriter} />
+    case 'paragraph':
+      return <ParagraphNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+    case 'heading':
+      return <HeadingNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'blockquote':
-      return (
-        <blockquote key={key} className="border-l-4 pl-4 my-4 italic text-gray-700">
-          {renderChildren(node.children, ctx, `${key}-blockquote`)}
-        </blockquote>
-      )
+      return <BlockquoteNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'list':
-      return renderList(node, key, ctx)
+      return <ListNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+    case 'list_item':
+      return <ListItemNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'table':
-      return renderTable(node, key, ctx)
+      return <TableNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'definition_list':
-      return (
-        <dl key={key} className="definition-list">
-          {node.items?.map((item: any, idx: number) => (
-            <div key={`${key}-def-${idx}`} className="mb-4">
-              <dt className="font-semibold">{renderChildren(item.term, ctx, `${key}-term-${idx}`)}</dt>
-              <dd className="ml-4">{renderChildren(item.definition, ctx, `${key}-defn-${idx}`)}</dd>
-            </div>
-          ))}
-        </dl>
-      )
+      return <DefinitionListNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'footnote':
-      return renderFootnote(node, key, ctx)
+      return <FootnoteNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'footnote_reference':
-      return <sup key={key} className="footnote-ref">[{node.id}]</sup>
+      return <FootnoteReferenceNode key={key} node={node as any} />
     case 'footnote_anchor':
-      return <a key={key} id={`footnote-${node.id}`} className="footnote-anchor" />
+      return <FootnoteAnchorNode key={key} node={node as any} />
     case 'admonition':
-      return renderAdmonition(node, key, ctx)
+      return <AdmonitionNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} isDark={ctx.isDark} typewriter={ctx.typewriter} />
     case 'hardbreak':
-      return <br key={key} />
+      return <HardBreakNode key={key} node={node as any} typewriter={ctx.typewriter} />
     case 'link':
-      return renderLink(node, key, ctx)
+      return <LinkNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} isDark={ctx.isDark} typewriter={ctx.typewriter} />
     case 'image':
       return (
         <ImageNode
@@ -382,64 +175,78 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
         />
       )
     case 'inline_code':
-      return (
-        <code key={key} className="inline-code px-1.5 py-0.5 rounded bg-gray-100 text-sm">
-          {node.code}
-        </code>
-      )
+      return <InlineCodeNode key={key} node={node as any} typewriter={ctx.typewriter} />
     case 'code_block':
       return renderCodeBlock(node, key, ctx)
     case 'strong':
-      return <strong key={key}>{renderChildren(node.children, ctx, `${key}-strong`)}</strong>
+      return (
+        <StrongNode
+          key={key}
+          node={node as any}
+        >
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-strong`, renderNode)}
+        </StrongNode>
+      )
     case 'emphasis':
-      return <em key={key}>{renderChildren(node.children, ctx, `${key}-em`)}</em>
+      return (
+        <EmphasisNode key={key} node={node as any}>
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-em`, renderNode)}
+        </EmphasisNode>
+      )
     case 'strikethrough':
-      return <s key={key}>{renderChildren(node.children, ctx, `${key}-strike`)}</s>
+      return (
+        <StrikethroughNode key={key} node={node as any}>
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-strike`, renderNode)}
+        </StrikethroughNode>
+      )
     case 'highlight':
-      return <mark key={key}>{renderChildren(node.children, ctx, `${key}-highlight`)}</mark>
+      return (
+        <HighlightNode key={key} node={node as any}>
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-highlight`, renderNode)}
+        </HighlightNode>
+      )
     case 'insert':
-      return <ins key={key}>{renderChildren(node.children, ctx, `${key}-insert`)}</ins>
+      return (
+        <InsertNode key={key} node={node as any}>
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-insert`, renderNode)}
+        </InsertNode>
+      )
     case 'subscript':
-      return <sub key={key}>{renderChildren(node.children, ctx, `${key}-sub`)}</sub>
+      return (
+        <SubscriptNode key={key} node={node as any}>
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-sub`, renderNode)}
+        </SubscriptNode>
+      )
     case 'superscript':
-      return <sup key={key}>{renderChildren(node.children, ctx, `${key}-sup`)}</sup>
+      return (
+        <SuperscriptNode key={key} node={node as any}>
+          {renderNodeChildren((node as any).children, ctx, `${String(key)}-sup`, renderNode)}
+        </SuperscriptNode>
+      )
     case 'checkbox':
     case 'checkbox_input':
-      return (
-        <input
-          key={key}
-          type="checkbox"
-          checked={Boolean((node as any).checked)}
-          readOnly
-          className="checkbox-node mr-2"
-        />
-      )
+      return <CheckboxNode key={key} node={node as any} typewriter={ctx.typewriter} />
     case 'emoji':
-      return <span key={key} className="emoji-node">{node.markup ?? node.name}</span>
+      return <EmojiNode key={key} node={node as any} typewriter={ctx.typewriter} />
     case 'thematic_break':
-      return <hr key={key} className="my-8 border-t border-muted" />
+      return <ThematicBreakNode key={key} />
     case 'math_inline':
       return <MathInlineNode key={key} node={node as any} />
     case 'math_block':
       return <MathBlockNode key={key} node={node as any} />
     case 'reference':
-      return (
-        <span key={key} className="reference-node text-sm text-gray-500">
-          [{node.id}]
-        </span>
-      )
+      return <ReferenceNode key={key} node={node as any} ctx={ctx} typewriter={ctx.typewriter} />
     case 'html_block':
-      return renderHtmlBlock(node, key)
     case 'html_inline':
-      return renderHtmlBlock(node, key)
+      return node.type === 'html_block'
+        ? <HtmlBlockNode key={key} node={node as any} typewriter={ctx.typewriter} />
+        : <HtmlInlineNode key={key} node={node as any} typewriter={ctx.typewriter} />
+    case 'vmr_container':
+      return <VmrContainerNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'label_open':
     case 'label_close':
       return null
     default:
-      return (
-        <div key={key} className="unknown-node text-sm text-gray-500 italic">
-          Unsupported node type: {String((node as any).type)}
-        </div>
-      )
+      return <FallbackComponent key={key} node={node as any} />
   }
 }

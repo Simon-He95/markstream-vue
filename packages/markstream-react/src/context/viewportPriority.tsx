@@ -15,56 +15,70 @@ const ViewportPriorityContext = createContext<RegisterViewportFn | null>(null)
 
 function createViewportRegistrar(getRoot: GetRootFn, enabled: EnabledFn): RegisterViewportFn {
   const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined'
-  let observer: IntersectionObserver | null = null
-  let currentRoot: Element | null = null
-  const targets = new Map<Element, { resolve: () => void, state: { current: boolean } }>()
+  const observers = new Map<string, {
+    observer: IntersectionObserver
+    root: Element | null
+    rootMargin: string
+    threshold: number
+    targets: Map<Element, { resolve: () => void, state: { current: boolean } }>
+  }>()
 
-  const handleEntries = (entries: IntersectionObserverEntry[]) => {
-    for (const entry of entries) {
-      const target = targets.get(entry.target)
-      if (!target)
-        continue
-      const isVisible = entry.isIntersecting || entry.intersectionRatio > 0
-      if (!isVisible)
-        continue
-      target.state.current = true
-      try {
-        target.resolve()
-      }
-      catch {}
-      observer?.unobserve(entry.target)
-      targets.delete(entry.target)
-    }
-  }
-
-  const ensureObserver = () => {
+  const ensureObserver = (rootMargin: string, threshold: number) => {
     if (!isBrowser)
       return null
     if (typeof IntersectionObserver === 'undefined')
       return null
+
     const root = getRoot() ?? null
-    if (observer && root === currentRoot)
-      return observer
-    if (observer) {
+    const key = `${rootMargin}::${threshold}`
+    const existing = observers.get(key)
+    if (existing && existing.root === root)
+      return existing
+
+    if (existing) {
       try {
-        observer.disconnect()
+        existing.observer.disconnect()
       }
       catch {}
-      observer = null
+      observers.delete(key)
     }
-    observer = new IntersectionObserver(handleEntries, {
+
+    const targets = existing?.targets ?? new Map<Element, { resolve: () => void, state: { current: boolean } }>()
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const target = targets.get(entry.target)
+        if (!target)
+          continue
+        const isVisible = entry.isIntersecting || entry.intersectionRatio > 0
+        if (!isVisible)
+          continue
+        target.state.current = true
+        try {
+          target.resolve()
+        }
+        catch {}
+        try {
+          observer.unobserve(entry.target)
+        }
+        catch {}
+        targets.delete(entry.target)
+      }
+    }, {
       root,
-      rootMargin: '300px',
-      threshold: 0,
+      rootMargin,
+      threshold,
     })
-    currentRoot = root
-    for (const element of targets.keys()) {
+
+    const record = { observer, root, rootMargin, threshold, targets }
+    observers.set(key, record)
+
+    for (const element of targets.keys())
       observer.observe(element)
-    }
-    return observer
+
+    return record
   }
 
-  const register: RegisterViewportFn = (el) => {
+  const register: RegisterViewportFn = (el, opts) => {
     const state = { current: false }
     let settled = false
     let resolve!: () => void
@@ -77,11 +91,15 @@ function createViewportRegistrar(getRoot: GetRootFn, enabled: EnabledFn): Regist
       }
     })
     const destroy = () => {
-      targets.delete(el)
-      try {
-        observer?.unobserve(el)
+      for (const record of observers.values()) {
+        if (!record.targets.has(el))
+          continue
+        record.targets.delete(el)
+        try {
+          record.observer.unobserve(el)
+        }
+        catch {}
       }
-      catch {}
     }
 
     if (!isBrowser || !enabled()) {
@@ -94,8 +112,10 @@ function createViewportRegistrar(getRoot: GetRootFn, enabled: EnabledFn): Regist
       }
     }
 
-    const obs = ensureObserver()
-    if (!obs) {
+    const rootMargin = opts?.rootMargin ?? '300px'
+    const threshold = opts?.threshold ?? 0
+    const record = ensureObserver(rootMargin, threshold)
+    if (!record) {
       state.current = true
       resolve()
       return {
@@ -105,8 +125,8 @@ function createViewportRegistrar(getRoot: GetRootFn, enabled: EnabledFn): Regist
       }
     }
 
-    targets.set(el, { resolve, state })
-    obs.observe(el)
+    record.targets.set(el, { resolve, state })
+    record.observer.observe(el)
     return {
       isVisible: () => state.current,
       whenVisible,

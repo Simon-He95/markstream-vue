@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
         entry: resolve(__dirname, 'src/index.ts'),
         name,
         fileName: 'index',
-        formats: ['es']
+        formats: ['es'],
       },
       rollupOptions: {
         external: [
@@ -41,9 +41,9 @@ export default defineConfig(({ mode }) => {
           'stream-monaco',
           'stream-markdown',
           'stream-markdown-parser',
-          '@floating-ui/dom'
-        ]
-      }
-    }
+          '@floating-ui/dom',
+        ],
+      },
+    },
   }
 })

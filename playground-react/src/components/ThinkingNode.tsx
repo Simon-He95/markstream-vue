@@ -1,6 +1,8 @@
+import type { NodeComponentProps } from 'markstream-react'
+import { NodeRenderer } from 'markstream-react'
 import React from 'react'
 
-interface ThinkingNodeProps {
+interface ThinkingNodeData {
   node: {
     type: 'thinking'
     content: string
@@ -9,8 +11,12 @@ interface ThinkingNodeProps {
   }
 }
 
-export function ThinkingNode({ node }: ThinkingNodeProps) {
+export function ThinkingNode(props: NodeComponentProps<ThinkingNodeData['node']>) {
+  const { node } = props
   const dotsClass = node.loading ? 'thinking-dots visible' : 'thinking-dots hidden'
+  const ctx = props.ctx
+  const inheritedCustomId = props.customId ?? ctx?.customId
+  const inheritedIsDark = props.isDark ?? ctx?.isDark
 
   return (
     <div className="thinking-node p-4 my-4 bg-blue-50 dark:bg-blue-900/40 rounded-md border-l-4 border-blue-400 flex items-start gap-3">
@@ -42,9 +48,25 @@ export function ThinkingNode({ node }: ThinkingNodeProps) {
         <div className="mt-1 text-sm leading-relaxed text-slate-800 dark:text-slate-100">
           {node.loading && <span className="sr-only" aria-live="polite">Thinking…</span>}
           <div className="content-area">
-            {node.loading
-              ? <div className="partial-content">{node.content}</div>
-              : <div className="full-content">{node.content}</div>}
+            <NodeRenderer
+              content={String(node.content ?? '')}
+              customId={inheritedCustomId}
+              isDark={inheritedIsDark}
+              themes={ctx?.codeBlockThemes?.themes}
+              codeBlockDarkTheme={ctx?.codeBlockThemes?.darkTheme}
+              codeBlockLightTheme={ctx?.codeBlockThemes?.lightTheme}
+              codeBlockMonacoOptions={ctx?.codeBlockThemes?.monacoOptions}
+              codeBlockMinWidth={ctx?.codeBlockThemes?.minWidth}
+              codeBlockMaxWidth={ctx?.codeBlockThemes?.maxWidth}
+              codeBlockProps={ctx?.codeBlockProps}
+              codeBlockStream={ctx?.codeBlockStream}
+              renderCodeBlocksAsPre={ctx?.renderCodeBlocksAsPre}
+              typewriter={false}
+              viewportPriority={false}
+              deferNodesUntilVisible={false}
+              batchRendering={false}
+              maxLiveNodes={0}
+            />
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 
+import type { PluginOption } from 'vite'
 import path from 'node:path'
 import Vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
@@ -52,6 +53,6 @@ export default defineConfig({
       customDistPath(root, buildOutDir) {
         return path.resolve(buildOutDir, 'monacoeditorwork')
       },
-    }),
+    }) as unknown as PluginOption,
   ],
 })

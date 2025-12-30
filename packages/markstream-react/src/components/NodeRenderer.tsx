@@ -1,13 +1,15 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ParsedNode } from 'stream-markdown-parser'
-import { getMarkdown, parseMarkdownToStructure } from 'stream-markdown-parser'
-import { renderNode } from '../renderers/renderNode'
-import type { NodeRendererProps, RenderContext } from '../types'
-import { ViewportPriorityProvider, useViewportPriority } from '../context/viewportPriority'
 import type { VisibilityHandle } from '../context/viewportPriority'
+import type { NodeRendererProps, RenderContext } from '../types'
+import React, { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { getMarkdown, parseMarkdownToStructure } from 'stream-markdown-parser'
+import { useViewportPriority, ViewportPriorityProvider } from '../context/viewportPriority'
+import { renderNode } from '../renderers/renderNode'
+import { normalizeLanguageIdentifier } from '../utils/languageIcon'
+import { getCustomComponentsRevision, getCustomNodeComponents, subscribeCustomComponents } from '../customComponents'
+import { getUseMonaco } from './CodeBlockNode/monaco'
 
-const DEFAULT_PROPS: Required<Pick<NodeRendererProps,
-  'codeBlockStream'
+const DEFAULT_PROPS: Required<Pick<NodeRendererProps, 'codeBlockStream'
   | 'typewriter'
   | 'batchRendering'
   | 'initialRenderBatchSize'
@@ -17,8 +19,7 @@ const DEFAULT_PROPS: Required<Pick<NodeRendererProps,
   | 'renderBatchIdleTimeoutMs'
   | 'deferNodesUntilVisible'
   | 'maxLiveNodes'
-  | 'liveNodeBuffer'
->> = {
+  | 'liveNodeBuffer'>> = {
   codeBlockStream: true,
   typewriter: true,
   batchRendering: true,
@@ -33,6 +34,18 @@ const DEFAULT_PROPS: Required<Pick<NodeRendererProps,
 }
 
 const fallbackMarkdown = getMarkdown()
+
+function normalizeCustomTag(value: unknown) {
+  const raw = String(value ?? '').trim()
+  if (!raw)
+    return ''
+  const match = raw.match(/^[<\s/]*([A-Z][\w-]*)/i)
+  return match ? match[1].toLowerCase() : ''
+}
+
+function isHtmlLikeTagName(tag: string) {
+  return /^[a-z][a-z0-9-]*$/.test(tag)
+}
 
 type ResolvedProps = NodeRendererProps & typeof DEFAULT_PROPS
 
@@ -49,6 +62,7 @@ interface NodeRendererInnerProps {
 }
 
 const DEFAULT_NODE_HEIGHT = 32
+const MAX_DEFERRED_NODE_COUNT = 900
 
 const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
   props,
@@ -66,13 +80,31 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     Math.trunc(props.initialRenderBatchSize ?? (resolvedBatchSize || parsedNodes.length)),
   )
   const batchingEnabled = props.batchRendering !== false && resolvedBatchSize > 0 && isClient
-  const virtualizationEnabled = (props.maxLiveNodes ?? 0) > 0
   const liveNodeBufferResolved = Math.max(0, props.liveNodeBuffer ?? 60)
   const maxLiveNodesResolved = Math.max(1, props.maxLiveNodes ?? 320)
-  const deferNodes = props.deferNodesUntilVisible !== false && props.viewportPriority !== false
+  const virtualizationEnabled = (props.maxLiveNodes ?? 0) > 0 && parsedNodes.length > maxLiveNodesResolved
+  const viewportPriorityEnabled = props.viewportPriority !== false
+  const incrementalRenderingActive = batchingEnabled && (props.maxLiveNodes ?? 0) <= 0
+  const deferNodes = useMemo(() => {
+    if (props.deferNodesUntilVisible === false)
+      return false
+    if ((props.maxLiveNodes ?? 0) <= 0)
+      return false
+    if (virtualizationEnabled)
+      return false
+    if (parsedNodes.length > MAX_DEFERRED_NODE_COUNT)
+      return false
+    return viewportPriorityEnabled
+  }, [
+    parsedNodes.length,
+    props.deferNodesUntilVisible,
+    props.maxLiveNodes,
+    viewportPriorityEnabled,
+    virtualizationEnabled,
+  ])
 
   const [renderedCount, setRenderedCount] = useState(() => {
-    if (!batchingEnabled)
+    if (!incrementalRenderingActive)
       return parsedNodes.length
     return Math.min(parsedNodes.length, resolvedInitialBatch)
   })
@@ -80,6 +112,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
   useEffect(() => {
     renderedCountRef.current = renderedCount
   }, [renderedCount])
+  const cleanupLimit = incrementalRenderingActive ? renderedCount : parsedNodes.length
 
   const [focusIndex, setFocusIndex] = useState(0)
   const [liveRange, setLiveRange] = useState({ start: 0, end: parsedNodes.length })
@@ -105,10 +138,9 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     batchSize: resolvedBatchSize,
     initial: resolvedInitialBatch,
     delay: props.renderBatchDelay ?? 16,
-    enabled: batchingEnabled,
+    enabled: incrementalRenderingActive,
   })
 
-  const renderLimit = Math.min(renderedCount, parsedNodes.length)
   const shouldObserveSlots = deferNodes || virtualizationEnabled
 
   const averageNodeHeight = useMemo(() => {
@@ -184,7 +216,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
   }, [])
 
   const adjustAdaptiveBatchSize = useCallback((elapsed: number) => {
-    if (!batchingEnabled)
+    if (!incrementalRenderingActive)
       return
     const budget = Math.max(2, props.renderBatchBudgetMs ?? 6)
     const maxSize = Math.max(1, resolvedBatchSize || 1)
@@ -193,10 +225,10 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
       adaptiveBatchSizeRef.current = Math.max(minSize, Math.floor(adaptiveBatchSizeRef.current * 0.7))
     else if (elapsed < budget * 0.5 && adaptiveBatchSizeRef.current < maxSize)
       adaptiveBatchSizeRef.current = Math.min(maxSize, Math.ceil(adaptiveBatchSizeRef.current * 1.2))
-  }, [batchingEnabled, props.renderBatchBudgetMs, resolvedBatchSize])
+  }, [incrementalRenderingActive, props.renderBatchBudgetMs, resolvedBatchSize])
 
   const scheduleBatch = useCallback((increment: number, opts: { immediate?: boolean } = {}) => {
-    if (!batchingEnabled)
+    if (!incrementalRenderingActive)
       return
     const target = desiredRenderedCountRef.current
     if (renderedCountRef.current >= target)
@@ -271,8 +303,8 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     })
   }, [
     adjustAdaptiveBatchSize,
-    batchingEnabled,
     hasIdleCallback,
+    incrementalRenderingActive,
     isClient,
     props.renderBatchDelay,
     props.renderBatchBudgetMs,
@@ -293,15 +325,15 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
       = prevBatch.batchSize !== resolvedBatchSize
         || prevBatch.initial !== resolvedInitialBatch
         || prevBatch.delay !== currentDelay
-        || prevBatch.enabled !== batchingEnabled
+        || prevBatch.enabled !== incrementalRenderingActive
     previousBatchConfigRef.current = {
       batchSize: resolvedBatchSize,
       initial: resolvedInitialBatch,
       delay: currentDelay,
-      enabled: batchingEnabled,
+      enabled: incrementalRenderingActive,
     }
 
-    if (datasetChanged || batchConfigChanged || !batchingEnabled)
+    if (datasetChanged || batchConfigChanged || !incrementalRenderingActive)
       cancelBatchTimers()
     if (datasetChanged || batchConfigChanged) {
       adaptiveBatchSizeRef.current = Math.max(1, resolvedBatchSize || 1)
@@ -316,7 +348,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
 
     const target = desiredRenderedCountRef.current
 
-    if (!batchingEnabled) {
+    if (!incrementalRenderingActive) {
       renderedCountRef.current = target
       setRenderedCount(target)
       return
@@ -339,8 +371,8 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     if (renderedCountRef.current < target)
       scheduleBatch(Math.max(1, resolvedBatchSize || 1))
   }, [
-    batchingEnabled,
     cancelBatchTimers,
+    incrementalRenderingActive,
     isClient,
     parsedNodes.length,
     props.indexKey,
@@ -398,8 +430,8 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
   }, [])
 
   useEffect(() => {
-    cleanupAfterTruncate(renderLimit)
-  }, [cleanupAfterTruncate, renderLimit])
+    cleanupAfterTruncate(cleanupLimit)
+  }, [cleanupAfterTruncate, cleanupLimit])
 
   useEffect(() => {
     const total = parsedNodes.length
@@ -426,7 +458,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     if (deferNodes && visible)
       nodeVisibilityStateRef.current[index] = true
     if (visible && virtualizationEnabled) {
-      setFocusIndex((prev) => (index > prev ? index : prev))
+      setFocusIndex(prev => (index > prev ? index : prev))
     }
   }, [deferNodes, virtualizationEnabled])
 
@@ -501,14 +533,14 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
   }, [])
 
   const shouldRenderNode = useCallback((index: number) => {
-    if (index >= renderLimit)
+    if (incrementalRenderingActive && index >= renderedCountRef.current)
       return false
     if (!deferNodes)
       return true
     if (index < resolvedInitialBatch)
       return true
     return nodeVisibilityStateRef.current[index] === true
-  }, [deferNodes, renderLimit, resolvedInitialBatch])
+  }, [deferNodes, incrementalRenderingActive, resolvedInitialBatch])
 
   const handleMouseEvent = useCallback((cb?: (event: React.MouseEvent<HTMLElement>) => void) => {
     return (event: React.MouseEvent<HTMLElement>) => {
@@ -544,7 +576,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="markdown-renderer"
+      className={`markstream-vue markdown-renderer${props.isDark ? ' dark' : ''}${virtualizationEnabled ? ' virtualized' : ''}`}
       onClick={props.onClick}
       onMouseOver={handleMouseEvent(props.onMouseOver)}
       onMouseOut={handleMouseEvent(props.onMouseOut)}
@@ -567,16 +599,18 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
             data-node-index={index}
             data-node-type={node.type}
           >
-            {canRender ? (
-              <div
-                ref={el => setNodeContentRef(index, el)}
-                className={`node-content${shouldAnimate ? ' typewriter-node' : ''}`}
-              >
-                {renderNode(node, `${indexPrefix}-${index}`, renderCtx)}
-              </div>
-            ) : (
-              <div className="node-placeholder" style={{ height: `${placeholderHeight}px` }} />
-            )}
+            {canRender
+              ? (
+                  <div
+                    ref={el => setNodeContentRef(index, el)}
+                    className={`node-content${shouldAnimate ? ' typewriter-node' : ''}`}
+                  >
+                    {renderNode(node, `${indexPrefix}-${index}`, renderCtx)}
+                  </div>
+                )
+              : (
+                  <div className="node-placeholder" style={{ height: `${placeholderHeight}px` }} />
+                )}
           </div>
         )
       })}
@@ -588,18 +622,137 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
 export const NodeRenderer: React.FC<NodeRendererProps> = (rawProps) => {
   const props = { ...DEFAULT_PROPS, ...rawProps } as ResolvedProps
   const containerRef = useRef<HTMLDivElement | null>(null)
+
+  const customComponentsRevision = useSyncExternalStore(
+    subscribeCustomComponents,
+    getCustomComponentsRevision,
+    getCustomComponentsRevision,
+  )
+
+  const instanceMsgId = useMemo(() => {
+    return props.customId
+      ? `renderer-${props.customId}`
+      : `renderer-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  }, [props.customId])
+
+  const inferredCustomHtmlTags = useMemo(() => {
+    const customComponents = getCustomNodeComponents(props.customId)
+    return Object.keys(customComponents)
+      .map(String)
+      .map(s => s.trim().toLowerCase())
+      .filter(isHtmlLikeTagName)
+  }, [props.customId, customComponentsRevision])
+
+  const effectiveCustomHtmlTags = useMemo(() => {
+    const base = props.parseOptions ?? {}
+    const optionTags = (base as any).customHtmlTags ?? []
+    const merged = [
+      ...(props.customHtmlTags ?? []),
+      ...(Array.isArray(optionTags) ? optionTags : []),
+      ...inferredCustomHtmlTags,
+    ]
+      .map(normalizeCustomTag)
+      .filter(Boolean)
+    return Array.from(new Set(merged))
+  }, [
+    props.customId,
+    props.customHtmlTags,
+    props.parseOptions,
+    inferredCustomHtmlTags,
+    customComponentsRevision,
+  ])
+
+  const mdBase = useMemo(() => {
+    const tags = effectiveCustomHtmlTags
+    if (!tags || tags.length === 0)
+      return getMarkdown(instanceMsgId)
+    return getMarkdown(instanceMsgId, { customHtmlTags: tags })
+  }, [instanceMsgId, effectiveCustomHtmlTags])
+
   const mdInstance = useMemo(() => {
-    const base = getMarkdown()
+    const base = mdBase
     return props.customMarkdownIt ? props.customMarkdownIt(base) : base
-  }, [props.customMarkdownIt])
+  }, [mdBase, props.customMarkdownIt])
+
+  const mergedParseOptions = useMemo(() => {
+    const base = props.parseOptions ?? {}
+    const resolvedFinal = props.final ?? (base as any).final
+    const merged = effectiveCustomHtmlTags
+    if (!merged.length) {
+      if (resolvedFinal == null)
+        return base
+      return { ...(base as any), final: resolvedFinal }
+    }
+    return {
+      ...base,
+      final: resolvedFinal,
+      customHtmlTags: merged,
+    } as any
+  }, [effectiveCustomHtmlTags, props.final, props.parseOptions])
 
   const parsedNodes = useMemo<ParsedNode[]>(() => {
-    if (Array.isArray(props.nodes) && props.nodes.length)
-      return (props.nodes as ParsedNode[]).map(node => ({ ...node }))
-    if (props.content)
-      return parseMarkdownToStructure(props.content, mdInstance ?? fallbackMarkdown, props.parseOptions)
-    return []
-  }, [props.content, props.nodes, props.parseOptions, mdInstance])
+    const debugEnabled = Boolean(props.debugPerformance)
+      && typeof console !== 'undefined'
+      && typeof performance !== 'undefined'
+    const parseStart = debugEnabled ? performance.now() : 0
+
+    let result: ParsedNode[] = []
+    if (Array.isArray(props.nodes) && props.nodes.length) {
+      result = (props.nodes as ParsedNode[]).map(node => ({ ...node }))
+    }
+    else if (props.content) {
+      result = parseMarkdownToStructure(props.content, mdInstance ?? fallbackMarkdown, mergedParseOptions)
+    }
+
+    if (debugEnabled) {
+      console.info('[markstream-react][perf] parse(sync)', {
+        ms: Math.round(performance.now() - parseStart),
+        nodes: result.length,
+        contentLength: props.content?.length ?? 0,
+      })
+    }
+
+    return result
+  }, [
+    props.content,
+    props.debugPerformance,
+    props.nodes,
+    mergedParseOptions,
+    mdInstance,
+    props.customId,
+    customComponentsRevision,
+    effectiveCustomHtmlTags,
+  ])
+
+  useEffect(() => {
+    if (typeof window === 'undefined')
+      return
+    if (props.renderCodeBlocksAsPre)
+      return
+    // React parity improvement: prefetch Monaco (and preload workers) in idle time
+    // so the first visible code block doesn't pay the full dynamic import cost.
+    const hasCodeBlock = parsedNodes.some((node) => {
+      if ((node as any)?.type !== 'code_block')
+        return false
+      const lang = normalizeLanguageIdentifier(String((node as any)?.language ?? ''))
+      return lang !== 'mermaid'
+    })
+    if (!hasCodeBlock)
+      return
+
+    const requestIdle = (window as any).requestIdleCallback
+      ?? ((cb: (deadline: { didTimeout?: boolean, timeRemaining?: () => number }) => void, opts?: { timeout?: number }) => {
+        return window.setTimeout(() => cb({ didTimeout: true, timeRemaining: () => 0 }), opts?.timeout ?? 600)
+      })
+    const cancelIdle = (window as any).cancelIdleCallback
+      ?? ((id: number) => window.clearTimeout(id))
+
+    const id = requestIdle(() => {
+      void getUseMonaco()
+    }, { timeout: 900 })
+
+    return () => cancelIdle(id)
+  }, [parsedNodes, props.renderCodeBlocksAsPre])
 
   const indexPrefix = useMemo(() => {
     return props.indexKey != null ? String(props.indexKey) : 'markdown-renderer'
@@ -609,6 +762,7 @@ export const NodeRenderer: React.FC<NodeRendererProps> = (rawProps) => {
     customId: props.customId,
     isDark: props.isDark,
     indexKey: indexPrefix,
+    typewriter: props.typewriter,
     renderCodeBlocksAsPre: props.renderCodeBlocksAsPre,
     codeBlockStream: props.codeBlockStream,
     codeBlockProps: props.codeBlockProps,
@@ -628,6 +782,7 @@ export const NodeRenderer: React.FC<NodeRendererProps> = (rawProps) => {
     props.customId,
     props.isDark,
     indexPrefix,
+    props.typewriter,
     props.renderCodeBlocksAsPre,
     props.codeBlockStream,
     props.codeBlockProps,

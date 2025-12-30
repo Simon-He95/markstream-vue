@@ -1,8 +1,28 @@
 import type { CustomComponents } from '../types'
+import { shallowRef } from 'vue'
 
 // Store mappings per scope id. A special key is kept for the legacy/global mapping.
 const GLOBAL_KEY = '__global__'
-const scopedCustomComponents: Record<string, Partial<CustomComponents>> = {}
+type CustomComponentsStore = {
+  scopedCustomComponents: Record<string, Partial<CustomComponents>>
+  revision: ReturnType<typeof shallowRef<number>>
+}
+
+const STORE_KEY = '__MARKSTREAM_VUE_CUSTOM_COMPONENTS_STORE__'
+const store: CustomComponentsStore = (() => {
+  const g = globalThis as any
+  if (g[STORE_KEY])
+    return g[STORE_KEY] as CustomComponentsStore
+  const next: CustomComponentsStore = {
+    scopedCustomComponents: {},
+    revision: shallowRef(0),
+  }
+  g[STORE_KEY] = next
+  return next
+})()
+
+// Reactive revision counter so renderers can re-parse when mappings change.
+export const customComponentsRevision = store.revision
 
 // Overloads for nicer TypeScript API
 export function setCustomComponents(id: string, mapping: Partial<CustomComponents>): void
@@ -13,12 +33,13 @@ export function setCustomComponents(
 ): void {
   if (typeof customIdOrMapping === 'string') {
     // scoped API: setCustomComponents('my-id', { ... })
-    scopedCustomComponents[customIdOrMapping] = maybeMapping || {}
+    store.scopedCustomComponents[customIdOrMapping] = maybeMapping || {}
   }
   else {
     // legacy/global API: setCustomComponents({ ... })
-    scopedCustomComponents[GLOBAL_KEY] = customIdOrMapping || {}
+    store.scopedCustomComponents[GLOBAL_KEY] = customIdOrMapping || {}
   }
+  customComponentsRevision.value++
 }
 
 /**
@@ -26,9 +47,19 @@ export function setCustomComponents(
  * If no id is provided, returns the legacy/global mapping (if any).
  */
 export function getCustomNodeComponents(customId?: string) {
+  const globalMapping = store.scopedCustomComponents[GLOBAL_KEY] || {}
   if (!customId)
-    return scopedCustomComponents[GLOBAL_KEY] || {}
-  return scopedCustomComponents[customId] || scopedCustomComponents[GLOBAL_KEY] || {}
+    return globalMapping
+
+  const scopedMapping = store.scopedCustomComponents[customId] || {}
+  if (!globalMapping || Object.keys(globalMapping).length === 0)
+    return scopedMapping
+  if (!scopedMapping || Object.keys(scopedMapping).length === 0)
+    return globalMapping
+  return {
+    ...globalMapping,
+    ...scopedMapping,
+  }
 }
 
 /**
@@ -41,7 +72,8 @@ export function removeCustomComponents(id: string) {
     // Use clearGlobalCustomComponents() for explicit global clearing.
     throw new Error('removeCustomComponents: use clearGlobalCustomComponents() to clear the global mapping')
   }
-  delete scopedCustomComponents[id]
+  delete store.scopedCustomComponents[id]
+  customComponentsRevision.value++
 }
 
 /**
@@ -50,5 +82,6 @@ export function removeCustomComponents(id: string) {
  * `setCustomComponents(mapping)`.
  */
 export function clearGlobalCustomComponents() {
-  delete scopedCustomComponents[GLOBAL_KEY]
+  delete store.scopedCustomComponents[GLOBAL_KEY]
+  customComponentsRevision.value++
 }

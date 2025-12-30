@@ -2,8 +2,8 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "allowJs": false,
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "allowJs": false
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.*", "dist", "node_modules"]

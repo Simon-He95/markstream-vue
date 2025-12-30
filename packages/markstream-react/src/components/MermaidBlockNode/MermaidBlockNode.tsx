@@ -1,21 +1,146 @@
+import type { VisibilityHandle } from '../../context/viewportPriority'
+import type { MermaidBlockEvent, MermaidBlockNodeProps } from '../../types/component-props'
+import clsx from 'clsx'
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import clsx from 'clsx'
-import type { MermaidBlockNodeProps } from '../../types/component-props'
 import { useViewportPriority } from '../../context/viewportPriority'
-import type { VisibilityHandle } from '../../context/viewportPriority'
-import { showTooltipForAnchor, hideTooltip } from '../../tooltip/singletonTooltip'
-import { canParseOffthread, findPrefixOffthread, terminateWorker as terminateMermaidWorker } from '../../workers/mermaidWorkerClient'
+import { useSafeI18n } from '../../i18n/useSafeI18n'
+import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
+import { getLanguageIcon } from '../../utils/languageIcon'
 import { safeRaf } from '../../utils/safeRaf'
+import { canParseOffthread, findPrefixOffthread, terminateWorker as terminateMermaidWorker } from '../../workers/mermaidWorkerClient'
 import { getMermaid } from './mermaid'
 
 type Theme = 'light' | 'dark'
+
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
+
+const DOMPURIFY_CONFIG = {
+  USE_PROFILES: { svg: true },
+  FORBID_TAGS: ['script'],
+  FORBID_ATTR: [/^on/i],
+  ADD_TAGS: ['style'],
+  ADD_ATTR: ['style'],
+  SAFE_FOR_TEMPLATES: true,
+} as const
+
+function neutralizeScriptProtocols(raw: string) {
+  return raw
+    .replace(/["']\s*javascript:/gi, '#')
+    .replace(/\bjavascript:/gi, '#')
+    .replace(/["']\s*vbscript:/gi, '#')
+    .replace(/\bvbscript:/gi, '#')
+    .replace(/\bdata:text\/html/gi, '#')
+}
+
+const DISALLOWED_STYLE_PATTERNS = [/javascript:/i, /expression\s*\(/i, /url\s*\(\s*javascript:/i, /@import/i]
+const SAFE_URL_PROTOCOLS = /^(?:https?:|mailto:|tel:|#|\/|data:image\/(?:png|gif|jpe?g|webp);)/i
+
+function sanitizeUrl(value: string | null | undefined) {
+  if (!value)
+    return ''
+  const trimmed = value.trim()
+  if (SAFE_URL_PROTOCOLS.test(trimmed))
+    return trimmed
+  return ''
+}
+
+function scrubSvgElement(svgEl: SVGElement) {
+  const forbiddenTags = new Set(['script'])
+  const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll<SVGElement>('*'))]
+  for (const node of nodes) {
+    if (forbiddenTags.has(node.tagName.toLowerCase())) {
+      node.remove()
+      continue
+    }
+    const attrs = Array.from(node.attributes)
+    for (const attr of attrs) {
+      const name = attr.name
+      if (/^on/i.test(name)) {
+        node.removeAttribute(name)
+        continue
+      }
+      if (name === 'style' && attr.value) {
+        const val = attr.value
+        if (DISALLOWED_STYLE_PATTERNS.some(re => re.test(val))) {
+          node.removeAttribute(name)
+          continue
+        }
+      }
+      if ((name === 'href' || name === 'xlink:href') && attr.value) {
+        const safe = sanitizeUrl(attr.value)
+        if (!safe) {
+          node.removeAttribute(name)
+          continue
+        }
+        if (safe !== attr.value)
+          node.setAttribute(name, safe)
+      }
+    }
+  }
+}
+
+function toSafeSvgElement(svg: string | null | undefined): SVGElement | null {
+  if (typeof window === 'undefined' || typeof DOMParser === 'undefined')
+    return null
+  if (!svg)
+    return null
+  const neutralized = neutralizeScriptProtocols(svg)
+  const parsed = new DOMParser().parseFromString(neutralized, 'image/svg+xml')
+  const svgEl = parsed.documentElement
+  if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
+    return null
+  const svgElement = svgEl as unknown as SVGElement
+  scrubSvgElement(svgElement)
+  return svgElement
+}
+
+function clearElement(target: HTMLElement | null | undefined) {
+  if (!target)
+    return
+  try {
+    target.replaceChildren()
+  }
+  catch {
+    target.innerHTML = ''
+  }
+}
+
+function setSafeSvg(target: HTMLElement | null | undefined, svg: string | null | undefined) {
+  if (!target)
+    return ''
+  clearElement(target)
+  const safeElement = toSafeSvgElement(svg)
+  if (safeElement) {
+    target.appendChild(safeElement)
+    return target.innerHTML
+  }
+  return ''
+}
+
+function renderSvgToTarget(target: HTMLElement | null | undefined, svg: string | null | undefined, strict: boolean) {
+  if (!target)
+    return ''
+  if (strict)
+    return setSafeSvg(target, svg)
+  clearElement(target)
+  if (svg) {
+    try {
+      target.insertAdjacentHTML('afterbegin', svg)
+    }
+    catch {
+      target.innerHTML = svg
+    }
+  }
+  return target.innerHTML
+}
 
 const DEFAULTS = {
   maxHeight: '500px',
@@ -31,10 +156,24 @@ const DEFAULTS = {
   showFullscreenButton: true,
   showCollapseButton: true,
   showZoomControls: true,
+  enableWheelZoom: false,
+  isStrict: false,
 }
 
-export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
-  const props = { ...DEFAULTS, ...rawProps }
+export interface MermaidBlockNodeReactEvents {
+  onCopy?: (code: string) => void
+  onExport?: (event: MermaidBlockEvent<{ type: 'export' }>) => void
+  onOpenModal?: (event: MermaidBlockEvent<{ type: 'open-modal' }>) => void
+  onToggleMode?: (
+    target: 'preview' | 'source',
+    event: MermaidBlockEvent<{ type: 'toggle-mode', target: 'preview' | 'source' }>,
+  ) => void
+}
+
+export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockNodeReactEvents) {
+  const props = { ...DEFAULTS, ...rawProps } as (typeof DEFAULTS & MermaidBlockNodeProps & MermaidBlockNodeReactEvents)
+  const { t } = useSafeI18n()
+  const languageIcon = useMemo(() => getLanguageIcon('mermaid'), [])
   const baseCode = props.node?.code ?? ''
   const baseFixedCode = useMemo(() => {
     return baseCode
@@ -54,16 +193,13 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
   const [zoom, setZoom] = useState(1)
   const [translate, setTranslate] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
-  const [rendering, setRendering] = useState(Boolean(props.node?.loading ?? props.loading))
+  const [rendering, setRendering] = useState(false)
   const [hasRenderedOnce, setHasRenderedOnce] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const [modalHtml, setModalHtml] = useState<string | null>(null)
   const [containerHeight, setContainerHeight] = useState<string>(() => {
     if (props.maxHeight == null)
       return '360px'
-    if (typeof props.maxHeight === 'number')
-      return `${props.maxHeight}px`
     return props.maxHeight
   })
   const [viewportReady, setViewportReady] = useState(typeof window === 'undefined')
@@ -73,6 +209,8 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null)
   const contentRef = useRef<HTMLDivElement | null>(null)
   const modeContainerRef = useRef<HTMLDivElement | null>(null)
+  const modalContentRef = useRef<HTMLDivElement | null>(null)
+  const modalCloneWrapperRef = useRef<HTMLElement | null>(null)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const renderTokenRef = useRef(0)
   const svgCacheRef = useRef<{ light?: string, dark?: string }>({})
@@ -90,23 +228,34 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
   const registerViewport = useViewportPriority()
   const streaming = Boolean(props.node?.loading ?? props.loading)
   const theme: Theme = props.isDark ? 'dark' : 'light'
+  const strictMode = Boolean(props.isStrict)
+  const mermaidInitConfig = useMemo(() => {
+    if (!strictMode) {
+      return {
+        startOnLoad: false,
+        securityLevel: 'loose',
+      }
+    }
+    return {
+      startOnLoad: false,
+      securityLevel: 'strict',
+      dompurifyConfig: DOMPURIFY_CONFIG,
+      flowchart: { htmlLabels: false },
+    }
+  }, [strictMode])
 
   useEffect(() => {
     hasRenderedOnceRef.current = hasRenderedOnce
   }, [hasRenderedOnce])
 
   useEffect(() => {
-    setRendering(streaming)
-  }, [streaming])
-
-  useEffect(() => {
     svgCacheRef.current = {}
-  }, [theme, baseFixedCode])
+  }, [theme, baseFixedCode, strictMode])
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      const instance = await getMermaid()
+    void (async () => {
+      const instance = await getMermaid(mermaidInitConfig as any)
       if (cancelled)
         return
       mermaidRef.current = instance
@@ -117,7 +266,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [mermaidInitConfig])
 
   useEffect(() => {
     const el = containerRef.current
@@ -133,13 +282,6 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
       viewportHandleRef.current = null
     }
   }, [registerViewport])
-
-  useEffect(() => {
-    if (!modalOpen)
-      return
-    if (contentRef.current)
-      setModalHtml(contentRef.current.innerHTML)
-  }, [modalOpen, baseFixedCode, theme])
 
   useEffect(() => {
     if (typeof document === 'undefined')
@@ -223,13 +365,13 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
       const result = await withTimeoutSignal(
         () => (mermaidRef.current as any).render(id, themed),
         { timeoutMs: fullRenderTimeout, signal },
-      )
+      ) as any
       if (!result?.svg)
         return false
-      contentRef.current.innerHTML = result.svg
+      const rendered = renderSvgToTarget(contentRef.current, result.svg, strictMode)
       result.bindFunctions?.(contentRef.current)
       updateContainerHeight()
-      svgCacheRef.current[t] = result.svg
+      svgCacheRef.current[t] = rendered
       setHasRenderedOnce(true)
       setError(null)
       return true
@@ -241,10 +383,9 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
       return false
     }
     finally {
-      if (!streaming)
-        setRendering(false)
+      setRendering(false)
     }
-  }, [fullRenderTimeout, streaming, updateContainerHeight])
+  }, [fullRenderTimeout, streaming, strictMode, updateContainerHeight])
 
   const renderPartial = useCallback(async (code: string, t: Theme, signal?: AbortSignal) => {
     if (!mermaidRef.current || !contentRef.current)
@@ -257,9 +398,9 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
       const res = await withTimeoutSignal(
         () => (mermaidRef.current as any).render(id, themed),
         { timeoutMs: renderTimeout, signal },
-      )
+      ) as any
       if (res?.svg) {
-        contentRef.current.innerHTML = res.svg
+        renderSvgToTarget(contentRef.current, res.svg, strictMode)
         res.bindFunctions?.(contentRef.current)
         updateContainerHeight()
       }
@@ -268,15 +409,13 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
       // swallow partial errors
     }
     finally {
-      if (!streaming)
-        setRendering(false)
+      setRendering(false)
     }
-  }, [renderTimeout, streaming, updateContainerHeight])
+  }, [renderTimeout, streaming, strictMode, updateContainerHeight])
 
   const progressiveRender = useCallback(async (code: string, signal?: AbortSignal) => {
     if (!code.trim()) {
-      if (contentRef.current)
-        contentRef.current.innerHTML = ''
+      clearElement(contentRef.current)
       setHasRenderedOnce(false)
       lastRenderedCodeRef.current = ''
       return
@@ -329,38 +468,131 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
     try {
       await navigator.clipboard?.writeText(baseFixedCode)
       setCopying(true)
-      props.onCopy?.({ code: baseFixedCode })
+      props.onCopy?.(baseFixedCode)
       setTimeout(() => setCopying(false), 1000)
     }
     catch {}
-  }, [baseFixedCode, props.onCopy])
+  }, [baseFixedCode, props])
 
   const handleExport = useCallback(() => {
     const svgElement = contentRef.current?.querySelector('svg') ?? null
     if (!svgElement)
       return
     const svgString = serializeSvg(svgElement)
-    props.onExport?.({ svgElement, svgString })
-    exportSvg(svgElement, svgString)
-  }, [props.onExport])
+    const ev: MermaidBlockEvent<{ type: 'export' }> = {
+      payload: { type: 'export' },
+      defaultPrevented: false,
+      preventDefault() {
+        this.defaultPrevented = true
+      },
+      svgElement,
+      svgString,
+    }
+    props.onExport?.(ev)
+    if (!ev.defaultPrevented)
+      exportSvg(svgElement, svgString)
+  }, [props])
 
-  const openModal = useCallback(() => {
-    const html = contentRef.current?.innerHTML ?? null
-    if (!html)
-      return
-    setModalHtml(html)
-    setModalOpen(true)
+  const clearModalContent = useCallback(() => {
+    modalCloneWrapperRef.current = null
+    clearElement(modalContentRef.current)
   }, [])
 
   const closeModal = useCallback(() => {
     setModalOpen(false)
-  }, [])
+    clearModalContent()
+  }, [clearModalContent])
+
+  const handleOpenModal = useCallback(() => {
+    const svgElement = contentRef.current?.querySelector('svg') ?? null
+    const svgString = svgElement ? serializeSvg(svgElement) : null
+    const ev: MermaidBlockEvent<{ type: 'open-modal' }> = {
+      payload: { type: 'open-modal' },
+      defaultPrevented: false,
+      preventDefault() {
+        this.defaultPrevented = true
+      },
+      svgElement,
+      svgString,
+    }
+    props.onOpenModal?.(ev)
+    if (ev.defaultPrevented)
+      return
+    setModalOpen(true)
+  }, [props])
+
+  useEffect(() => {
+    if (!modalOpen)
+      return
+    if (typeof window === 'undefined')
+      return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape')
+        closeModal()
+    }
+    try {
+      window.addEventListener('keydown', onKeyDown)
+    }
+    catch {}
+    return () => {
+      try {
+        window.removeEventListener('keydown', onKeyDown)
+      }
+      catch {}
+    }
+  }, [closeModal, modalOpen])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!modalOpen)
+      return
+    const host = modalContentRef.current
+    const original = containerRef.current
+    if (!host || !original)
+      return
+
+    const transform = `translate(${translate.x}px, ${translate.y}px) scale(${zoom})`
+    const clone = original.cloneNode(true) as HTMLElement
+    clone.classList.add('fullscreen')
+    const wrapper = clone.querySelector('[data-mermaid-wrapper]') as HTMLElement | null
+    if (wrapper) {
+      modalCloneWrapperRef.current = wrapper
+      wrapper.style.transform = transform
+    }
+    clearElement(host)
+    host.appendChild(clone)
+  }, [modalOpen])
+
+  useEffect(() => {
+    if (!modalOpen)
+      return
+    if (!modalCloneWrapperRef.current)
+      return
+    modalCloneWrapperRef.current.style.transform = `translate(${translate.x}px, ${translate.y}px) scale(${zoom})`
+  }, [modalOpen, translate.x, translate.y, zoom])
+
+  const isFullscreenDisabled = showSource || rendering || isCollapsed
+  const computedButtonClass = useMemo(() => {
+    return props.isDark
+      ? 'mermaid-action-btn p-2 text-xs rounded text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+      : 'mermaid-action-btn p-2 text-xs rounded text-gray-600 hover:bg-gray-200 hover:text-gray-700'
+  }, [props.isDark])
 
   const handleSwitchMode = useCallback((target: 'preview' | 'source') => {
+    const ev: MermaidBlockEvent<{ type: 'toggle-mode', target: 'preview' | 'source' }> = {
+      payload: { type: 'toggle-mode', target },
+      defaultPrevented: false,
+      preventDefault() {
+        this.defaultPrevented = true
+      },
+    }
+    props.onToggleMode?.(target, ev)
+    if (ev.defaultPrevented)
+      return
+
     userToggledRef.current = true
     if (target === 'preview') {
       setShowSource(false)
-      props.onToggleMode?.({ mode: 'preview' })
       const saved = savedTransformRef.current
       setZoom(saved.zoom)
       setTranslate({ x: saved.translateX, y: saved.translateY })
@@ -381,13 +613,12 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
         containerHeight,
       }
       setShowSource(true)
-      props.onToggleMode?.({ mode: 'source' })
     }
   }, [
     baseFixedCode,
     containerHeight,
     progressiveRender,
-    props.onToggleMode,
+    props,
     theme,
     translate.x,
     translate.y,
@@ -396,6 +627,8 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
   ])
 
   const handleWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
+    if (props.enableWheelZoom === false)
+      return
     if (!event.ctrlKey && !event.metaKey)
       return
     event.preventDefault()
@@ -449,7 +682,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
                 'p-2 text-xs rounded transition-colors',
                 props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
               )}
-              onMouseEnter={event => handleTooltip(event, 'Zoom in')}
+              onMouseEnter={event => handleTooltip(event, t('common.zoomIn'))}
               onMouseLeave={() => hideTooltip()}
               onClick={() => setZoom(clamp(zoom + 0.1, 0.5, 3))}
             >
@@ -461,7 +694,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
                 'p-2 text-xs rounded transition-colors',
                 props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
               )}
-              onMouseEnter={event => handleTooltip(event, 'Zoom out')}
+              onMouseEnter={event => handleTooltip(event, t('common.zoomOut'))}
               onMouseLeave={() => hideTooltip()}
               onClick={() => setZoom(clamp(zoom - 0.1, 0.5, 3))}
             >
@@ -473,14 +706,15 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
                 'p-2 text-xs rounded transition-colors',
                 props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
               )}
-              onMouseEnter={event => handleTooltip(event, 'Reset zoom')}
+              onMouseEnter={event => handleTooltip(event, t('common.resetZoom'))}
               onMouseLeave={() => hideTooltip()}
               onClick={() => {
                 setZoom(1)
                 setTranslate({ x: 0, y: 0 })
               }}
             >
-              {Math.round(zoom * 100)}%
+              {Math.round(zoom * 100)}
+              %
             </button>
           </div>
         </div>
@@ -545,7 +779,11 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
       )}
     >
       <div className="flex items-center space-x-2 overflow-hidden">
-        <span className="text-sm font-medium font-mono truncate" style={{ color: props.isDark ? '#d1d5db' : '#4b5563' }}>
+        <span
+          className="icon-slot h-4 w-4 flex-shrink-0"
+          dangerouslySetInnerHTML={{ __html: languageIcon }}
+        />
+        <span className={clsx('text-sm font-medium font-mono truncate', props.isDark ? 'text-gray-400' : 'text-gray-600')}>
           Mermaid
         </span>
       </div>
@@ -560,10 +798,20 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
                 : (props.isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
             )}
             onClick={() => handleSwitchMode('preview')}
-            onMouseEnter={event => handleTooltip(event, 'Preview')}
+            onMouseEnter={event => handleTooltip(event, t('common.preview'))}
+            onFocus={event => handleTooltip(event as any, t('common.preview'))}
             onMouseLeave={() => hideTooltip()}
+            onBlur={() => hideTooltip()}
           >
-            Preview
+            <div className="flex items-center space-x-1">
+              <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+                <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+                  <path d="M2.062 12.348a1 1 0 0 1 0-.696a10.75 10.75 0 0 1 19.876 0a1 1 0 0 1 0 .696a10.75 10.75 0 0 1-19.876 0" />
+                  <circle cx="12" cy="12" r="3" />
+                </g>
+              </svg>
+              <span>{t('common.preview')}</span>
+            </div>
           </button>
           <button
             type="button"
@@ -574,10 +822,17 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
                 : (props.isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
             )}
             onClick={() => handleSwitchMode('source')}
-            onMouseEnter={event => handleTooltip(event, 'Source')}
+            onMouseEnter={event => handleTooltip(event, t('common.source'))}
+            onFocus={event => handleTooltip(event as any, t('common.source'))}
             onMouseLeave={() => hideTooltip()}
+            onBlur={() => hideTooltip()}
           >
-            Source
+            <div className="flex items-center space-x-1">
+              <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+                <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m16 18l6-6l-6-6M8 6l-6 6l6 6" />
+              </svg>
+              <span>{t('common.source')}</span>
+            </div>
           </button>
         </div>
       )}
@@ -585,59 +840,96 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
         {props.showCollapseButton && (
           <button
             type="button"
-            className={clsx(
-              'p-2 text-xs rounded transition-colors',
-              props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
-            )}
+            className={computedButtonClass}
+            aria-pressed={isCollapsed}
             onClick={() => setIsCollapsed(value => !value)}
-            onMouseEnter={event => handleTooltip(event, isCollapsed ? 'Expand' : 'Collapse')}
+            onMouseEnter={event => handleTooltip(event, isCollapsed ? t('common.expand') : t('common.collapse'))}
+            onFocus={event => handleTooltip(event as any, isCollapsed ? t('common.expand') : t('common.collapse'))}
             onMouseLeave={() => hideTooltip()}
+            onBlur={() => hideTooltip()}
           >
-            {isCollapsed ? '▸' : '▾'}
+            <svg
+              style={{ rotate: isCollapsed ? '0deg' : '90deg' }}
+              xmlns="http://www.w3.org/2000/svg"
+              xmlnsXlink="http://www.w3.org/1999/xlink"
+              aria-hidden="true"
+              role="img"
+              width="1em"
+              height="1em"
+              viewBox="0 0 24 24"
+              className="w-3 h-3"
+            >
+              <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m9 18l6-6l-6-6" />
+            </svg>
           </button>
         )}
         {props.showCopyButton && (
           <button
             type="button"
-            className={clsx(
-              'p-2 text-xs rounded transition-colors',
-              props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
-            )}
+            className={computedButtonClass}
             onClick={handleCopy}
-            onMouseEnter={event => handleTooltip(event, copying ? 'Copied' : 'Copy')}
+            onMouseEnter={event => handleTooltip(event, copying ? t('common.copySuccess') : t('common.copy'))}
+            onFocus={event => handleTooltip(event as any, copying ? t('common.copySuccess') : t('common.copy'))}
             onMouseLeave={() => hideTooltip()}
+            onBlur={() => hideTooltip()}
           >
-            {copying ? '✓' : '⧉'}
+            {!copying
+              ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+                    <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                    </g>
+                  </svg>
+                )
+              : (
+                  <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 6L9 17l-5-5" />
+                  </svg>
+                )}
           </button>
         )}
-        {props.showExportButton && (
+        {props.showExportButton && mermaidAvailable && (
           <button
             type="button"
-            className={clsx(
-              'p-2 text-xs rounded transition-colors',
-              props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
-            )}
-            disabled={!mermaidAvailable || showSource}
+            className={clsx(computedButtonClass, isFullscreenDisabled ? 'opacity-50 cursor-not-allowed' : '')}
+            disabled={isFullscreenDisabled}
             onClick={handleExport}
-            onMouseEnter={event => handleTooltip(event, 'Export SVG')}
+            onMouseEnter={event => handleTooltip(event, t('common.export'))}
+            onFocus={event => handleTooltip(event as any, t('common.export'))}
             onMouseLeave={() => hideTooltip()}
+            onBlur={() => hideTooltip()}
           >
-            ⤓
+            <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+              <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+                <path d="M12 15V3m9 12v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <path d="m7 10l5 5l5-5" />
+              </g>
+            </svg>
           </button>
         )}
-        {props.showFullscreenButton && (
+        {props.showFullscreenButton && mermaidAvailable && (
           <button
             type="button"
-            className={clsx(
-              'p-2 text-xs rounded transition-colors',
-              props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200',
-            )}
-            disabled={!mermaidAvailable || showSource}
-            onClick={openModal}
-            onMouseEnter={event => handleTooltip(event, 'Fullscreen')}
+            className={clsx(computedButtonClass, isFullscreenDisabled ? 'opacity-50 cursor-not-allowed' : '')}
+            disabled={isFullscreenDisabled}
+            onClick={modalOpen ? closeModal : handleOpenModal}
+            onMouseEnter={event => handleTooltip(event, modalOpen ? t('common.minimize') : t('common.open'))}
+            onFocus={event => handleTooltip(event as any, modalOpen ? t('common.minimize') : t('common.open'))}
             onMouseLeave={() => hideTooltip()}
+            onBlur={() => hideTooltip()}
           >
-            ⧉
+            {!modalOpen
+              ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 3h6v6m0-6l-7 7M3 21l7-7m-1 7H3v-6" />
+                  </svg>
+                )
+              : (
+                  <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" className="w-3 h-3">
+                    <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m14 10l7-7m-1 7h-6V4M3 21l7-7m-6 0h6v6" />
+                  </svg>
+                )}
           </button>
         )}
       </div>
@@ -646,15 +938,17 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
 
   const body = (
     <div>
-      {showSource ? (
-        <div className={clsx('p-4', props.isDark ? 'bg-gray-900 text-gray-300' : 'bg-gray-50 text-gray-700')}>
-          <pre className="text-sm font-mono whitespace-pre-wrap">
-            {baseFixedCode}
-          </pre>
-        </div>
-      ) : (
-        previewContent
-      )}
+      {showSource
+        ? (
+            <div className={clsx('p-4', props.isDark ? 'bg-gray-900 text-gray-300' : 'bg-gray-50 text-gray-700')}>
+              <pre className="text-sm font-mono whitespace-pre-wrap">
+                {baseFixedCode}
+              </pre>
+            </div>
+          )
+        : (
+            previewContent
+          )}
       {error && (
         <div className="mermaid-error">{error}</div>
       )}
@@ -677,21 +971,23 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps) {
           </div>
         )}
       </div>
-      {modalOpen && modalHtml && typeof document !== 'undefined' && createPortal(
+      {modalOpen && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed inset-0 bg-black/60 z-[9998] flex flex-col"
-          onClick={closeModal}
+          className="mermaid-modal-overlay"
+          onClick={() => closeModal()}
         >
-          <div className="relative max-w-5xl w-full mx-auto my-8 bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden" onClick={event => event.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-              <span className="text-sm font-medium">Mermaid Preview</span>
-              <button type="button" className="text-sm px-2 py-1" onClick={closeModal}>Close</button>
+          <div
+            className={clsx('mermaid-modal-panel', { 'is-dark': props.isDark })}
+            role="dialog"
+            aria-modal="true"
+            onClick={event => event.stopPropagation()}
+          >
+            <div className="mermaid-modal-header">
+              <span className="mermaid-modal-title">Mermaid Preview</span>
+              <button type="button" className="mermaid-modal-close" onClick={closeModal}>Close</button>
             </div>
-            <div className="overflow-auto max-h-[80vh] p-4">
-              <div
-                className="w-full flex justify-center"
-                dangerouslySetInnerHTML={{ __html: modalHtml }}
-              />
+            <div className="mermaid-modal-body">
+              <div ref={modalContentRef} className="mermaid-modal-content" />
             </div>
           </div>
         </div>,
@@ -789,21 +1085,24 @@ async function withTimeoutSignal<T>(
   return new Promise((resolve, reject) => {
     let settled = false
     let timer: ReturnType<typeof setTimeout> | null = null
-    const cleanup = () => {
-      if (timer != null)
-        clearTimeout(timer)
-      if (signal && abortHandler)
-        signal.removeEventListener('abort', abortHandler)
-    }
-    const abortHandler = () => {
+
+    function onAbort() {
       if (settled)
         return
       settled = true
       cleanup()
       reject(new DOMException('Aborted', 'AbortError'))
     }
+
+    function cleanup() {
+      if (timer != null)
+        clearTimeout(timer)
+      if (signal)
+        signal.removeEventListener('abort', onAbort)
+    }
+
     if (signal)
-      signal.addEventListener('abort', abortHandler)
+      signal.addEventListener('abort', onAbort, { once: true })
     if (timeoutMs && timeoutMs > 0) {
       timer = setTimeout(() => {
         if (settled)

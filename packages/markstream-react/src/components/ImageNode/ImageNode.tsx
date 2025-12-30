@@ -1,21 +1,7 @@
+import type { ImageNodeProps } from '../../types/component-props'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { useViewportPriority } from '../../context/viewportPriority'
 
-export interface ImageNodeProps {
-  node: {
-    type: 'image'
-    src: string
-    alt?: string | null
-    title?: string | null
-    raw?: string
-    loading?: boolean
-  }
-  fallbackSrc?: string
-  showCaption?: boolean
-  lazy?: boolean
-  svgMinHeight?: string | number
-  usePlaceholder?: boolean
-}
+import { useViewportPriority } from '../../context/viewportPriority'
 
 const DEFAULT_PROPS = {
   fallbackSrc: '',
@@ -25,7 +11,13 @@ const DEFAULT_PROPS = {
   usePlaceholder: true,
 }
 
-export function ImageNode(rawProps: ImageNodeProps) {
+export interface ImageNodeReactEvents {
+  onLoad?: (src: string) => void
+  onError?: (src: string) => void
+  onClick?: (payload: [event: React.MouseEvent<HTMLImageElement>, src: string]) => void
+}
+
+export function ImageNode(rawProps: ImageNodeProps & ImageNodeReactEvents) {
   const props = { ...DEFAULT_PROPS, ...rawProps }
   const registerViewport = useViewportPriority()
   const [figureEl, setFigureEl] = useState<HTMLElement | null>(null)
@@ -87,19 +79,22 @@ export function ImageNode(rawProps: ImageNodeProps) {
     }
     else {
       setHasError(true)
+      props.onError?.(props.node.src)
     }
   }
 
   const handleImageLoad = () => {
     setImageLoaded(true)
     setHasError(false)
+    props.onLoad?.(displaySrc)
   }
 
   const handleClick = (event: React.MouseEvent<HTMLImageElement>) => {
+    event.preventDefault()
     if (!imageLoaded || hasError) {
-      event.preventDefault()
       return
     }
+    props.onClick?.([event, displaySrc])
   }
 
   const placeholderStyle = isSvg
@@ -109,56 +104,60 @@ export function ImageNode(rawProps: ImageNodeProps) {
   return (
     <figure ref={setFigureEl} className="image-node">
       <div className="image-node__inner">
-        {!props.node.loading && !hasError && canRenderImage ? (
-          <img
-            key="image"
-            src={displaySrc}
-            alt={String(props.node.alt ?? props.node.title ?? '')}
-            title={String(props.node.title ?? props.node.alt ?? '')}
-            className={`image-node__img${imageLoaded ? ' is-loaded' : ''}`}
-            style={isSvg ? { minHeight: props.svgMinHeight, width: '100%', height: 'auto', objectFit: 'contain' } : undefined}
-            loading={props.lazy ? 'lazy' : 'eager'}
-            decoding="async"
-            tabIndex={imageLoaded ? 0 : -1}
-            aria-label={props.node.alt ?? 'Preview image'}
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-            onClick={handleClick}
-          />
-        ) : !hasError ? (
-          <div
-            key="placeholder"
-            className="image-node__placeholder"
-            style={placeholderStyle}
-          >
-            {props.usePlaceholder
+        {!props.node.loading && !hasError && canRenderImage
+          ? (
+              <img
+                key="image"
+                src={displaySrc}
+                alt={String(props.node.alt ?? props.node.title ?? '')}
+                title={String(props.node.title ?? props.node.alt ?? '')}
+                className={`image-node__img${imageLoaded ? ' is-loaded' : ''}`}
+                style={isSvg ? { minHeight: props.svgMinHeight, width: '100%', height: 'auto', objectFit: 'contain' } : undefined}
+                loading={props.lazy ? 'lazy' : 'eager'}
+                decoding="async"
+                tabIndex={imageLoaded ? 0 : -1}
+                aria-label={props.node.alt ?? 'Preview image'}
+                onError={handleImageError}
+                onLoad={handleImageLoad}
+                onClick={handleClick}
+              />
+            )
+          : !hasError
               ? (
-                  <>
-                    <span className="image-node__spinner" aria-hidden="true" />
-                    <span className="image-node__placeholder-text">Loading image...</span>
-                  </>
+                  <div
+                    key="placeholder"
+                    className="image-node__placeholder"
+                    style={placeholderStyle}
+                  >
+                    {props.usePlaceholder
+                      ? (
+                          <>
+                            <span className="image-node__spinner" aria-hidden="true" />
+                            <span className="image-node__placeholder-text">Loading image...</span>
+                          </>
+                        )
+                      : (
+                          <span className="image-node__placeholder-text">{props.node.raw ?? 'Loading image…'}</span>
+                        )}
+                  </div>
                 )
               : (
-                  <span className="image-node__placeholder-text">{props.node.raw ?? 'Loading image…'}</span>
+                  <div className="image-node__error">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        fill="currentColor"
+                        d="M2 2h20v10h-2V4H4v9.586l5-5L14.414 14L13 15.414l-4-4l-5 5V20h8v2H2zm13.547 5a1 1 0 1 0 0 2a1 1 0 0 0 0-2m-3 1a3 3 0 1 1 6 0a3 3 0 0 1-6 0m3.625 6.757L19 17.586l2.828-2.829l1.415 1.415L20.414 19l2.829 2.828l-1.415 1.415L19 20.414l-2.828 2.829l-1.415-1.415L17.586 19l-2.829-2.828z"
+                      />
+                    </svg>
+                    <span className="image-node__placeholder-text">Image failed to load</span>
+                  </div>
                 )}
-          </div>
-        ) : (
-          <div className="image-node__error">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                fill="currentColor"
-                d="M2 2h20v10h-2V4H4v9.586l5-5L14.414 14L13 15.414l-4-4l-5 5V20h8v2H2zm13.547 5a1 1 0 1 0 0 2a1 1 0 0 0 0-2m-3 1a3 3 0 1 1 6 0a3 3 0 0 1-6 0m3.625 6.757L19 17.586l2.828-2.829l1.415 1.415L20.414 19l2.829 2.828l-1.415 1.415L19 20.414l-2.828 2.829l-1.415-1.415L17.586 19l-2.829-2.828z"
-              />
-            </svg>
-            <span className="image-node__placeholder-text">Image failed to load</span>
-          </div>
-        )}
       </div>
       {props.showCaption && props.node.alt && (
         <figcaption className="image-node__caption">

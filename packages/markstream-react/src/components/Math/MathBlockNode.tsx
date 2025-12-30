@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
 import type { MathBlockNodeProps } from '../../types/component-props'
+import { useEffect, useRef, useState } from 'react'
 import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from '../../workers/katexWorkerClient'
 import { getKatex } from './katex'
 
@@ -63,7 +63,7 @@ export function MathBlockNode({ node }: MathBlockNodeProps) {
         }
       })
 
-  return () => {
+    return () => {
       aborted = true
       controller.abort()
     }

@@ -1,5 +1,9 @@
 export const streamContent = `
-<thinking>这是一段自定义解析处理的thinking组件</thinking>
+<thinking>
+- markstream-vue playground
+- A Vue 3 component that renders Markdown string content as HTML, supporting custom components and advanced markdown features.
+</thinking>
+
 >>>I'll create a simple Electron + Vue chat application demo. Here's the structure:
 
 [Star on GitHub](https://github.com/Simon-He95/markstream-vue)

@@ -149,7 +149,7 @@ export async function renderKaTeXInWorker(content: string, displayMode = true, t
       return
     }
     const id = Math.random().toString(36).slice(2)
-    const timeoutId = (globalThis as any).setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       pending.delete(id)
       const err = new Error('Worker render timed out')
       ;(err as any).name = 'WorkerTimeout'
@@ -257,31 +257,34 @@ export function waitForKaTeXWorkerSlot(timeout = 1500, signal?: AbortSignal) {
       reject(err)
       return
     }
-    const onDrain = () => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    function cleanup() {
       drainWaiters.delete(onDrain)
-      if (timer)
-        (globalThis as any).clearTimeout(timer)
+      if (timer != null)
+        clearTimeout(timer)
       if (signal)
         signal.removeEventListener('abort', onAbort)
+    }
+
+    function onDrain() {
+      cleanup()
       resolve()
     }
-    const timer = timeout > 0
-      ? (globalThis as any).setTimeout(() => {
-        drainWaiters.delete(onDrain)
-        if (signal)
-          signal.removeEventListener('abort', onAbort)
-        reject(new Error('Timeout waiting for worker slot'))
-      }, timeout)
-      : null
 
-    const onAbort = () => {
-      drainWaiters.delete(onDrain)
-      if (timer)
-        (globalThis as any).clearTimeout(timer)
+    function onAbort() {
+      cleanup()
       const err = new Error('Aborted')
       ;(err as any).name = 'AbortError'
       reject(err)
     }
+
+    timer = timeout > 0
+      ? setTimeout(() => {
+          cleanup()
+          reject(new Error('Timeout waiting for worker slot'))
+        }, timeout)
+      : null
 
     if (signal)
       signal.addEventListener('abort', onAbort, { once: true })
@@ -348,7 +351,7 @@ export async function renderKaTeXWithBackpressure(content: string, displayMode =
         throw e
       }
       if (backoffMs > 0)
-        await new Promise(r => (globalThis as any).setTimeout(r, backoffMs * attempt))
+        await new Promise(r => setTimeout(r, backoffMs * attempt))
     }
   }
 }

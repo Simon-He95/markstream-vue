@@ -123,13 +123,13 @@ function callWorker<T>(action: 'canParse' | 'findPrefix', payload: any, timeout 
   return new Promise<T>((resolve, reject) => {
     const id = Math.random().toString(36).slice(2)
     let settled = false
-    let timeoutId: any
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
     const cleanup = () => {
       if (settled)
         return
       settled = true
       if (timeoutId != null)
-        (globalThis as any).clearTimeout(timeoutId)
+        clearTimeout(timeoutId)
       rpcMap.delete(id)
     }
     const pending: Pending = {
@@ -151,7 +151,7 @@ function callWorker<T>(action: 'canParse' | 'findPrefix', payload: any, timeout 
       reject(err)
       return
     }
-    timeoutId = (globalThis as any).setTimeout(() => {
+    timeoutId = setTimeout(() => {
       const err: any = new Error('Worker call timed out')
       err.name = 'WorkerTimeout'
       err.code = 'WORKER_TIMEOUT'
@@ -162,12 +162,7 @@ function callWorker<T>(action: 'canParse' | 'findPrefix', payload: any, timeout 
 }
 
 export async function canParseOffthread(code: string, theme: Theme, timeout = 1400) {
-  try {
-    return await callWorker<boolean>('canParse', { code, theme }, timeout)
-  }
-  catch (e) {
-    throw e
-  }
+  return callWorker<boolean>('canParse', { code, theme }, timeout)
 }
 
 export async function findPrefixOffthread(code: string, theme: Theme, timeout = 2400) {

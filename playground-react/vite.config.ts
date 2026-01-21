@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => ({
     format: 'es',
   },
   optimizeDeps: {
-    exclude: ['stream-monaco'],
+    exclude: ['stream-monaco', 'monaco-editor'],
   },
   // Only use alias in dev mode - for production build, use the built package
   resolve: mode === 'development'

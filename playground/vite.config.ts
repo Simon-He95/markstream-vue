@@ -23,7 +23,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['stream-monaco'],
+    exclude: ['stream-monaco', 'monaco-editor'],
   },
   plugins: [
     Vue({}),

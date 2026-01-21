@@ -26,6 +26,10 @@ import path from 'node:path'
 import monacoEditorPlugin from 'vite-plugin-monaco-editor-esm'
 
 export default defineConfig({
+  optimizeDeps: {
+    // Exclude monaco-editor and stream-monaco from pre-bundling to avoid worker path issues
+    exclude: ['stream-monaco', 'monaco-editor'],
+  },
   plugins: [
     monacoEditorPlugin({
       languageWorkers: [

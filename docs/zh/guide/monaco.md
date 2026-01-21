@@ -16,6 +16,36 @@ pnpm add stream-monaco
 
 更多细节参见 `/zh/guide/monaco-internals`。
 
+### Vite & worker 配置
+
+Monaco 需要正确配置 worker 打包才能在生产环境中正常工作。使用 `vite-plugin-monaco-editor-esm` 确保 worker 文件被正确打包到你的应用构建输出中。配置示例：
+
+```ts
+import path from 'node:path'
+import monacoEditorPlugin from 'vite-plugin-monaco-editor-esm'
+
+export default defineConfig({
+  optimizeDeps: {
+    // 排除 monaco-editor 和 stream-monaco 避免预构建导致的 worker 路径问题
+    exclude: ['stream-monaco', 'monaco-editor'],
+  },
+  plugins: [
+    monacoEditorPlugin({
+      languageWorkers: [
+        'editorWorkerService',
+        'typescript',
+        'css',
+        'html',
+        'json',
+      ],
+      customDistPath(root, buildOutDir, base) {
+        return path.resolve(buildOutDir, 'monacoeditorwork')
+      },
+    }),
+  ],
+})
+```
+
 ### 添加更多语言与主题
 
 为了保持初始化速度，默认只注册了一小部分 Monaco 语言。如果你的文档需要 Rust、Go、Bash 等额外语法，或希望注入自定义主题，可以将它们通过 `monacoOptions` 传给 `CodeBlockNode`，或者在 `MarkdownRender` 上使用 `codeBlockMonacoOptions` 统一下发。该对象会原样透传给 `useMonaco()`。

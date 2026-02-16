@@ -69,9 +69,65 @@ jobs:
           TAG="${{ matrix.tag }}"
           PKG="${TAG%@*}"
           ID="${TAG##*@}"
+          echo "pkg=${PKG}" >> "${GITHUB_OUTPUT}"
           echo "name=[${PKG}] ${ID}" >> "${GITHUB_OUTPUT}"
 
-      - name: Create GitHub Pre-release
+      - name: Checkout (for changelog body)
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build changelog body (best effort)
+        id: changelog
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(grep -m1 '"version"' package.json | sed -E 's/.*"version": "([^"]+)".*/\1/')"
+          BODY_FILE="$(mktemp)"
+          FOUND=0
+
+          if [[ -n "${VERSION}" ]]; then
+            awk -v version="${VERSION}" '
+              BEGIN { capture = 0; found = 0 }
+              /^## \[/ {
+                if (capture == 1)
+                  exit
+                if ($0 ~ "^## \\[" version "\\]") {
+                  capture = 1
+                  found = 1
+                  next
+                }
+              }
+              capture == 1 { print }
+              END {
+                if (found == 0)
+                  exit 2
+              }
+            ' CHANGELOG.md > "${BODY_FILE}" && FOUND=1 || true
+          fi
+
+          if [[ "${FOUND}" == "1" && -s "${BODY_FILE}" ]]; then
+            echo "has_body=true" >> "${GITHUB_OUTPUT}"
+            echo "body_path=${BODY_FILE}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "has_body=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Create GitHub Pre-release (markstream-vue with changelog)
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' && steps.changelog.outputs.has_body == 'true' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.tag }}
+          name: ${{ steps.meta.outputs.name }}
+          prerelease: true
+          generate_release_notes: true
+          body_path: ${{ steps.changelog.outputs.body_path }}
+          append_body: true
+
+      - name: Create GitHub Pre-release (fallback)
+        if: ${{ steps.meta.outputs.pkg != 'markstream-vue' || steps.changelog.outputs.has_body != 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ matrix.tag }}

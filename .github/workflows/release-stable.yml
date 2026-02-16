@@ -38,7 +38,62 @@ jobs:
           echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
           echo "name=[${PKG}] ${VERSION}" >> "${GITHUB_OUTPUT}"
 
-      - name: Create GitHub Release
+      - name: Checkout (for changelog body)
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build changelog body
+        id: changelog
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.meta.outputs.version }}"
+          BODY_FILE="$(mktemp)"
+
+          awk -v version="${VERSION}" '
+            BEGIN { capture = 0; found = 0 }
+            /^## \[/ {
+              if (capture == 1)
+                exit
+              if ($0 ~ "^## \\[" version "\\]") {
+                capture = 1
+                found = 1
+                next
+              }
+            }
+            capture == 1 { print }
+            END {
+              if (found == 0)
+                exit 2
+            }
+          ' CHANGELOG.md > "${BODY_FILE}" || {
+            echo "Unable to find CHANGELOG.md section for version ${VERSION}" >&2
+            exit 1
+          }
+
+          if [[ ! -s "${BODY_FILE}" ]]; then
+            echo "Found empty CHANGELOG.md section for version ${VERSION}" >&2
+            exit 1
+          fi
+
+          echo "body_path=${BODY_FILE}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create GitHub Release (markstream-vue)
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ steps.meta.outputs.name }}
+          prerelease: ${{ steps.meta.outputs.prerelease }}
+          generate_release_notes: true
+          body_path: ${{ steps.changelog.outputs.body_path }}
+          append_body: true
+
+      - name: Create GitHub Release (other packages)
+        if: ${{ steps.meta.outputs.pkg != 'markstream-vue' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}

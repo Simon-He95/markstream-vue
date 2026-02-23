@@ -105,7 +105,7 @@
     "build:demo": "vite build",
     "build:view": "vite preview",
     "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "release": "bumpp --commit --no-tag --no-push --execute 'conventional-changelog -p angular -i CHANGELOG.md -s -r 0 && git add CHANGELOG.md' && pnpm publish && node scripts/tag-package.mjs --package-json package.json --push",
+    "release": "bumpp --all --commit --no-tag --no-push --execute 'conventional-changelog -p angular -i CHANGELOG.md -s -r 0' && pnpm publish && node scripts/tag-package.mjs --package-json package.json --push",
     "tag": "node scripts/tag-package.mjs",
     "tag:vue3": "node scripts/tag-package.mjs --package-json package.json",
     "tag:vue3:push": "node scripts/tag-package.mjs --package-json package.json --push",

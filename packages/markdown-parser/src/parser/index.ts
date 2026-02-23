@@ -562,8 +562,34 @@ function ensureBlankLineAfterCustomHtmlCloseBeforeBlockMarkerSameLine(markdown: 
 
     let nextContent = contentLine
     if (!inFence && nextContent.includes('</')) {
-      for (const re of closeTagRes)
-        nextContent = nextContent.replace(re, '$1\n\n')
+      for (const re of closeTagRes) {
+        nextContent = nextContent.replace(re, (match, closeTag: string, offset: number, src: string) => {
+          // Inside table rows like:
+          //   | A | <my_component></my_component>## heading-like |
+          // do not inject blank lines after the closing tag, otherwise the row
+          // gets split and table parsing breaks after this custom cell.
+          const lineTrimmed = src.replace(/^[\t ]+/, '')
+          if (lineTrimmed.startsWith('|'))
+            return match
+
+          const before = src.slice(0, offset).replace(/^[\t ]+/, '')
+          // Keep same-line boundary splitting conservative:
+          // only split when the line starts with the custom tag block itself,
+          // or when the close tag is at line start (e.g. "</tag>## heading").
+          // This avoids breaking list/blockquote/paragraph inline contexts like:
+          // "- text <my_component></my_component>## h"
+          // "> text <my_component></my_component>- item"
+          // "text <my_component></my_component>## h"
+          if (before.length > 0) {
+            const closeTagName = closeTag.match(/^<\s*\/\s*([A-Za-z][\w:-]*)/i)?.[1]?.toLowerCase() ?? ''
+            const openTagName = before.match(/^<\s*([A-Za-z][\w:-]*)/i)?.[1]?.toLowerCase() ?? ''
+            if (!closeTagName || !openTagName || closeTagName !== openTagName)
+              return match
+          }
+
+          return `${closeTag}\n\n`
+        })
+      }
     }
 
     if (prefix) {

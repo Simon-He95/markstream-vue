@@ -870,6 +870,11 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         // 补充一个闭合标签
         const rawTag = t.children[0].content?.match(/<([^\s>/]+)/)?.[1] ?? ''
         const tag = rawTag.toLowerCase()
+        const second = t.children[1] as any
+        const secondCloseTag = String(second?.content ?? '').match(/^<\s*\/\s*([^\s>]+)/)?.[1]?.toLowerCase() ?? ''
+        // Already a complete open+close pair: don't append another closing tag.
+        if (second?.type === 'html_inline' && secondCloseTag === tag)
+          continue
         // 如果是常见的 inline标签（含用户自定义），则只追加结尾标签，否则转换成 html_block
         if (autoCloseInlineTagSet.has(tag)) {
           t.children[0].loading = true

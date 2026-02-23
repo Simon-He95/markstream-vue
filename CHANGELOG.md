@@ -1,4 +1,4 @@
-## [0.0.7-beta.8](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.8...v0.0.7-beta.8) (2026-02-12)
+## [0.0.7-beta.9](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.8...v0.0.7-beta.9) (2026-02-23)
 
 
 ### Bug Fixes
@@ -83,12 +83,14 @@
 * add support for blank line after custom HTML close before block marker ([4e4e31b](https://github.com/Simon-He95/markstream-vue/commit/4e4e31bb804fe76401c9283f215c6e43135f362c)), closes [#295](https://github.com/Simon-He95/markstream-vue/issues/295)
 * add support for fixing indented code blocks and enhance HTML inline handling ([733bf40](https://github.com/Simon-He95/markstream-vue/commit/733bf409f05de3704199f9274a62f48ea5d0f4e4)), closes [#257](https://github.com/Simon-He95/markstream-vue/issues/257)
 * add Tailwind CSS support to markstream-vue2 ([b6a8b20](https://github.com/Simon-He95/markstream-vue/commit/b6a8b20c65a451eb684c80b238149320f208799f))
+* add tests for validateLink ([961a914](https://github.com/Simon-He95/markstream-vue/commit/961a914b62ee715b4fd902010d4fb3fa2f7aed7a))
 * delete temporary patch file ([e931d8b](https://github.com/Simon-He95/markstream-vue/commit/e931d8bc414833194aebebe23fafa8379d7bde41))
 * **docs:** update playground links and add local running instructions ([2ec2745](https://github.com/Simon-He95/markstream-vue/commit/2ec27456fed6b0b0432e92b67753d51bbf42ad89))
 * enhance ::: container syntax to support args and improve JSON matching ([4b3bbf7](https://github.com/Simon-He95/markstream-vue/commit/4b3bbf707e7f58e9b2f935ac58d353567eeebb0d)), closes [#233](https://github.com/Simon-He95/markstream-vue/issues/233)
 * enhance D2BlockNodeProps interface with additional properties ([9f8ac87](https://github.com/Simon-He95/markstream-vue/commit/9f8ac87ccd1826711119a6842e8f816eeed7da74))
 * enhance documentation and components for Shiki and Monaco integration ([588358c](https://github.com/Simon-He95/markstream-vue/commit/588358cd605b6e529357a410dcc0efb87d3decd7)), closes [#279](https://github.com/Simon-He95/markstream-vue/issues/279)
 * enhance documentation structure and content for multiple frameworks ([293511d](https://github.com/Simon-He95/markstream-vue/commit/293511d0226c353f8e7874d69a58daa17cbc1d4a))
+* enhance handling of custom HTML tags in inline contexts and tables ([c86efd8](https://github.com/Simon-He95/markstream-vue/commit/c86efd816012a2a8e59ace7cb7ef7052df883983))
 * enhance HTML rendering and custom component handling ([005b325](https://github.com/Simon-He95/markstream-vue/commit/005b325cc20450b327537884e3a275d3f03a8749))
 * enhance HtmlBlockNode and HtmlInlineNode for improved streaming stability and add tests ([28b408f](https://github.com/Simon-He95/markstream-vue/commit/28b408f8f491aff4cdab4f18bea1ed8dd4c6e4f7)), closes [#273](https://github.com/Simon-He95/markstream-vue/issues/273)
 * enhance link parsing to handle CJK punctuation and ASCII correctly ([ac7ee04](https://github.com/Simon-He95/markstream-vue/commit/ac7ee047575aae014ae13a01b59e83010aa8a8fd)), closes [#296](https://github.com/Simon-He95/markstream-vue/issues/296)

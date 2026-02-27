@@ -1,4 +1,4 @@
-## [0.0.7-beta.9](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.8...v0.0.7-beta.9) (2026-02-23)
+## [0.0.7](https://github.com/Simon-He95/markstream-vue/compare/v0.0.4-beta.8...v0.0.7) (2026-02-27)
 
 
 ### Bug Fixes
@@ -20,9 +20,11 @@
 * **dependencies:** update stream-markdown and stream-monaco versions to 0.0.13 and 0.0.10 respectively ([e363e3a](https://github.com/Simon-He95/markstream-vue/commit/e363e3afbdc86e76ab3d0727e3859eaed661b623))
 * **dependencies:** update stream-monaco version to 0.0.12 across all packages ([b1b3097](https://github.com/Simon-He95/markstream-vue/commit/b1b309767dc19765b4b0915b17b48798b94143bc))
 * **dependencies:** update stream-monaco version to 0.0.13 across all packages ([1e9dadd](https://github.com/Simon-He95/markstream-vue/commit/1e9dadd4685a4cb60689deac72c4e9cb7945588f))
+* enhance HTML inline parsing to handle malformed custom tags and maintain valid attributes ([fadb904](https://github.com/Simon-He95/markstream-vue/commit/fadb904f3b312291ce3457acdf6a6e0dfca84112)), closes [#305](https://github.com/Simon-He95/markstream-vue/issues/305)
 * enhance strong token parsing to correctly handle escaped asterisks ([97abc4a](https://github.com/Simon-He95/markstream-vue/commit/97abc4abd92aa1e8d16f72e635ee6d0396b9e6e1)), closes [#255](https://github.com/Simon-He95/markstream-vue/issues/255)
 * **image:** inline with math parse wrong ([6a1c0fa](https://github.com/Simon-He95/markstream-vue/commit/6a1c0fa732da53b0d586d5d054aa9101730ac186))
 * **image:** inline with math parse wrong ([edc7a44](https://github.com/Simon-He95/markstream-vue/commit/edc7a44d36598bb2ee2c0d3061a62c1201293646)), closes [#246](https://github.com/Simon-He95/markstream-vue/issues/246)
+* improve HTML tag matching to support uppercase tag names in inline parsing ([7a3342d](https://github.com/Simon-He95/markstream-vue/commit/7a3342dda33f71c3e9b41e1ceb8e23c6e3b12304))
 * improve reference detection in markdown parser and add related tests ([31e5b6e](https://github.com/Simon-He95/markstream-vue/commit/31e5b6eee57b85a838b0bdb2f71c29453c8d8902)), closes [#231](https://github.com/Simon-He95/markstream-vue/issues/231)
 * improve vue2 compatibility ([6e58454](https://github.com/Simon-He95/markstream-vue/commit/6e58454bf178f33c2b1e5dff468dba97c0cd0cfc))
 * **link:** inline code inside links rendering nested elements ([4f85231](https://github.com/Simon-He95/markstream-vue/commit/4f85231ef551391d1eb34f573e9a17563fe16c68)), closes [#256](https://github.com/Simon-He95/markstream-vue/issues/256)

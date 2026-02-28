@@ -267,6 +267,81 @@ function isPlainBracketMathLike(content: string) {
   return true
 }
 
+function buildCodeSpanRanges(src: string): Array<[number, number]> {
+  const ranges: Array<[number, number]> = []
+  let i = 0
+
+  while (i < src.length) {
+    if (src[i] !== '`') {
+      i++
+      continue
+    }
+
+    const openStart = i
+    let openLen = 1
+    while (openStart + openLen < src.length && src[openStart + openLen] === '`')
+      openLen++
+
+    let j = openStart + openLen
+    let closeStart = -1
+    while (j < src.length) {
+      if (src[j] !== '`') {
+        j++
+        continue
+      }
+
+      let runLen = 1
+      while (j + runLen < src.length && src[j + runLen] === '`')
+        runLen++
+
+      if (runLen === openLen) {
+        closeStart = j
+        break
+      }
+
+      j += runLen
+    }
+
+    if (closeStart !== -1) {
+      ranges.push([openStart, closeStart + openLen])
+      i = closeStart + openLen
+      continue
+    }
+
+    i = openStart + openLen
+  }
+
+  return ranges
+}
+
+function findCodeSpanRangeAt(ranges: Array<[number, number]>, index: number): [number, number] | null {
+  for (const range of ranges) {
+    if (index >= range[0] && index < range[1])
+      return range
+  }
+  return null
+}
+
+function isLikelyCurrencyRangeDollar(content: string, nextChar?: string) {
+  const stripped = String(content ?? '').trim()
+  if (!stripped)
+    return false
+  // Currency ranges like "$2000~$5000" should remain plain text.
+  // We only gate when the content before closing "$" ends with a range marker
+  // and the following character continues with digits.
+  if (!/^\d[\d,.]*(?:\s*[~～-]\s*)$/.test(stripped))
+    return false
+  return /\d/.test(String(nextChar ?? ''))
+}
+
+function isLikelyPlaceholderDollar(content: string) {
+  const stripped = String(content ?? '').trim()
+  if (!stripped)
+    return false
+  // Placeholder text like "$...$" / "$…$" is not math.
+  return /^(?:\.{3,}|…+)$/.test(stripped)
+}
+
 export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
   // Inline rule for `\\(...\\)` and `$$...$$` and `$...$`
   const mathInline = (state: unknown, silent: boolean) => {
@@ -295,10 +370,11 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     // Save the initial position so $$ can scan from the beginning
     // even after $ rule has advanced s.pos
     const initialPos = s.pos
-    // use findMatchingClose from util
+      // use findMatchingClose from util
     for (const [open, close] of delimiters) {
       // We'll scan the entire inline source and tokenize all occurrences
       const src = s.src
+      const codeSpanRanges = buildCodeSpanRanges(src)
       let foundAny = false
       // Reset searchPos for $$ to allow it to scan the full content
       // even after $ rule has processed some text
@@ -388,7 +464,10 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
             const content = text.slice(dollarIndex + 1, closingDollarIndex)
             const hasBacktick = content.includes('`')
             const isEmpty = !content || !content.trim()
-            if (!hasBacktick && !isEmpty) {
+            const nextChar = text[closingDollarIndex + 1]
+            const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
+            const isPlaceholder = isLikelyPlaceholderDollar(content)
+            if (!hasBacktick && !isEmpty && !isCurrencyRange && !isPlaceholder) {
               const token = s.push('math_inline', 'math', 0)
               token.content = normalizeStandaloneBackslashT(content, mathOpts)
               token.markup = '$'
@@ -473,6 +552,13 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         const index = src.indexOf(open, searchPos)
         if (index === -1)
           break
+
+        const codeSpanAtIndex = findCodeSpanRangeAt(codeSpanRanges, index)
+        if (codeSpanAtIndex) {
+          searchPos = codeSpanAtIndex[1]
+          continue
+        }
+
         if (index === lastIndex && searchPos === lastSearchPos) {
           stallCount++
           if (stallCount > 2) {
@@ -579,9 +665,12 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         const hasBacktick = content.includes('`')
         const isEmpty = !content || !content.trim()
         const isDollar = open === '$'
+        const nextChar = src[endIdx + close.length]
+        const isCurrencyRange = isDollar && isLikelyCurrencyRangeDollar(content, nextChar)
+        const isPlaceholder = isDollar && isLikelyPlaceholderDollar(content)
         const shouldSkip = strict
-          ? (hasBacktick || isEmpty)
-          : (hasBacktick || isEmpty || (!isDollar && !isMathLike(content)))
+          ? (hasBacktick || isEmpty || isCurrencyRange || isPlaceholder)
+          : (hasBacktick || isEmpty || isCurrencyRange || isPlaceholder || (!isDollar && !isMathLike(content)))
         if (shouldSkip) {
           // push remaining text after last match
           // not math-like; skip this match and continue scanning
@@ -721,10 +810,13 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
               const content = src.slice(dollarIndex + 1, closingDollarIndex)
               const hasBacktick = content.includes('`')
               const isEmpty = !content || !content.trim()
+              const nextChar = src[closingDollarIndex + 1]
+              const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
+              const isPlaceholder = isLikelyPlaceholderDollar(content)
               // For explicit $...$ delimiters, accept any non-empty content
               // (e.g. "$H$", "$1$") even if the heuristic doesn't classify it
               // as "math-like".
-              if (!hasBacktick && !isEmpty) {
+              if (!hasBacktick && !isEmpty && !isCurrencyRange && !isPlaceholder) {
                 // Push text before this $...$
                 const before = src.slice(searchPos, dollarIndex)
                 if (before) {

@@ -330,7 +330,22 @@ export function parseInlineTokens(
     if (!content.includes('`'))
       return false
 
-    const codeStart = content.indexOf('`')
+    const findFirstUnescapedBacktick = (src: string) => {
+      for (let idx = 0; idx < src.length; idx++) {
+        if (src[idx] !== '`')
+          continue
+        let slashCount = 0
+        for (let j = idx - 1; j >= 0 && src[j] === '\\'; j--)
+          slashCount++
+        if (slashCount % 2 === 0)
+          return idx
+      }
+      return -1
+    }
+
+    const codeStart = findFirstUnescapedBacktick(content)
+    if (codeStart === -1)
+      return false
     // Determine the length of the opening backtick run (supports ``code``)
     let runLen = 1
     for (let k = codeStart + 1; k < content.length && content[k] === '`'; k++)
@@ -788,7 +803,9 @@ export function parseInlineTokens(
       i++
       return
     }
-    if (handleInlineCodeContent(content, token))
+    // Use raw token content for inline-code fallback parsing so backslashes
+    // inside code spans are preserved (e.g. `\\(...\\)`).
+    if (handleInlineCodeContent(rawContent, token))
       return
 
     if (handleInlineImageContent(content, token))

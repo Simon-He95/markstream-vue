@@ -1,7 +1,7 @@
 {
   "name": "markstream-vue2",
   "type": "module",
-  "version": "0.0.19-beta.4",
+  "version": "0.0.19-beta.5",
   "description": "Vue 2 Markdown renderer optimized for large documents with progressive Mermaid rendering, streaming diff code blocks, and fast real-time preview. Perfect for documentation sites, AI chat interfaces, and content management systems.",
   "author": "Simon He",
   "license": "MIT",

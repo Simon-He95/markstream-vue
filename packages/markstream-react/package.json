@@ -1,7 +1,7 @@
 {
   "name": "markstream-react",
   "type": "module",
-  "version": "0.0.20-beta.8",
+  "version": "0.0.20-beta.9",
   "description": "React Markdown renderer optimized for large documents with progressive Mermaid rendering, streaming diff code blocks, and fast real-time preview. Built on stream-markdown AST for consistent rendering across frameworks. Perfect for documentation sites, AI chat interfaces, and content management systems.",
   "author": "Simon He",
   "license": "MIT",

@@ -93,6 +93,7 @@ export interface MermaidBlockNodeProps {
   // When false, relax all sanitization/security (not recommended)
   isStrict?: boolean;
   showTooltips?: boolean;
+  headerBtnZIndex?: number
 }
 
 // Generic event wrapper used by MermaidBlockNode emits. Consumers can call
@@ -135,6 +136,7 @@ export interface InfographicBlockNodeProps {
   showExportButton?: boolean;
   showFullscreenButton?: boolean;
   showZoomControls?: boolean;
+  headerBtnZIndex?: number
 }
 
 export interface MathBlockNodeProps {

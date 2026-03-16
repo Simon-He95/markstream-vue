@@ -13,6 +13,7 @@
 - `enableWheelZoom?: boolean` — 开启 Ctrl/Cmd + 滚轮缩放（默认 `false`）
 - 超时（毫秒）：`workerTimeoutMs` / `parseTimeoutMs` / `renderTimeoutMs` / `fullRenderTimeoutMs`（默认 `1400/1800/2500/4000`）
 - 流式调优：`renderDebounceMs` / `contentStableDelayMs` / `previewPollDelayMs` / `previewPollMaxDelayMs` / `previewPollMaxAttempts`
+- 全屏 dialog z-index: `headerBtnZIndex`
 
 ## Slots
 - `header-left` — 替换左侧（默认是 Mermaid 图标 + 标签）

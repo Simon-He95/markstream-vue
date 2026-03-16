@@ -1,19 +1,19 @@
 {
-  "name": "markstream-vue",
+  "name": "@ashlesss/markstream-vue",
   "type": "module",
-  "version": "0.0.9-beta.1",
+  "version": "0.0.9-beta.7",
   "packageManager": "pnpm@10.30.3",
   "description": "Vue 3 Markdown renderer optimized for large docs: progressive Mermaid, streaming diff code blocks, and fast real-time preview.",
   "author": "Simon He",
   "license": "MIT",
-  "homepage": "https://github.com/Simon-He95/markstream-vue",
+  "homepage": "https://github.com/ashless/markstream-vue",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Simon-He95/markstream-vue.git",
-    "homepage": "https://github.com/Simon-He95/markstream-vue#readme"
+    "url": "git+https://github.com/ashless/markstream-vue.git",
+    "homepage": "https://github.com/ashless/markstream-vue#readme"
   },
   "bugs": {
-    "url": "https://github.com/Simon-He95/markstream-vue/issues"
+    "url": "https://github.com/ashless/markstream-vue/issues"
   },
   "keywords": [
     "vue",

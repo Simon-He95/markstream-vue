@@ -13,6 +13,7 @@
 - `enableWheelZoom?: boolean` — enable Ctrl/Cmd + wheel zoom in the canvas (default `false`)
 - Timeouts (ms): `workerTimeoutMs`, `parseTimeoutMs`, `renderTimeoutMs`, `fullRenderTimeoutMs` (defaults: `1400/1800/2500/4000`)
 - Streaming tuning: `renderDebounceMs`, `contentStableDelayMs`, `previewPollDelayMs`, `previewPollMaxDelayMs`, `previewPollMaxAttempts`
+- Fullscreen dialog z-index: `headerBtnZIndex`
 
 ## Slots
 - `header-left` — replace the left area (defaults to Mermaid icon + label)

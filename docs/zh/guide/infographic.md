@@ -33,3 +33,7 @@ data
 ## 3. 更多资源
 
 - [AntV Infographic 官网](https://infographic.antv.vision/) - 查看更多图表模版与语法的详细介绍。
+
+## 4. 特殊 props
+
+- 当显示全屏 dialog时 z-index: `headerBtnZIndex`

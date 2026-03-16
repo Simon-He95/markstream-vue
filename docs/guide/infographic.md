@@ -33,3 +33,7 @@ data
 ## 3. Resources
 
 - [AntV Infographic Official Website](https://infographic.antv.vision/) - Explore more chart templates and syntax details.
+
+## 4. Special props
+
+- Fullscreen dialog z-index: `headerBtnZIndex`

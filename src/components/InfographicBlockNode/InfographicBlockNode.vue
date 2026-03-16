@@ -18,6 +18,8 @@ const props = withDefaults(
     showExportButton: true,
     showFullscreenButton: true,
     showZoomControls: true,
+    headerBtnZIndex: 50
+
   },
 )
 
@@ -589,14 +591,15 @@ watch(
         <transition name="infographic-dialog" appear>
           <div
             v-if="isModalOpen"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            class="fixed inset-0 flex items-center justify-center bg-black/70 p-4"
+            :style="{ zIndex: props.headerBtnZIndex}"
             @click.self="closeModal"
           >
             <div
               class="dialog-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
               :class="props.isDark ? 'bg-gray-900' : 'bg-white'"
             >
-              <div class="absolute top-6 right-6 z-50 flex items-center gap-2">
+              <div class="absolute top-6 right-6 z-50 flex items-center gap-2" :style="{ zIndex: props.headerBtnZIndex}">
                 <button
                   class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
                   @click="zoomIn"

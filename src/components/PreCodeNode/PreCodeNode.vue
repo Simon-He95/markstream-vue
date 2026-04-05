@@ -56,7 +56,7 @@ const ariaLabel = computed(() => {
 /* Keyboard accessibility: visible focus when scroll container is focused */
 .markstream-vue pre[class^='language-']:focus,
 .markstream-vue pre[class*=' language-']:focus {
-  outline: 2px solid var(--vmdr-focus, #3b82f6);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 </style>

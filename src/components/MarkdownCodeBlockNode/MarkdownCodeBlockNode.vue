@@ -625,12 +625,10 @@ function previewCode() {
     ref="container"
     :style="containerStyle"
     class="code-block-container my-4 rounded-lg border overflow-hidden shadow-sm"
-    :class="[props.isDark ? 'border-gray-700/30 bg-gray-900' : 'border-gray-200 bg-white', props.isDark ? 'is-dark' : '']"
   >
     <div
       v-if="props.showHeader"
-      class="code-block-header flex justify-between items-center px-4 py-2.5 border-b border-gray-400/5"
-      style="color: var(--vscode-editor-foreground);background-color: var(--vscode-editor-background);"
+      class="code-block-header flex justify-between items-center px-4 py-2.5 border-b"
     >
       <!-- left slot / fallback language label -->
       <slot name="header-left">
@@ -646,7 +644,7 @@ function previewCode() {
           <button
             v-if="props.showCollapseButton"
             type="button"
-            class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+            class="code-action-btn p-2 text-xs rounded-md"
             :aria-pressed="isCollapsed"
             @click="toggleHeaderCollapse"
             @mouseenter="onBtnHover($event, isCollapsed ? (t('common.expand') || 'Expand') : (t('common.collapse') || 'Collapse'))"
@@ -659,7 +657,7 @@ function previewCode() {
           <template v-if="props.showFontSizeButtons && props.enableFontSizeControl">
             <button
               type="button"
-              class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+              class="code-action-btn p-2 text-xs rounded-md"
               :disabled="Number.isFinite(codeFontSize) ? codeFontSize <= codeFontMin : false"
               @click="decreaseCodeFont()"
               @mouseenter="onBtnHover($event, t('common.decrease') || 'Decrease')"
@@ -671,7 +669,7 @@ function previewCode() {
             </button>
             <button
               type="button"
-              class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+              class="code-action-btn p-2 text-xs rounded-md"
               :disabled="!fontBaselineReady || codeFontSize === defaultCodeFontSize"
               @click="resetCodeFont()"
               @mouseenter="onBtnHover($event, t('common.reset') || 'Reset')"
@@ -683,7 +681,7 @@ function previewCode() {
             </button>
             <button
               type="button"
-              class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+              class="code-action-btn p-2 text-xs rounded-md"
               :disabled="Number.isFinite(codeFontSize) ? codeFontSize >= codeFontMax : false"
               @click="increaseCodeFont()"
               @mouseenter="onBtnHover($event, t('common.increase') || 'Increase')"
@@ -698,7 +696,7 @@ function previewCode() {
           <button
             v-if="props.showCopyButton"
             type="button"
-            class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+            class="code-action-btn p-2 text-xs rounded-md"
             :aria-label="copyText ? (t('common.copied') || 'Copied') : (t('common.copy') || 'Copy')"
             @click="copy"
             @mouseenter="onCopyHover($event)"
@@ -713,7 +711,7 @@ function previewCode() {
           <button
             v-if="props.showExpandButton"
             type="button"
-            class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+            class="code-action-btn p-2 text-xs rounded-md"
             :aria-pressed="isExpanded"
             @click="toggleExpand($event)"
             @mouseenter="onBtnHover($event, isExpanded ? (t('common.collapse') || 'Collapse') : (t('common.expand') || 'Expand'))"
@@ -728,7 +726,7 @@ function previewCode() {
           <button
             v-if="isPreviewable && props.showPreviewButton"
             type="button"
-            class="code-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+            class="code-action-btn p-2 text-xs rounded-md"
             :aria-label="t('common.preview') || 'Preview'"
             @click="previewCode"
             @mouseenter="onBtnHover($event, t('common.preview') || 'Preview')"
@@ -765,10 +763,41 @@ function previewCode() {
 </template>
 
 <style scoped>
+/* ── Container ── */
 .code-block-container {
   contain: content;
+  background: var(--code-bg);
+  border-color: var(--code-border);
+  color: var(--code-fg);
 }
 
+/* ── Header ── */
+.code-block-header {
+  background: var(--code-header-bg);
+  border-color: var(--code-border);
+  color: var(--code-fg);
+}
+
+/* ── Action buttons ── */
+.code-action-btn {
+  cursor: pointer;
+  color: var(--code-action-fg);
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.15s, color 0.15s;
+}
+
+.code-action-btn:hover {
+  opacity: 1;
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.code-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Code content ── */
 .code-block-content {
   max-height: min(70vh, 500px);
   overflow: auto;
@@ -813,22 +842,7 @@ function previewCode() {
   padding: 1rem;
 }
 
-.code-action-btn {
-  cursor: pointer;
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.code-action-btn:hover {
-  opacity: 1;
-}
-
-.code-action-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-/* Loading placeholder styles */
+/* ── Loading placeholder ── */
 .code-loading-placeholder {
   padding: 1rem;
   min-height: 120px;
@@ -842,15 +856,10 @@ function previewCode() {
 
 .skeleton-line {
   height: 1rem;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
+  background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted-foreground) / 0.12) 37%, var(--loading-shimmer) 63%);
   background-size: 400% 100%;
   animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
   border-radius: 0.25rem;
-}
-
-.code-block-container.is-dark .skeleton-line {
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 37%, rgba(255,255,255,0.06) 63%);
-  background-size: 400% 100%;
 }
 
 .skeleton-line.short {

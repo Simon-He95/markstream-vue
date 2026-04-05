@@ -45,7 +45,7 @@ defineEmits<{
 .blockquote {
   font-weight: 500;
   font-style: italic;
-  border-left: 0.25rem solid var(--blockquote-border-color,#e2e8f0);
+  border-left: 0.25rem solid var(--blockquote-border);
   quotes: "\201C" "\201D" "\2018" "\2019";
   margin-top: 1.6em;
   margin-bottom: 1.6em;

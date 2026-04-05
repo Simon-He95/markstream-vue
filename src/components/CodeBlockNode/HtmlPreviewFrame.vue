@@ -64,8 +64,8 @@ onUnmounted(() => {
 <template>
   <teleport to="body">
     <div class="markstream-vue">
-      <div class="html-preview-frame__backdrop" :class="{ 'html-preview-frame__backdrop--dark': props.isDark }" @click="props.onClose?.()">
-        <div class="html-preview-frame" :class="{ 'html-preview-frame--dark': props.isDark }" @click.stop>
+      <div class="html-preview-frame__backdrop" @click="props.onClose?.()">
+        <div class="html-preview-frame" @click.stop>
           <div class="html-preview-frame__header">
             <div class="html-preview-frame__title">
               <span class="html-preview-frame__dot" />
@@ -74,7 +74,6 @@ onUnmounted(() => {
             <button
               type="button"
               class="html-preview-frame__close"
-              :class="{ 'html-preview-frame__close--dark': props.isDark }"
               @click="props.onClose?.()"
             >
               ×
@@ -95,33 +94,24 @@ onUnmounted(() => {
 .html-preview-frame__backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--modal-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
 }
 
-.html-preview-frame__backdrop--dark {
-  background-color: rgba(15, 23, 42, 0.8);
-}
-
 .html-preview-frame {
   width: 80vw;
   max-width: 960px;
   height: 70vh;
-  background-color: #fff;
-  border-radius: 0.5rem;
+  background-color: var(--modal-bg);
+  color: var(--modal-fg);
+  border-radius: calc(var(--ms-radius) * 2);
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 10px 40px hsl(var(--ms-foreground) / 0.25);
   display: flex;
   flex-direction: column;
-}
-
-.html-preview-frame--dark {
-  background-color: #020617;
-  color: #e5e7eb;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
 }
 
 .html-preview-frame__header {
@@ -129,11 +119,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.html-preview-frame--dark .html-preview-frame__header {
-  border-bottom-color: rgba(148, 163, 184, 0.35);
+  border-bottom: 1px solid var(--code-border);
 }
 
 .html-preview-frame__title {
@@ -151,11 +137,7 @@ onUnmounted(() => {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background-color: #22c55e;
-}
-
-.html-preview-frame--dark .html-preview-frame__dot {
-  background-color: #4ade80;
+  background-color: hsl(var(--ms-success));
 }
 
 .html-preview-frame__label {
@@ -168,10 +150,7 @@ onUnmounted(() => {
   font-size: 1.25rem;
   line-height: 1;
   cursor: pointer;
-}
-
-.html-preview-frame__close--dark {
-  color: #e5e7eb;
+  color: var(--modal-fg);
 }
 
 .html-preview-frame__iframe {

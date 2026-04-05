@@ -53,7 +53,7 @@ const bodyRows = computed(() => props.node.rows ?? [])
       :class="{ 'table-node--loading': isLoading }"
       :aria-busy="isLoading"
     >
-      <thead class="border-[var(--table-border,#cbd5e1)]">
+      <thead class="border-[var(--table-border)]">
         <tr class="border-b">
           <th
             v-for="(cell, index) in node.header.cells"
@@ -82,7 +82,7 @@ const bodyRows = computed(() => props.node.rows ?? [])
         <tr
           v-for="(row, rowIndex) in bodyRows"
           :key="`row-${rowIndex}`"
-          class="border-[var(--table-border,#cbd5e1)]"
+          class="border-[var(--table-border)]"
           :class="[rowIndex < bodyRows.length - 1 ? 'border-b' : '']"
         >
           <td
@@ -165,9 +165,9 @@ const bodyRows = computed(() => props.node.rows ?? [])
   border-radius: 0.25rem;
   background: linear-gradient(
     90deg,
-    rgba(148, 163, 184, 0.16) 25%,
-    rgba(148, 163, 184, 0.28) 50%,
-    rgba(148, 163, 184, 0.16) 75%
+    var(--loading-shimmer) 25%,
+    var(--loading-shimmer) 50%,
+    var(--loading-shimmer) 75%
   );
   background-size: 200% 100%;
   animation: table-node-shimmer 1.2s linear infinite;
@@ -187,8 +187,8 @@ const bodyRows = computed(() => props.node.rows ?? [])
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 9999px;
-  border: 2px solid rgba(94, 104, 121, 0.25);
-  border-top-color: rgba(94, 104, 121, 0.8);
+  border: 2px solid color-mix(in srgb, var(--loading-spinner) 25%, transparent);
+  border-top-color: color-mix(in srgb, var(--loading-spinner) 80%, transparent);
   will-change: transform;
 }
 

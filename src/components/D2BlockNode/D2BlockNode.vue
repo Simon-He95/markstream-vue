@@ -510,12 +510,10 @@ onBeforeUnmount(() => {
     class="d2-block-container my-4 rounded-lg border overflow-hidden shadow-sm"
     data-markstream-d2="1"
     :data-markstream-mode="showSourceFallback ? 'fallback' : 'preview'"
-    :class="props.isDark ? 'border-gray-700/30 bg-gray-900 text-gray-100' : 'border-gray-200 bg-white text-gray-900'"
   >
     <div
       v-if="props.showHeader"
-      class="d2-block-header flex justify-between items-center px-4 py-2.5 border-b border-gray-400/5"
-      style="color: var(--vscode-editor-foreground);background-color: var(--vscode-editor-background);"
+      class="d2-block-header flex justify-between items-center px-4 py-2.5 border-b"
     >
       <div class="flex items-center gap-x-2">
         <span class="text-sm font-medium font-mono">D2</span>
@@ -523,8 +521,7 @@ onBeforeUnmount(() => {
       <div class="flex items-center gap-x-2">
         <div
           v-if="props.showModeToggle"
-          class="flex items-center gap-x-1 rounded-md p-0.5"
-          :class="props.isDark ? 'bg-gray-700' : 'bg-gray-100'"
+          class="d2-mode-toggle flex items-center gap-x-1 rounded-md p-0.5"
         >
           <button
             type="button"
@@ -555,7 +552,7 @@ onBeforeUnmount(() => {
         <button
           v-if="props.showCopyButton"
           type="button"
-          class="d2-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+          class="d2-action-btn p-2 text-xs rounded-md"
           :aria-label="copyText ? (t('common.copied') || 'Copied') : (t('common.copy') || 'Copy')"
           @click="copy"
           @mouseenter="onCopyHover($event)"
@@ -570,7 +567,7 @@ onBeforeUnmount(() => {
         <button
           v-if="props.showExportButton && svgMarkup"
           type="button"
-          class="d2-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+          class="d2-action-btn p-2 text-xs rounded-md"
           :aria-label="t('common.export') || 'Export'"
           @click="exportSvg"
           @mouseenter="onBtnHover($event, t('common.export') || 'Export')"
@@ -584,7 +581,7 @@ onBeforeUnmount(() => {
         <button
           v-if="props.showCollapseButton"
           type="button"
-          class="d2-action-btn p-2 text-xs rounded-md transition-colors hover:bg-[var(--vscode-editor-selectionBackground)]"
+          class="d2-action-btn p-2 text-xs rounded-md"
           :aria-pressed="isCollapsed"
           @click="toggleCollapse"
           @mouseenter="onBtnHover($event, isCollapsed ? (t('common.expand') || 'Expand') : (t('common.collapse') || 'Collapse'))"
@@ -623,6 +620,56 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* ── Container ── */
+.d2-block-container {
+  background: var(--diagram-bg);
+  border-color: var(--diagram-border);
+  color: hsl(var(--ms-foreground));
+}
+
+/* ── Header ── */
+.d2-block-header {
+  background: var(--diagram-header-bg);
+  border-color: var(--diagram-border);
+  color: hsl(var(--ms-foreground));
+}
+
+/* ── Mode toggle pill ── */
+.d2-mode-toggle {
+  background: hsl(var(--ms-secondary));
+}
+
+.mode-btn {
+  color: var(--code-action-fg);
+  opacity: 0.7;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.mode-btn.is-active {
+  opacity: 1;
+  font-weight: 600;
+  color: hsl(var(--ms-foreground));
+}
+
+/* ── Action buttons ── */
+.d2-action-btn {
+  color: var(--code-action-fg);
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.15s, color 0.15s;
+}
+
+.d2-action-btn:hover {
+  opacity: 1;
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.d2-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── Body ── */
 .d2-block-body {
   position: relative;
 }
@@ -648,31 +695,7 @@ onBeforeUnmount(() => {
   display: block;
 }
 
-.mode-btn {
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.mode-btn.is-active {
-  opacity: 1;
-  font-weight: 600;
-}
-
-.d2-action-btn {
-  opacity: 0.7;
-  transition: opacity 0.2s;
-}
-
-.d2-action-btn:hover {
-  opacity: 1;
-}
-
-.d2-action-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
 .d2-error {
-  color: #dc2626;
+  color: hsl(var(--ms-destructive));
 }
 </style>

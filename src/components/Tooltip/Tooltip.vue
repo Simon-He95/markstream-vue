@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps<{
   visible: boolean
@@ -11,24 +11,9 @@ const props = defineProps<{
   originX?: number | null
   originY?: number | null
   id?: string | null
+  /** @deprecated Dark mode is now handled via semantic CSS tokens (Layer 1). This prop is kept for backward compatibility. */
   isDark?: boolean | null
 }>()
-
-// Determine effective dark mode: prefer explicit prop, otherwise detect global/document preference
-const isDarkEffective = computed(() => {
-  if (props.isDark !== undefined && props.isDark !== null)
-    return Boolean(props.isDark)
-  if (typeof document !== 'undefined') {
-    try {
-      if (document.documentElement.classList.contains('dark'))
-        return true
-      if ((window as any)?.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
-        return true
-    }
-    catch {}
-  }
-  return false
-})
 
 const tooltip = ref<HTMLElement | null>(null)
 // Position via transform to allow smooth transitions
@@ -139,7 +124,7 @@ onBeforeUnmount(() => {
           :id="props.id"
           ref="tooltip"
           :style="{ position: 'fixed', left: style.left, top: style.top, transform: style.transform }"
-          class="z-[9999] inline-block text-base py-2 px-3 rounded-md shadow-md whitespace-nowrap pointer-events-none tooltip-element border" :class="[isDarkEffective ? 'bg-gray-900 text-white border-gray-700 border is-dark' : 'bg-white text-gray-900 border-gray-200 border']"
+          class="z-[9999] inline-block text-base py-2 px-3 rounded-md shadow-md whitespace-nowrap pointer-events-none tooltip-element border"
           role="tooltip"
         >
           {{ content }}
@@ -158,5 +143,10 @@ onBeforeUnmount(() => {
 .tooltip-enter-active, .tooltip-leave-active { transition: opacity 120ms linear; }
 
 /* Move transition: always active on the element so updates to transform animate smoothly */
-.tooltip-element { transition: transform 220ms cubic-bezier(.16,1,.3,1), box-shadow 220ms cubic-bezier(.16,1,.3,1); }
+.tooltip-element {
+  transition: transform 220ms cubic-bezier(.16,1,.3,1), box-shadow 220ms cubic-bezier(.16,1,.3,1);
+  background-color: var(--tooltip-bg);
+  color: var(--tooltip-fg);
+  border-color: var(--tooltip-border);
+}
 </style>

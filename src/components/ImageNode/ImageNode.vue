@@ -94,16 +94,16 @@ watch(displaySrc, () => {
     >
       <template v-if="props.usePlaceholder">
         <slot name="placeholder" :node="props.node" :display-src="displaySrc" :image-loaded="imageLoaded" :has-error="hasError" :fallback-src="props.fallbackSrc" :lazy="props.lazy">
-          <div class="w-4 h-4 rounded-full border-2 border-solid border-current border-t-transparent animate-spin" aria-hidden="true" />
+          <div class="image-node__spinner w-4 h-4 rounded-full border-2 border-solid animate-spin" aria-hidden="true" />
           <span class="text-sm whitespace-nowrap">{{ t('image.loading') }}</span>
         </slot>
       </template>
       <template v-else>
-        <span class="text-sm text-gray-500">{{ node.raw }}</span>
+        <span class="image-node__raw-text text-sm">{{ node.raw }}</span>
       </template>
     </span>
 
-    <span v-else-if="!node.loading && !props.fallbackSrc" key="error" class="image-node__error image-node__error--inline px-4 py-2 bg-gray-100 flex items-center justify-center rounded-lg gap-2 text-red-500">
+    <span v-else-if="!node.loading && !props.fallbackSrc" key="error" class="image-node__error image-node__error--inline px-4 py-2 flex items-center justify-center rounded-lg gap-2">
       <slot name="error" :node="props.node" :display-src="displaySrc" :image-loaded="imageLoaded" :has-error="hasError" :fallback-src="props.fallbackSrc" :lazy="props.lazy">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><!-- Icon from TDesign Icons by TDesign - https://github.com/Tencent/tdesign-icons/blob/main/LICENSE --><path fill="currentColor" d="M2 2h20v10h-2V4H4v9.586l5-5L14.414 14L13 15.414l-4-4l-5 5V20h8v2H2zm13.547 5a1 1 0 1 0 0 2a1 1 0 0 0 0-2m-3 1a3 3 0 1 1 6 0a3 3 0 0 1-6 0m3.625 6.757L19 17.586l2.828-2.829l1.415 1.415L20.414 19l2.829 2.828l-1.415 1.415L19 20.414l-2.828 2.829l-1.415-1.415L17.586 19l-2.829-2.828z" /></svg>
         <span class="text-sm whitespace-nowrap">{{ t('image.loadError') }}</span>
@@ -119,6 +119,7 @@ watch(displaySrc, () => {
 
 .placeholder-layer {
   max-width: 24rem;
+  will-change: transform, opacity;
 }
 
 .image-node__img--inline {
@@ -152,9 +153,21 @@ watch(displaySrc, () => {
   transform: translateY(0);
 }
 
-/* Spinner styles using CSS animations to leverage compositor */
-.placeholder-layer {
-  will-change: transform, opacity;
+/* Spinner uses semantic loading color */
+.image-node__spinner {
+  border-color: var(--loading-spinner);
+  border-top-color: transparent;
+}
+
+/* Raw text (when placeholder is disabled) uses muted foreground */
+.image-node__raw-text {
+  color: hsl(var(--ms-muted-foreground));
+}
+
+/* Error state uses semantic destructive color and placeholder background */
+.image-node__error {
+  background-color: var(--image-placeholder-bg);
+  color: hsl(var(--ms-destructive));
 }
 
 /* Respect user preference for reduced motion */

@@ -1886,7 +1886,7 @@ onUnmounted(() => {
     <!-- Configurable header area: consumers may override via named slots -->
     <div
       v-if="props.showHeader"
-      class="code-block-header flex justify-between items-center px-4 py-2.5 border-b border-gray-400/5"
+      class="code-block-header flex justify-between items-center px-4 py-2.5 border-b"
       :style="headerStyle"
     >
       <!-- left slot / fallback language label -->
@@ -2057,60 +2057,60 @@ onUnmounted(() => {
   content-visibility: auto;
   contain-intrinsic-size: 320px 180px;
   container-type: inline-size;
-  --markstream-code-fallback-bg: #ffffff;
-  --markstream-code-fallback-fg: #111827;
-  --markstream-code-border-color: rgb(229 231 235);
+  --markstream-code-fallback-bg: var(--code-bg);
+  --markstream-code-fallback-fg: var(--code-fg);
+  --markstream-code-border-color: var(--code-border);
   --vscode-editor-selectionBackground: var(--markstream-code-fallback-selection-bg);
-  --markstream-code-fallback-selection-bg: rgba(0, 0, 0, 0.06);
-  --markstream-diff-frame-border: rgb(203 213 225 / 0.56);
-  --markstream-diff-frame-shadow: 0 16px 40px -32px rgb(15 23 42 / 0.18);
-  --markstream-diff-shell-fg: #0f172a;
-  --markstream-diff-shell-muted: #64748b;
-  --markstream-diff-shell-border: rgb(148 163 184 / 0.18);
-  --markstream-diff-shell-shadow: 0 30px 70px -48px rgb(15 23 42 / 0.42);
+  --markstream-code-fallback-selection-bg: var(--code-selection-bg);
+  --markstream-diff-frame-border: var(--code-border);
+  --markstream-diff-frame-shadow: 0 16px 40px -32px hsl(var(--ms-foreground) / 0.18);
+  --markstream-diff-shell-fg: hsl(var(--ms-foreground));
+  --markstream-diff-shell-muted: hsl(var(--ms-muted-foreground));
+  --markstream-diff-shell-border: hsl(var(--ms-border) / 0.18);
+  --markstream-diff-shell-shadow: 0 30px 70px -48px hsl(var(--ms-foreground) / 0.42);
   --markstream-diff-shell-bg: radial-gradient(
       circle at top center,
-      rgb(255 255 255 / 0.9),
+      hsl(var(--ms-background) / 0.9),
       transparent 55%
     ),
-    linear-gradient(180deg, #fffdfa 0%, #fbfcfe 100%);
-  --markstream-diff-header-border: rgb(226 232 240 / 0.92);
+    linear-gradient(180deg, var(--code-bg) 0%, hsl(var(--ms-muted)) 100%);
+  --markstream-diff-header-border: hsl(var(--ms-border) / 0.92);
   --markstream-diff-stage-bg: radial-gradient(
       circle at top center,
-      rgb(255 255 255 / 0.95),
+      hsl(var(--ms-background) / 0.95),
       transparent 60%
     ),
-    linear-gradient(180deg, #fcfdff 0%, #f6f8fb 100%);
-  --markstream-diff-editor-bg: #ffffff;
-  --markstream-diff-editor-fg: #435266;
-  --markstream-diff-unchanged-fg: lab(36.247 0.0071872 -0.000424832);
-  --markstream-diff-unchanged-bg: lab(95.9989 0.0180531 -0.0010643);
-  --markstream-diff-unchanged-divider: rgb(255 255 255 / 0.94);
-  --markstream-diff-focus: rgb(14 165 233 / 0.42);
-  --markstream-diff-widget-shadow: rgb(15 23 42 / 0.26);
-  --markstream-diff-action-hover: rgb(15 23 42 / 0.06);
-  --markstream-diff-panel-bg: linear-gradient(180deg, #ffffff 0%, #fbfcfe 100%);
-  --markstream-diff-panel-bg-soft: #ffffff;
-  --markstream-diff-panel-bg-strong: #ffffff;
-  --markstream-diff-panel-border: rgb(226 232 240 / 0.3);
-  --markstream-diff-pane-divider: rgb(226 232 240 / 0.42);
+    linear-gradient(180deg, var(--code-bg) 0%, hsl(var(--ms-muted)) 100%);
+  --markstream-diff-editor-bg: var(--code-bg);
+  --markstream-diff-editor-fg: hsl(var(--ms-foreground));
+  --markstream-diff-unchanged-fg: hsl(var(--ms-foreground));
+  --markstream-diff-unchanged-bg: hsl(var(--ms-muted));
+  --markstream-diff-unchanged-divider: hsl(var(--ms-background) / 0.94);
+  --markstream-diff-focus: var(--focus-ring);
+  --markstream-diff-widget-shadow: hsl(var(--ms-foreground) / 0.26);
+  --markstream-diff-action-hover: var(--code-action-hover-bg);
+  --markstream-diff-panel-bg: linear-gradient(180deg, var(--code-bg) 0%, hsl(var(--ms-muted)) 100%);
+  --markstream-diff-panel-bg-soft: var(--code-bg);
+  --markstream-diff-panel-bg-strong: var(--code-bg);
+  --markstream-diff-panel-border: hsl(var(--ms-border) / 0.3);
+  --markstream-diff-pane-divider: hsl(var(--ms-border) / 0.42);
   --markstream-diff-gutter-bg: transparent;
   --markstream-diff-gutter-guide: transparent;
   --markstream-diff-gutter-gap: 16px;
-  --markstream-diff-line-number: rgb(82 82 82 / 0.88);
-  --markstream-diff-line-number-active: rgb(82 82 82 / 0.88);
-  --markstream-diff-added-fg: #14b8a6;
-  --markstream-diff-removed-fg: #ff3658;
-  --markstream-diff-added-line: rgb(232 249 245 / 0.98);
-  --markstream-diff-removed-line: rgb(255 241 241 / 0.98);
-  --markstream-diff-added-inline: rgb(197 245 219 / 0.96);
-  --markstream-diff-removed-inline: rgb(255 215 217 / 0.92);
+  --markstream-diff-line-number: var(--code-line-number);
+  --markstream-diff-line-number-active: var(--code-line-number);
+  --markstream-diff-added-fg: var(--diff-added-fg);
+  --markstream-diff-removed-fg: var(--diff-removed-fg);
+  --markstream-diff-added-line: var(--diff-added-bg);
+  --markstream-diff-removed-line: var(--diff-removed-bg);
+  --markstream-diff-added-inline: var(--diff-added-inline-bg);
+  --markstream-diff-removed-inline: var(--diff-removed-inline-bg);
   --markstream-diff-added-inline-border: transparent;
   --markstream-diff-removed-inline-border: transparent;
   --markstream-diff-added-gutter: linear-gradient(
     90deg,
     var(--markstream-diff-added-fg) 0 var(--stream-monaco-gutter-marker-width, 4px),
-    rgb(20 184 166 / 0.08) var(--stream-monaco-gutter-marker-width, 4px) 100%
+    hsl(var(--ms-diff-added) / 0.08) var(--stream-monaco-gutter-marker-width, 4px) 100%
   );
   --markstream-diff-removed-gutter: repeating-linear-gradient(
         180deg,
@@ -2118,59 +2118,59 @@ onUnmounted(() => {
         transparent 2px 4px
       )
       left / var(--stream-monaco-gutter-marker-width, 4px) 100% no-repeat,
-    linear-gradient(90deg, rgb(255 54 88 / 0.08) 0 100%);
-  --markstream-diff-added-line-fill: rgb(231 248 244 / 0.96);
-  --markstream-diff-removed-line-fill: rgb(255 241 241 / 0.98);
+    linear-gradient(90deg, hsl(var(--ms-diff-removed) / 0.08) 0 100%);
+  --markstream-diff-added-line-fill: var(--diff-added-bg);
+  --markstream-diff-removed-line-fill: var(--diff-removed-bg);
 }
 
 .code-block-container.is-dark {
-  --markstream-code-fallback-bg: #111827;
-  --markstream-code-fallback-fg: #e5e7eb;
-  --markstream-code-border-color: rgb(55 65 81 / 0.3);
-  --markstream-code-fallback-selection-bg: rgba(255, 255, 255, 0.08);
-  --markstream-diff-frame-border: rgb(82 82 91 / 0.56);
-  --markstream-diff-frame-shadow: 0 18px 40px -30px rgb(0 0 0 / 0.84);
-  --markstream-diff-shell-fg: #e2e8f0;
-  --markstream-diff-shell-muted: #94a3b8;
-  --markstream-diff-shell-border: rgb(82 82 91 / 0.56);
-  --markstream-diff-shell-shadow: 0 34px 80px -52px rgb(0 0 0 / 0.72);
-  --markstream-diff-shell-bg: rgb(10 10 11 / 0.99);
-  --markstream-diff-header-border: rgb(63 63 70 / 0.82);
-  --markstream-diff-stage-bg: rgb(10 10 11 / 0.99);
-  --markstream-diff-editor-bg: rgb(12 12 14 / 0.99);
-  --markstream-diff-editor-fg: #b6c2d3;
-  --markstream-diff-unchanged-fg: #cbd5e1;
-  --markstream-diff-unchanged-bg: rgb(24 24 27 / 0.92);
-  --markstream-diff-unchanged-divider: rgb(255 255 255 / 0.18);
-  --markstream-diff-focus: rgb(96 165 250 / 0.42);
-  --markstream-diff-widget-shadow: rgb(0 0 0 / 0.72);
-  --markstream-diff-action-hover: rgb(255 255 255 / 0.08);
-  --markstream-diff-panel-bg: rgb(10 10 11 / 0.99);
-  --markstream-diff-panel-bg-soft: rgb(10 10 11 / 0.99);
-  --markstream-diff-panel-bg-strong: rgb(10 10 11 / 0.99);
-  --markstream-diff-panel-border: rgb(82 82 91 / 0.3);
-  --markstream-diff-pane-divider: rgb(82 82 91 / 0.34);
+  --markstream-code-fallback-bg: var(--code-bg);
+  --markstream-code-fallback-fg: var(--code-fg);
+  --markstream-code-border-color: var(--code-border);
+  --markstream-code-fallback-selection-bg: var(--code-selection-bg);
+  --markstream-diff-frame-border: var(--code-border);
+  --markstream-diff-frame-shadow: 0 18px 40px -30px hsl(var(--ms-foreground) / 0.84);
+  --markstream-diff-shell-fg: hsl(var(--ms-foreground));
+  --markstream-diff-shell-muted: hsl(var(--ms-muted-foreground));
+  --markstream-diff-shell-border: hsl(var(--ms-border) / 0.56);
+  --markstream-diff-shell-shadow: 0 34px 80px -52px hsl(var(--ms-foreground) / 0.72);
+  --markstream-diff-shell-bg: hsl(var(--ms-background) / 0.99);
+  --markstream-diff-header-border: hsl(var(--ms-border) / 0.82);
+  --markstream-diff-stage-bg: hsl(var(--ms-background) / 0.99);
+  --markstream-diff-editor-bg: var(--code-bg);
+  --markstream-diff-editor-fg: hsl(var(--ms-foreground));
+  --markstream-diff-unchanged-fg: hsl(var(--ms-foreground));
+  --markstream-diff-unchanged-bg: hsl(var(--ms-muted));
+  --markstream-diff-unchanged-divider: hsl(var(--ms-background) / 0.18);
+  --markstream-diff-focus: var(--focus-ring);
+  --markstream-diff-widget-shadow: hsl(var(--ms-foreground) / 0.72);
+  --markstream-diff-action-hover: var(--code-action-hover-bg);
+  --markstream-diff-panel-bg: hsl(var(--ms-background) / 0.99);
+  --markstream-diff-panel-bg-soft: hsl(var(--ms-background) / 0.99);
+  --markstream-diff-panel-bg-strong: hsl(var(--ms-background) / 0.99);
+  --markstream-diff-panel-border: hsl(var(--ms-border) / 0.3);
+  --markstream-diff-pane-divider: hsl(var(--ms-border) / 0.34);
   --markstream-diff-gutter-bg: linear-gradient(
     180deg,
-    rgb(13 13 15 / 0.94) 0%,
-    rgb(9 9 10 / 0.98) 100%
+    hsl(var(--ms-background) / 0.94) 0%,
+    hsl(var(--ms-background) / 0.98) 100%
   );
-  --markstream-diff-gutter-guide: rgb(161 161 170 / 0.08);
+  --markstream-diff-gutter-guide: hsl(var(--ms-muted-foreground) / 0.08);
   --markstream-diff-gutter-gap: 16px;
-  --markstream-diff-line-number: rgb(161 161 170 / 0.68);
-  --markstream-diff-line-number-active: rgb(228 228 231 / 0.82);
-  --markstream-diff-added-fg: #5eead4;
-  --markstream-diff-removed-fg: #fda4af;
-  --markstream-diff-added-line: rgb(13 148 136 / 0.18);
-  --markstream-diff-removed-line: rgb(225 29 72 / 0.18);
-  --markstream-diff-added-inline: rgb(45 212 191 / 0.24);
-  --markstream-diff-removed-inline: rgb(251 113 133 / 0.24);
+  --markstream-diff-line-number: var(--code-line-number);
+  --markstream-diff-line-number-active: var(--code-line-number);
+  --markstream-diff-added-fg: var(--diff-added-fg);
+  --markstream-diff-removed-fg: var(--diff-removed-fg);
+  --markstream-diff-added-line: var(--diff-added-bg);
+  --markstream-diff-removed-line: var(--diff-removed-bg);
+  --markstream-diff-added-inline: var(--diff-added-inline-bg);
+  --markstream-diff-removed-inline: var(--diff-removed-inline-bg);
   --markstream-diff-added-inline-border: transparent;
   --markstream-diff-removed-inline-border: transparent;
   --markstream-diff-added-gutter: linear-gradient(
     90deg,
     var(--markstream-diff-added-fg) 0 var(--stream-monaco-gutter-marker-width, 4px),
-    rgb(94 234 212 / 0.2) var(--stream-monaco-gutter-marker-width, 4px) 100%
+    hsl(var(--ms-diff-added) / 0.2) var(--stream-monaco-gutter-marker-width, 4px) 100%
   );
   --markstream-diff-removed-gutter: repeating-linear-gradient(
         180deg,
@@ -2178,17 +2178,9 @@ onUnmounted(() => {
         transparent 2px 4px
       )
       left / var(--stream-monaco-gutter-marker-width, 4px) 100% no-repeat,
-    linear-gradient(90deg, rgb(253 164 175 / 0.18) 0 100%);
-  --markstream-diff-added-line-fill: linear-gradient(
-    90deg,
-    rgb(15 118 110 / 0.38) 0%,
-    rgb(13 148 136 / 0.28) 100%
-  );
-  --markstream-diff-removed-line-fill: linear-gradient(
-    90deg,
-    rgb(159 18 57 / 0.38) 0%,
-    rgb(225 29 72 / 0.28) 100%
-  );
+    linear-gradient(90deg, hsl(var(--ms-diff-removed) / 0.18) 0 100%);
+  --markstream-diff-added-line-fill: var(--diff-added-bg);
+  --markstream-diff-removed-line-fill: var(--diff-removed-bg);
 }
 
 .code-editor-container {
@@ -2197,6 +2189,7 @@ onUnmounted(() => {
 
 .code-block-header {
   gap: 16px;
+  border-color: var(--code-border);
 }
 
 .code-header-main {
@@ -2236,7 +2229,7 @@ onUnmounted(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
-  color: color-mix(in srgb, var(--vscode-editor-foreground, currentColor) 62%, transparent);
+  color: var(--code-line-number);
 }
 
 .code-editor-layer {
@@ -2405,7 +2398,7 @@ onUnmounted(() => {
   background-size: 400% 100%;
   animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
   min-height: 120px;
-  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 37%, rgba(0,0,0,0.04) 63%);
+  background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted) / 0.7) 37%, var(--loading-shimmer) 63%);
 }
 
 /* Loading placeholder styles */
@@ -2422,14 +2415,14 @@ onUnmounted(() => {
 
 .skeleton-line {
   height: 1rem;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
+  background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted) / 0.7) 37%, var(--loading-shimmer) 63%);
   background-size: 400% 100%;
   animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
   border-radius: 0.25rem;
 }
 
 .code-block-container.is-dark .skeleton-line {
-  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 37%, rgba(255,255,255,0.06) 63%);
+  background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted) / 0.7) 37%, var(--loading-shimmer) 63%);
   background-size: 400% 100%;
 }
 
@@ -2458,15 +2451,15 @@ onUnmounted(() => {
 .code-block-container.is-diff .icon-slot {
   width: 28px;
   height: 28px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7);
+  box-shadow: inset 0 1px 0 hsl(var(--ms-background) / 0.7);
   padding: 5px;
   color: var(--markstream-diff-added-fg);
 }
 
 .code-block-container.is-diff.is-dark .icon-slot {
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.08),
-    0 12px 28px -20px rgb(56 189 248 / 0.45);
+    inset 0 1px 0 hsl(var(--ms-background) / 0.08),
+    0 12px 28px -20px hsl(var(--ms-ring) / 0.45);
 }
 
 .code-diff-stats {
@@ -2499,19 +2492,19 @@ onUnmounted(() => {
   border-radius: 999px;
   border: 1px solid transparent;
   line-height: 1;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 1px 0 hsl(var(--ms-background) / 0.05);
 }
 
 .code-block-container.is-dark .code-diff-stat.removed {
-  color: #fb7185;
-  background: rgb(159 18 57 / 0.16);
-  border-color: rgb(251 113 133 / 0.2);
+  color: var(--diff-removed-fg);
+  background: hsl(var(--ms-diff-removed) / 0.16);
+  border-color: hsl(var(--ms-diff-removed) / 0.2);
 }
 
 .code-block-container.is-dark .code-diff-stat.added {
-  color: #2dd4bf;
-  background: rgb(15 118 110 / 0.16);
-  border-color: rgb(45 212 191 / 0.22);
+  color: var(--diff-added-fg);
+  background: hsl(var(--ms-diff-added) / 0.16);
+  border-color: hsl(var(--ms-diff-added) / 0.22);
 }
 
 .code-action-btn:active {

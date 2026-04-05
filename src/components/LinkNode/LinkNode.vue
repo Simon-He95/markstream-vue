@@ -33,8 +33,7 @@ const cssVars = computed(() => {
   const activeOpacity = props.animationOpacity ?? 0.35
   const restingOpacity = Math.max(0.12, Math.min(activeOpacity * 0.5, activeOpacity))
 
-  return {
-    '--link-color': props.color ?? '#0366d6',
+  const vars: Record<string, string> = {
     '--underline-height': `${props.underlineHeight ?? 2}px`,
     '--underline-bottom': bottom,
     '--underline-opacity': String(activeOpacity),
@@ -42,7 +41,10 @@ const cssVars = computed(() => {
     '--underline-duration': `${props.animationDuration ?? 1.6}s`,
     '--underline-timing': props.animationTiming ?? 'ease-in-out',
     '--underline-iteration': typeof props.animationIteration === 'number' ? String(props.animationIteration) : (props.animationIteration ?? 'infinite'),
-  } as Record<string, string>
+  }
+  if (props.color)
+    vars['--link-color'] = props.color
+  return vars
 })
 
 // Available node components for child rendering
@@ -170,7 +172,7 @@ const title = computed(() => {
 
 <style scoped>
 .link-node {
-  color: var(--link-color, #0366d6);
+  color: var(--link-color);
   text-decoration: none;
 }
 
@@ -183,7 +185,7 @@ const title = computed(() => {
 }
 
 .link-loading {
-  color: var(--link-color, #0366d6);
+  color: var(--link-color);
 }
 
 .link-loading .link-text {

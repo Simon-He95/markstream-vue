@@ -501,7 +501,8 @@ function renderErrorToContainer(error: unknown) {
     }
   }
   const errorDiv = document.createElement('div')
-  errorDiv.className = 'text-red-500 p-4'
+  errorDiv.className = 'p-4'
+  errorDiv.style.color = 'hsl(var(--ms-destructive))'
   errorDiv.textContent = 'Failed to render diagram: '
   const errorSpan = document.createElement('span')
   errorSpan.textContent = error instanceof Error ? error.message : 'Unknown error'
@@ -1857,20 +1858,15 @@ watch(
   { immediate: false },
 )
 
-const computedButtonStyle = computed(() => {
-  return props.isDark
-    ? 'mermaid-action-btn p-2 text-xs rounded text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-    : 'mermaid-action-btn p-2 text-xs rounded text-gray-600 hover:bg-gray-200 hover:text-gray-700'
-})
+const computedButtonStyle = 'mermaid-action-btn p-2 text-xs rounded'
 </script>
 
 <template>
   <div
-    class="my-4 rounded-lg border overflow-hidden shadow-sm"
+    class="mermaid-block-container my-4 rounded-lg border overflow-hidden"
     data-markstream-mermaid="1"
     :data-markstream-mode="showSource ? 'fallback' : hasRenderedOnce ? 'preview' : 'pending'"
     :class="[
-      props.isDark ? 'border-gray-700/30' : 'border-gray-200',
       { 'is-rendering': props.loading },
     ]"
   >
@@ -1878,7 +1874,6 @@ const computedButtonStyle = computed(() => {
     <div
       v-if="props.showHeader"
       class="mermaid-block-header flex justify-between items-center px-4 py-2.5 border-b"
-      :class="props.isDark ? 'bg-gray-800 border-gray-700/30' : 'bg-gray-50 border-gray-200'"
     >
       <!-- 左侧插槽（允许完全接管左侧显示） -->
       <div v-if="$slots['header-left']">
@@ -1886,21 +1881,17 @@ const computedButtonStyle = computed(() => {
       </div>
       <div v-else class="flex items-center gap-x-2 overflow-hidden">
         <img :src="mermaidIconUrl" class="w-4 h-4 my-0" alt="Mermaid">
-        <span class="text-sm font-medium font-mono truncate" :class="props.isDark ? 'text-gray-400' : 'text-gray-600'">Mermaid</span>
+        <span class="mermaid-label-text text-sm font-medium font-mono truncate">Mermaid</span>
       </div>
 
       <!-- 中间插槽或默认切换按钮 -->
       <div v-if="$slots['header-center']">
         <slot name="header-center" />
       </div>
-      <div v-else-if="props.showModeToggle && mermaidAvailable" class="flex items-center gap-x-1 rounded-md p-0.5" :class="props.isDark ? 'bg-gray-700' : 'bg-gray-100'">
+      <div v-else-if="props.showModeToggle && mermaidAvailable" class="mermaid-mode-toggle-group flex items-center gap-x-1 rounded-md p-0.5">
         <button
-          class="px-2.5 py-1 text-xs rounded transition-colors"
-          :class="[
-            !showSource
-              ? (props.isDark ? 'bg-gray-600 text-gray-200 shadow-sm' : 'bg-white text-gray-700 shadow-sm')
-              : (props.isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
-          ]"
+          class="mermaid-mode-btn px-2.5 py-1 text-xs rounded transition-colors"
+          :class="[!showSource ? 'is-active' : '']"
           @click="() => handleSwitchMode('preview')"
           @mouseenter="onBtnHover($event, t('common.preview') || 'Preview')"
           @focus="onBtnHover($event, t('common.preview') || 'Preview')"
@@ -1913,12 +1904,8 @@ const computedButtonStyle = computed(() => {
           </div>
         </button>
         <button
-          class="px-2.5 py-1 text-xs rounded transition-colors"
-          :class="[
-            showSource
-              ? (props.isDark ? 'bg-gray-600 text-gray-200 shadow-sm' : 'bg-white text-gray-700 shadow-sm')
-              : (props.isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
-          ]"
+          class="mermaid-mode-btn px-2.5 py-1 text-xs rounded transition-colors"
+          :class="[showSource ? 'is-active' : '']"
           @click="() => handleSwitchMode('source')"
           @mouseenter="onBtnHover($event, t('common.source') || 'Source')"
           @focus="onBtnHover($event, t('common.source') || 'Source')"
@@ -1993,15 +1980,15 @@ const computedButtonStyle = computed(() => {
 
     <!-- 内容区域（带高度过渡的容器） -->
     <div v-show="!isCollapsed" ref="modeContainerRef">
-      <div v-if="showSource" class="p-4" :class="props.isDark ? 'bg-gray-900' : 'bg-gray-50'">
-        <pre class="text-sm font-mono whitespace-pre-wrap" :class="props.isDark ? 'text-gray-300' : 'text-gray-700'">{{ baseFixedCode }}</pre>
+      <div v-if="showSource" class="mermaid-source-panel p-4">
+        <pre class="mermaid-source-code text-sm font-mono whitespace-pre-wrap">{{ baseFixedCode }}</pre>
       </div>
       <div v-else class="relative">
         <!-- ...existing preview content... -->
         <div v-if="props.showZoomControls" class="absolute top-2 right-2 z-10 rounded-lg">
           <div class="flex items-center gap-2 backdrop-blur rounded-lg">
             <button
-              class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+              class="mermaid-action-btn p-2 text-xs rounded transition-colors"
               @click="zoomIn"
               @mouseenter="onBtnHover($event, t('common.zoomIn') || 'Zoom in')"
               @focus="onBtnHover($event, t('common.zoomIn') || 'Zoom in')"
@@ -2011,7 +1998,7 @@ const computedButtonStyle = computed(() => {
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M11 8v6m-3-3h6" /></g></svg>
             </button>
             <button
-              class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+              class="mermaid-action-btn p-2 text-xs rounded transition-colors"
               @click="zoomOut"
               @mouseenter="onBtnHover($event, t('common.zoomOut') || 'Zoom out')"
               @focus="onBtnHover($event, t('common.zoomOut') || 'Zoom out')"
@@ -2021,7 +2008,7 @@ const computedButtonStyle = computed(() => {
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M8 11h6" /></g></svg>
             </button>
             <button
-              class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+              class="mermaid-action-btn p-2 text-xs rounded transition-colors"
               @click="resetZoom"
               @mouseenter="onBtnHover($event, t('common.resetZoom') || 'Reset zoom')"
               @focus="onBtnHover($event, t('common.resetZoom') || 'Reset zoom')"
@@ -2034,8 +2021,7 @@ const computedButtonStyle = computed(() => {
         </div>
         <div
           ref="mermaidContainer"
-          class="min-h-[360px] relative overflow-hidden block transition-[height] duration-150 ease-out"
-          :class="props.isDark ? 'bg-gray-900' : 'bg-gray-50'"
+          class="mermaid-preview-area min-h-[360px] relative overflow-hidden block transition-[height] duration-150 ease-out"
           :style="{ height: containerHeight }"
           v-on="wheelListeners"
           @mousedown="startDrag"
@@ -2064,34 +2050,33 @@ const computedButtonStyle = computed(() => {
             <transition name="mermaid-dialog" appear>
               <div
                 v-if="isModalOpen"
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+                class="mermaid-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
                 @click.self="closeModal"
               >
                 <div
-                  class="dialog-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
-                  :class="props.isDark ? 'bg-gray-900' : 'bg-white'"
+                  class="dialog-panel mermaid-modal-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
                 >
                   <div class="absolute top-6 right-6 z-50 flex items-center gap-2">
                     <button
-                      class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      class="mermaid-action-btn p-2 text-xs rounded transition-colors"
                       @click="zoomIn"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M11 8v6m-3-3h6" /></g></svg>
                     </button>
                     <button
-                      class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      class="mermaid-action-btn p-2 text-xs rounded transition-colors"
                       @click="zoomOut"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M8 11h6" /></g></svg>
                     </button>
                     <button
-                      class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      class="mermaid-action-btn p-2 text-xs rounded transition-colors"
                       @click="resetZoom"
                     >
                       {{ Math.round(zoom * 100) }}%
                     </button>
                     <button
-                      class="inline-flex items-center justify-center p-2 rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                      class="mermaid-action-btn inline-flex items-center justify-center p-2 rounded transition-colors"
                       @click="closeModal"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6L6 18M6 6l12 12" /></svg>
@@ -2120,6 +2105,83 @@ const computedButtonStyle = computed(() => {
 </template>
 
 <style scoped>
+/* ── Outer container ── */
+.mermaid-block-container {
+  border-color: var(--diagram-border);
+}
+
+/* ── Header ── */
+.mermaid-block-header {
+  background: var(--diagram-header-bg);
+  border-color: var(--diagram-border);
+}
+
+/* ── Header label text ── */
+.mermaid-label-text {
+  color: var(--code-action-fg);
+}
+
+/* ── Mode toggle pill group ── */
+.mermaid-mode-toggle-group {
+  background: var(--code-action-hover-bg);
+}
+
+/* ── Mode toggle buttons ── */
+.mermaid-mode-btn {
+  color: var(--code-action-fg);
+}
+
+.mermaid-mode-btn:hover {
+  color: var(--code-action-hover-fg);
+}
+
+.mermaid-mode-btn.is-active {
+  background: var(--code-action-active-bg);
+  color: var(--code-action-active-fg);
+  box-shadow: 0 1px 2px 0 hsl(var(--ms-foreground) / 0.05);
+}
+
+/* ── Action buttons (copy, export, fullscreen, zoom, collapse, modal close) ── */
+.mermaid-action-btn {
+  font-family: inherit;
+  color: var(--code-action-fg);
+}
+
+.mermaid-action-btn:hover {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.mermaid-action-btn:active {
+  transform: scale(0.98);
+}
+
+/* ── Source panel ── */
+.mermaid-source-panel {
+  background: var(--diagram-bg);
+}
+
+.mermaid-source-code {
+  color: hsl(var(--ms-foreground));
+}
+
+/* ── Preview area ── */
+.mermaid-preview-area {
+  background: var(--diagram-bg);
+}
+
+/* ── Modal overlay ── */
+.mermaid-modal-overlay {
+  background: var(--modal-overlay);
+}
+
+/* ── Modal panel ── */
+.mermaid-modal-panel {
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+}
+
+/* ── Mermaid SVG content ── */
 ._mermaid {
   font-family: inherit;
   content-visibility: auto;
@@ -2137,14 +2199,6 @@ const computedButtonStyle = computed(() => {
   width: 100%;
   max-height: 100% !important;
   height: 100% !important;
-}
-
-.mermaid-action-btn {
-  font-family: inherit;
-}
-
-.mermaid-action-btn:active {
-  transform: scale(0.98);
 }
 
 /* Dialog transition inspired by shadcn (fade + zoom) */

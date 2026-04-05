@@ -2411,7 +2411,7 @@ function handleContainerMouseout(event: MouseEvent) {
   min-height: 1rem;
   margin: 0.25rem 0;
   border-radius: 0.5rem;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
+  background-image: linear-gradient(90deg, var(--loading-shimmer), transparent, var(--loading-shimmer));
   background-size: 200% 100%;
   animation: node-placeholder-shimmer 1.1s ease-in-out infinite;
 }
@@ -2434,7 +2434,7 @@ function handleContainerMouseout(event: MouseEvent) {
 }
 
 .unknown-node {
-  color: #6a737d;
+  color: hsl(var(--ms-muted-foreground));
   font-style: italic;
   margin: 1rem 0;
 }

@@ -58,11 +58,11 @@ const liValueAttr = computed(() =>
 
 <style scoped>
 ol > .list-item::marker{
-  color: var(--list-item-counter-marker,#64748b);
+  color: var(--list-counter-marker);
   line-height: 1.6;
 }
 ul > .list-item::marker{
-  color: var(--list-item-marker,#cbd5e1)
+  color: var(--list-marker)
 }
 
 /* 大列表滚动到视口时，嵌套 NodeRenderer 需要立即绘制内容，避免空白 */

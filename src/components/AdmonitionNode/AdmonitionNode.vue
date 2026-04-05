@@ -55,7 +55,7 @@ const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
 </script>
 
 <template>
-  <div class="admonition" :class="[`admonition-${props.node.kind}`, props.isDark ? 'is-dark' : '']">
+  <div class="admonition" :class="[`admonition-${props.node.kind}`]">
     <div :id="headerId" class="admonition-header">
       <span v-if="iconMap[props.node.kind]" class="admonition-icon">{{ iconMap[props.node.kind] }}</span>
       <span class="admonition-title">{{ displayTitle }}</span>
@@ -92,25 +92,14 @@ const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
 </template>
 
 <style scoped>
-/* 变量默认（浅色主题）*/
+/* Base admonition — consumes semantic tokens from .markstream-vue */
 .admonition {
-  --admonition-bg: #f8f8f8;
-  --admonition-border: #eaecef;
-  --admonition-header-bg: rgba(0, 0, 0, 0.03);
-  --admonition-text: #111827;
-  --admonition-muted: #374151;
-
-  --admonition-note-color: #448aff;
-  --admonition-tip-color: #00bfa5;
-  --admonition-warning-color: #ff9100;
-  --admonition-danger-color: #ff5252;
-
   margin: 1rem 0;
   padding: 0;
-  border-radius: 4px;
+  border-radius: var(--ms-radius);
   border-left: 4px solid var(--admonition-border);
   background-color: var(--admonition-bg);
-  color: var(--admonition-text);
+  color: var(--admonition-fg);
   overflow: hidden;
 }
 
@@ -123,71 +112,53 @@ const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
   color: var(--admonition-muted);
 }
 
+.admonition-content {
+  padding: 0.5rem 1rem 1rem;
+  color: var(--admonition-fg);
+}
+
 .admonition-icon {
   margin-right: 0.5rem;
   color: inherit;
 }
 
-.admonition-content {
-  padding: 0.5rem 1rem 1rem;
-  color: var(--admonition-text);
-}
-
-/* 各种类型只控制边框与 header 颜色（使用更轻的 header 背景，以免过于抢眼） */
-.admonition-note {
-  border-left-color: var(--admonition-note-color);
-}
-.admonition-note .admonition-header {
-  background-color: rgba(68, 138, 255, 0.06);
-  color: var(--admonition-note-color);
-}
-
+/* Type variants — border + header color via semantic tokens */
+.admonition-note,
 .admonition-info {
-  border-left-color: var(--admonition-note-color);
+  border-left-color: var(--admonition-note);
 }
+.admonition-note .admonition-header,
 .admonition-info .admonition-header {
-  background-color: rgba(68, 138, 255, 0.06);
-  color: var(--admonition-note-color);
+  background-color: var(--admonition-note-header-bg);
+  color: var(--admonition-note);
 }
 
 .admonition-tip {
-  border-left-color: var(--admonition-tip-color);
+  border-left-color: var(--admonition-tip);
 }
 .admonition-tip .admonition-header {
-  background-color: rgba(0, 191, 165, 0.06);
-  color: var(--admonition-tip-color);
+  background-color: var(--admonition-tip-header-bg);
+  color: var(--admonition-tip);
 }
 
-.admonition-warning {
-  border-left-color: var(--admonition-warning-color);
-}
-.admonition-warning .admonition-header {
-  background-color: rgba(255, 145, 0, 0.06);
-  color: var(--admonition-warning-color);
-}
-
-.admonition-danger {
-  border-left-color: var(--admonition-danger-color);
-}
-.admonition-danger .admonition-header {
-  background-color: rgba(255, 82, 82, 0.06);
-  color: var(--admonition-danger-color);
-}
-
-.admonition-error {
-  border-left-color: var(--admonition-danger-color);
-}
-.admonition-error .admonition-header {
-  background-color: rgba(255, 82, 82, 0.06);
-  color: var(--admonition-danger-color);
-}
-
+.admonition-warning,
 .admonition-caution {
-  border-left-color: var(--admonition-warning-color);
+  border-left-color: var(--admonition-warning);
 }
+.admonition-warning .admonition-header,
 .admonition-caution .admonition-header {
-  background-color: rgba(255, 145, 0, 0.06);
-  color: var(--admonition-warning-color);
+  background-color: var(--admonition-warn-header-bg);
+  color: var(--admonition-warning);
+}
+
+.admonition-danger,
+.admonition-error {
+  border-left-color: var(--admonition-danger);
+}
+.admonition-danger .admonition-header,
+.admonition-error .admonition-header {
+  background-color: var(--admonition-danger-header-bg);
+  color: var(--admonition-danger);
 }
 
 /* 修复：当一次性渲染大量内容并滚动到 AdmonitionNode 时，
@@ -208,68 +179,12 @@ const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
   color: inherit;
   cursor: pointer;
   padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  border-radius: var(--ms-radius);
   font-size: 0.9rem;
 }
 .admonition-toggle:focus {
-  outline: 2px solid rgba(0,0,0,0.08);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-/* 深色模式支持：支持 props.isDark（组件级）与系统偏好（媒体查询） */
-.admonition.is-dark {
-  --admonition-bg: #0b1220;
-  --admonition-border: rgba(255, 255, 255, 0.06);
-  --admonition-header-bg: rgba(255, 255, 255, 0.03);
-  --admonition-text: #e6eef8;
-  --admonition-muted: #cbd5e1;
-}
-
-/* 当组件通过 props.isDark 指定为暗色时，增强语义色块 */
-.admonition.is-dark .admonition-note .admonition-header,
-.admonition.is-dark .admonition-info .admonition-header {
-  background-color: rgba(68, 138, 255, 0.12);
-  color: var(--admonition-note-color);
-}
-.admonition.is-dark .admonition-tip .admonition-header {
-  background-color: rgba(0, 191, 165, 0.12);
-  color: var(--admonition-tip-color);
-}
-.admonition.is-dark .admonition-warning .admonition-header {
-  background-color: rgba(255, 145, 0, 0.12);
-  color: var(--admonition-warning-color);
-}
-.admonition.is-dark .admonition-danger .admonition-header {
-  background-color: rgba(255, 82, 82, 0.12);
-  color: var(--admonition-danger-color);
-}
-
-@media (prefers-color-scheme: dark) {
-  .admonition {
-    --admonition-bg: #0b1220;
-    --admonition-border: rgba(255, 255, 255, 0.06);
-    --admonition-header-bg: rgba(255, 255, 255, 0.03);
-    --admonition-text: #e6eef8;
-    --admonition-muted: #cbd5e1;
-  }
-
-  /* 在暗色里稍微增强 header 的语义色块 */
-  .admonition-note .admonition-header,
-  .admonition-info .admonition-header {
-    background-color: rgba(68, 138, 255, 0.12);
-    color: var(--admonition-note-color);
-  }
-  .admonition-tip .admonition-header {
-    background-color: rgba(0, 191, 165, 0.12);
-    color: var(--admonition-tip-color);
-  }
-  .admonition-warning .admonition-header {
-    background-color: rgba(255, 145, 0, 0.12);
-    color: var(--admonition-warning-color);
-  }
-  .admonition-danger .admonition-header {
-    background-color: rgba(255, 82, 82, 0.12);
-    color: var(--admonition-danger-color);
-  }
-}
 </style>

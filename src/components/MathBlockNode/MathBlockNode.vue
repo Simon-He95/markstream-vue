@@ -236,8 +236,8 @@ onBeforeUnmount(() => {
 .math-loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-top-color: rgba(0, 0, 0, 0.6);
+  border: 2px solid color-mix(in srgb, var(--loading-spinner) 15%, transparent);
+  border-top-color: color-mix(in srgb, var(--loading-spinner) 80%, transparent);
   border-radius: 50%;
   animation: math-spin 0.8s linear infinite;
 }
@@ -269,14 +269,5 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  .math-loading-overlay {
-    background-color: rgba(0, 0, 0, 0.6);
-  }
-
-  .math-loading-spinner {
-    border-color: rgba(255, 255, 255, 0.2);
-    border-top-color: rgba(255, 255, 255, 0.8);
-  }
-}
+/* Dark mode spinner now handled by --loading-spinner token; no override needed */
 </style>

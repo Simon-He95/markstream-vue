@@ -373,7 +373,7 @@ async function renderInfographic(force = false) {
     hasPreview.value = false
     lastCompletedRenderSignature = ''
     if (infographicContainer.value) {
-      infographicContainer.value.innerHTML = `<div class="text-red-500 p-4">Failed to render infographic: ${error instanceof Error ? error.message : 'Unknown error'}</div>`
+      infographicContainer.value.innerHTML = `<div class="p-4" style="color: hsl(var(--ms-destructive))">Failed to render infographic: ${error instanceof Error ? error.message : 'Unknown error'}</div>`
     }
   }
   finally {
@@ -463,11 +463,7 @@ onBeforeUnmount(() => {
   }
 })
 
-const computedButtonStyle = computed(() => {
-  return props.isDark
-    ? 'infographic-action-btn p-2 text-xs rounded text-gray-400 hover:bg-gray-700 hover:text-gray-200'
-    : 'infographic-action-btn p-2 text-xs rounded text-gray-600 hover:bg-gray-200 hover:text-gray-700'
-})
+const computedButtonStyle = 'infographic-action-btn p-2 text-xs rounded'
 
 const isFullscreenDisabled = computed(() => showSource.value || isCollapsed.value)
 const renderMode = computed(() => {
@@ -494,11 +490,10 @@ watch(
 <template>
   <div
     ref="viewportTarget"
-    class="my-4 rounded-lg border overflow-hidden shadow-sm"
+    class="infographic-block-container my-4 rounded-lg border overflow-hidden shadow-sm"
     data-markstream-infographic="1"
     :data-markstream-mode="renderMode"
     :class="[
-      props.isDark ? 'border-gray-700/30' : 'border-gray-200',
       { 'is-rendering': props.loading },
     ]"
   >
@@ -506,7 +501,6 @@ watch(
     <div
       v-if="props.showHeader"
       class="infographic-block-header flex justify-between items-center px-4 py-2.5 border-b"
-      :class="props.isDark ? 'bg-gray-800 border-gray-700/30' : 'bg-gray-50 border-gray-200'"
     >
       <!-- Left side -->
       <div v-if="$slots['header-left']">
@@ -514,21 +508,17 @@ watch(
       </div>
       <div v-else class="flex items-center gap-x-2 overflow-hidden">
         <img :src="infographicIconUrl" class="w-4 h-4 my-0" alt="Infographic">
-        <span class="text-sm font-medium font-mono truncate" :class="props.isDark ? 'text-gray-400' : 'text-gray-600'">Infographic</span>
+        <span class="infographic-label text-sm font-medium font-mono truncate">Infographic</span>
       </div>
 
       <!-- Center - Mode toggle -->
       <div v-if="$slots['header-center']">
         <slot name="header-center" />
       </div>
-      <div v-else-if="props.showModeToggle" class="flex items-center gap-x-1 rounded-md p-0.5" :class="props.isDark ? 'bg-gray-700' : 'bg-gray-100'">
+      <div v-else-if="props.showModeToggle" class="infographic-mode-toggle flex items-center gap-x-1 rounded-md p-0.5">
         <button
-          class="px-2.5 py-1 text-xs rounded transition-colors"
-          :class="[
-            !showSource
-              ? (props.isDark ? 'bg-gray-600 text-gray-200 shadow-sm' : 'bg-white text-gray-700 shadow-sm')
-              : (props.isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
-          ]"
+          class="infographic-mode-btn px-2.5 py-1 text-xs rounded transition-colors"
+          :class="[!showSource ? 'is-active' : '']"
           @click="() => handleSwitchMode('preview')"
           @mouseenter="onBtnHover($event, t('common.preview') || 'Preview')"
           @focus="onBtnHover($event, t('common.preview') || 'Preview')"
@@ -541,12 +531,8 @@ watch(
           </div>
         </button>
         <button
-          class="px-2.5 py-1 text-xs rounded transition-colors"
-          :class="[
-            showSource
-              ? (props.isDark ? 'bg-gray-600 text-gray-200 shadow-sm' : 'bg-white text-gray-700 shadow-sm')
-              : (props.isDark ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'),
-          ]"
+          class="infographic-mode-btn px-2.5 py-1 text-xs rounded transition-colors"
+          :class="[showSource ? 'is-active' : '']"
           @click="() => handleSwitchMode('source')"
           @mouseenter="onBtnHover($event, t('common.source') || 'Source')"
           @focus="onBtnHover($event, t('common.source') || 'Source')"
@@ -619,15 +605,15 @@ watch(
 
     <!-- Content area -->
     <div v-show="!isCollapsed">
-      <div v-if="showSource" class="p-4" :class="props.isDark ? 'bg-gray-900' : 'bg-gray-50'">
-        <pre class="text-sm font-mono whitespace-pre-wrap" :class="props.isDark ? 'text-gray-300' : 'text-gray-700'">{{ baseCode }}</pre>
+      <div v-if="showSource" class="infographic-source p-4">
+        <pre class="infographic-source-code text-sm font-mono whitespace-pre-wrap">{{ baseCode }}</pre>
       </div>
       <div v-else class="relative">
         <!-- Zoom controls -->
         <div v-if="props.showZoomControls" class="absolute top-2 right-2 z-10 rounded-lg">
           <div class="flex items-center gap-2 backdrop-blur rounded-lg">
             <button
-              class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+              class="infographic-action-btn p-2 text-xs rounded"
               @click="zoomIn"
               @mouseenter="onBtnHover($event, t('common.zoomIn') || 'Zoom in')"
               @focus="onBtnHover($event, t('common.zoomIn') || 'Zoom in')"
@@ -637,7 +623,7 @@ watch(
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M11 8v6m-3-3h6" /></g></svg>
             </button>
             <button
-              class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+              class="infographic-action-btn p-2 text-xs rounded"
               @click="zoomOut"
               @mouseenter="onBtnHover($event, t('common.zoomOut') || 'Zoom out')"
               @focus="onBtnHover($event, t('common.zoomOut') || 'Zoom out')"
@@ -647,7 +633,7 @@ watch(
               <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M8 11h6" /></g></svg>
             </button>
             <button
-              class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+              class="infographic-action-btn p-2 text-xs rounded"
               @click="resetZoom"
               @mouseenter="onBtnHover($event, t('common.resetZoom') || 'Reset zoom')"
               @focus="onBtnHover($event, t('common.resetZoom') || 'Reset zoom')"
@@ -659,8 +645,7 @@ watch(
           </div>
         </div>
         <div
-          class="min-h-[360px] relative transition-all duration-100 overflow-hidden block"
-          :class="props.isDark ? 'bg-gray-900' : 'bg-gray-50'"
+          class="infographic-preview min-h-[360px] relative transition-all duration-100 overflow-hidden block"
           :style="{ height: containerHeight }"
           @mousedown="startDrag"
           @mousemove="onDrag"
@@ -690,34 +675,33 @@ watch(
         <transition name="infographic-dialog" appear>
           <div
             v-if="isModalOpen"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            class="infographic-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
             @click.self="closeModal"
           >
             <div
-              class="dialog-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
-              :class="props.isDark ? 'bg-gray-900' : 'bg-white'"
+              class="dialog-panel infographic-modal-panel relative w-full h-full max-w-full max-h-full rounded shadow-lg overflow-hidden"
             >
               <div class="absolute top-6 right-6 z-50 flex items-center gap-2">
                 <button
-                  class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                  class="infographic-action-btn p-2 text-xs rounded"
                   @click="zoomIn"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M11 8v6m-3-3h6" /></g></svg>
                 </button>
                 <button
-                  class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                  class="infographic-action-btn p-2 text-xs rounded"
                   @click="zoomOut"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8" /><path d="m21 21l-4.35-4.35M8 11h6" /></g></svg>
                 </button>
                 <button
-                  class="p-2 text-xs rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                  class="infographic-action-btn p-2 text-xs rounded"
                   @click="resetZoom"
                 >
                   {{ Math.round(zoom * 100) }}%
                 </button>
                 <button
-                  class="inline-flex items-center justify-center p-2 rounded transition-colors" :class="[props.isDark ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600 hover:bg-gray-200']"
+                  class="infographic-action-btn inline-flex items-center justify-center p-2 rounded"
                   @click="closeModal"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" role="img" width="1em" height="1em" viewBox="0 0 24 24" class="w-3 h-3"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6L6 18M6 6l12 12" /></svg>
@@ -744,12 +728,78 @@ watch(
 </template>
 
 <style scoped>
+/* ── Container ── */
+.infographic-block-container {
+  background: var(--diagram-bg);
+  border-color: var(--diagram-border);
+  color: hsl(var(--ms-foreground));
+}
+
+/* ── Header ── */
+.infographic-block-header {
+  background: var(--diagram-header-bg);
+  border-color: var(--diagram-border);
+  color: hsl(var(--ms-foreground));
+}
+
+.infographic-label {
+  color: hsl(var(--ms-muted-foreground));
+}
+
+/* ── Mode toggle pill ── */
+.infographic-mode-toggle {
+  background: hsl(var(--ms-secondary));
+}
+
+.infographic-mode-btn {
+  color: var(--code-action-fg);
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.infographic-mode-btn.is-active {
+  background: var(--code-action-active-bg);
+  color: var(--code-action-active-fg);
+  box-shadow: 0 1px 2px 0 hsl(var(--ms-foreground) / 0.05);
+}
+
+/* ── Action buttons ── */
 .infographic-action-btn {
   font-family: inherit;
+  color: var(--code-action-fg);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.infographic-action-btn:hover {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
 }
 
 .infographic-action-btn:active {
   transform: scale(0.98);
+}
+
+/* ── Source view ── */
+.infographic-source {
+  background: var(--diagram-bg);
+}
+
+.infographic-source-code {
+  color: hsl(var(--ms-foreground));
+}
+
+/* ── Preview area ── */
+.infographic-preview {
+  background: var(--diagram-bg);
+}
+
+/* ── Modal ── */
+.infographic-modal-overlay {
+  background: var(--modal-overlay);
+}
+
+.infographic-modal-panel {
+  background: var(--modal-bg);
+  color: var(--modal-fg);
 }
 
 .fullscreen {

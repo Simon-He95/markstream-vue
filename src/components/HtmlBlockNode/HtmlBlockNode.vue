@@ -177,7 +177,7 @@ onBeforeUnmount(() => {
   display: block;
   height: 0.8rem;
   border-radius: 9999px;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.35));
+  background-image: linear-gradient(90deg, var(--loading-shimmer), transparent, var(--loading-shimmer));
   background-size: 200% 100%;
   animation: html-block-node-shimmer 1.2s ease infinite;
 }

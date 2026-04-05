@@ -17,7 +17,7 @@ function scrollToReference(e) {
 
 <template>
   <a
-    class="footnote-anchor text-sm text-[#0366d6] hover:underline cursor-pointer"
+    class="footnote-anchor text-sm hover:underline cursor-pointer"
     :href="`#fnref-${node.id}`"
     :title="`返回引用 ${node.id}`"
     @click="scrollToReference"
@@ -29,5 +29,6 @@ function scrollToReference(e) {
 <style scoped>
 .footnote-anchor {
   margin-left: 0.5rem;
+  color: var(--link-color);
 }
 </style>

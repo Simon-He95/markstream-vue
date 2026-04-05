@@ -6,6 +6,6 @@
 
 <style scoped>
 .hr-node {
-  @apply border-t border-[var(--hr-border-color,#e2e8f0)] my-12;
+  @apply border-t border-[var(--hr-border)] my-12;
 }
 </style>

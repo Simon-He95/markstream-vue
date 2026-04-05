@@ -24,7 +24,7 @@ defineEmits(['copy'])
 <template>
   <div
     :id="`fnref--${node.id}`"
-    class="flex mt-2 mb-2 text-sm leading-relaxed border-t border-[#eaecef] pt-2"
+    class="flex mt-2 mb-2 text-sm leading-relaxed border-t border-[var(--footnote-border)] pt-2"
   >
     <!-- <span class="font-semibold mr-2 text-[#0366d6]">[{{ node.id }}]</span> -->
     <div class="flex-1">

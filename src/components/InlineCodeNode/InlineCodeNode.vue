@@ -112,7 +112,7 @@ const streamedDeltaClass = computed(() => (
 
 <template>
   <code
-    class="inline text-[85%] px-1 py-0.5 rounded font-mono bg-[hsl(var(--secondary))] whitespace-normal break-words max-w-full before:content-[''] after:content-['']"
+    class="inline text-[85%] px-1 py-0.5 rounded font-mono whitespace-normal break-words max-w-full before:content-[''] after:content-['']"
   >
     <span v-if="settledCode">{{ settledCode }}</span>
     <span
@@ -127,9 +127,9 @@ const streamedDeltaClass = computed(() => (
 
 <style scoped>
 code {
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--secondary));
-  border: 1px solid hsl(var(--border) / 0.9);
+  color: var(--inline-code-fg);
+  background-color: var(--inline-code-bg);
+  border: 1px solid var(--inline-code-border);
 }
 
 .inline-code-stream-delta {

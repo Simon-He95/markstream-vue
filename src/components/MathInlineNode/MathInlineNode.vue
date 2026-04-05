@@ -252,8 +252,8 @@ onBeforeUnmount(() => {
   width: 1rem;
   height: 1rem;
   border-radius: 9999px;
-  border: 2px solid rgba(94, 104, 121, 0.25);
-  border-top-color: rgba(94, 104, 121, 0.8);
+  border: 2px solid color-mix(in srgb, var(--loading-spinner) 25%, transparent);
+  border-top-color: color-mix(in srgb, var(--loading-spinner) 80%, transparent);
   will-change: transform;
 }
 

@@ -15,24 +15,216 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS variables for theme colors */
+/* ==========================================================================
+   Layer 1: Base Tokens
+   ========================================================================== */
+
+/*
+ * Bridge Tokens (--ms-*):
+ *   Inherit from host's shadcn variables via var(--xxx, fallback).
+ *   If the host defines --background on :root, it flows through automatically.
+ *   If not, the fallback value provides a sensible default (shadcn slate).
+ *
+ * Extension Tokens (--ms-info, --ms-link, etc.):
+ *   Unique to markstream-vue, no collision risk, defined directly.
+ */
+
+/* ── Light (default) ── */
+
 .markstream-vue {
-  --border: 214.3 31.8% 91.4%;
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --secondary: 210 40% 96%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+
+  /* Bridge: inherit shadcn compat variables */
+  --ms-background:              var(--background,             0 0% 100%);
+  --ms-foreground:              var(--foreground,             222.2 84% 4.9%);
+
+  --ms-muted:                   var(--muted,                  210 40% 96%);
+  --ms-muted-foreground:        var(--muted-foreground,       215.4 16.3% 46.9%);
+
+  --ms-secondary:               var(--secondary,              210 40% 96%);
+  --ms-secondary-foreground:    var(--secondary-foreground,   222.2 47.4% 11.2%);
+
+  --ms-accent:                  var(--accent,                 210 40% 96%);
+  --ms-accent-foreground:       var(--accent-foreground,      222.2 47.4% 11.2%);
+
+  --ms-primary:                 var(--primary,                222.2 47.4% 11.2%);
+  --ms-primary-foreground:      var(--primary-foreground,     210 40% 98%);
+
+  --ms-destructive:             var(--destructive,            0 84.2% 60.2%);
+  --ms-destructive-foreground:  var(--destructive-foreground, 210 40% 98%);
+
+  --ms-border:                  var(--border,                 214.3 31.8% 91.4%);
+  --ms-ring:                    var(--ring,                   222.2 84% 4.9%);
+
+  --ms-popover:                 var(--popover,                0 0% 100%);
+  --ms-popover-foreground:      var(--popover-foreground,     222.2 84% 4.9%);
+
+  --ms-radius:                  var(--radius,                 0.5rem);
+
+  /* Extension: markdown-specific, no shadcn collision */
+  --ms-info:                    217 91% 60%;
+  --ms-info-foreground:         210 40% 98%;
+
+  --ms-success:                 168 100% 37.5%;
+  --ms-success-foreground:      210 40% 98%;
+
+  --ms-warning:                 34 100% 50%;
+  --ms-warning-foreground:      0 0% 100%;
+
+  --ms-diff-added:              174 60% 51%;
+  --ms-diff-removed:            350 100% 60%;
+
+  --ms-highlight:               54 100% 62%;
+  --ms-highlight-foreground:    0 0% 0%;
+
+  --ms-link:                    212 100% 42%;
+
+  --ms-font-sans:               ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --ms-font-mono:               ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
+
+/* ── Dark ── */
 
 .dark .markstream-vue,
 .markstream-vue.dark {
-  --border: 217.2 32.6% 17.5%;
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --secondary: 217.2 32.6% 17.5%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+
+  /* Bridge: dark fallbacks (used when host has no dark tokens) */
+  --ms-background:              var(--background,             222.2 84% 4.9%);
+  --ms-foreground:              var(--foreground,             210 40% 98%);
+
+  --ms-muted:                   var(--muted,                  217.2 32.6% 17.5%);
+  --ms-muted-foreground:        var(--muted-foreground,       215 20.2% 65.1%);
+
+  --ms-secondary:               var(--secondary,              217.2 32.6% 17.5%);
+  --ms-secondary-foreground:    var(--secondary-foreground,   210 40% 98%);
+
+  --ms-accent:                  var(--accent,                 217.2 32.6% 17.5%);
+  --ms-accent-foreground:       var(--accent-foreground,      210 40% 98%);
+
+  --ms-primary:                 var(--primary,                210 40% 98%);
+  --ms-primary-foreground:      var(--primary-foreground,     222.2 47.4% 11.2%);
+
+  --ms-destructive:             var(--destructive,            0 62.8% 30.6%);
+  --ms-destructive-foreground:  var(--destructive-foreground, 210 40% 98%);
+
+  --ms-border:                  var(--border,                 217.2 32.6% 17.5%);
+  --ms-ring:                    var(--ring,                   212.7 26.8% 83.9%);
+
+  --ms-popover:                 var(--popover,                222.2 84% 4.9%);
+  --ms-popover-foreground:      var(--popover-foreground,     210 40% 98%);
+
+  /* Extension: dark overrides */
+  --ms-diff-added:              174 72% 70%;
+  --ms-diff-removed:            0 92% 82%;
+
+  --ms-highlight:               54 80% 42%;
+  --ms-highlight-foreground:    0 0% 100%;
+
+  --ms-link:                    213 94% 68%;
+
+  /* Admonition: stronger tint on dark backgrounds */
+  --admonition-note-header-bg:  color-mix(in srgb, hsl(var(--ms-info)) 12%, transparent);
+  --admonition-tip-header-bg:   color-mix(in srgb, hsl(var(--ms-success)) 12%, transparent);
+  --admonition-warn-header-bg:  color-mix(in srgb, hsl(var(--ms-warning)) 12%, transparent);
+  --admonition-danger-header-bg: color-mix(in srgb, hsl(var(--ms-destructive)) 12%, transparent);
+}
+
+/* ==========================================================================
+   Layer 2: Semantic Tokens
+   All reference --ms-* from Layer 1. Dark mode changes propagate
+   automatically — no need to redefine these under .dark.
+   ========================================================================== */
+
+.markstream-vue {
+
+  /* ── Inline code ── */
+  --inline-code-bg:             hsl(var(--ms-secondary));
+  --inline-code-fg:             hsl(var(--ms-foreground));
+  --inline-code-border:         hsl(var(--ms-border) / 0.9);
+
+  /* ── Code block ── */
+  --code-bg:                    hsl(var(--ms-background));
+  --code-fg:                    hsl(var(--ms-foreground));
+  --code-border:                hsl(var(--ms-border));
+  --code-header-bg:             hsl(var(--ms-muted));
+  --code-selection-bg:          hsl(var(--ms-accent) / 0.3);
+  --code-line-number:           hsl(var(--ms-muted-foreground));
+
+  /* ── Code block actions ── */
+  --code-action-fg:             hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg:       hsl(var(--ms-accent));
+  --code-action-hover-fg:       hsl(var(--ms-accent-foreground));
+  --code-action-active-bg:      hsl(var(--ms-primary));
+  --code-action-active-fg:      hsl(var(--ms-primary-foreground));
+
+  /* ── Diff ── */
+  --diff-added-fg:              hsl(var(--ms-diff-added));
+  --diff-removed-fg:            hsl(var(--ms-diff-removed));
+  --diff-added-bg:              hsl(var(--ms-diff-added) / 0.1);
+  --diff-added-inline-bg:       hsl(var(--ms-diff-added) / 0.2);
+  --diff-removed-bg:            hsl(var(--ms-diff-removed) / 0.1);
+  --diff-removed-inline-bg:     hsl(var(--ms-diff-removed) / 0.2);
+
+  /* ── Blockquote ── */
+  --blockquote-border:          hsl(var(--ms-border));
+
+  /* ── Admonition ── */
+  --admonition-bg:              hsl(var(--ms-muted));
+  --admonition-border:          hsl(var(--ms-border));
+  --admonition-fg:              hsl(var(--ms-foreground));
+  --admonition-muted:           hsl(var(--ms-muted-foreground));
+  --admonition-header-bg:       hsl(var(--ms-muted) / 0.5);
+  --admonition-note:            hsl(var(--ms-info));
+  --admonition-tip:             hsl(var(--ms-success));
+  --admonition-warning:         hsl(var(--ms-warning));
+  --admonition-danger:          hsl(var(--ms-destructive));
+  --admonition-note-header-bg:  color-mix(in srgb, hsl(var(--ms-info)) 6%, transparent);
+  --admonition-tip-header-bg:   color-mix(in srgb, hsl(var(--ms-success)) 6%, transparent);
+  --admonition-warn-header-bg:  color-mix(in srgb, hsl(var(--ms-warning)) 6%, transparent);
+  --admonition-danger-header-bg: color-mix(in srgb, hsl(var(--ms-destructive)) 6%, transparent);
+
+  /* ── Table ── */
+  --table-border:               hsl(var(--ms-border));
+
+  /* ── Link ── */
+  --link-color:                 hsl(var(--ms-link));
+
+  /* ── List ── */
+  --list-marker:                hsl(var(--ms-border));
+  --list-counter-marker:        hsl(var(--ms-muted-foreground));
+
+  /* ── Thematic break (HR) ── */
+  --hr-border:                  hsl(var(--ms-border));
+
+  /* ── Highlight ── */
+  --highlight-bg:               hsl(var(--ms-highlight));
+
+  /* ── Footnote ── */
+  --footnote-border:            hsl(var(--ms-border));
+
+  /* ── Tooltip ── */
+  --tooltip-bg:                 hsl(var(--ms-popover));
+  --tooltip-fg:                 hsl(var(--ms-popover-foreground));
+  --tooltip-border:             hsl(var(--ms-border));
+
+  /* ── Modal ── */
+  --modal-overlay:              hsl(0 0% 0% / 0.7);
+  --modal-bg:                   hsl(var(--ms-popover));
+  --modal-fg:                   hsl(var(--ms-popover-foreground));
+
+  /* ── Diagram containers (Mermaid / D2 / Infographic) ── */
+  --diagram-bg:                 hsl(var(--ms-muted));
+  --diagram-border:             hsl(var(--ms-border));
+  --diagram-header-bg:          hsl(var(--ms-muted));
+
+  /* ── Loading states ── */
+  --loading-spinner:            hsl(var(--ms-muted-foreground));
+  --loading-shimmer:            hsl(var(--ms-muted) / 0.5);
+
+  /* ── Image ── */
+  --image-placeholder-bg:       hsl(var(--ms-muted));
+
+  /* ── Focus ring ── */
+  --focus-ring:                 hsl(var(--ms-ring));
 }
 
 /* Prevent mermaid temporary render containers from causing layout shift */

@@ -45,7 +45,10 @@ function getThemeKey(theme: CodeBlockMonacoTheme | null | undefined): string | n
 
 /**
  * Request a global Monaco theme change.
- * Picks any available setTheme from the registry, deduplicates by theme key.
+ * Each useMonaco() instance captures its own `themes` list in its setTheme
+ * closure, so we must call every registered instance — only the one whose
+ * themes list contains the target theme will succeed at registration.
+ * monaco.editor.setTheme() itself is global (affects all editors).
  */
 export function requestThemeChange(theme: CodeBlockMonacoTheme | null | undefined): Promise<void> {
   const key = getThemeKey(theme)
@@ -70,14 +73,19 @@ async function applyTheme(key: string, theme: CodeBlockMonacoTheme | null | unde
   try {
     if (lastAppliedKey === key)
       return
-
-    // Pick any registered setTheme — they all call the same global Monaco API
-    const setTheme = registry.values().next().value
-    if (!setTheme || theme == null)
+    if (theme == null || registry.size === 0)
       return
 
-    await setTheme(theme)
-    lastAppliedKey = key
+    // Notify all registered instances — each has its own themes context.
+    // stream-monaco internally deduplicates via globalAppliedThemeName,
+    // so only the first successful call does real work; the rest are no-ops.
+    const results = await Promise.allSettled(
+      [...registry].map(fn => fn(theme)),
+    )
+
+    // Mark as applied if at least one succeeded
+    if (results.some(r => r.status === 'fulfilled'))
+      lastAppliedKey = key
   }
   catch (error) {
     if (import.meta.env?.DEV)
@@ -90,7 +98,6 @@ async function applyTheme(key: string, theme: CodeBlockMonacoTheme | null | unde
 
 /**
  * Reset the cached lastAppliedKey so the next requestThemeChange always applies.
- * Useful when forcing a re-apply after component recreation.
  */
 export function invalidateThemeCache() {
   lastAppliedKey = null

@@ -17,7 +17,7 @@ import {
   getUseMonaco,
 
 } from './monaco'
-import { scheduleGlobalMonacoTheme } from './monacoThemeScheduler'
+import { invalidateThemeCache, registerSetTheme, requestThemeChange } from './monacoThemeService'
 
 const props = withDefaults(
   defineProps<CodeBlockNodeProps & {
@@ -155,8 +155,11 @@ if (typeof window !== 'undefined') {
     { immediate: true },
   )
 }
+let unregisterTheme: (() => void) | null = null
 onBeforeUnmount(() => {
   isUnmounted = true
+  unregisterTheme?.()
+  unregisterTheme = null
   viewportHandle.value?.destroy()
   viewportHandle.value = null
 })
@@ -332,6 +335,7 @@ if (typeof window !== 'undefined') {
         safeClean = helpers.safeClean || helpers.cleanupEditor || safeClean
         refreshDiffPresentation = helpers.refreshDiffPresentation || refreshDiffPresentation
         setTheme = helpers.setTheme || setTheme
+        unregisterTheme = registerSetTheme(setTheme)
         monacoReady.value = true
 
         if (!isUnmounted && codeEditor.value)
@@ -1833,7 +1837,7 @@ function themeUpdate() {
     return
   }
 
-  void scheduleGlobalMonacoTheme(setTheme, themeToSet)
+  void requestThemeChange(themeToSet)
     .then(syncPresentation)
     .catch((error) => {
       warnCodeBlockDev('Failed to apply Monaco theme', error)

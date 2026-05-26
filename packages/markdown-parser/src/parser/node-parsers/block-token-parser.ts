@@ -369,7 +369,7 @@ export function parseBasicBlockToken(
         // markdown-it can normalize html_block token.content and lose original lines.
         // Re-extract the next full <tag>...</tag> block from the original source.
         const source = String((options as any)?.__sourceMarkdown ?? '')
-        const cursor = Number((options as any)?.__customHtmlBlockCursor ?? 0)
+        const cursor = Number((options as any)?.__customHtmlSourceCursor ?? (options as any)?.__customHtmlBlockCursor ?? 0)
 
         // If markdown-it provides a source map for this token, prefer anchoring the
         // re-extraction to that line range. This avoids accidentally matching an
@@ -380,8 +380,10 @@ export function parseBasicBlockToken(
         const searchStart = Math.max(clampNonNegative(cursor), clampNonNegative(mappedLineStart))
 
         const fromSource = findNextCustomHtmlBlockFromSource(source, tag, searchStart)
-        if (fromSource)
+        if (fromSource) {
           (options as any).__customHtmlBlockCursor = fromSource.end
+          ;(options as any).__customHtmlSourceCursor = fromSource.end
+        }
 
         const rawHtml = String(fromSource?.raw ?? htmlBlockNode.raw ?? '')
 

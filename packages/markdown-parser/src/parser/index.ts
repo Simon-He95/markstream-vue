@@ -1984,6 +1984,7 @@ export function parseMarkdownToStructure(
     validateLink,
     __markdownIt: md,
     __sourceMarkdown: safeMarkdown,
+    __customHtmlSourceCursor: 0,
     __customHtmlBlockCursor: 0,
   } as any
   let result = processTokens(transformedTokens, internalOptions)

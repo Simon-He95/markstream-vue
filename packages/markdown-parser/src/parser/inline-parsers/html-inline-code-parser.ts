@@ -1,6 +1,6 @@
 import type { InlineCodeNode, MarkdownToken, ParsedNode } from '../../types'
 import { VOID_HTML_TAGS } from '../../htmlTags'
-import { parseTagAttrs } from '../../htmlTagUtils'
+import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes, parseTagAttrs } from '../../htmlTagUtils'
 import { normalizeCustomTag } from '../customHtmlTags'
 import { buildAllowedHtmlTagSet } from '../index'
 
@@ -196,6 +196,75 @@ function collectHtmlFragment(tokens: MarkdownToken[], startIndex: number, tag: s
   }
 }
 
+function findCustomHtmlFragmentFromSource(
+  source: string,
+  tag: string,
+  startIndex: number,
+): { raw: string, inner: string, end: number } | null {
+  if (!source || !tag)
+    return null
+
+  const lowerTag = escapeTagForRegExp(tag.toLowerCase())
+  const openRe = new RegExp(String.raw`<\s*${lowerTag}(?=\s|>|/)`, 'gi')
+  openRe.lastIndex = Math.max(0, startIndex || 0)
+  const openMatch = openRe.exec(source)
+  if (!openMatch || openMatch.index == null)
+    return null
+
+  const openStart = openMatch.index
+  const openEndRel = findTagCloseIndexOutsideQuotes(source.slice(openStart))
+  if (openEndRel === -1)
+    return null
+
+  const openEnd = openStart + openEndRel
+  const openTag = source.slice(openStart, openEnd + 1)
+  if (/\/\s*>$/.test(openTag))
+    return { raw: openTag, inner: '', end: openEnd + 1 }
+
+  let depth = 1
+  let index = openEnd + 1
+  const isOpenAt = (pos: number) => new RegExp(String.raw`^<\s*${lowerTag}(?=\s|>|/)`, 'i').test(source.slice(pos))
+  const isCloseAt = (pos: number) => new RegExp(String.raw`^<\s*\/\s*${lowerTag}(?=\s|>)`, 'i').test(source.slice(pos))
+
+  while (index < source.length) {
+    const lt = source.indexOf('<', index)
+    if (lt === -1)
+      return { raw: source.slice(openStart), inner: source.slice(openEnd + 1), end: source.length }
+
+    if (isCloseAt(lt)) {
+      const closeEndRel = findTagCloseIndexOutsideQuotes(source.slice(lt))
+      if (closeEndRel === -1)
+        return { raw: source.slice(openStart), inner: source.slice(openEnd + 1, lt), end: source.length }
+      const closeEnd = lt + closeEndRel
+      depth--
+      if (depth === 0) {
+        return {
+          raw: source.slice(openStart, closeEnd + 1),
+          inner: source.slice(openEnd + 1, lt),
+          end: closeEnd + 1,
+        }
+      }
+      index = closeEnd + 1
+      continue
+    }
+
+    if (isOpenAt(lt)) {
+      const nestedOpenEndRel = findTagCloseIndexOutsideQuotes(source.slice(lt))
+      if (nestedOpenEndRel === -1)
+        return null
+      const nestedOpenEnd = lt + nestedOpenEndRel
+      if (!/\/\s*>$/.test(source.slice(lt, nestedOpenEnd + 1)))
+        depth++
+      index = nestedOpenEnd + 1
+      continue
+    }
+
+    index = lt + 1
+  }
+
+  return { raw: source.slice(openStart), inner: source.slice(openEnd + 1), end: source.length }
+}
+
 // Parse inline HTML and return an appropriate ParsedNode depending on tag.
 export function parseHtmlInlineCodeToken(
   token: MarkdownToken,
@@ -355,9 +424,18 @@ export function parseHtmlInlineCodeToken(
     attrs.push([attrName, attrValue])
   }
   if (customTagSet?.has(tag)) {
-    const _content = fragment.innerTokens.length
-      ? stringifyTokens(fragment.innerTokens)
-      : ''
+    const source = String((options as any)?.__sourceMarkdown ?? '')
+    const cursor = Number((options as any)?.__customHtmlSourceCursor ?? 0)
+    const sourceFragment = findCustomHtmlFragmentFromSource(source, tag, cursor)
+    if (sourceFragment)
+      (options as any).__customHtmlSourceCursor = sourceFragment.end
+
+    const _content = sourceFragment
+      ? sourceFragment.inner
+      : fragment.innerTokens.length
+        ? stringifyTokens(fragment.innerTokens)
+        : ''
+    const rawHtml = sourceFragment?.raw ?? content
 
     const customChildren = fragment.innerTokens.length
       ? parseInlineTokens(fragment.innerTokens, raw, pPreToken, options)
@@ -369,7 +447,7 @@ export function parseHtmlInlineCodeToken(
         attrs,
         content: _content,
         children: customChildren,
-        raw: content,
+        raw: rawHtml,
         loading: token.loading || loading,
         autoClosed,
       } as ParsedNode,

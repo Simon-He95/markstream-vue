@@ -26,15 +26,6 @@ export interface FactoryOptions extends Record<string, unknown> {
    * Default: true
    */
   enableFixIndentedCodeBlock?: boolean
-  /**
-   * Whether to enable markdown-it's smartquotes rule, which rewrites
-   * straight `"` `'` into typographic curly quotes (e.g. `“ ” ‘ ’`).
-   * Disabled by default because it corrupts structured content (JSON,
-   * code-like strings) carried inside custom HTML tags. Set to `true`
-   * to opt back in. See: https://github.com/Simon-He95/markstream-vue/issues/466
-   * Default: false
-   */
-  enableSmartQuotes?: boolean
 }
 
 export function factory(opts: FactoryOptions = {}) {
@@ -45,9 +36,6 @@ export function factory(opts: FactoryOptions = {}) {
     stream: true,
     ...(opts.markdownItOptions ?? {}),
   })
-
-  if (!opts.enableSmartQuotes)
-    md.disable('smartquotes', true)
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }

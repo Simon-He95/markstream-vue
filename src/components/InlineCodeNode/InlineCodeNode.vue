@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { resolveStreamingTextUpdate } from 'markstream-core'
 import { computed, inject, ref, useAttrs, watch } from 'vue'
 
 const props = defineProps<{
@@ -10,21 +11,22 @@ const props = defineProps<{
 }>()
 
 const attrs = useAttrs()
-const inheritedTypewriter = inject<{ value?: boolean } | undefined>('markstreamTypewriter', undefined)
+const inheritedFade = inject<{ value?: boolean } | undefined>('markstreamFade', undefined)
 const inheritedTextStreamState = inject<Map<string, string> | undefined>('markstreamTextStreamState', undefined)
-const explicitTypewriter = computed<boolean | undefined>(() => {
-  const raw = attrs.typewriter
+const inheritedStreamVersion = inject<{ value?: number } | undefined>('markstreamStreamVersion', undefined)
+const explicitFade = computed<boolean | undefined>(() => {
+  const raw = attrs.fade
   if (raw === '' || raw === true || raw === 'true')
     return true
   if (raw === false || raw === 'false')
     return false
   return undefined
 })
-const typewriterEnabled = computed(() => {
-  if (typeof explicitTypewriter.value === 'boolean')
-    return explicitTypewriter.value
-  if (typeof inheritedTypewriter?.value === 'boolean')
-    return inheritedTypewriter.value
+const fadeEnabled = computed(() => {
+  if (typeof explicitFade.value === 'boolean')
+    return explicitFade.value
+  if (typeof inheritedFade?.value === 'boolean')
+    return inheritedFade.value
   return true
 })
 const streamStateKey = computed(() => {
@@ -35,6 +37,7 @@ const streamStateKey = computed(() => {
 })
 const settledCode = ref(props.node.code)
 const streamedDelta = ref('')
+let lastStreamVersion: number | undefined = inheritedStreamVersion?.value
 const streamFadeVersion = ref(0)
 
 function getRenderedContent() {
@@ -54,40 +57,26 @@ function settleStreamedDelta() {
 }
 
 watch(
-  [() => props.node.code, streamStateKey, typewriterEnabled],
-  ([next]) => {
+  [() => props.node.code, streamStateKey, fadeEnabled, () => inheritedStreamVersion?.value],
+  ([next, _key, _fade, version]) => {
     const normalized = String(next ?? '')
-    const rendered = getRenderedContent()
     const key = streamStateKey.value
-    const previousPersisted = key
-      ? inheritedTextStreamState?.get(key)
-      : undefined
-    const previousContent = previousPersisted ?? rendered
+    const versionChanged = version !== lastStreamVersion
+    lastStreamVersion = version
 
-    if (!typewriterEnabled.value) {
-      setFullContent(normalized)
-      if (key)
-        inheritedTextStreamState?.set(key, normalized)
-      return
-    }
+    const result = resolveStreamingTextUpdate({
+      nextContent: normalized,
+      persistedContent: key ? inheritedTextStreamState?.get(key) : undefined,
+      currentState: { settledContent: settledCode.value, streamedDelta: streamedDelta.value },
+      typewriterEnabled: fadeEnabled.value,
+      streamRenderVersionChanged: versionChanged,
+    })
 
-    if (normalized === previousContent) {
-      setFullContent(normalized)
-      if (key)
-        inheritedTextStreamState?.set(key, normalized)
-      return
-    }
-
-    if (previousContent && normalized.startsWith(previousContent) && normalized.length > previousContent.length) {
-      settledCode.value = previousContent
-      streamedDelta.value = normalized.slice(previousContent.length)
+    settledCode.value = result.settledContent
+    streamedDelta.value = result.streamedDelta
+    if (result.appended)
       streamFadeVersion.value += 1
-      if (key)
-        inheritedTextStreamState?.set(key, normalized)
-      return
-    }
 
-    setFullContent(normalized)
     if (key)
       inheritedTextStreamState?.set(key, normalized)
   },
@@ -95,7 +84,7 @@ watch(
 )
 
 watch(
-  typewriterEnabled,
+  fadeEnabled,
   (enabled) => {
     if (enabled)
       return
@@ -143,8 +132,8 @@ const streamedDeltaClass = computed(() => (
 }
 
 .inline-code-stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--typewriter-fade-duration, 900ms));
-  animation-timing-function: var(--stream-update-fade-ease, var(--typewriter-fade-ease, ease-out));
+  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, 280ms));
+  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.33, 0, 0.67, 1)));
   animation-fill-mode: both;
   will-change: opacity;
 }

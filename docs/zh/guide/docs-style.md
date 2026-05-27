@@ -3,5 +3,5 @@
 如果向文档中添加截图或 GIF，请遵循以下建议：
 
 - 保持文件体积小（优先使用 SVG 或压缩图片）
-- 将资源放在 `docs/.vitepress/public/`，以便 VitePress 正确托管
+- 将资源放在 `docs/public/`，以便 VitePress 正确托管
 - 使用描述性文件名，并在图片下方添加说明

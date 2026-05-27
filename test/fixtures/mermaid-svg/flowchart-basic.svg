@@ -1,0 +1,28 @@
+<svg id="mermaid-flowchart" xmlns="http://www.w3.org/2000/svg" class="flowchart" viewBox="0 0 220 90" role="graphics-document document" aria-roledescription="flowchart-v2">
+  <style>#mermaid-flowchart .node rect{stroke:#9370db;stroke-width:1px;}#mermaid-flowchart .edgePath .path{stroke:#333;stroke-width:2px;fill:none;}</style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" />
+    </marker>
+    <linearGradient id="nodeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ececff" />
+      <stop offset="100%" stop-color="#f8f8ff" />
+    </linearGradient>
+    <clipPath id="nodeClip">
+      <rect x="10" y="10" width="80" height="40" rx="4" ry="4" />
+    </clipPath>
+  </defs>
+  <g class="nodes">
+    <g class="node" id="flowchart-A">
+      <rect x="10" y="10" width="80" height="40" fill="url(#nodeGradient)" clip-path="url(#nodeClip)" />
+      <text x="50" y="35"><tspan>Start</tspan></text>
+    </g>
+    <g class="node" id="flowchart-B">
+      <rect x="130" y="10" width="80" height="40" />
+      <text x="170" y="35"><tspan>Done</tspan></text>
+    </g>
+  </g>
+  <g class="edgePaths">
+    <path class="path" d="M 90 30 L 130 30" marker-end="url(#arrowhead)" />
+  </g>
+</svg>

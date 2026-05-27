@@ -9,7 +9,8 @@
  * code blocks that don't look like code into paragraphs.
  */
 
-import type { MarkdownIt, Token } from 'markdown-it-ts'
+import type { MarkdownIt } from '../markdown-it-types'
+import type { MarkdownToken } from '../types'
 
 export interface FixIndentedCodeBlockOptions {
   /**
@@ -137,8 +138,8 @@ export function applyFixIndentedCodeBlock(md: MarkdownIt, options: FixIndentedCo
     return
 
   // Process at the core stage after tokenization is complete
-  md.core.ruler.after('inline', 'fix_indented_code_block', (state: any) => {
-    const tokens = state.tokens as Token[]
+  md.core.ruler.after('inline', 'fix_indented_code_block', (state: unknown) => {
+    const tokens = (state as { tokens?: MarkdownToken[] }).tokens ?? []
 
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i]
@@ -147,7 +148,7 @@ export function applyFixIndentedCodeBlock(md: MarkdownIt, options: FixIndentedCo
       if (token.type !== 'code_block')
         continue
 
-      const content = String((token as any).content ?? '').trim()
+      const content = String(token.content ?? '').trim()
       if (!content)
         continue
 
@@ -157,17 +158,18 @@ export function applyFixIndentedCodeBlock(md: MarkdownIt, options: FixIndentedCo
       if (lines.length === 1 && !looksLikeCode(lines[0] ?? '')) {
         // Convert code_block to paragraph
         const textContent = lines[0] ?? ''
+        const level = token.level ?? 0
 
         // Replace code_block token with paragraph tokens
-        tokens.splice(i, 1, { type: 'paragraph_open', tag: 'p', nesting: 1, level: token.level } as any, {
+        tokens.splice(i, 1, { type: 'paragraph_open', tag: 'p', nesting: 1, level }, {
           type: 'inline',
           tag: '',
           nesting: 0,
-          level: token.level,
+          level,
           content: textContent,
-          children: [{ type: 'text', content: textContent, level: token.level + 1 }] as any,
+          children: [{ type: 'text', content: textContent, level: level + 1, raw: textContent }],
           block: true,
-        } as any, { type: 'paragraph_close', tag: 'p', nesting: -1, level: token.level } as any)
+        }, { type: 'paragraph_close', tag: 'p', nesting: -1, level })
         // Skip the newly inserted tokens
         i += 2
       }

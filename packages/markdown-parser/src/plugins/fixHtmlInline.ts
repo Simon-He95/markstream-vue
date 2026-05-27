@@ -1,4 +1,5 @@
-import type { MarkdownIt, Token } from 'markdown-it-ts'
+import type { MarkdownIt } from '../markdown-it-types'
+import type { MarkdownToken } from '../types'
 import { normalizeCustomHtmlTagName } from '../customHtmlTags'
 import { STANDARD_BLOCK_HTML_TAGS, STANDARD_HTML_TAGS, VOID_HTML_TAGS } from '../htmlTags'
 import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes } from '../htmlTagUtils'
@@ -140,7 +141,7 @@ function getTrailingCustomTagDepthInHtml(content: string, tag: string) {
   return depth
 }
 
-function tokenToRaw(token: Token) {
+function tokenToRaw(token: MarkdownToken) {
   const shape = token as unknown as { raw?: string, markup?: string, content?: string }
   return String(shape.raw ?? shape.content ?? shape.markup ?? '')
 }
@@ -233,35 +234,35 @@ function findFirstIncompleteTag(content: string, tagSet: Set<string>) {
   return first
 }
 
-function splitTextToken(token: Token, content: string) {
-  const t = token as Token & { content?: string, raw?: string }
-  // Preserve the original Token prototype (markdown-it-ts attaches helper methods).
+function splitTextToken(token: MarkdownToken, content: string) {
+  const t = token as MarkdownToken & { content?: string, raw?: string }
+  // Preserve the original MarkdownToken prototype (markdown-it-ts attaches helper methods).
   const nt = Object.assign(
     Object.create(Object.getPrototypeOf(t)),
     t,
     { type: 'text', content, raw: content },
-  ) as Token
+  ) as MarkdownToken
   return nt
 }
 
-function fixStreamingHtmlInlineChildren(children: Token[], tagSet: Set<string>) {
+function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<string>) {
   if (!children.length)
     return { children }
 
-  const out: Token[] = []
+  const out: MarkdownToken[] = []
   let pending: { tag: string, buffer: string, closing: boolean } | null = null
   let pendingAtEnd: string | null = null
 
-  function pushTextPart(text: string, baseToken?: Token) {
+  function pushTextPart(text: string, baseToken?: MarkdownToken) {
     if (!text)
       return
     if (baseToken)
       out.push(splitTextToken(baseToken, text))
     else
-      out.push({ type: 'text', content: text, raw: text } as any)
+      out.push({ type: 'text', content: text, raw: text } as MarkdownToken)
   }
 
-  function splitCompleteHtmlFromText(chunk: string, baseToken?: Token) {
+  function splitCompleteHtmlFromText(chunk: string, baseToken?: MarkdownToken) {
     let cursor = 0
     while (cursor < chunk.length) {
       const lt = chunk.indexOf('<', cursor)
@@ -292,7 +293,7 @@ function fixStreamingHtmlInlineChildren(children: Token[], tagSet: Set<string>) 
           tag: '',
           content: tagText,
           raw: tagText,
-        } as any)
+        } as MarkdownToken)
       }
       else {
         pushTextPart(tagText, baseToken)
@@ -301,7 +302,7 @@ function fixStreamingHtmlInlineChildren(children: Token[], tagSet: Set<string>) 
     }
   }
 
-  function processTextChunk(chunk: string, baseToken?: Token) {
+  function processTextChunk(chunk: string, baseToken?: MarkdownToken) {
     if (!chunk)
       return
     const match = findFirstIncompleteTag(chunk, tagSet)
@@ -338,7 +339,7 @@ function fixStreamingHtmlInlineChildren(children: Token[], tagSet: Set<string>) 
         tag: '',
         content: tagChunk,
         raw: tagChunk,
-      } as any)
+      } as MarkdownToken)
       pending = null
       pendingAtEnd = null
       if (afterChunk)
@@ -366,7 +367,7 @@ function fixStreamingHtmlInlineChildren(children: Token[], tagSet: Set<string>) 
     }
 
     if (child.type === 'text') {
-      const content = String((child as any).content ?? '')
+      const content = String((child as MarkdownToken).content ?? '')
       if (!content.includes('<')) {
         out.push(child)
         continue
@@ -415,7 +416,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
     }
   }
   const shouldMergeHtmlBlockTag = (tag: string) => customTagSet.has(tag) || !commonHtmlTags.has(tag) || BLOCK_LEVEL_HTML_TAGS.has(tag)
-  const getHtmlBlockCarrierContent = (token: Token & { content?: string, children?: any[] }) => {
+  const getHtmlBlockCarrierContent = (token: MarkdownToken & { content?: string, children?: MarkdownToken[] }) => {
     if (token.type === 'html_block')
       return String(token.content ?? '')
     if (token.type !== 'inline' || !Array.isArray(token.children) || token.children.length !== 1)
@@ -426,7 +427,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
     return String(token.content ?? onlyChild.content ?? '')
   }
   const normalizeHtmlBlockCarrier = (
-    token: Token & { content?: string, children?: any[], raw?: string },
+    token: MarkdownToken & { content?: string, children?: MarkdownToken[], raw?: string },
     content: string,
   ) => {
     token.type = 'html_block'
@@ -437,10 +438,10 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
   // Streaming mid-state: suppress partial inline HTML in text tokens until the
   // tag is fully closed with `>`, then allow it to be tokenized as html_inline.
   md.core.ruler.after('inline', 'fix_html_inline_streaming', (state: unknown) => {
-    const s = state as unknown as { tokens?: Token[] }
+    const s = state as unknown as { tokens?: MarkdownToken[] }
     const toks = s.tokens ?? []
     for (const t of toks) {
-      const tok = t as Token & { children?: Token[], content?: string, raw?: string }
+      const tok = t as MarkdownToken & { children?: MarkdownToken[], content?: string, raw?: string }
       if (tok.type !== 'inline' || !Array.isArray(tok.children))
         continue
 
@@ -451,7 +452,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
       const sourceChildren = tok.children.length
         ? tok.children
         : (originalContent.includes('<')
-            ? [{ type: 'text', content: originalContent, raw: originalContent } as any]
+            ? [{ type: 'text', content: originalContent, raw: originalContent } as MarkdownToken]
             : null)
 
       if (!sourceChildren)
@@ -480,13 +481,13 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
   // Fix certain single-token inline HTML cases by expanding into [openTag, text, closeTag]
   // This helps downstream inline parsers (e.g., <a>text</a>) to recognize inner text reliably.
   md.core.ruler.push('fix_html_inline_tokens', (state: unknown) => {
-    const s = state as unknown as { tokens?: Token[] }
+    const s = state as unknown as { tokens?: MarkdownToken[] }
     const toks = s.tokens ?? []
 
     // 有一些很特殊的场景，比如 html_block 开始 <thinking>，但是后面跟着很多段落,如果没匹配到</thinking>，中间的都应该合并为html_block的 content
     const tagStack: [string, number][] = []
     for (let i = 0; i < toks.length; i++) {
-      const t = toks[i] as Token & { content?: string, children: any[] }
+      const t = toks[i] as MarkdownToken & { content?: string, children: MarkdownToken[] }
 
       // If we're currently inside an unclosed custom-tag html_block, merge
       // everything (including other html_block tokens) into the opener until
@@ -501,10 +502,10 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
             continue
           }
 
-          const chunk = String((t as any).content ?? (t as any).raw ?? '')
+          const chunk = String((t as MarkdownToken).content ?? (t as MarkdownToken).raw ?? '')
 
           if (chunk) {
-            const openToken = toks[openIndex] as Token & { content?: string, loading?: boolean }
+            const openToken = toks[openIndex] as MarkdownToken & { content?: string, loading?: boolean }
             const mergedContent = `${String(openToken.content || '')}\n${chunk}`
             const openEnd = findTagCloseIndexOutsideQuotes(mergedContent)
             const closeRange = openEnd === -1
@@ -524,8 +525,8 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
               tagStack.pop()
               if (afterTrimmed) {
                 toks.splice(i, 0, afterTrimmed.startsWith('<')
-                  ? ({ type: 'html_block', content: afterTrimmed } as any)
-                  : ({ type: 'inline', content: afterTrimmed, children: [{ type: 'text', content: afterTrimmed, raw: afterTrimmed }] } as any))
+                  ? ({ type: 'html_block', content: afterTrimmed } as MarkdownToken)
+                  : ({ type: 'inline', content: afterTrimmed, children: [{ type: 'text', content: afterTrimmed, raw: afterTrimmed }] } as MarkdownToken))
               }
               i--
               continue
@@ -575,7 +576,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
           // 结束标签：如果匹配到栈顶，则把 closing token 也合并进 opener 并删除自己
           if (tagStack.length > 0 && tag && tagStack[tagStack.length - 1][0] === tag) {
             const [, openIndex] = tagStack[tagStack.length - 1]
-            const openToken = toks[openIndex] as Token & { content?: string, loading?: boolean }
+            const openToken = toks[openIndex] as MarkdownToken & { content?: string, loading?: boolean }
             openToken.content = `${String(openToken.content || '')}\n${rawContent}`
             openToken.loading = false
             tagStack.pop()
@@ -602,7 +603,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         if (content) {
           // 插入到栈顶标签对应的 html_block 中
           const [, openIndex] = tagStack[tagStack.length - 1]
-          const openToken = toks[openIndex] as Token & { content?: string, loading: boolean }
+          const openToken = toks[openIndex] as MarkdownToken & { content?: string, loading: boolean }
           openToken.content = `${openToken.content || ''}\n${content}`
           if (openToken.loading !== false)
             openToken.loading = !isClosingTag
@@ -645,14 +646,14 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
 
       const stack: Array<{ tag: string, index: number }> = []
       for (let i = 0; i < toks.length; i++) {
-        const tok = toks[i] as Token & { content?: string, children?: any[] }
+        const tok = toks[i] as MarkdownToken & { content?: string, children?: MarkdownToken[] }
         const content = String(tok.content ?? '')
 
         // If we're inside an unclosed custom tag, we may need to close it even
         // if the closing tag is emitted as html_block (markdown-it can do this).
         if (stack.length > 0) {
           const top = stack[stack.length - 1]
-          const openTok = toks[top.index] as Token & { content?: string, children?: any[] }
+          const openTok = toks[top.index] as MarkdownToken & { content?: string, children?: MarkdownToken[] }
 
           // Close via an html_block token like "</thinking>"
           if (tok.type === 'html_block' && getCloseRe(top.tag).test(content)) {
@@ -662,7 +663,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
                 type: 'html_inline',
                 content: `</${top.tag}>`,
                 raw: `</${top.tag}>`,
-              } as any)
+              } as MarkdownToken)
             }
             toks.splice(i, 1)
             i--
@@ -685,7 +686,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
             const afterChildren = children.slice(closeChildIndex + 1)
 
             const beforeText = beforeChildren
-              .map((c: any) => String(c?.content ?? c?.raw ?? ''))
+              .map((c: MarkdownToken) => String(c?.content ?? c?.raw ?? ''))
               .join('')
 
             // Only append the fragment up to and including the closing tag.
@@ -693,16 +694,16 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
             if (Array.isArray(openTok.children))
               openTok.children.push(...beforeChildren)
 
-            // Replace current token with trailing content (if any)
+            // Replace current token with trailing content when present.
             if (afterChildren.length) {
-              const afterText = afterChildren.map((c: any) => String(c.content ?? c.raw ?? '')).join('')
+              const afterText = afterChildren.map((c: MarkdownToken) => String(c.content ?? c.raw ?? '')).join('')
               if (afterText.trim()) {
                 const trimmed = afterText.replace(/^\s+/, '')
                 if (trimmed.startsWith('<')) {
-                  toks.splice(i, 1, { type: 'html_block', content: trimmed } as any)
+                  toks.splice(i, 1, { type: 'html_block', content: trimmed } as MarkdownToken)
                 }
                 else {
-                  toks.splice(i, 1, { type: 'paragraph_open', tag: 'p', nesting: 1 } as any, { type: 'inline', tag: '', nesting: 0, content: afterText, children: [{ type: 'text', content: afterText, raw: afterText }] } as any, { type: 'paragraph_close', tag: 'p', nesting: -1 } as any)
+                  toks.splice(i, 1, { type: 'paragraph_open', tag: 'p', nesting: 1 } as MarkdownToken, { type: 'inline', tag: '', nesting: 0, content: afterText, children: [{ type: 'text', content: afterText, raw: afterText }] } as MarkdownToken, { type: 'paragraph_close', tag: 'p', nesting: -1 } as MarkdownToken)
                   // current index now points at paragraph_open; move on
                 }
               }
@@ -752,7 +753,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
     {
       let depth = 0
       for (let i = 0; i < toks.length; i++) {
-        const t = toks[i] as Token
+        const t = toks[i] as MarkdownToken
         if (t.type === 'paragraph_open') {
           depth++
           continue
@@ -770,7 +771,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
     }
 
     for (let i = 0; i < toks.length; i++) {
-      const t = toks[i] as Token & { content?: string, children: any[], loading?: boolean }
+      const t = toks[i] as MarkdownToken & { content?: string, children: MarkdownToken[], loading?: boolean }
       if (t.type === 'html_block') {
         const rawTag = t.content?.match(/<([^\s>/]+)/)?.[1] ?? ''
         const tag = rawTag.toLowerCase()
@@ -814,19 +815,19 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
                 tag,
                 loading: false,
               },
-            ] as any[]
+            ] as MarkdownToken[]
 
             // Update token content
             t.content = rawForNode
-            ;(t as any).raw = rawForNode
+            ;(t as MarkdownToken).raw = rawForNode
 
             // Insert trailing content as a new token if present
             const afterContent = raw.slice(endTagIndex + closeLen) || ''
             const afterTrimmed = afterContent.replace(/^\s+/, '')
             if (afterTrimmed) {
               toks.splice(i + 1, 0, afterTrimmed.startsWith('<')
-                ? ({ type: 'html_block', content: afterTrimmed } as any)
-                : ({ type: 'text', content: afterTrimmed, raw: afterTrimmed } as any))
+                ? ({ type: 'html_block', content: afterTrimmed } as MarkdownToken)
+                : ({ type: 'text', content: afterTrimmed, raw: afterTrimmed } as MarkdownToken))
             }
           }
           else {
@@ -840,7 +841,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
                 tag,
                 loading: true,
               },
-            ] as any[]
+            ] as MarkdownToken[]
           }
 
           continue
@@ -882,17 +883,17 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
               tag,
               loading: false,
             },
-          ] as any[]
+          ] as MarkdownToken[]
 
           // Update token content
           t.content = rawForNode
-          ;(t as any).raw = rawForNode
+          ;(t as MarkdownToken).raw = rawForNode
 
           // Insert trailing content as a new token if present
           if (afterTrimmed) {
             toks.splice(i + 1, 0, afterTrimmed.startsWith('<')
-              ? ({ type: 'html_block', content: afterTrimmed } as any)
-              : ({ type: 'text', content: afterTrimmed, raw: afterTrimmed } as any))
+              ? ({ type: 'html_block', content: afterTrimmed } as MarkdownToken)
+              : ({ type: 'text', content: afterTrimmed, raw: afterTrimmed } as MarkdownToken))
           }
         }
         else {
@@ -904,7 +905,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
               tag,
               loading: true,
             },
-          ] as any[]
+          ] as MarkdownToken[]
         }
         continue
       }
@@ -916,7 +917,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         // 补充一个闭合标签
         const rawTag = t.children[0].content?.match(/<([^\s>/]+)/)?.[1] ?? ''
         const tag = rawTag.toLowerCase()
-        const second = t.children[1] as any
+        const second = t.children[1] as MarkdownToken
         const secondCloseTag = String(second?.content ?? '').match(/^<\s*\/\s*([^\s>]+)/)?.[1]?.toLowerCase() ?? ''
         // Already a complete open+close pair: don't append another closing tag.
         if (second?.type === 'html_inline' && secondCloseTag === tag)
@@ -930,7 +931,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
             tag,
             loading: true,
             content: `</${tag}>`,
-          } as any)
+          } as MarkdownToken)
         }
         else {
           t.children = [
@@ -938,8 +939,8 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
               type: 'html_block',
               loading: true,
               tag,
-              content: t.children[0].content + t.children[1].content,
-            } as any,
+              content: String(t.children[0]?.content ?? '') + String(t.children[1]?.content ?? ''),
+            } as MarkdownToken,
           ]
         }
         continue
@@ -956,12 +957,12 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
             loading: false,
             tag,
             content: t.children.map(ct => ct.content).join(''),
-          } as any,
+          } as MarkdownToken,
         ]
         continue
       }
       // Only handle pathological cases where inline content is a single HTML-ish chunk
-      if (!t.content?.startsWith('<') || (t as any).children?.length !== 1)
+      if (!t.content?.startsWith('<') || (t as MarkdownToken).children?.length !== 1)
         continue
 
       const raw = String(t.content)
@@ -987,7 +988,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         // For void/self-closing tags, keep a single html_inline token
         htmlToken.children = [
           { type: 'html_inline', content: raw },
-        ] as any
+        ]
         continue
       }
       htmlToken.children.length = 0

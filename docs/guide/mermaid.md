@@ -8,14 +8,12 @@ Mermaid diagrams stream progressively in `markstream-vue`: as soon as the syntax
 pnpm add mermaid
 ```
 
-No extra Mermaid CSS import is required. Keep `markstream-vue/index.css` after your reset and inside `@layer components` when using Tailwind/UnoCSS so utility layers do not override the renderer styles.
+No extra Mermaid CSS import is required. Keep `markstream-vue/index.css` after your reset and use `@import '...' layer(components)` when using Tailwind/UnoCSS so utility layers do not override the renderer styles.
 
 ```css
 @import 'modern-css-reset';
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 ## 2. Streaming example
@@ -67,9 +65,70 @@ B-->C[End]
 ## 3. Advanced component: `MermaidBlockNode`
 
 Need header controls, export buttons, or a pseudo-fullscreen modal? Use [`MermaidBlockNode`](/guide/mermaid-block-node) or override the default renderer via [setCustomComponents](/guide/mermaid-block-node-override). A runnable playground demo lives at `/mermaid-export-demo`.
-If diagrams come from untrusted users/LLMs, pass `:is-strict="true"` to enable Mermaid's strict mode and SVG sanitization so injected HTML/event handlers are stripped before render.
+Mermaid strict mode and SVG sanitization are enabled by default. Set `:is-strict="false"` only for trusted diagrams that need Mermaid's loose parse/render config. Markstream still sanitizes Mermaid SVG output before mounting.
 
-## 4. Troubleshooting checklist
+## 4. When strict mode changes rendering
+
+Moving Mermaid from loose mode to strict mode can change trusted diagrams that depended on Mermaid HTML labels or looser Mermaid parsing/rendering.
+
+Common symptoms after upgrading:
+
+1. Labels that relied on inline HTML such as `<br>`, `<span>`, or richer HTML fragments stop rendering as before.
+2. Links or interactions that depended on Mermaid's looser HTML handling disappear from the final SVG.
+3. Previously accepted diagram markup now falls back to plain text or renders a simpler label.
+
+If the diagram source is fully trusted and you need Mermaid's loose config, opt out explicitly instead of changing the global default. In Markstream renderers, `isStrict=false` does not mean raw SVG insertion; the final SVG is still sanitized, so `foreignObject` and active HTML labels may be removed.
+
+### Vue 3: switch a trusted Markdown surface to loose Mermaid config
+
+```vue
+<script setup lang="ts">
+import MarkdownRender from 'markstream-vue'
+
+const trustedMarkdown = `
+\`\`\`mermaid
+flowchart TD
+  A["<b>Trusted HTML label</b><br/>line 2"] --> B
+\`\`\`
+`
+</script>
+
+<template>
+  <MarkdownRender
+    :content="trustedMarkdown"
+    :mermaid-props="{ isStrict: false }"
+  />
+</template>
+```
+
+### Direct component usage
+
+```vue
+<MermaidBlockNode :node="node" :is-strict="false" />
+```
+
+### Other framework entrypoints
+
+```tsx
+import MarkdownRender from 'markstream-react'
+
+<MarkdownRender content={trustedMarkdown} mermaidProps={{ isStrict: false }} />
+```
+
+```html
+<markstream-angular
+  [content]="trustedMarkdown()"
+  [mermaidProps]="{ isStrict: false }"
+/>
+```
+
+```vue
+<MarkdownRender :content="trustedMarkdown" :mermaid-props="{ isStrict: false }" />
+```
+
+Keep the default strict mode for user content, AI output, or any mixed-trust Markdown stream.
+
+## 5. Troubleshooting checklist
 
 1. **Peer not installed** — run `pnpm add mermaid`. Without it the renderer falls back to showing source text.
 2. **Async errors** — check the browser console for Mermaid logs. Versions prior to 11 are unsupported; upgrade to ≥ 11.

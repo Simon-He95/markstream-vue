@@ -11,7 +11,7 @@ description: 在 content 与 nodes 之间做出正确选择，并理解 markstre
 | 场景 | 推荐输入 |
 |------|---------|
 | 文档页、静态文章、低频更新 | `content` |
-| SSE、token 流式输出、AI Chat、高频增量更新 | `nodes` + `final` |
+| SSE、token 流式输出、AI Chat、高频增量更新 | `content` + `smooth-streaming` |
 | SSR 或 Worker 里预解析完成 | `nodes` |
 
 如果你只是在调现有能力，继续看本页和 [Props 与选项](/zh/guide/props) 就够了。只有在你要改变渲染行为时，再跳去看 [覆盖内置组件](/zh/guide/component-overrides)。
@@ -39,9 +39,7 @@ const doc = '# 使用示例\n\n支持 **streaming** 渲染。'
 ```css
 @import 'modern-css-reset';
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 ## VitePress + 自定义标签
@@ -93,9 +91,20 @@ const nodes = parseMarkdownToStructure('# 标题', md)
 - `parseMarkdownToStructure(content, md)` 将 Markdown 字符串转为渲染器使用的 AST。
 - 可搭配 `setCustomComponents(id?, mapping)` 为特定 `custom-id` 替换节点渲染器。
 
+> 注意：`parseMarkdownToStructure` 默认是 `streamParse: 'auto'`：兼容的 `md` 实例会在非 final 顶层解析时使用 stream parser，并保留最近一次 source/token cache。final 一次性解析默认走普通 parser；需要强制 stream 时传 `{ streamParse: true }`，需要关闭时传 `{ streamParse: false }`。如果复用同一个 `md` 解析互不相关的一次性文档，请传 `{ final: true }` 或 `{ streamParse: false }`。
+
+```ts
+declare const source: string
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+```
+
+当 `MarkdownRender` 自己解析 `content` 时，会有意把 `parseOptions.streamParse` 默认设为 `true`，让 streaming parse 使用 `md.stream.parse`。当 `final` 变化时，renderer 会使 stream cache 失效，并用 final 语义重新解析，避免 loading 或未闭合 token 状态过期。若希望 final content parse 继续走普通 parser，可传 `:parse-options="{ streamParse: 'auto' }"`；若要完全关闭 stream parser，可传 `false`。
+
 ## 流式推荐用法
 
-`content` 模式适合低频更新或一次性渲染；如果你在做 AI Chat、SSE、逐 token 输出，推荐把解析放到外部，然后用 `:nodes` + `:final` 驱动渲染器。这样可以减少整篇重解析、降低重绘次数，也更容易把解析工作放到 Worker 或独立状态层。
+`content` 模式适合低频更新或一次性渲染；如果你在做 AI Chat、SSE、逐 token 输出，`MarkdownRender` 内置的 smooth streaming 可以对 `content` 更新做 pacing，即使 incoming chunk 是突发式的，可见输出也能保持平稳。默认 `smooth-streaming="auto"` 会在 `typewriter` 开启或 `max-live-nodes <= 0` 时自动启用 pacing。
+
+如果你已经在 worker/store 中自行解析并需要完整 AST 控制，可以继续用 `:nodes` + `:final`——但注意内置 smooth streaming 只作用于 `content` 路径；`nodes` 路径需要直接使用 `useSmoothMarkdownStream` 在解析前对原始文本做 pacing。
 
 ```ts twoslash
 import { getMarkdown, parseMarkdownToStructure } from 'markstream-vue'
@@ -135,7 +144,7 @@ const final = false
 ## 样式提醒
 
 1. **先 reset** —— `modern-css-reset`、`@tailwind base` 或 `@unocss/reset`，之后再导入库的 CSS。
-2. **使用 CSS layer** —— Tailwind/UnoCSS 项目请在 `@layer components { ... }` 中导入 `markstream-vue/index.css`。
+2. **使用 CSS layer** —— Tailwind/UnoCSS 项目请使用 `@import 'markstream-vue/index.css' layer(components);`。
 3. **处理 Uno/Tailwind 冲突** —— 参见 [Tailwind 指南](/zh/guide/tailwind)（包含 UnoCSS 示例）。
 4. **同伴 CSS** —— KaTeX 需要对应的 CSS；Mermaid/D2 不需要。Monaco 不需要额外导入 CSS。
 

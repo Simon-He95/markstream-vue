@@ -8,9 +8,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "katex": "^0.16.44",
+    "katex": "^0.16.46",
     "markstream-vue2": "workspace:*",
-    "mermaid": "^11.13.0",
+    "mermaid": "^11.15.0",
     "stream-monaco": "latest",
     "vue": "2.7.16",
     "vue-demi": "^0.14.10"

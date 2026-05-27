@@ -359,7 +359,7 @@
   --ms-duration-overlay: 200ms;
   --ms-duration-emphasis: 220ms;
   --ms-duration-slow: 300ms;
-  --ms-duration-stream: 900ms;
+  --ms-duration-stream: 280ms;
   --ms-ease-linear: linear;
   --ms-ease-standard: ease;
   --ms-ease-out: ease-out;
@@ -376,6 +376,8 @@
   --ms-size-diagram-min-height: 360px;
   --ms-size-code-max-height: 500px;
   --ms-size-image-max-width: 24rem;
+  --ms-size-image-min-width: 8rem;
+  --ms-size-image-min-height: 1.5em;
   --ms-size-math-min-height: 40px;
   --ms-size-skeleton-min-height: 120px;
 }

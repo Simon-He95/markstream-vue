@@ -4,7 +4,11 @@
     "jsx": "react-jsx",
     "baseUrl": "./src",
     "paths": {
-      "@markstream-react/*": ["./*"]
+      "@markstream-react/*": ["./*"],
+      "stream-markdown-parser": ["../../markdown-parser/src/index.ts"],
+      "stream-markdown-parser/*": ["../../markdown-parser/src/*"],
+      "markstream-core": ["../../markstream-core/src/index.ts"],
+      "markstream-core/*": ["../../markstream-core/src/*"]
     },
     "types": ["vite/client", "react", "react-dom", "node"],
     "allowJs": false,

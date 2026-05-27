@@ -1,0 +1,4 @@
+interface:
+  display_name: Markstream Svelte
+  short_description: Svelte 5 setup
+  default_prompt: Use $markstream-svelte.

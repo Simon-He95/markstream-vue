@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { HtmlPolicy } from 'stream-markdown-parser'
 import { sanitizeHtmlContent } from 'stream-markdown-parser'
-import { computed, defineComponent } from 'vue-demi'
+import { computed, defineComponent, inject } from 'vue-demi'
 import { hasCustomComponents, parseHtmlToVNodes } from '../../utils/htmlRenderer'
 import { getCustomNodeComponents } from '../../utils/nodeComponents'
 
@@ -13,7 +14,11 @@ const props = defineProps<{
     autoClosed?: boolean
   }
   customId?: string
+  htmlPolicy?: HtmlPolicy
 }>()
+
+const inheritedHtmlPolicy = inject<{ value?: HtmlPolicy } | undefined>('markstreamHtmlPolicy', undefined)
+const resolvedHtmlPolicy = computed<HtmlPolicy>(() => props.htmlPolicy ?? inheritedHtmlPolicy?.value ?? 'safe')
 
 // Get custom components from global registry
 const customComponents = computed(() => {
@@ -32,9 +37,13 @@ const DynamicRenderer = defineComponent({
       type: Object as () => Record<string, any>,
       required: true,
     },
+    htmlPolicy: {
+      type: String as () => HtmlPolicy,
+      default: 'safe',
+    },
   },
   render() {
-    const nodes = parseHtmlToVNodes(this.content, this.customComponents)
+    const nodes = parseHtmlToVNodes(this.content, this.customComponents, undefined, this.htmlPolicy)
     return (nodes || []) as any
   },
 })
@@ -45,12 +54,15 @@ const renderMode = computed(() => {
   if (!content)
     return { mode: 'html', content: '' }
 
+  if (resolvedHtmlPolicy.value === 'escape')
+    return { mode: 'html', content: sanitizeHtmlContent(content, resolvedHtmlPolicy.value) }
+
   if (props.node.loading && !props.node.autoClosed)
     return { mode: 'text', content }
 
   // Check if content contains custom components
   if (!hasCustomComponents(content, customComponents.value))
-    return { mode: 'html', content: sanitizeHtmlContent(content) }
+    return { mode: 'html', content: sanitizeHtmlContent(content, resolvedHtmlPolicy.value) }
 
   return { mode: 'dynamic', content }
 })
@@ -62,7 +74,7 @@ const renderMode = computed(() => {
     class="html-inline-node"
     :class="{ 'html-inline-node--loading': props.node.loading }"
   >
-    <DynamicRenderer :content="renderMode.content" :custom-components="customComponents" />
+    <DynamicRenderer :content="renderMode.content" :custom-components="customComponents" :html-policy="resolvedHtmlPolicy" />
   </span>
   <span
     v-else-if="renderMode.mode === 'text'"

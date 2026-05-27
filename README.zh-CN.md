@@ -74,6 +74,8 @@
 - Playground（交互演示）： https://markstream-vue.simonhe.me/
 - 交互测试页（可分享链接，便于复现）： https://markstream-vue.simonhe.me/test
 - 文档： https://markstream-vue-docs.simonhe.me/zh/guide/
+- Showcase： https://markstream-vue-docs.simonhe.me/zh/guide/showcase
+- 1.0 benchmark 报告：`pnpm benchmark:1.0`
 - AI/LLM 项目索引（中文）： https://markstream-vue-docs.simonhe.me/llms.zh-CN
 - AI/LLM 项目索引（英文）： https://markstream-vue-docs.simonhe.me/llms
 - 一键 StackBlitz 体验： https://stackblitz.com/github/Simon-He95/markstream-vue?file=playground/src/App.vue
@@ -81,23 +83,19 @@
 - Nuxt playground：`pnpm play:nuxt`
 - Discord： https://discord.gg/vkzdkjeRCW
 
-## skills 和 prompts 的 CLI
+## 仓库内的 skills 和 prompts
 
-如果你想直接拿到打包后的 AI 资产，而不是先克隆仓库：
+如果你想直接拿到 AI 资产，而不是先克隆仓库：
 
 ```bash
 npx skills add Simon-He95/markstream-vue
-npx markstream-vue skills list
-npx markstream-vue skills install
-npx markstream-vue prompts list
-npx markstream-vue prompts show install-markstream
 ```
 
 推荐这样理解：
 
 - `npx skills add Simon-He95/markstream-vue` 是最推荐的安装方式，因为它会直接读取 GitHub 仓库里的 `.agents/skills`
-- `skills install` 会把打包好的 skills 安装到你的 agent skills 目录，默认是 `~/.agents/skills`
-- `prompts list` / `prompts show` 用来发现并直接复制官方维护的 prompt 模板
+- `markstream-vue@1.0` 不发布 CLI `bin`；`pnpm skills:list`、`pnpm prompts:list` 这类脚本只面向克隆仓库后的维护者
+- prompts 继续保留在仓库的 `prompts/` 目录下，供直接复制或后续拆成独立包
 
 `npx skills add` 也支持这些来源：
 
@@ -152,7 +150,7 @@ createApp({
 }).mount('#app')
 ```
 
-确保在 CSS reset（如 `@tailwind base` 或 `@unocss/reset`）之后导入 `markstream-vue/index.css`，最好放在 `@layer components` 中以避免 Tailwind/UnoCSS 覆盖组件样式。根据需求再按需安装可选 peer 依赖：`stream-monaco`（Monaco 代码块）、`shiki` + `stream-markdown`（Shiki 高亮）、`mermaid`（Mermaid 图表）、`katex`（数学公式）。
+确保在 CSS reset（如 `@tailwind base` 或 `@unocss/reset`）之后导入 `markstream-vue/index.css`，推荐使用 `@import 'markstream-vue/index.css' layer(components);` 以避免 Tailwind/UnoCSS 覆盖组件样式。根据需求再按需安装可选 peer 依赖：`stream-monaco`（Monaco 代码块）、`shiki` + `stream-markdown`（Shiki 高亮）、`mermaid`（Mermaid 图表）、`katex`（数学公式）。
 如果你的移动端会主动调大根字号（`html`/`body`），建议改用 `markstream-vue/index.px.css`，避免 `rem` 跟随根字号导致整体放大。
 
 渲染器的 CSS 会作用于内部 `.markstream-vue` 容器下，以尽量降低对全局的影响；如果你脱离 `MarkdownRender` 单独使用导出的节点组件，请在外层包一层带 `markstream-vue` 类名的容器。
@@ -259,35 +257,37 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 ## ⏱️ 30 秒流式接入
 
-用 SSE / WebSocket 增量渲染 Markdown：
+用 SSE / WebSocket 结合内置平滑节奏渲染 Markdown：
 
 ```ts
-import type { ParsedNode } from 'markstream-vue'
-import MarkdownRender, { getMarkdown, parseMarkdownToStructure } from 'markstream-vue'
+import MarkdownRender from 'markstream-vue'
 import { ref } from 'vue'
 
-const nodes = ref<ParsedNode[]>([])
-const buffer = ref('')
-const md = getMarkdown()
+const content = ref('')
+const final = ref(false)
 
-function addChunk(chunk: string) {
-  buffer.value += chunk
-  nodes.value = parseMarkdownToStructure(buffer.value, md)
+eventSource.onmessage = (event) => {
+  content.value += event.data
 }
-
-// 例如在 SSE / onmessage 处理器中
-eventSource.onmessage = event => addChunk(event.data)
+eventSource.addEventListener('done', () => {
+  final.value = true
+})
 
 // template
 // <MarkdownRender
-//   :nodes="nodes"
+//   :content="content"
+//   :final="final"
 //   :max-live-nodes="0"
-//   :batch-rendering="{
-//     renderBatchSize: 16,
-//     renderBatchDelay: 8,
-//   }"
+//   :batch-rendering="true"
+//   :render-batch-size="16"
+//   :render-batch-delay="8"
+//   :render-batch-budget-ms="4"
+//   :fade="false"
+//   :typewriter="true"
 // />
 ```
+
+`smooth-streaming` 在打字机/增量模式（`typewriter` 或 `max-live-nodes <= 0`）默认开启；如果希望严格按原始 chunk 节奏显示，可按实例设置 `:smooth-streaming="false"`。
 
 按页面需要切换渲染风格：
 
@@ -309,6 +309,8 @@ const md = getMarkdown()
 const nodes = parseMarkdownToStructure('# Hello\n\n服务端解析一次', md)
 // 将 nodes JSON 下发到客户端
 ```
+
+> 注意：`parseMarkdownToStructure` 默认是 `streamParse: 'auto'`：兼容的 `md` 实例会在非 final 顶层解析时使用 `md.stream.parse`，并保留最近一次 source/token cache。final 一次性解析默认走普通 parser；需要强制 stream 时传 `{ streamParse: true }`，需要关闭时传 `{ streamParse: false }`。如果复用同一个 `md` 解析互不相关的一次性文档，请传 `{ final: true }` 或 `{ streamParse: false }`。
 
 ```vue
 <!-- client -->

@@ -40,6 +40,7 @@ declare module 'vue' {
     MathBlockNode: typeof import('./src/components/MathBlockNode/MathBlockNode.vue')['default']
     MathInlineNode: typeof import('./src/components/MathInlineNode/MathInlineNode.vue')['default']
     MermaidBlockNode: typeof import('./src/components/MermaidBlockNode/MermaidBlockNode.vue')['default']
+    NodeChildRenderer: typeof import('./src/components/NodeChildRenderer/NodeChildRenderer.vue')['default']
     NodeRenderer: typeof import('./src/components/NodeRenderer/NodeRenderer.vue')['default']
     ParagraphNode: typeof import('./src/components/ParagraphNode/ParagraphNode.vue')['default']
     PreCodeNode: typeof import('./src/components/PreCodeNode/PreCodeNode.vue')['default']

@@ -40,11 +40,12 @@ export class HtmlInlineNodeComponent {
       return
     }
 
-    if (this.context?.allowHtml === false || ((this.node as any)?.loading && !(this.node as any)?.autoClosed)) {
+    const htmlPolicy = this.context?.htmlPolicy ?? 'safe'
+    if (this.context?.allowHtml === false || htmlPolicy === 'escape' || ((this.node as any)?.loading && !(this.node as any)?.autoClosed)) {
       container.textContent = content
       return
     }
 
-    container.innerHTML = sanitizeHtmlContent(content)
+    container.innerHTML = sanitizeHtmlContent(content, htmlPolicy)
   }
 }

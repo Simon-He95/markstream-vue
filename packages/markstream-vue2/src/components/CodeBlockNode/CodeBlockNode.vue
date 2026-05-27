@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { CodeBlockNode as ParsedCodeBlockNode } from 'stream-markdown-parser'
+import type { CodeBlockPreviewPayload } from '../../types/component-props'
 // Avoid static import of `stream-monaco` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
 import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue-demi'
@@ -34,10 +36,15 @@ const props = defineProps({
   showCollapseButton: { type: Boolean, default: true },
   showFontSizeButtons: { type: Boolean, default: true },
   showTooltips: { type: Boolean, default: undefined },
+  htmlPreviewAllowScripts: { type: Boolean, default: undefined },
+  htmlPreviewSandbox: { type: String, default: undefined },
   customId: { type: String, default: undefined },
 })
 
-const emits = defineEmits(['previewCode', 'copy'])
+const emits = defineEmits<{
+  (e: 'previewCode', payload: CodeBlockPreviewPayload): void
+  (e: 'copy', code: string): void
+}>()
 
 // Chrome warns when Monaco registers non-passive touchstart listeners.
 // Patch the editor host so touch handlers default to passive for Monaco roots.
@@ -1088,7 +1095,7 @@ function previewCode() {
         ? t('artifacts.htmlPreviewTitle') || 'HTML Preview'
         : t('artifacts.svgPreviewTitle') || 'SVG Preview'
     emits('previewCode', {
-      node: props.node,
+      node: props.node as ParsedCodeBlockNode,
       artifactType,
       artifactTitle,
       id: `temp-${lowerLang}-${Date.now()}`,
@@ -1640,6 +1647,8 @@ onUnmounted(() => {
     <HtmlPreviewFrame
       v-if="showInlinePreview && !hasPreviewListener && isPreviewable && codeLanguage === 'html'"
       :code="node.code"
+      :html-preview-allow-scripts="props.htmlPreviewAllowScripts"
+      :html-preview-sandbox="props.htmlPreviewSandbox"
       :is-dark="props.isDark"
       :on-close="() => (showInlinePreview = false)"
     />

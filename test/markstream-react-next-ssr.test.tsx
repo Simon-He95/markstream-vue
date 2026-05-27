@@ -5,7 +5,7 @@
 import { createRequire } from 'node:module'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const packageRequire = createRequire(new URL('../packages/markstream-react/package.json', import.meta.url))
+const packageRequire = createRequire(new URL('../package.json', import.meta.url))
 const React = packageRequire('react') as typeof import('react')
 const { renderToStaticMarkup } = packageRequire('react-dom/server') as typeof import('react-dom/server')
 
@@ -558,7 +558,51 @@ describe('markstream-react next/server SSR', () => {
     }
   })
 
-  it('keeps closed unknown tags as raw HTML and escapes malformed ones in the server entry', async () => {
+  it('renders footnote exports with the markstream-vue anchor contract', async () => {
+    const serverEntry = await import('../packages/markstream-react/src/server')
+    const ctx = createRenderCtx(serverEntry)
+    const withRenderCtx = (props: Record<string, any>) => ({
+      ...props,
+      ctx,
+      renderNode: serverEntry.renderNode,
+      indexKey: 'matrix',
+      customId: 'matrix',
+    })
+    const entries = [
+      await import('../packages/markstream-react/src/index'),
+      serverEntry,
+    ]
+
+    for (const entry of entries) {
+      const referenceHtml = renderToStaticMarkup(React.createElement(entry.FootnoteReferenceNode, {
+        node: { type: 'footnote_reference', id: '1' },
+      }))
+      const footnoteHtml = renderToStaticMarkup(React.createElement(entry.FootnoteNode, withRenderCtx({
+        node: {
+          type: 'footnote',
+          id: '1',
+          children: [paragraphNode('Footnote body')],
+        },
+      })))
+      const anchorHtml = renderToStaticMarkup(React.createElement(entry.FootnoteAnchorNode, {
+        node: { type: 'footnote_anchor', id: '1' },
+      }))
+
+      expect(referenceHtml).toContain('id="fnref-1"')
+      expect(referenceHtml).toContain('href="#fnref--1"')
+      expect(referenceHtml).toContain('title="查看脚注 1"')
+      expect(referenceHtml).toContain('class="footnote-link cursor-pointer"')
+      expect(referenceHtml).not.toContain('href="#footnote-1"')
+      expect(referenceHtml).not.toContain('View footnote')
+      expect(footnoteHtml).toContain('id="fnref--1"')
+      expect(footnoteHtml).not.toContain('id="footnote-1"')
+      expect(anchorHtml).toContain('href="#fnref-1"')
+      expect(anchorHtml).toContain('title="返回引用 1"')
+      expect(anchorHtml).not.toContain('Back to reference')
+    }
+  })
+
+  it('drops closed unknown tags in safe mode and still escapes malformed ones in the server entry', async () => {
     const serverEntry = await import('../packages/markstream-react/src/server')
 
     const closedHtml = renderToStaticMarkup(
@@ -567,7 +611,8 @@ describe('markstream-react next/server SSR', () => {
         final: true,
       }),
     )
-    expect(closedHtml).toContain('<question>ok</question>')
+    expect(closedHtml).not.toContain('<question>')
+    expect(closedHtml).not.toContain('ok</question>')
 
     const malformedHtml = renderToStaticMarkup(
       React.createElement(serverEntry.NodeRenderer, {
@@ -579,7 +624,7 @@ describe('markstream-react next/server SSR', () => {
     expect(malformedHtml).not.toContain('&amp;lt;')
   })
 
-  it('renders structured html wrappers on the server without structuring blocked tags', async () => {
+  it('renders structured html wrappers on the server without keeping safe-policy style attrs', async () => {
     const serverEntry = await import('../packages/markstream-react/src/server')
 
     const structuredHtml = renderToStaticMarkup(
@@ -603,7 +648,7 @@ describe('markstream-react next/server SSR', () => {
     )
 
     expect(structuredHtml).toContain('<span')
-    expect(structuredHtml).toContain('font-size:12px')
+    expect(structuredHtml).not.toContain('font-size:12px')
     expect(structuredHtml).toContain('<ul')
     expect(structuredHtml).toContain('alpha')
     expect(structuredHtml).toContain('beta')

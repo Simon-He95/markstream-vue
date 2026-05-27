@@ -1,0 +1,25 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": ["DOM", "ESNext"],
+    "baseUrl": ".",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "markstream-core": ["../markstream-core/src/index.ts"],
+      "markstream-core/*": ["../markstream-core/src/*"],
+      "stream-markdown-parser": ["../markdown-parser/src/index.ts"],
+      "stream-markdown-parser/*": ["../markdown-parser/src/*"]
+    },
+    "types": ["svelte", "vite/client", "node"],
+    "declaration": true,
+    "declarationMap": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "src/**/*.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

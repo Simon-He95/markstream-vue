@@ -6,7 +6,7 @@ import { getCustomComponentDisplay } from '../customComponents'
 export interface ResolvedCustomHtmlTag {
   tag: string
   isWhitelisted: boolean
-  component: MarkstreamCustomComponent<any> | null
+  component: MarkstreamCustomComponent | null
   display: CustomComponentDisplayMode | undefined
 }
 

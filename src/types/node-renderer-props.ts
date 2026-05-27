@@ -1,4 +1,5 @@
-import type { BaseNode, MarkdownIt, ParseOptions } from 'stream-markdown-parser'
+import type { BaseNode, HtmlPolicy, MarkdownIt, ParseOptions } from 'stream-markdown-parser'
+import type { SmoothMarkdownStreamOptions } from '../composables/useSmoothMarkdownStream'
 import type {
   CodeBlockMonacoOptions,
   CodeBlockMonacoTheme,
@@ -30,6 +31,8 @@ export interface NodeRendererProps {
    * and are emitted as custom nodes (e.g. ['thinking']). Forwarded to `getMarkdown()`.
    */
   customHtmlTags?: readonly string[]
+  /** HTML rendering policy for html_block/html_inline nodes. Default: safe */
+  htmlPolicy?: HtmlPolicy
   /** Enable priority rendering for visible viewport area */
   viewportPriority?: boolean
   /**
@@ -67,8 +70,23 @@ export interface NodeRendererProps {
   /** Scope key used by `setCustomComponents()` and `data-custom-id` style overrides. */
   customId?: string
   indexKey?: number | string
-  /** Enable/disable the non-code-node enter transition (typewriter). Default: true */
+  /** Show a blinking typewriter cursor while streamed content grows. Default: false */
   typewriter?: boolean
+  /**
+   * Enable built-in smooth pacing for streaming `content` updates.
+   * - `true`: force-enable smooth streaming (content mode only)
+   * - `false`: force-disable smooth streaming
+   * - `'auto'` (default): enable only when typewriter/incremental mode is active
+   * Applies when rendering from `content` (not `nodes`).
+   * Default: 'auto'
+   */
+  smoothStreaming?: boolean | 'auto'
+  /** Options forwarded to the built-in smooth streaming composable. */
+  smoothStreamingOptions?: SmoothMarkdownStreamOptions
+  /** Performance tuning knob for the minimum interval in ms between built-in smooth-streaming parse commits. Default: 80. */
+  parseCoalesceMs?: number
+  /** Enable/disable non-code-node enter and streamed-text fade animations. Default: true */
+  fade?: boolean
   /** Enable incremental/batched rendering of nodes to avoid large single flush costs. Default: true */
   batchRendering?: boolean
   /** How many nodes to render immediately before batching kicks in. Default: 40 */

@@ -71,6 +71,7 @@ function renderCustomCodeBlockComponent(
     renderNode,
     indexKey: key,
     typewriter: ctx.typewriter,
+    fade: ctx.fade,
   })
 }
 
@@ -201,6 +202,7 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
       renderNode,
       indexKey: key,
       typewriter: ctx.typewriter,
+      fade: ctx.fade,
     })
   }
 
@@ -227,15 +229,16 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
           renderNode,
           indexKey: key,
           typewriter: ctx.typewriter,
+          fade: ctx.fade,
         })
       }
       const rawContent = String((node as any).content ?? (node as any).raw ?? '')
       if (!isWhitelisted && shouldRenderUnknownHtmlTagAsText(rawContent, tag)) {
         if (node.type === 'html_inline') {
-          return <TextNode key={key} node={{ type: 'text', content: rawContent, raw: rawContent } as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} />
+          return <TextNode key={key} node={{ type: 'text', content: rawContent, raw: rawContent } as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
         }
         else {
-          return <ParagraphNode key={key} node={{ type: 'paragraph', children: [{ type: 'text', content: rawContent, raw: rawContent }], raw: rawContent } as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+          return <ParagraphNode key={key} node={{ type: 'paragraph', children: [{ type: 'text', content: rawContent, raw: rawContent }], raw: rawContent } as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
         }
       }
     }
@@ -243,33 +246,33 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
 
   switch (node.type) {
     case 'text':
-      return <TextNode key={key} node={node as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} />
+      return <TextNode key={key} node={node as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'text_special':
-      return <TextNode key={key} node={{ type: 'text', content: (node as any).content ?? '', center: (node as any).center } as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} />
+      return <TextNode key={key} node={{ type: 'text', content: (node as any).content ?? '', center: (node as any).center } as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'paragraph':
-      return <ParagraphNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <ParagraphNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'heading':
-      return <HeadingNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <HeadingNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'blockquote':
-      return <BlockquoteNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <BlockquoteNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'list':
-      return <ListNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <ListNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'list_item':
-      return <ListItemNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <ListItemNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'table':
-      return <TableNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <TableNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'definition_list':
-      return <DefinitionListNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <DefinitionListNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'footnote':
-      return <FootnoteNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <FootnoteNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'footnote_reference':
       return <FootnoteReferenceNode key={key} node={node as any} />
     case 'footnote_anchor':
       return <FootnoteAnchorNode key={key} node={node as any} />
     case 'admonition':
-      return <AdmonitionNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} isDark={ctx.isDark} typewriter={ctx.typewriter} />
+      return <AdmonitionNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} isDark={ctx.isDark} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'hardbreak':
-      return <HardBreakNode key={key} node={node as any} typewriter={ctx.typewriter} />
+      return <HardBreakNode key={key} node={node as any} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'link':
       return (
         <LinkNode
@@ -281,6 +284,7 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
           isDark={ctx.isDark}
           showTooltip={typeof ctx.showTooltips === 'boolean' ? ctx.showTooltips : undefined}
           typewriter={ctx.typewriter}
+          fade={ctx.fade}
         />
       )
     case 'image':
@@ -291,7 +295,7 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
         />
       )
     case 'inline_code':
-      return <InlineCodeNode key={key} node={node as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} />
+      return <InlineCodeNode key={key} node={node as any} ctx={ctx} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'code_block':
       return renderCodeBlock(node, key, ctx, customComponents)
     case 'strong':
@@ -341,9 +345,9 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
       )
     case 'checkbox':
     case 'checkbox_input':
-      return <CheckboxNode key={key} node={node as any} typewriter={ctx.typewriter} />
+      return <CheckboxNode key={key} node={node as any} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'emoji':
-      return <EmojiNode key={key} node={node as any} typewriter={ctx.typewriter} />
+      return <EmojiNode key={key} node={node as any} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'thematic_break':
       return <ThematicBreakNode key={key} />
     case 'math_inline':
@@ -351,14 +355,14 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
     case 'math_block':
       return <MathBlockNode key={key} node={node as any} />
     case 'reference':
-      return <ReferenceNode key={key} node={node as any} ctx={ctx} typewriter={ctx.typewriter} />
+      return <ReferenceNode key={key} node={node as any} ctx={ctx} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'html_block':
     case 'html_inline':
       return node.type === 'html_block'
-        ? <HtmlBlockNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} customId={ctx.customId} />
-        : <HtmlInlineNode key={key} node={node as any} typewriter={ctx.typewriter} customId={ctx.customId} />
+        ? <HtmlBlockNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} customId={ctx.customId} />
+        : <HtmlInlineNode key={key} node={node as any} ctx={ctx} typewriter={ctx.typewriter} fade={ctx.fade} customId={ctx.customId} />
     case 'vmr_container':
-      return <VmrContainerNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
+      return <VmrContainerNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} fade={ctx.fade} />
     case 'label_open':
     case 'label_close':
       return null

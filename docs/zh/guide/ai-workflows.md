@@ -6,12 +6,12 @@
 
 ## 先按你的目标选入口
 
-- 想直接安装可用的 skills：先看 [安装打包后的 skills](#安装打包后的-skills)
+- 想直接安装可用的 skills：先看 [安装仓库里的 skills](#安装仓库里的-skills)
 - 想直接复制官方 prompt 模板：先看 [可直接复制的任务模板](#2-可直接复制的任务模板)
 - 想让 AI 帮你做迁移：先看 [可直接复制的任务模板](#2-可直接复制的任务模板)，再配合文末的接入顺序
 - 想把 AI 资产跟着仓库一起版本化：看 [仓库里的现成资产](#仓库里的现成资产)
 
-## 安装打包后的 skills
+## 安装仓库里的 skills
 
 对最终用户来说，最推荐的是直接使用通用的 `skills` 安装器：
 
@@ -37,59 +37,31 @@ npx skills add https://github.com/Simon-He95/markstream-vue/tree/main/.agents/sk
 npx skills add git@github.com:Simon-He95/markstream-vue.git
 ```
 
-如果你更希望走包级 CLI，也仍然可以使用：
-
-```bash
-npx markstream-vue skills install
-# 或
-pnpm dlx markstream-vue skills install
-```
-
-常用变体还有：
-
-```bash
-npx markstream-vue skills list
-npx markstream-vue skills install --target codex
-npx markstream-vue skills install --target ./tmp/skills-test --mode copy --force
-```
-
 - `npx skills add Simon-He95/markstream-vue` 是当前最推荐的 Codex-compatible 安装方式
-- `skills install` 默认使用 `copy`，更适合 `npx` / `dlx` 场景
-- 默认目标目录是 `~/.agents/skills`
-- `--target codex` 会安装到 `${CODEX_HOME:-~/.codex}/skills`
-- `--target` 可以传 `agents`、`codex`，也可以传任意自定义路径
-- `--force` 用来替换目标目录里已有的安装
+- `markstream-vue@1.0` 不发布 CLI `bin`
+- `pnpm skills:list`、`pnpm prompts:list` 这类脚本只面向克隆仓库后的维护者，不属于 npm 包公开表面
 
-`prompts/` 仍然保留在仓库里；包级安装命令只处理 skills 目录。
-
-同一个 CLI 也可以直接暴露 prompts：
-
-```bash
-npx markstream-vue prompts list
-npx markstream-vue prompts show install-markstream
-```
-
-对于 npm 用户来说，这是发现和复用官方 prompt 模板最方便的方式，不需要先克隆仓库。
+`prompts/` 仍然保留在仓库里；可以直接从 GitHub 或克隆后的仓库复制，不通过 `markstream-vue` npm 包发布。
 
 ## 仓库里的现成资产
 
 这个仓库现在已经有可版本化、可复用的资产：
 
 - 任务型 skills：`markstream-install`、`markstream-custom-components`、`markstream-migration`
-- 框架入口 skills：`markstream-vue`、`markstream-nuxt`、`markstream-vue2`、`markstream-vue2-cli`、`markstream-vue2-vite`、`markstream-react`、`markstream-angular`
+- 框架入口 skills：`markstream-vue`、`markstream-nuxt`、`markstream-vue2`、`markstream-vue2-cli`、`markstream-vue2-vite`、`markstream-react`、`markstream-angular`、`markstream-svelte`
 - `prompts/install-markstream.md`
 - `prompts/override-built-in-components.md`
 - `prompts/add-custom-tag-thinking.md`
 - `prompts/migrate-react-markdown.md`
 - `prompts/audit-markstream-integration.md`
 
-`.agents/skills/` 适合放可复用、并且能被 GitHub 安装器自动发现的 Codex 工作流资产。任务型 skills 负责跨框架工作流，框架入口 skills 则让 Vue 3、Nuxt、Vue 2、Vue 2 CLI、Vue 2 Vite、React、Angular 这些场景更容易被直接发现；`prompts/` 适合放给人类或其他助手直接复制使用的提示词模板。
+`.agents/skills/` 适合放可复用、并且能被 GitHub 安装器自动发现的 Codex 工作流资产。任务型 skills 负责跨框架工作流，框架入口 skills 则让 Vue 3、Nuxt、Vue 2、Vue 2 CLI、Vue 2 Vite、React、Angular、Svelte 5 这些场景更容易被直接发现；`prompts/` 适合放给人类或其他助手直接复制使用的提示词模板。
 
 ## 1. 先把这五类信息告诉 AI
 
 在让 AI 开始改代码前，尽量先说明：
 
-- 框架和版本，例如 Vue 3、Nuxt 3、React 18、Angular 20
+- 框架和版本，例如 Vue 3、Nuxt 3、React 18、Angular 20、Svelte 5
 - CSS 技术栈，例如 Tailwind、UnoCSS、reset 库、设计系统
 - 渲染模式：静态文章、文档站、SSR，还是流式聊天
 - 需要哪些可选能力：Monaco、Mermaid、D2、KaTeX、Shiki
@@ -141,8 +113,8 @@ npx markstream-vue prompts show install-markstream
 
 - 自动识别框架和包管理器
 - 按需求只安装必要的 peers
-- 遇到 Tailwind / UnoCSS 时，把 CSS 放在 reset 之后，并放进 `@layer components`
-- 普通渲染优先用 `content`，流式输出优先用 `nodes` + `final`
+- 遇到 Tailwind / UnoCSS 时，把 CSS 放在 reset 之后，并使用 `@import '...' layer(components)`
+- 普通渲染和大多数流式聊天优先用 `content`；token 抖动场景使用内置 smooth streaming；只有 worker 预解析、自定义 AST 或独立状态层接管解析时，才优先用 `nodes` + `final`
 - 组件覆盖默认走 `custom-id` 作用域
 - 改完后告诉用户下一步应该看哪一页文档
 

@@ -1,8 +1,28 @@
-import type { MarkdownIt } from 'markdown-it-ts'
 import type { MathOptions } from '../config'
+import type { MarkdownIt } from '../markdown-it-types'
+import type { MarkdownToken } from '../types'
 
 import findMatchingClose from '../findMatchingClose'
 import { ESCAPED_TEX_BRACE_COMMANDS, isMathLike } from './isMathLike'
+
+interface MathInlineState {
+  env?: Record<string, unknown>
+  pending?: string
+  pos: number
+  push: (type: string, tag?: string, nesting?: number) => MarkdownToken
+  src: string
+}
+
+interface MathBlockState {
+  bMarks: number[]
+  eMarks: number[]
+  env?: Record<string, unknown>
+  line: number
+  push: (type: string, tag?: string, nesting?: number) => MarkdownToken
+  src: string
+  tShift: number[]
+  tokens: MarkdownToken[]
+}
 
 // Heuristic to decide whether a piece of text is likely math.
 // Matches common TeX commands, math operators, function-call patterns like f(x),
@@ -420,6 +440,17 @@ function isLikelyCurrencyRangeDollar(content: string, nextChar?: string) {
   return /\d/.test(String(nextChar ?? ''))
 }
 
+function isLikelyCurrencyAmountStart(content: string) {
+  const stripped = String(content ?? '').trimStart()
+  const amount = stripped.match(/^\d+(?:,\d{3})*(?:\.\d+)?/)
+  if (!amount)
+    return false
+  const rest = stripped.slice(amount[0].length)
+  if (/^\s*(?:[+\-*/^_=<>]|\\[a-z]+)/i.test(rest))
+    return false
+  return rest === '' || /^[)\s,.!?;:]/.test(rest)
+}
+
 function isLikelyPlaceholderDollar(content: string) {
   const stripped = String(content ?? '').trim()
   if (!stripped)
@@ -431,7 +462,7 @@ function isLikelyPlaceholderDollar(content: string) {
 export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
   // Inline rule for `\\(...\\)` and `$$...$$` and `$...$`
   const mathInline = (state: unknown, silent?: boolean) => {
-    const s = state as any
+    const s = state as MathInlineState
     const strict = !!mathOpts?.strictDelimiters
     const allowLoading = !s?.env?.__markstreamFinal
 
@@ -517,7 +548,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         if (!text)
           return
 
-        // When scanning $$...$$, also parse any single-dollar $...$ math
+        // When scanning $$...$$, also parse nested single-dollar $...$ math
         // segments that appear in the surrounding text. Without this, mixing
         // $ and $$ in one line can cause the $ segments to be emitted as plain
         // text because this rule returns after the first successful delimiter
@@ -733,7 +764,8 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
           }
           if (endIdx === -1) {
             // Do not treat segments containing inline code as math
-            if (allowLoading && !strict && isMathLike(content) && !content.includes('`')) {
+            const isCurrencyAmount = open === '$' && isLikelyCurrencyAmountStart(content)
+            if (allowLoading && !strict && !isCurrencyAmount && isMathLike(content) && !content.includes('`')) {
               searchPos = index + open.length
               foundAny = true
               if (!silent) {
@@ -808,7 +840,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
 
         if (!silent) {
           // push text before this math
-          const before = src.slice(s.pos - s.pending.length, index)
+          const before = src.slice(s.pos - (s.pending ?? '').length, index)
           // 如果 before 包含 单边的 ` ** 或 __ ，则直接跳过，交给 md 处理
 
           // const m = before.match(/(^|[^\\])(`+|__|\*\*)/)
@@ -935,7 +967,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
               const nextChar = src[closingDollarIndex + 1]
               const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
               const isPlaceholder = isLikelyPlaceholderDollar(content)
-              // For explicit $...$ delimiters, accept any non-empty content
+              // For explicit $...$ delimiters, accept non-empty content
               // (e.g. "$H$", "$1$") even if the heuristic doesn't classify it
               // as "math-like".
               if (!hasBacktick && !isEmpty && !isCurrencyRange && !isPlaceholder) {
@@ -960,7 +992,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
               }
             }
 
-            // Push any remaining text after all $...$ patterns
+            // Push remaining text after all $...$ patterns
             if (remainingPos < src.length) {
               pushText(src.slice(remainingPos))
             }
@@ -993,7 +1025,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     endLine: number,
     silent: boolean,
   ) => {
-    const s = state as any
+    const s = state as MathBlockState
     const allowLoading = !s?.env?.__markstreamFinal
     const strict = mathOpts?.strictDelimiters
     const delimiters: [string, string][] = strict
@@ -1104,7 +1136,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         startDelimIndex + openDelim.length,
         endDelimIndex,
       )
-      const token: any = s.push('math_block', 'math', 0)
+      const token = s.push('math_block', 'math', 0)
       token.content = normalizeStandaloneBackslashT(content)
       token.markup
         = openDelim === '$$' ? '$$' : openDelim === '[' ? '[]' : '\\[\\]'
@@ -1164,7 +1196,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     if (!looksMath)
       return false
 
-    const token: any = s.push('math_block', 'math', 0)
+    const token = s.push('math_block', 'math', 0)
     token.content = normalizeStandaloneBackslashT(content)
     token.markup
       = openDelim === '$$' ? '$$' : openDelim === '[' ? '[]' : '\\[\\]'
@@ -1182,7 +1214,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     endLine: number,
     silent: boolean,
   ) => {
-    const s = state as any
+    const s = state as MathBlockState
     const startPos = s.bMarks[startLine] + s.tShift[startLine]
     const lineText = s.src.slice(startPos, s.eMarks[startLine]).trim()
 

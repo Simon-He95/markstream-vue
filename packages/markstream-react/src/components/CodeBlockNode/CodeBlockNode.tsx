@@ -1318,6 +1318,8 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
       {inlinePreviewOpen && !props.onPreviewCode && isPreviewable && canonicalLanguage === 'html' && (
         <HtmlPreviewFrame
           code={String(node.code ?? '')}
+          htmlPreviewAllowScripts={props.htmlPreviewAllowScripts}
+          htmlPreviewSandbox={props.htmlPreviewSandbox}
           isDark={isDark}
           onClose={() => setInlinePreviewOpen(false)}
         />

@@ -1,14 +1,16 @@
 <script setup lang="ts">
 // 定义链接节点
 import type { LinkNodeProps } from '../../types/component-props'
+import { shouldOpenLinkInNewTab } from 'stream-markdown-parser'
 import { computed, inject, useAttrs } from 'vue'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { sanitizeAttrs } from '../../utils/htmlRenderer'
-import { customComponentsRevision, getCustomNodeComponents } from '../../utils/nodeComponents'
+import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import EmphasisNode from '../EmphasisNode/EmphasisNode.vue'
 import HtmlInlineNode from '../HtmlInlineNode'
 import ImageNode from '../ImageNode'
 import InlineCodeNode from '../InlineCodeNode'
+import NodeChildRenderer from '../NodeChildRenderer'
 import StrikethroughNode from '../StrikethroughNode'
 import StrongNode from '../StrongNode'
 import TextNode from '../TextNode'
@@ -48,7 +50,9 @@ const cssVars = computed(() => {
 })
 
 // Available node components for child rendering
-const nodeComponents = {
+const customComponents = useCustomNodeComponents(() => props.customId)
+
+const nodeComponents = computed(() => ({
   text: TextNode,
   strong: StrongNode,
   strikethrough: StrikethroughNode,
@@ -56,21 +60,8 @@ const nodeComponents = {
   image: ImageNode,
   html_inline: HtmlInlineNode,
   inline_code: InlineCodeNode,
-}
-
-const customComponents = computed(() => {
-  void customComponentsRevision.value
-  return getCustomNodeComponents(props.customId)
-})
-
-// 获取子节点组件，优先使用用户自定义组件
-function getChildComponent(child: any) {
-  const customComponent = customComponents.value[child.type]
-  if (customComponent)
-    return customComponent
-
-  return nodeComponents[child.type] || null
-}
+  ...customComponents.value,
+}))
 
 // forward any non-prop attributes (e.g. custom-id) to the rendered element
 const attrs = useAttrs()
@@ -96,15 +87,58 @@ const nodeAttrs = computed(() => {
     }
   }
 
-  return sanitizeAttrs(normalized)
+  return sanitizeAttrs(normalized, 'safe', 'a')
 })
-const anchorAttrs = computed(() => {
-  const merged = {
+const mergedAnchorAttrs = computed(() => {
+  return {
     ...(attrs as Record<string, unknown>),
     ...nodeAttrs.value,
   } as Record<string, unknown>
+})
+const safeHref = computed(() => {
+  const href = String(props.node?.href ?? '')
+  return sanitizeAttrs({ href }, 'safe', 'a').href
+})
+const finalTarget = computed(() => {
+  if (!safeHref.value)
+    return undefined
+
+  const rawTarget = mergedAnchorAttrs.value.target
+  const normalized = typeof rawTarget === 'string' ? rawTarget.trim() : String(rawTarget ?? '').trim()
+  return normalized || (shouldOpenLinkInNewTab(safeHref.value) ? '_blank' : undefined)
+})
+const isBlankTarget = computed(() => String(finalTarget.value ?? '').trim().toLowerCase() === '_blank')
+const finalRel = computed(() => {
+  if (!safeHref.value)
+    return undefined
+
+  const rawRel = mergedAnchorAttrs.value.rel
+  const tokens = new Set(
+    (typeof rawRel === 'string' ? rawRel : String(rawRel ?? ''))
+      .split(/\s+/)
+      .filter(Boolean),
+  )
+  const filteredTokens = new Set(
+    Array.from(tokens).filter(token => token.toLowerCase() !== 'opener'),
+  )
+
+  if (isBlankTarget.value) {
+    filteredTokens.add('noopener')
+    filteredTokens.add('noreferrer')
+  }
+
+  return filteredTokens.size > 0 ? Array.from(filteredTokens).join(' ') : undefined
+})
+const anchorAttrs = computed(() => {
+  const merged = {
+    ...mergedAnchorAttrs.value,
+  } as Record<string, unknown>
   // `title` is controlled by `showTooltip` behavior and should not be overridden.
   delete merged.title
+  // `href` is controlled by safeHref so attrs cannot override node.href.
+  delete merged.href
+  delete merged.target
+  delete merged.rel
   return merged
 })
 
@@ -115,7 +149,7 @@ function onAnchorEnter(e: Event) {
   const ev = e as MouseEvent
   const origin = ev?.clientX != null && ev?.clientY != null ? { x: ev.clientX, y: ev.clientY } : undefined
   // show the link href in tooltip; fall back to title/text if href missing
-  const txt = props.node?.title || props.node?.href || props.node?.text || ''
+  const txt = props.node?.title || (safeHref.value?.includes('xn--') && props.node?.text?.includes('://') ? props.node.text : safeHref.value) || ''
   showTooltipForAnchor(e.currentTarget as HTMLElement, txt, 'top', false, origin)
 }
 
@@ -128,7 +162,7 @@ const title = computed(() => {
   const rawTitle = props.node?.title
   if (typeof rawTitle === 'string' && rawTitle.trim().length > 0)
     return rawTitle
-  return String(props.node?.href ?? '')
+  return String(safeHref.value ?? '')
 })
 </script>
 
@@ -136,21 +170,21 @@ const title = computed(() => {
   <a
     v-if="!node.loading"
     class="link-node"
-    :href="node.href"
+    :href="safeHref"
     :title="tooltipEnabled ? '' : title"
     :aria-label="`Link: ${title}`"
     :aria-hidden="node.loading ? 'true' : 'false'"
-    target="_blank"
-    rel="noopener noreferrer"
+    :target="finalTarget"
+    :rel="finalRel"
     v-bind="anchorAttrs"
     :style="cssVars"
     @mouseenter="(e) => onAnchorEnter(e)"
     @mouseleave="onAnchorLeave"
   >
-    <component
-      :is="getChildComponent(child)"
+    <NodeChildRenderer
       v-for="(child, index) in node.children"
       :key="`${indexKey || 'emphasis'}-${index}`"
+      :components="nodeComponents"
       :node="child"
       :custom-id="props.customId"
       :index-key="`${indexKey || 'link-text'}-${index}`"

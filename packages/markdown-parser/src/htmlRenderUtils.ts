@@ -7,12 +7,90 @@ import {
   VOID_HTML_TAGS,
 } from './htmlTags'
 
+export type HtmlPolicy = 'escape' | 'safe' | 'trusted'
+export type HtmlPropValue = string | number | boolean
+
 export interface HtmlToken {
   type: 'text' | 'tag_open' | 'tag_close' | 'self_closing'
   tagName?: string
   attrs?: Record<string, string>
   content?: string
 }
+
+const SAFE_BLOCKED_HTML_TAGS = new Set<string>([
+  ...BLOCKED_HTML_TAGS,
+  'base',
+  'button',
+  'datalist',
+  'dialog',
+  'embed',
+  'fieldset',
+  'form',
+  'iframe',
+  'input',
+  'legend',
+  'link',
+  'meta',
+  'object',
+  'optgroup',
+  'option',
+  'output',
+  'param',
+  'select',
+  'style',
+  'template',
+  'textarea',
+  'title',
+])
+
+export const SAFE_ALLOWED_HTML_TAGS = new Set<string>([
+  'a',
+  'abbr',
+  'b',
+  'blockquote',
+  'br',
+  'caption',
+  'code',
+  'col',
+  'colgroup',
+  'dd',
+  'details',
+  'div',
+  'dl',
+  'dt',
+  'em',
+  'h1',
+  'h2',
+  'h3',
+  'h4',
+  'h5',
+  'h6',
+  'hr',
+  'i',
+  'img',
+  'ins',
+  'kbd',
+  'li',
+  'mark',
+  'ol',
+  'p',
+  'pre',
+  's',
+  'small',
+  'span',
+  'strong',
+  'sub',
+  'summary',
+  'sup',
+  'table',
+  'tbody',
+  'td',
+  'tfoot',
+  'th',
+  'thead',
+  'tr',
+  'ul',
+])
 
 const CUSTOM_TAG_REGEX = /<([a-z][a-z0-9-]*)\b[^>]*>/gi
 
@@ -49,6 +127,28 @@ function normalizeTagName(tagName: string | undefined): string {
   return String(tagName ?? '').trim().toLowerCase()
 }
 
+export function isHtmlTagBlocked(tagName: string | undefined, policy: HtmlPolicy = 'safe') {
+  const normalized = normalizeTagName(tagName)
+  if (!normalized)
+    return false
+  if (policy === 'escape')
+    return true
+  if (policy === 'trusted')
+    return BLOCKED_HTML_TAGS.has(normalized)
+  return !SAFE_ALLOWED_HTML_TAGS.has(normalized)
+}
+
+export function isHtmlTagHardBlocked(tagName: string | undefined, policy: HtmlPolicy = 'safe') {
+  const normalized = normalizeTagName(tagName)
+  if (!normalized)
+    return false
+  if (policy === 'escape')
+    return true
+  if (policy === 'trusted')
+    return BLOCKED_HTML_TAGS.has(normalized)
+  return SAFE_BLOCKED_HTML_TAGS.has(normalized)
+}
+
 function serializeAttrs(attrs: Record<string, string>): string {
   const pairs = Object.entries(attrs)
   if (pairs.length === 0)
@@ -59,7 +159,75 @@ function serializeAttrs(attrs: Record<string, string>): string {
     .join('')
 }
 
-function sanitizeHtmlContentAttrs(attrs: Record<string, string>) {
+function isUnsafeSrcset(value: string, tagName?: string) {
+  const candidates = value
+    .split(',')
+    .map(candidate => candidate.trim())
+    .filter(Boolean)
+
+  if (candidates.length === 0)
+    return false
+
+  return candidates.some((candidate) => {
+    const url = candidate.split(/\s+/, 1)[0] ?? ''
+    return !url || isUnsafeHtmlUrl(url, { tagName, attrName: 'srcset' })
+  })
+}
+
+function shouldDropHtmlAttr(lowerKey: string, value: string, policy: HtmlPolicy, tagName?: string) {
+  if (DANGEROUS_HTML_ATTRS.has(lowerKey))
+    return true
+  if (policy === 'safe' && lowerKey === 'style')
+    return true
+  if (lowerKey === 'srcset')
+    return isUnsafeSrcset(value, tagName)
+  if (URL_HTML_ATTRS.has(lowerKey) && value && isUnsafeHtmlUrl(value, { tagName, attrName: lowerKey }))
+    return true
+  return false
+}
+
+function findHtmlAttrName(attrs: Record<string, string>, attrName: string) {
+  const normalized = attrName.toLowerCase()
+  return Object.keys(attrs).find(key => key.toLowerCase() === normalized)
+}
+
+function hardenAnchorAttrs(clean: Record<string, string>, policy: HtmlPolicy, tagName?: string, hadHref = false) {
+  if (policy !== 'safe' || normalizeTagName(tagName) !== 'a')
+    return clean
+
+  const hrefKey = findHtmlAttrName(clean, 'href')
+  if (hadHref && (!hrefKey || !clean[hrefKey])) {
+    const targetKey = findHtmlAttrName(clean, 'target')
+    const relKey = findHtmlAttrName(clean, 'rel')
+    if (targetKey)
+      delete clean[targetKey]
+    if (relKey)
+      delete clean[relKey]
+    return clean
+  }
+
+  const targetKey = findHtmlAttrName(clean, 'target')
+  const target = targetKey ? String(clean[targetKey]).trim() : ''
+  if (target.toLowerCase() !== '_blank')
+    return clean
+
+  const relKey = findHtmlAttrName(clean, 'rel')
+  const relTokens = new Set(
+    String(relKey ? clean[relKey] : '')
+      .split(/\s+/)
+      .map(token => token.trim())
+      .filter(Boolean)
+      .filter(token => token.toLowerCase() !== 'opener'),
+  )
+  relTokens.add('noopener')
+  relTokens.add('noreferrer')
+  if (relKey && relKey !== 'rel')
+    delete clean[relKey]
+  clean.rel = Array.from(relTokens).join(' ')
+  return clean
+}
+
+function sanitizeHtmlContentAttrs(attrs: Record<string, string>, policy: HtmlPolicy = 'safe', tagName?: string) {
   const clean: Record<string, string> = {}
 
   for (const [key, value] of Object.entries(attrs)) {
@@ -67,14 +235,12 @@ function sanitizeHtmlContentAttrs(attrs: Record<string, string>) {
     const lowerKey = safeName.toLowerCase()
     if (!safeName || !isSafeAttrName(safeName))
       continue
-    if (DANGEROUS_HTML_ATTRS.has(lowerKey))
-      continue
-    if (URL_HTML_ATTRS.has(lowerKey) && value && isUnsafeHtmlUrl(value))
+    if (shouldDropHtmlAttr(lowerKey, value, policy, tagName))
       continue
     clean[safeName] = value
   }
 
-  return clean
+  return hardenAnchorAttrs(clean, policy, tagName, Boolean(findHtmlAttrName(attrs, 'href')))
 }
 
 export function isCustomHtmlComponentTag(
@@ -87,17 +253,18 @@ export function isCustomHtmlComponentTag(
   return hasOwn(customComponents, lowerTag) || hasOwn(customComponents, tagName)
 }
 
-export function sanitizeHtmlAttrs(attrs: Record<string, string>) {
+export function sanitizeHtmlAttrs(attrs: Record<string, string>, policy: HtmlPolicy = 'safe', tagName?: string) {
   const clean: Record<string, string> = {}
   for (const [key, value] of Object.entries(attrs)) {
-    const lowerKey = key.toLowerCase()
-    if (DANGEROUS_HTML_ATTRS.has(lowerKey))
+    const safeName = key.trim()
+    const lowerKey = safeName.toLowerCase()
+    if (!safeName || !isSafeAttrName(safeName))
       continue
-    if (URL_HTML_ATTRS.has(lowerKey) && value && isUnsafeHtmlUrl(value))
+    if (shouldDropHtmlAttr(lowerKey, value, policy, tagName))
       continue
-    clean[key] = value
+    clean[safeName] = value
   }
-  return clean
+  return hardenAnchorAttrs(clean, policy, tagName, Boolean(findHtmlAttrName(attrs, 'href')))
 }
 
 export function tokenAttrsToRecord(attrs?: Array<[string, string | null]> | null) {
@@ -114,13 +281,17 @@ export function tokenAttrsToRecord(attrs?: Array<[string, string | null]> | null
   return record
 }
 
-export function sanitizeHtmlTokenAttrs(attrs?: Array<[string, string | null]> | null) {
-  const sanitized = sanitizeHtmlAttrs(tokenAttrsToRecord(attrs))
+export function sanitizeHtmlTokenAttrs(
+  attrs?: Array<[string, string | null]> | null,
+  policy: HtmlPolicy = 'safe',
+  tagName?: string,
+) {
+  const sanitized = sanitizeHtmlAttrs(tokenAttrsToRecord(attrs), policy, tagName)
   const pairs = Object.entries(sanitized).map(([key, value]) => [key, value] as [string, string])
   return pairs.length > 0 ? pairs : undefined
 }
 
-export function convertHtmlPropValue(value: string, key: string): any {
+export function convertHtmlPropValue(value: string, key: string): HtmlPropValue {
   const lowerKey = key.toLowerCase()
 
   if (['checked', 'disabled', 'readonly', 'required', 'autofocus', 'multiple', 'hidden'].includes(lowerKey))
@@ -136,7 +307,7 @@ export function convertHtmlPropValue(value: string, key: string): any {
 }
 
 export function convertHtmlAttrsToProps(attrs: Record<string, string>) {
-  const result: Record<string, any> = {}
+  const result: Record<string, HtmlPropValue> = {}
   for (const [key, value] of Object.entries(attrs))
     result[key] = convertHtmlPropValue(value, key)
   return result
@@ -343,6 +514,23 @@ function tokenizeHtmlPreservingText(html: string): HtmlToken[] {
   return tokens
 }
 
+function serializeLiteralHtmlTag(token: HtmlToken) {
+  const tagName = String(token.tagName ?? '').trim()
+  if (!tagName)
+    return ''
+
+  if (token.type === 'tag_close')
+    return `&lt;/${escapeHtml(tagName)}&gt;`
+
+  const attrs = Object.entries(token.attrs ?? {})
+    .map(([name, value]) => value === '' ? ` ${escapeHtml(name)}` : ` ${escapeHtml(name)}="${escapeAttr(value)}"`)
+    .join('')
+
+  return token.type === 'self_closing'
+    ? `&lt;${escapeHtml(tagName)}${attrs} /&gt;`
+    : `&lt;${escapeHtml(tagName)}${attrs}&gt;`
+}
+
 export function hasCustomHtmlComponents(
   content: string,
   customComponents: Record<string, unknown>,
@@ -360,18 +548,21 @@ export function hasCustomHtmlComponents(
   return false
 }
 
-export function sanitizeHtmlContent(content: string): string {
+export function sanitizeHtmlContent(content: string, policy: HtmlPolicy = 'safe'): string {
   if (!content)
     return ''
+
+  if (policy === 'escape')
+    return escapeHtml(content)
 
   const tokens = tokenizeHtmlPreservingText(content)
   const stack: string[] = []
   const output: string[] = []
-  let blockedDepth = 0
+  const blockedStack: string[] = []
 
   for (const token of tokens) {
     if (token.type === 'text') {
-      if (blockedDepth === 0)
+      if (blockedStack.length === 0)
         output.push(escapeHtml(token.content ?? ''))
       continue
     }
@@ -380,24 +571,29 @@ export function sanitizeHtmlContent(content: string): string {
     if (!tagName)
       continue
 
-    if (BLOCKED_HTML_TAGS.has(tagName)) {
+    if (isHtmlTagHardBlocked(tagName, policy)) {
       if (token.type === 'tag_open')
-        blockedDepth += 1
-      else if (token.type === 'tag_close' && blockedDepth > 0)
-        blockedDepth -= 1
+        blockedStack.push(tagName)
+      else if (token.type === 'tag_close' && blockedStack[blockedStack.length - 1] === tagName)
+        blockedStack.pop()
       continue
     }
 
-    if (blockedDepth > 0)
+    if (blockedStack.length > 0)
       continue
 
+    if (policy === 'safe' && isHtmlTagBlocked(tagName, policy)) {
+      output.push(serializeLiteralHtmlTag(token))
+      continue
+    }
+
     if (token.type === 'self_closing') {
-      output.push(`<${tagName}${serializeAttrs(sanitizeHtmlContentAttrs(token.attrs ?? {}))}>`)
+      output.push(`<${tagName}${serializeAttrs(sanitizeHtmlContentAttrs(token.attrs ?? {}, policy, tagName))}>`)
       continue
     }
 
     if (token.type === 'tag_open') {
-      output.push(`<${tagName}${serializeAttrs(sanitizeHtmlContentAttrs(token.attrs ?? {}))}>`)
+      output.push(`<${tagName}${serializeAttrs(sanitizeHtmlContentAttrs(token.attrs ?? {}, policy, tagName))}>`)
       if (!VOID_HTML_TAGS.has(tagName))
         stack.push(tagName)
       continue

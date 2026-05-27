@@ -1,7 +1,7 @@
 import { getMarkdown } from '../src/utils/markdown/getMarkdown.js'
 
 const md = getMarkdown({})
-const content = '**Figure: Vue Markdown Icon (served from /vue-markdown-icon.svg)**'
+const content = '**Figure: Markstream logo (served from /vue-markdown-icon.svg)**'
 const tokens = md.parse(content, {})
 console.log('parsed tokens count', tokens.length)
 if (tokens[1] && tokens[1].children) {

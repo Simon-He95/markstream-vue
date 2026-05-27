@@ -6,7 +6,7 @@ import mermaid from 'mermaid'
 declare const self: DedicatedWorkerGlobalScope
 
 // Initialize mermaid in worker for parsing only
-mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' })
+mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', flowchart: { htmlLabels: false } })
 
 type Theme = 'light' | 'dark'
 

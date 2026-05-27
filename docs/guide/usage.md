@@ -11,7 +11,7 @@ This page shows how to wire `markstream-vue` into common stacks, how the parser 
 | Situation | Recommended input |
 |-----------|-------------------|
 | Docs pages, static articles, low-frequency updates | `content` |
-| SSE, token streaming, AI chat, or frequent incremental updates | `nodes` + `final` |
+| SSE, token streaming, AI chat, or frequent incremental updates | `content` + `smooth-streaming` |
 | SSR or worker-preparsed content | `nodes` |
 
 If you only need built-in configuration, stay in this page and [Props & Options](/guide/props). If you need to replace rendering behavior, jump to [Override Built-in Components](/guide/component-overrides).
@@ -37,9 +37,7 @@ const doc = '# Usage example\n\nSupports **streaming** nodes.'
 ```css
 @import 'modern-css-reset';
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 ## VitePress + custom tags
@@ -91,9 +89,20 @@ const nodes = parseMarkdownToStructure('# Title', md)
 - `parseMarkdownToStructure(content, md)` transforms a Markdown string into the AST consumed by the renderer.
 - Combine with `setCustomComponents(id?, mapping)` to swap node renderers for a given `custom-id`.
 
+> Warning: `parseMarkdownToStructure` defaults to `streamParse: 'auto'`: compatible `md` instances use `md.stream.parse` for non-final top-level parses and retain the latest source/token cache. Final one-shot parses use the regular parser unless you pass `{ streamParse: true }`; pass `{ streamParse: false }` to opt out. If you reuse one `md` instance for unrelated one-shot documents, pass `{ final: true }` or `{ streamParse: false }`.
+
+```ts
+declare const source: string
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+```
+
+When `MarkdownRender` parses its own `content`, it intentionally defaults `parseOptions.streamParse` to `true` so streaming parses use `md.stream.parse`. When `final` changes, the renderer invalidates the stream cache and reparses with final semantics to avoid stale loading or unclosed-token state. Pass `:parse-options="{ streamParse: 'auto' }"` to keep final content parses on the regular parser, or `false` to opt out entirely.
+
 ## Streaming recommendation
 
-For low-frequency updates, passing `content` directly is convenient. For chat-style token streams or long documents, prefer parsing outside the component and passing `nodes` so Vue only reconciles the AST you hand it:
+For low-frequency updates, passing `content` directly is convenient. For chat-style token streams or long documents, the built-in smooth streaming on `MarkdownRender` paces `content` updates so visible output stays steady even when incoming chunks are bursty. The default `smooth-streaming="auto"` enables pacing automatically when `typewriter` is on or `max-live-nodes <= 0`.
+
+If you already parse in a worker/store and need full AST control, keep using `nodes` + `final` — but note that the built-in smooth streaming only applies to the `content` path; for the `nodes` path use `useSmoothMarkdownStream` directly to pace the raw text before parsing.
 
 ```ts twoslash
 import { getMarkdown, parseMarkdownToStructure } from 'markstream-vue'
@@ -118,7 +127,7 @@ const isFinalChunk = false
 </template>
 ```
 
-That avoids reparsing the full Markdown string inside `MarkdownRender` on every tiny content update, which is usually the biggest win for SSE / AI output.
+That approach avoids reparsing the full Markdown string inside `MarkdownRender` on every tiny content update, which is usually the biggest win for SSE / AI output when you need AST control. For most streaming scenarios, the simpler `content` + `smooth-streaming` path is now recommended instead.
 
 For a full end-to-end rollout order, peer selection, and chat-specific tuning, continue with [AI Chat & Streaming](/guide/ai-chat-streaming).
 
@@ -135,7 +144,7 @@ For a full list of components and props, visit [Components & node renderers](/gu
 ## Styling reminders
 
 1. **Reset first** (`modern-css-reset`, `@tailwind base`, `@unocss/reset`), then import `markstream-vue` styles.
-2. **Use CSS layers** when Tailwind/UnoCSS is active (`@layer components { @import 'markstream-vue/index.css' }`).
+2. **Use CSS layers** when Tailwind/UnoCSS is active (`@import 'markstream-vue/index.css' layer(components);`).
 3. **UNO/Tailwind conflicts** — follow the [Tailwind guide](/guide/tailwind) (includes UnoCSS examples) to prevent utilities from overriding renderer styles.
 4. **Peer CSS** — KaTeX needs its own CSS; Mermaid/D2 do not. Monaco does not require extra CSS.
 

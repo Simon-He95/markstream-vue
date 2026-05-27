@@ -1,6 +1,8 @@
+import type { HtmlPolicy, ParsedNode } from 'stream-markdown-parser'
+import type { CustomComponentMap } from '../../customComponents'
 import type { NodeComponentProps } from '../../types/node-component'
 import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { NON_STRUCTURING_HTML_TAGS, sanitizeHtmlContent, sanitizeHtmlTokenAttrs } from 'stream-markdown-parser'
+import { isHtmlTagBlocked, NON_STRUCTURING_HTML_TAGS, sanitizeHtmlContent, sanitizeHtmlTokenAttrs } from 'stream-markdown-parser'
 import { useViewportPriority } from '../../context/viewportPriority'
 import { getCustomComponentsRevision, getCustomNodeComponents, subscribeCustomComponents } from '../../customComponents'
 import { renderNodeChildren, tokenAttrsToProps } from '../../renderers/renderChildren'
@@ -19,13 +21,15 @@ export function HtmlBlockNode(props: NodeComponentProps<{
   raw?: string
   tag?: string
   attrs?: [string, string | null][] | null
-  children?: any[]
+  children?: ParsedNode[]
   loading?: boolean
 }> & {
-  customComponents?: Record<string, React.ComponentType<any>>
+  customComponents?: CustomComponentMap
+  htmlPolicy?: HtmlPolicy
   placeholder?: React.ReactNode
 }) {
   const { node, placeholder, customId } = props
+  const htmlPolicy = props.htmlPolicy ?? props.ctx?.htmlPolicy ?? 'safe'
   const registerViewport = useViewportPriority()
   const [hostEl, setHostEl] = useState<HTMLElement | null>(null)
   const handleRef = useRef<ReturnType<typeof registerViewport> | null>(null)
@@ -82,32 +86,39 @@ export function HtmlBlockNode(props: NodeComponentProps<{
   }, [isDeferred, node.content, shouldRender])
 
   const boundAttrs = useMemo(() => {
-    const rawAttrs = tokenAttrsToProps(sanitizeHtmlTokenAttrs(node.attrs ?? undefined))
+    const rawAttrs = tokenAttrsToProps(sanitizeHtmlTokenAttrs(node.attrs ?? undefined, htmlPolicy))
     return rawAttrs ? normalizeDomAttrs(rawAttrs as Record<string, string>) : undefined
-  }, [node.attrs])
+  }, [htmlPolicy, node.attrs])
   const structuredTag = useMemo(() => String(node.tag ?? '').trim(), [node.tag])
+  const structuredBoundAttrs = useMemo(() => {
+    const rawAttrs = tokenAttrsToProps(sanitizeHtmlTokenAttrs(node.attrs ?? undefined, htmlPolicy, structuredTag))
+    return rawAttrs ? normalizeDomAttrs(rawAttrs as Record<string, string>) : undefined
+  }, [htmlPolicy, node.attrs, structuredTag])
   const structuredChildren = useMemo(() => Array.isArray(node.children) ? node.children : [], [node.children])
   const isStructured = structuredChildren.length > 0
     && !!structuredTag
     && !NON_STRUCTURING_HTML_TAGS.has(structuredTag.toLowerCase())
+    && !isHtmlTagBlocked(structuredTag, htmlPolicy)
     && !!props.ctx
     && !!props.renderNode
   const structuredWrapperProps = useMemo(
-    () => mergeHtmlBlockClassName(boundAttrs as Record<string, any> | undefined),
-    [boundAttrs],
+    () => mergeHtmlBlockClassName(structuredBoundAttrs as Record<string, any> | undefined),
+    [structuredBoundAttrs],
   )
 
   // Check if we should use dynamic rendering
   const useDynamic = useMemo(() => {
+    if (htmlPolicy === 'escape')
+      return false
     return hasCustomHtmlComponents(node.content ?? '', effectiveCustomComponents)
-  }, [effectiveCustomComponents, node.content])
+  }, [effectiveCustomComponents, htmlPolicy, node.content])
 
   const reactNodes = useMemo(() => {
     if (!useDynamic || !node.content)
       return null
-    return parseHtmlToReactNodes(node.content, effectiveCustomComponents)
-  }, [effectiveCustomComponents, node.content, useDynamic])
-  const safeHtmlContent = useMemo(() => sanitizeHtmlContent(renderContent ?? ''), [renderContent])
+    return parseHtmlToReactNodes(node.content, effectiveCustomComponents, htmlPolicy)
+  }, [effectiveCustomComponents, htmlPolicy, node.content, useDynamic])
+  const safeHtmlContent = useMemo(() => sanitizeHtmlContent(renderContent ?? '', htmlPolicy), [htmlPolicy, renderContent])
   const structuredContent = useMemo(() => {
     if (!isStructured || !props.ctx || !props.renderNode)
       return null

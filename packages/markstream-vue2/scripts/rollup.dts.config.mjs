@@ -39,6 +39,7 @@ export default [
     ],
     external: [
       /^stream-markdown-parser(?:\/.*)?$/,
+      /^markstream-core(?:\/.*)?$/,
       /^vue-demi(?:\/.*)?$/,
     ],
     output: [

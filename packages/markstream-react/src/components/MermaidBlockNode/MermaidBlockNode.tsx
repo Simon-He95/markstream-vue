@@ -10,6 +10,7 @@ import React, {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { toSafeSvgElement } from 'stream-markdown-parser'
 import { useViewportPriority } from '../../context/viewportPriority'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
@@ -21,6 +22,11 @@ import { getMermaid } from './mermaid'
 
 type Theme = 'light' | 'dark'
 
+interface CachedSvg {
+  svg: string
+  bindFunctions?: (element: Element) => unknown
+}
+
 const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 const DOMPURIFY_CONFIG = {
@@ -31,77 +37,6 @@ const DOMPURIFY_CONFIG = {
   ADD_ATTR: ['style'],
   SAFE_FOR_TEMPLATES: true,
 } as const
-
-function neutralizeScriptProtocols(raw: string) {
-  return raw
-    .replace(/["']\s*javascript:/gi, '#')
-    .replace(/\bjavascript:/gi, '#')
-    .replace(/["']\s*vbscript:/gi, '#')
-    .replace(/\bvbscript:/gi, '#')
-    .replace(/\bdata:text\/html/gi, '#')
-}
-
-const DISALLOWED_STYLE_PATTERNS = [/javascript:/i, /expression\s*\(/i, /url\s*\(\s*javascript:/i, /@import/i]
-const SAFE_URL_PROTOCOLS = /^(?:https?:|mailto:|tel:|#|\/|data:image\/(?:png|gif|jpe?g|webp);)/i
-
-function sanitizeUrl(value: string | null | undefined) {
-  if (!value)
-    return ''
-  const trimmed = value.trim()
-  if (SAFE_URL_PROTOCOLS.test(trimmed))
-    return trimmed
-  return ''
-}
-
-function scrubSvgElement(svgEl: SVGElement) {
-  const forbiddenTags = new Set(['script'])
-  const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll<SVGElement>('*'))]
-  for (const node of nodes) {
-    if (forbiddenTags.has(node.tagName.toLowerCase())) {
-      node.remove()
-      continue
-    }
-    const attrs = Array.from(node.attributes)
-    for (const attr of attrs) {
-      const name = attr.name
-      if (/^on/i.test(name)) {
-        node.removeAttribute(name)
-        continue
-      }
-      if (name === 'style' && attr.value) {
-        const val = attr.value
-        if (DISALLOWED_STYLE_PATTERNS.some(re => re.test(val))) {
-          node.removeAttribute(name)
-          continue
-        }
-      }
-      if ((name === 'href' || name === 'xlink:href') && attr.value) {
-        const safe = sanitizeUrl(attr.value)
-        if (!safe) {
-          node.removeAttribute(name)
-          continue
-        }
-        if (safe !== attr.value)
-          node.setAttribute(name, safe)
-      }
-    }
-  }
-}
-
-function toSafeSvgElement(svg: string | null | undefined): SVGElement | null {
-  if (typeof window === 'undefined' || typeof DOMParser === 'undefined')
-    return null
-  if (!svg)
-    return null
-  const neutralized = neutralizeScriptProtocols(svg)
-  const parsed = new DOMParser().parseFromString(neutralized, 'image/svg+xml')
-  const svgEl = parsed.documentElement
-  if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
-    return null
-  const svgElement = svgEl as unknown as SVGElement
-  scrubSvgElement(svgElement)
-  return svgElement
-}
 
 function clearElement(target: HTMLElement | null | undefined) {
   if (!target)
@@ -117,63 +52,39 @@ function clearElement(target: HTMLElement | null | undefined) {
 function setSafeSvg(target: HTMLElement | null | undefined, svg: string | null | undefined) {
   if (!target)
     return ''
-  clearElement(target)
-  const safeElement = toSafeSvgElement(svg)
+  const safeElement = toSafeSvgElement<SVGElement>(svg)
   if (safeElement) {
+    clearElement(target)
     target.appendChild(safeElement)
     return target.innerHTML
   }
   return ''
 }
 
-function renderSvgToTarget(target: HTMLElement | null | undefined, svg: string | null | undefined, strict: boolean) {
+function renderSvgToTarget(
+  target: HTMLElement | null | undefined,
+  svg: string | null | undefined,
+  options: { keepPreviousOnFailure?: boolean } = {},
+) {
   if (!target)
     return ''
-  if (strict)
-    return setSafeSvg(target, svg)
-  clearElement(target)
-  if (svg) {
-    try {
-      target.insertAdjacentHTML('afterbegin', svg)
-    }
-    catch {
-      target.innerHTML = svg
-    }
-  }
-  return target.innerHTML
+  const rendered = setSafeSvg(target, svg)
+  if (!rendered && !options.keepPreviousOnFailure)
+    clearElement(target)
+  return rendered
 }
 
-function isBrokenMermaidSvg(svg: string | null | undefined) {
-  if (!svg || typeof DOMParser === 'undefined')
-    return !svg
-
-  const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml')
-  const svgEl = parsed.documentElement
-  if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
-    return true
-
-  const viewBox = svgEl.getAttribute('viewBox')
-  if (viewBox) {
-    const parts = viewBox.trim().split(/[\s,]+/)
-    if (parts.length === 4) {
-      const width = Number.parseFloat(parts[2] || '')
-      const height = Number.parseFloat(parts[3] || '')
-      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0)
-        return true
-    }
+function bindMermaidInteractionsTo(
+  element: Element | null | undefined,
+  bindFunctions: ((element: Element) => unknown) | null | undefined,
+  enabled: boolean,
+) {
+  if (!enabled || !element?.querySelector('svg'))
+    return
+  try {
+    bindFunctions?.(element)
   }
-
-  const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll('*'))]
-  for (const node of nodes) {
-    for (const attr of Array.from(node.attributes)) {
-      if (/\bNaN\b/i.test(attr.value))
-        return true
-      if (attr.name === 'style' && /max-width:\s*0(?:px)?/i.test(attr.value))
-        return true
-    }
-  }
-
-  return false
+  catch {}
 }
 
 const DEFAULTS = {
@@ -196,7 +107,8 @@ const DEFAULTS = {
   showCollapseButton: true,
   showZoomControls: true,
   enableWheelZoom: false,
-  isStrict: false,
+  isStrict: true,
+  enableMermaidInteractions: false,
 }
 
 export interface MermaidBlockNodeReactEvents {
@@ -261,7 +173,8 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
   const modalCloneWrapperRef = useRef<HTMLElement | null>(null)
   const dragStartRef = useRef({ x: 0, y: 0 })
   const renderTokenRef = useRef(0)
-  const svgCacheRef = useRef<{ light?: string, dark?: string }>({})
+  const svgCacheRef = useRef<{ light?: CachedSvg, dark?: CachedSvg }>({})
+  const lastMermaidBindFunctionsRef = useRef<((element: Element) => unknown) | null>(null)
   const lastRenderedCodeRef = useRef('')
   const userToggledRef = useRef(false)
   const viewportHandleRef = useRef<VisibilityHandle | null>(null)
@@ -277,6 +190,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
   const streaming = Boolean(props.node?.loading ?? props.loading)
   const theme: Theme = props.isDark ? 'dark' : 'light'
   const strictMode = Boolean(props.isStrict)
+  const enableMermaidInteractions = props.enableMermaidInteractions === true
   const mermaidInitConfig = useMemo(() => {
     if (!strictMode) {
       return {
@@ -432,11 +346,16 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
 
   // Restore cached SVG when switching from source to preview
   useLayoutEffect(() => {
-    if (!showSource && contentRef.current && svgCacheRef.current[theme]) {
-      renderSvgToTarget(contentRef.current, svgCacheRef.current[theme]!, strictMode)
+    const cached = svgCacheRef.current[theme]
+    if (!showSource && contentRef.current && cached?.svg) {
+      const rendered = renderSvgToTarget(contentRef.current, cached.svg)
+      if (rendered) {
+        lastMermaidBindFunctionsRef.current = cached.bindFunctions ?? null
+        bindMermaidInteractionsTo(contentRef.current, cached.bindFunctions, enableMermaidInteractions)
+      }
       safeRaf(() => updateContainerHeight())
     }
-  }, [showSource, strictMode, theme, updateContainerHeight])
+  }, [enableMermaidInteractions, showSource, theme, updateContainerHeight])
 
   const renderFull = useCallback(async (code: string, t: Theme, signal?: AbortSignal) => {
     if (!mermaidRef.current || !contentRef.current)
@@ -449,12 +368,15 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
         () => (mermaidRef.current as any).render(id, themed),
         { timeoutMs: fullRenderTimeout, signal },
       ) as any
-      if (!result?.svg || isBrokenMermaidSvg(result.svg))
+      if (!result?.svg)
         return false
-      const rendered = renderSvgToTarget(contentRef.current, result.svg, strictMode)
-      result.bindFunctions?.(contentRef.current)
+      const rendered = renderSvgToTarget(contentRef.current, result.svg)
+      if (!rendered)
+        return false
+      lastMermaidBindFunctionsRef.current = result.bindFunctions ?? null
+      bindMermaidInteractionsTo(contentRef.current, result.bindFunctions, enableMermaidInteractions)
       updateContainerHeight()
-      svgCacheRef.current[t] = rendered
+      svgCacheRef.current[t] = { svg: rendered, bindFunctions: result.bindFunctions }
       setHasRenderedOnce(true)
       setError(null)
       return true
@@ -475,7 +397,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
     finally {
       setRendering(false)
     }
-  }, [fullRenderTimeout, streaming, strictMode, updateContainerHeight])
+  }, [enableMermaidInteractions, fullRenderTimeout, streaming, updateContainerHeight])
 
   const renderPartial = useCallback(async (code: string, t: Theme, signal?: AbortSignal) => {
     if (!mermaidRef.current || !contentRef.current)
@@ -489,10 +411,14 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
         () => (mermaidRef.current as any).render(id, themed),
         { timeoutMs: renderTimeout, signal },
       ) as any
-      if (res?.svg && !isBrokenMermaidSvg(res.svg)) {
-        renderSvgToTarget(contentRef.current, res.svg, strictMode)
-        res.bindFunctions?.(contentRef.current)
-        updateContainerHeight()
+      if (res?.svg) {
+        const rendered = renderSvgToTarget(contentRef.current, res.svg, { keepPreviousOnFailure: true })
+        if (rendered) {
+          lastMermaidBindFunctionsRef.current = res.bindFunctions ?? null
+          bindMermaidInteractionsTo(contentRef.current, res.bindFunctions, enableMermaidInteractions)
+        }
+        if (rendered)
+          updateContainerHeight()
       }
     }
     catch {
@@ -501,7 +427,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
     finally {
       setRendering(false)
     }
-  }, [renderTimeout, streaming, strictMode, updateContainerHeight])
+  }, [enableMermaidInteractions, renderTimeout, streaming, updateContainerHeight])
 
   const progressiveRender = useCallback(async (code: string, signal?: AbortSignal) => {
     if (!code.trim()) {
@@ -695,7 +621,12 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
     }
     clearElement(host)
     host.appendChild(clone)
-  }, [modalOpen])
+    bindMermaidInteractionsTo(
+      host,
+      lastMermaidBindFunctionsRef.current ?? svgCacheRef.current[theme]?.bindFunctions,
+      enableMermaidInteractions,
+    )
+  }, [enableMermaidInteractions, modalOpen, theme])
 
   useEffect(() => {
     if (!modalOpen)

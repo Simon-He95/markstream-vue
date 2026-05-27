@@ -1,33 +1,59 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1200" height="630" fill="#050B18"/>
-  <rect x="44" y="44" width="1112" height="542" rx="34" fill="url(#bg)"/>
-  <rect x="92" y="108" width="430" height="414" rx="30" fill="#020617" stroke="#1E293B" stroke-width="2"/>
-  <rect x="128" y="148" width="132" height="36" rx="18" fill="#22C55E" fill-opacity="0.2" stroke="#22C55E"/>
-  <text x="194" y="166" fill="#DCFCE7" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="700" text-anchor="middle" dominant-baseline="middle">Live demo</text>
-  <rect x="128" y="214" width="320" height="18" rx="9" fill="#E2E8F0" fill-opacity="0.92"/>
-  <rect x="128" y="246" width="270" height="18" rx="9" fill="#94A3B8" fill-opacity="0.8"/>
-  <rect x="128" y="302" width="154" height="164" rx="26" fill="#111827"/>
-  <rect x="304" y="302" width="178" height="164" rx="26" fill="#0F172A"/>
-  <path d="M168 344H242" stroke="#38BDF8" stroke-width="20" stroke-linecap="round"/>
-  <path d="M352 332C352 325.373 357.373 320 364 320H404C427.196 320 446 338.804 446 362C446 385.196 427.196 404 404 404H364C357.373 404 352 398.627 352 392V332Z" fill="#F59E0B"/>
-  <path d="M352 434L430 434" stroke="#A78BFA" stroke-width="18" stroke-linecap="round"/>
-  <rect x="550" y="118" width="558" height="394" rx="34" fill="#0B1120" stroke="#334155" stroke-width="2"/>
-  <rect x="598" y="152" width="158" height="34" rx="17" fill="#38BDF8" fill-opacity="0.14" stroke="#38BDF8" stroke-opacity="0.7"/>
-  <text x="677" y="169" fill="#BAE6FD" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" text-anchor="middle" dominant-baseline="middle">PLAYGROUND</text>
-  <text x="598" y="232" fill="#F8FAFC" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="700">markstream-vue</text>
-  <text x="598" y="288" fill="#C4B5FD" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700">Interactive demos</text>
-  <text x="598" y="342" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">Streaming Markdown for AI chat</text>
-  <text x="598" y="378" fill="#CBD5E1" font-family="Arial, Helvetica, sans-serif" font-size="20">Mermaid, KaTeX, CDN peers</text>
-  <rect x="598" y="416" width="110" height="36" rx="18" fill="#0F1D33" stroke="#334155"/>
-  <text x="653" y="434" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" text-anchor="middle" dominant-baseline="middle">AI chat</text>
-  <rect x="720" y="416" width="120" height="36" rx="18" fill="#0F1D33" stroke="#334155"/>
-  <text x="780" y="434" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" text-anchor="middle" dominant-baseline="middle">Mermaid</text>
-  <rect x="852" y="416" width="100" height="36" rx="18" fill="#0F1D33" stroke="#334155"/>
-  <text x="902" y="434" fill="#E2E8F0" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" text-anchor="middle" dominant-baseline="middle">KaTeX</text>
+  <rect width="1200" height="630" fill="#06101f"/>
+  <rect x="44" y="44" width="1112" height="542" rx="36" fill="url(#panel)" stroke="#1e3348" stroke-width="2"/>
+  <g transform="translate(108 168) scale(2.12)">
+    <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#tileBg)"/>
+    <rect x="9.5" y="9.5" width="109" height="109" rx="26" fill="none" stroke="#fff" stroke-opacity=".08"/>
+    <circle cx="32" cy="28" r="3" fill="#43d67b" opacity=".85"/>
+    <circle cx="44" cy="28" r="3" fill="#20c7bd" opacity=".75"/>
+    <circle cx="56" cy="28" r="3" fill="#4cc9f0" opacity=".65"/>
+    <g transform="translate(0 5)">
+      <path d="M31 93V33l33 33 33-33v60" fill="none" stroke="#020617" stroke-opacity=".26" stroke-width="23" stroke-linecap="square" stroke-linejoin="round"/>
+      <path d="M31 93V33l33 33 33-33v60" fill="none" stroke="url(#msGradSoft)" stroke-width="16" stroke-linecap="square" stroke-linejoin="round"/>
+      <path d="M31 93V33l33 33" fill="none" stroke="#f8fafc" stroke-opacity=".84" stroke-width="5.6" stroke-linecap="square" stroke-linejoin="round"/>
+      <rect x="15" y="42" width="24" height="8" rx="3" fill="url(#msGrad)" opacity=".92"/>
+      <rect x="8" y="61" width="31" height="8" rx="3" fill="url(#msGrad)" opacity=".74"/>
+      <rect x="20" y="80" width="20" height="8" rx="3" fill="url(#msGrad)" opacity=".58"/>
+      <rect x="103" y="84" width="10" height="9" rx="2" fill="url(#msGrad)" opacity=".9"/>
+    </g>
+  </g>
+  <rect x="430" y="160" width="156" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+  <text x="508" y="185" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="800" text-anchor="middle">PLAYGROUND</text>
+  <text x="430" y="276" fill="#f8fafc" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="76" font-weight="750">markstream-<tspan fill="url(#msGradText)">vue</tspan></text>
+  <text x="432" y="346" fill="#a7f3d0" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30" font-weight="700">Interactive streaming Markdown demos</text>
+  <text x="432" y="400" fill="#cbd5e1" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24">Mermaid, KaTeX, Monaco, CDN peers, and test labs</text>
+  <g transform="translate(432 456)">
+    <rect width="96" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="48" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">Live</text>
+    <rect x="112" width="112" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="168" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">SSR lab</text>
+    <rect x="240" width="126" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="303" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">Streaming</text>
+  </g>
   <defs>
-    <linearGradient id="bg" x1="66" y1="62" x2="1124" y2="566" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#111827"/>
-      <stop offset="1" stop-color="#312E81"/>
+    <linearGradient id="panel" x1="82" y1="62" x2="1094" y2="574" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102033"/>
+      <stop offset="1" stop-color="#071a24"/>
     </linearGradient>
+    <linearGradient id="msGrad" x1="18" y1="18" x2="112" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#43d67b"/>
+      <stop offset=".52" stop-color="#20c7bd"/>
+      <stop offset="1" stop-color="#4cc9f0"/>
+    </linearGradient>
+    <linearGradient id="msGradSoft" x1="20" y1="20" x2="108" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7df28f"/>
+      <stop offset=".55" stop-color="#50dca5"/>
+      <stop offset="1" stop-color="#3bc6f2"/>
+    </linearGradient>
+    <linearGradient id="msGradText" x1="784" y1="213" x2="986" y2="291" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#43d67b"/>
+      <stop offset=".52" stop-color="#20c7bd"/>
+      <stop offset="1" stop-color="#4cc9f0"/>
+    </linearGradient>
+    <radialGradient id="tileBg" cx="50%" cy="12%" r="92%">
+      <stop stop-color="#1d2b3b"/>
+      <stop offset=".62" stop-color="#0c1724"/>
+      <stop offset="1" stop-color="#050a12"/>
+    </radialGradient>
   </defs>
 </svg>

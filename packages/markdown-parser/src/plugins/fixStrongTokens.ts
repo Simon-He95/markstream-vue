@@ -1,12 +1,12 @@
-import type { MarkdownIt } from 'markdown-it-ts'
-import type { MarkdownToken } from 'stream-markdown-parser'
+import type { MarkdownIt } from '../markdown-it-types'
+import type { MarkdownToken } from '../types'
 
 export function applyFixStrongTokens(md: MarkdownIt) {
   // Run after inline tokenization to normalize strong/em tokens in
   // each inline token's children. This ensures downstream inline
   // parsers receive a normalized token list.
   md.core.ruler.after('inline', 'fix_strong_tokens', (state: unknown) => {
-    const s = state as unknown as { tokens?: Array<{ type?: string, children?: any[] }> }
+    const s = state as unknown as { tokens?: MarkdownToken[] }
     const toks = s.tokens ?? []
     for (let i = 0; i < toks.length; i++) {
       const t = toks[i]
@@ -284,8 +284,74 @@ function mergeBrokenStrongAroundMathInline(tokens: MarkdownToken[]): MarkdownTok
       }
     }
 
+    if (
+      t0?.type === 'strong_open'
+      && t1?.type === 'text'
+      && t2?.type === 'strong_close'
+      && t3?.type === 'strong_open'
+      && t4?.type === 'math_inline'
+      && t5?.type === 'strong_close'
+    ) {
+      const close = findTrailingTextStrongClose(tokens, i + 6)
+      if (close) {
+        out.push(t0)
+        out.push(t1)
+        out.push(t4)
+
+        for (let j = i + 6; j < close.index; j++) {
+          out.push(tokens[j])
+        }
+
+        if (close.beforeClose) {
+          out.push({
+            ...tokens[close.index],
+            type: 'text',
+            content: close.beforeClose,
+            raw: close.beforeClose,
+          } as MarkdownToken)
+        }
+
+        out.push(t5)
+
+        if (close.afterClose) {
+          out.push({
+            ...tokens[close.index],
+            type: 'text',
+            content: close.afterClose,
+            raw: close.afterClose,
+          } as MarkdownToken)
+        }
+
+        i = close.index
+        continue
+      }
+    }
+
     out.push(t0)
   }
 
   return out
+}
+
+function findTrailingTextStrongClose(tokens: MarkdownToken[], startIndex: number) {
+  for (let i = startIndex; i < tokens.length; i++) {
+    const token = tokens[i]
+    if (token?.type === 'strong_open')
+      return null
+    if (token?.type !== 'text')
+      continue
+
+    const content = String(token.content ?? '')
+    const closeIdx = content.indexOf('**')
+    if (closeIdx === -1)
+      continue
+
+    return {
+      index: i,
+      beforeClose: content.slice(0, closeIdx),
+      afterClose: content.slice(closeIdx + 2),
+    }
+  }
+
+  return null
 }

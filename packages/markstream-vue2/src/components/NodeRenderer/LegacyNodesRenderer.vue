@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { BaseNode, ParsedNode } from 'stream-markdown-parser'
+import type { BaseNode, HtmlPolicy, ParsedNode } from 'stream-markdown-parser'
+import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme, CodeBlockNodeProps, CodeBlockPreviewPayload } from '../../types/component-props'
 import { normalizeCustomHtmlTags } from 'stream-markdown-parser'
 import { computed } from 'vue-demi'
 import AdmonitionNode from '../../components/AdmonitionNode'
@@ -43,25 +44,32 @@ const props = withDefaults(defineProps<{
   customId?: string
   indexKey?: number | string
   typewriter?: boolean
+  fade?: boolean
   showTooltips?: boolean
   codeBlockStream?: boolean
-  codeBlockDarkTheme?: any
-  codeBlockLightTheme?: any
-  codeBlockMonacoOptions?: Record<string, any>
+  codeBlockDarkTheme?: CodeBlockMonacoTheme
+  codeBlockLightTheme?: CodeBlockMonacoTheme
+  codeBlockMonacoOptions?: CodeBlockMonacoOptions
   codeBlockMinWidth?: string | number
   codeBlockMaxWidth?: string | number
-  codeBlockProps?: Record<string, any>
+  codeBlockProps?: Partial<Omit<CodeBlockNodeProps, 'node'>>
   renderCodeBlocksAsPre?: boolean
-  themes?: string[]
+  themes?: CodeBlockMonacoTheme[]
   isDark?: boolean
   customHtmlTags?: readonly string[]
+  htmlPolicy?: HtmlPolicy
 }>(), {
   codeBlockStream: true,
   showTooltips: true,
-  typewriter: true,
+  typewriter: false,
+  fade: true,
 })
 
-const emit = defineEmits(['copy', 'handleArtifactClick'])
+const emit = defineEmits<{
+  (e: 'copy', code: string): void
+  (e: 'handleArtifactClick', payload: CodeBlockPreviewPayload): void
+  (e: 'click', event: MouseEvent): void
+}>()
 
 const nodeComponents = {
   text: TextNode,
@@ -115,7 +123,7 @@ const codeBlockBindings = computed(() => ({
   maxWidth: props.codeBlockMaxWidth,
   ...(props.codeBlockProps || {}),
 }))
-const nonCodeBindings = computed(() => ({ typewriter: props.typewriter }))
+const nonCodeBindings = computed(() => ({ typewriter: props.typewriter, fade: props.fade, htmlPolicy: props.htmlPolicy ?? 'safe' }))
 const linkBindings = computed(() => ({
   ...nonCodeBindings.value,
   ...(typeof props.showTooltips === 'boolean' ? { showTooltip: props.showTooltips } : {}),
@@ -251,7 +259,7 @@ function getBindingsFor(node: ParsedNode, language?: string) {
 }
 
 function handleClick(event: MouseEvent) {
-  emit('handleArtifactClick', event)
+  emit('click', event)
 }
 </script>
 

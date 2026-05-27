@@ -9,6 +9,7 @@
  */
 import { mount } from '@vue/test-utils'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
+import { parseHtmlToVNodes } from '../packages/markstream-vue2/src/utils/htmlRenderer'
 import { removeCustomComponents, setCustomComponents } from '../packages/markstream-vue2/src/utils/nodeComponents'
 import { flushAll } from './setup/flush-all'
 
@@ -92,7 +93,7 @@ describe('vue2: non-whitelisted custom HTML tags', () => {
     }
   })
 
-  it('renders closed non-whitelisted custom tag as raw HTML', async () => {
+  it('renders closed non-whitelisted custom tag as escaped text in safe mode', async () => {
     const scopeId = 'vue2-closed-unknown-tag'
     const markdown = `<echat-url>content</echat-url>`
     const wrapper = await mount(MarkdownRender, {
@@ -105,7 +106,7 @@ describe('vue2: non-whitelisted custom HTML tags', () => {
     await flushAll()
     try {
       const html = wrapper.html()
-      expect(html).toMatch(/<echat-url[^>]*>content<\/echat-url>/i)
+      expect(html).toContain('&lt;echat-url&gt;content&lt;/echat-url&gt;')
     }
     finally {
       wrapper.unmount()
@@ -125,10 +126,10 @@ describe('vue2: non-whitelisted custom HTML tags', () => {
     })
     await flushAll()
     try {
-      const html = wrapper.html()
-      expect(html).toContain('Hello')
-      expect(html).toMatch(/<unknown-tag[^>]*>world<\/unknown-tag>/i)
-      expect(html).toContain('!')
+      const text = normalizeText(wrapper.text())
+      expect(text).toContain('Hello')
+      expect(text).toContain('world')
+      expect(text).toContain('!')
     }
     finally {
       wrapper.unmount()
@@ -189,6 +190,21 @@ describe('vue2: non-whitelisted custom HTML tags', () => {
     }
   })
 
+  it('keeps self-closing non-whitelisted tags literal in dynamic parsing', () => {
+    const nodes = parseHtmlToVNodes('<my-tag>Hello</my-tag><unknown-tag />', {
+      'my-tag': {
+        name: 'MyTag',
+        render() {
+          return null
+        },
+      } as any,
+    })
+
+    expect(nodes).not.toBeNull()
+    const stringNodes = (nodes || []).filter((node): node is string => typeof node === 'string')
+    expect(stringNodes).toContain('<unknown-tag />')
+  })
+
   it('does not truncate surrounding markdown in list context', async () => {
     // Original BUG: surrounding markdown was truncated when non-whitelisted tag appeared
     const scopeId = 'vue2-surrounding-markdown-truncation'
@@ -208,13 +224,13 @@ After list.`
     })
     await flushAll()
     try {
-      const html = wrapper.html()
-      expect(html).toContain('Before list')
-      expect(html).toContain('After list')
-      expect(html).toContain('Item with')
-      expect(html).toMatch(/<custom-tag[^>]*>inline content<\/custom-tag>/i)
-      expect(html).toContain('and more text')
-      expect(html).toContain('Another item')
+      const text = normalizeText(wrapper.text())
+      expect(text).toContain('Before list')
+      expect(text).toContain('After list')
+      expect(text).toContain('Item with')
+      expect(text).toContain('inline content')
+      expect(text).toContain('and more text')
+      expect(text).toContain('Another item')
     }
     finally {
       wrapper.unmount()

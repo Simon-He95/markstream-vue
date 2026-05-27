@@ -20,6 +20,7 @@ const props = defineProps<{
   node: BlockquoteNode
   indexKey: string | number
   typewriter?: boolean
+  fade?: boolean
   customId?: string
 }>()
 
@@ -36,6 +37,7 @@ defineEmits<{
       :nodes="props.node.children || []"
       :custom-id="props.customId"
       :typewriter="props.typewriter"
+      :fade="props.fade"
       @copy="$emit('copy', $event)"
     />
   </blockquote>

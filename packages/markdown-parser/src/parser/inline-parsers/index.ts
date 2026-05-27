@@ -1,6 +1,5 @@
-import type { MarkdownIt } from 'markdown-it-ts'
-import type { MarkdownToken, ParsedNode, ParseOptions, TextNode } from '../../types'
-import { shouldDemoteFilenameLikeLinkify } from '../linkifyHeuristics'
+import type { InternalParseOptions, MarkdownToken, ParsedNode, ParseOptions, TextNode } from '../../types'
+import { inferLinkifyDemotionContext, isDecodedFromRawPunycode, shouldDemoteFilenameLikeLinkify } from '../linkifyHeuristics'
 import { parseCheckboxInputToken, parseCheckboxToken } from './checkbox-parser'
 import { parseEmojiToken } from './emoji-parser'
 import { parseEmphasisToken } from './emphasis-parser'
@@ -352,6 +351,21 @@ export function parseInlineTokens(
   if (!tokens || tokens.length === 0)
     return []
 
+  const inheritedContext = (options as InternalParseOptions | undefined)?.__linkifyDemotionContext
+  const inferredContext = inferLinkifyDemotionContext(raw)
+  const linkifyDemotionContext = {
+    filename: inheritedContext?.filename || inferredContext.filename,
+    explicitFilename: inheritedContext?.explicitFilename || inferredContext.explicitFilename,
+    marketTicker: inheritedContext?.marketTicker || inferredContext.marketTicker,
+  }
+  if (linkifyDemotionContext.filename || linkifyDemotionContext.explicitFilename || linkifyDemotionContext.marketTicker) {
+    options = {
+      ...options,
+      __linkifyDemotionContext: linkifyDemotionContext,
+    } as InternalParseOptions
+  }
+
+  const internalOptions = options as InternalParseOptions | undefined
   const result: ParsedNode[] = []
   let currentTextNode: TextNode | null = null
 
@@ -440,7 +454,7 @@ export function parseInlineTokens(
         { type: 's_open', tag: 's', content: '', markup: '~~', info: '', meta: null },
         { type: 'text', tag: '', content: inner, markup: '', info: '', meta: null },
         { type: 's_close', tag: 's', content: '', markup: '~~', info: '', meta: null },
-      ], 0, options as any)
+      ], 0, options)
 
       resetCurrentTextNode()
       pushNode(node)
@@ -541,7 +555,7 @@ export function parseInlineTokens(
               { type: 'text', tag: '', content: inner, markup: '', info: '', meta: null },
               { type: 'em_close', tag: 'em', content: '', markup: '*', info: '', meta: null },
               { type: 'strong_close', tag: 'strong', content: '', markup: '**', info: '', meta: null },
-            ], 0, raw, options as any)
+            ], 0, raw, options)
 
             resetCurrentTextNode()
             pushNode(node)
@@ -623,7 +637,7 @@ export function parseInlineTokens(
         { type: 'strong_open', tag: 'strong', content: '', markup: '**', info: '', meta: null },
         { type: 'text', tag: '', content: inner, markup: '', info: '', meta: null },
         { type: 'strong_close', tag: 'strong', content: '', markup: '**', info: '', meta: null },
-      ], 0, raw, options as any)
+      ], 0, raw, options)
 
       resetCurrentTextNode()
       pushNode(node)
@@ -686,7 +700,7 @@ export function parseInlineTokens(
         { type: 'em_open', tag: 'em', content: '', markup: '*', info: '', meta: null },
         { type: 'text', tag: '', content: emphasisContent, markup: '', info: '', meta: null },
         { type: 'em_close', tag: 'em', content: '', markup: '*', info: '', meta: null },
-      ], 0, options as any)
+      ], 0, options)
 
       resetCurrentTextNode()
       pushNode(node)
@@ -768,7 +782,7 @@ export function parseInlineTokens(
       return true
     }
 
-    // Close any current text node and handle the text before the code span
+    // Close the current text node and handle the text before the code span
     resetCurrentTextNode()
     const beforeText = content.slice(0, codeStart)
     const codeContent = content.slice(codeStart + runLen, codeEnd)
@@ -799,7 +813,7 @@ export function parseInlineTokens(
   }
 
   function tryReparseCollapsedInlineText(rawContent: string): ParsedNode[] | null {
-    const md = (options as any)?.__markdownIt as MarkdownIt | undefined
+    const md = internalOptions?.__markdownIt
     if (!md)
       return null
     if (tokens.length <= 1 || !tokens.some(token => token?.type === 'math_inline'))
@@ -827,7 +841,7 @@ export function parseInlineTokens(
   }
 
   function pushParsed(node: ParsedNode) {
-    // ensure any ongoing text node is closed when pushing non-text nodes
+    // ensure the ongoing text node is closed when pushing non-text nodes
     resetCurrentTextNode()
     result.push(node)
   }
@@ -858,8 +872,38 @@ export function parseInlineTokens(
     }
   }
 
+  function pushInlineTextContent(content: string, token: MarkdownToken) {
+    if (!content)
+      return
+
+    const parsed = parseInlineTokens([
+      { ...token, type: 'text', content, raw: content } as MarkdownToken,
+    ], content, pPreToken, options)
+
+    if (parsed.length === 1 && parsed[0]?.type === 'text') {
+      const text = parsed[0] as TextNode
+      pushText(String(text.content ?? ''), String(text.raw ?? text.content ?? ''))
+      return
+    }
+
+    for (const node of parsed)
+      pushNode(node)
+  }
+
   function hasEscapedMarkup(token: MarkdownToken, escapedPrefix: string) {
     return String(token.markup ?? '').startsWith(escapedPrefix)
+  }
+
+  function isMarkdownLinkBeforeLinkifiedUrl(content: string) {
+    if (!content.endsWith(']('))
+      return false
+
+    return tokens[i + 1]?.type === 'link_open'
+      && tokens[i + 1]?.markup === 'linkify'
+      && tokens[i + 2]?.type === 'text'
+      && tokens[i + 3]?.type === 'link_close'
+      && tokens[i + 4]?.type === 'text'
+      && String(tokens[i + 4]?.content ?? '').startsWith(')')
   }
 
   function stripTrailingMidStateMarker(content: string, token: MarkdownToken) {
@@ -942,7 +986,7 @@ export function parseInlineTokens(
 
       case 'strong_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseStrongToken(tokens, i, token.content, options as any)
+        const { node, nextIndex } = parseStrongToken(tokens, i, token.content, options)
         pushNode(node)
         i = nextIndex
         break
@@ -950,7 +994,7 @@ export function parseInlineTokens(
 
       case 'em_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseEmphasisToken(tokens, i, options as any)
+        const { node, nextIndex } = parseEmphasisToken(tokens, i, options)
         pushNode(node)
         i = nextIndex
         break
@@ -958,7 +1002,7 @@ export function parseInlineTokens(
 
       case 's_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseStrikethroughToken(tokens, i, options as any)
+        const { node, nextIndex } = parseStrikethroughToken(tokens, i, options)
         pushNode(node)
         i = nextIndex
         break
@@ -966,7 +1010,7 @@ export function parseInlineTokens(
 
       case 'mark_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseHighlightToken(tokens, i, options as any)
+        const { node, nextIndex } = parseHighlightToken(tokens, i, options)
         pushNode(node)
         i = nextIndex
         break
@@ -974,7 +1018,7 @@ export function parseInlineTokens(
 
       case 'ins_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseInsertToken(tokens, i, options as any)
+        const { node, nextIndex } = parseInsertToken(tokens, i, options)
         pushNode(node)
         i = nextIndex
         break
@@ -982,7 +1026,7 @@ export function parseInlineTokens(
 
       case 'sub_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseSubscriptToken(tokens, i, options as any)
+        const { node, nextIndex } = parseSubscriptToken(tokens, i, options)
         pushNode(node)
         i = nextIndex
         break
@@ -990,7 +1034,7 @@ export function parseInlineTokens(
 
       case 'sup_open': {
         resetCurrentTextNode()
-        const { node, nextIndex } = parseSuperscriptToken(tokens, i, options as any)
+        const { node, nextIndex } = parseSuperscriptToken(tokens, i, options)
         pushNode(node)
         i = nextIndex
         break
@@ -1117,12 +1161,13 @@ export function parseInlineTokens(
         break
       }
 
-      default:
+      default: {
         // Skip unknown token types, ensure text merging stops.
         // Synthetic 'link' tokens (from fixLinkTokens) must respect validateLink.
-        if (token.type === 'link' && (token as any).href != null && options?.validateLink && !options.validateLink((token as any).href)) {
+        const syntheticLink = token as MarkdownToken & { href?: unknown, text?: unknown }
+        if (token.type === 'link' && syntheticLink.href != null && options?.validateLink && !options.validateLink(String(syntheticLink.href))) {
           resetCurrentTextNode()
-          const displayText = String((token as any).text ?? '')
+          const displayText = String(syntheticLink.text ?? '')
           pushText(displayText, displayText)
           i++
         }
@@ -1140,6 +1185,7 @@ export function parseInlineTokens(
           i++
         }
         break
+      }
     }
   }
 
@@ -1194,7 +1240,7 @@ export function parseInlineTokens(
       if (item.type !== 'text')
         break
       trailingTextStart = index
-      trailingTextContent = String((item as any).content ?? '') + trailingTextContent
+      trailingTextContent = String(item.content ?? '') + trailingTextContent
     }
     if (trailingTextStart < result.length) {
       // Some mid-state token streams resend the full trailing text chunk. Only
@@ -1275,7 +1321,7 @@ export function parseInlineTokens(
     // Avoid synthesizing links from raw text only when the next token is
     // already a structured link_open. This prevents duplicates while still
     // allowing fallback for later tricky links in the same inline run.
-    if (tokens[i + 1]?.type !== 'link_open' && handleInlineLinkContent(content, token))
+    if ((tokens[i + 1]?.type !== 'link_open' || isMarkdownLinkBeforeLinkifiedUrl(content)) && handleInlineLinkContent(content, token))
       return
 
     const reparsedNodes = tryReparseCollapsedInlineText(rawContent)
@@ -1297,7 +1343,7 @@ export function parseInlineTokens(
 
   function handleLinkOpen(token: MarkdownToken) {
     if (shouldTreatLinkOpenAsTextInEscapedOuterImageTail()) {
-      const { node, nextIndex } = parseLinkToken(tokens, i, options as any)
+      const { node, nextIndex } = parseLinkToken(tokens, i, options)
       const text = String(node.text || node.href || '')
       pushText(text, text)
       i = nextIndex
@@ -1307,14 +1353,16 @@ export function parseInlineTokens(
     // mirror logic previously in the switch-case for 'link_open'
     resetCurrentTextNode()
     // 直接使用 parseLinkToken 来解析链接及其子节点，这能正确处理包含 code_inline 等复杂内容的链接
-    const { node, nextIndex } = parseLinkToken(tokens, i, options as any)
+    const { node, nextIndex } = parseLinkToken(tokens, i, options)
     i = nextIndex
 
+    const linkText = node.text || node.href || ''
     if (
       token.markup === 'linkify'
-      && shouldDemoteFilenameLikeLinkify(node.text || node.href || '')
+      && !isDecodedFromRawPunycode(linkText, node.href, raw)
+      && shouldDemoteFilenameLikeLinkify(linkText, internalOptions?.__linkifyDemotionContext)
     ) {
-      pushText(node.text || node.href || '', node.text || node.href || '')
+      pushText(linkText, linkText)
       return
     }
 
@@ -1597,10 +1645,11 @@ export function parseInlineTokens(
     if (previous?.type !== 'image' && previous?.type !== 'link')
       return false
 
+    const previousWithChildren = previous as ParsedNode & { children?: ParsedNode[] }
     const previousLink = previous?.type === 'link'
-      && Array.isArray((previous as any).children)
-      && (previous as any).children.length === 1
-      && (previous as any).children[0]?.type === 'image'
+      && Array.isArray(previousWithChildren.children)
+      && previousWithChildren.children.length === 1
+      && previousWithChildren.children[0]?.type === 'image'
       ? result.pop() as ParsedNode & {
         href?: string
         title?: string | null
@@ -1623,7 +1672,7 @@ export function parseInlineTokens(
     let loading = true
 
     if (nextToken?.type === 'link_open') {
-      const { node, nextIndex } = parseLinkToken(tokens, i + 1, options as any)
+      const { node, nextIndex } = parseLinkToken(tokens, i + 1, options)
       href = node.href
       title = node.title
       loading = true
@@ -1679,17 +1728,25 @@ export function parseInlineTokens(
         const last = tokens[i + 4]
         let index = 4
         let loading = true
-        if (last?.type === 'text' && last.content === ')') {
-          index++
-          loading = false
-        }
-        else if (last?.type === 'text' && last.content === '.') {
-          i++
+        if (last?.type === 'text') {
+          const lastContent = String(last.content ?? '')
+          if (lastContent.startsWith(')')) {
+            loading = false
+            const trailing = lastContent.slice(1)
+            if (trailing) {
+              last.content = trailing
+              last.raw = trailing
+            }
+            else {
+              index++
+            }
+          }
+          else if (lastContent === '.') {
+            i++
+          }
         }
 
-        if (textNodeContent) {
-          pushText(textNodeContent, textNodeContent)
-        }
+        pushInlineTextContent(textNodeContent, _token)
         const hrefFromToken = String(textToken.content ?? '')
         if (options?.validateLink && !options.validateLink(hrefFromToken)) {
           pushText(text, text)
@@ -1715,9 +1772,7 @@ export function parseInlineTokens(
       if (emphasisMatch) {
         textNodeContent = textNodeContent.replace(/\*+$/, '')
       }
-      if (textNodeContent) {
-        pushText(textNodeContent, textNodeContent)
-      }
+      pushInlineTextContent(textNodeContent, _token)
       if (!emphasisMatch)
         emphasisMatch = text.match(/^\*+/)
       if (!requireClosingStrong && emphasisMatch) {
@@ -1744,22 +1799,22 @@ export function parseInlineTokens(
         })
         if (type === 1) {
           newTokens.push({ type: 'em_close', tag: 'em', nesting: -1 })
-          const { node } = parseEmphasisToken(newTokens, 0, options as any)
+          const { node } = parseEmphasisToken(newTokens, 0, options)
           pushNode(node)
         }
         else if (type === 2) {
           newTokens.push({ type: 'strong_close', tag: 'strong', nesting: -1 })
-          const { node } = parseStrongToken(newTokens, 0, undefined, options as any)
+          const { node } = parseStrongToken(newTokens, 0, undefined, options)
           pushNode(node)
         }
         else if (type === 3) {
           newTokens.push({ type: 'em_close', tag: 'em', nesting: -1 })
           newTokens.push({ type: 'strong_close', tag: 'strong', nesting: -1 })
-          const { node } = parseStrongToken(newTokens, 0, undefined, options as any)
+          const { node } = parseStrongToken(newTokens, 0, undefined, options)
           pushNode(node)
         }
         else {
-          const { node } = parseEmphasisToken(newTokens, 0, options as any)
+          const { node } = parseEmphasisToken(newTokens, 0, options)
           pushNode(node)
         }
       }

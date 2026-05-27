@@ -6,6 +6,7 @@ import type {
   ParseOptions,
 } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 
 export function parseDefinitionList(
   tokens: MarkdownToken[],
@@ -16,12 +17,14 @@ export function parseDefinitionList(
   let j = index + 1
   let termNodes: ParsedNode[] = []
   let definitionNodes: ParsedNode[] = []
+  const linkifyContext = createLinkifyDemotionContextTracker(options, true)
 
   while (j < tokens.length && tokens[j].type !== 'dl_close') {
     if (tokens[j].type === 'dt_open') {
       // Process term
       const termToken = tokens[j + 1]
-      termNodes = parseInlineTokens(termToken.children || [], undefined, undefined, options as any)
+      termNodes = parseInlineTokens(termToken.children || [], undefined, undefined, linkifyContext.options())
+      linkifyContext.remember(termNodes.map(term => term.raw).join(''))
       j += 3 // Skip dt_open, inline, dt_close
     }
     else if (tokens[j].type === 'dd_open') {
@@ -34,9 +37,10 @@ export function parseDefinitionList(
           const contentToken = tokens[k + 1]
           definitionNodes.push({
             type: 'paragraph',
-            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, options as any),
+            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, linkifyContext.options()),
             raw: String(contentToken.content ?? ''),
           })
+          linkifyContext.remember(String(contentToken.content ?? ''))
           k += 3 // Skip paragraph_open, inline, paragraph_close
         }
         else {

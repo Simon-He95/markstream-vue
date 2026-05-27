@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getCustomNodeComponents } from '../../utils/nodeComponents'
+import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import CheckboxNode from '../CheckboxNode'
 import EmphasisNode from '../EmphasisNode'
 import HardBreakNode from '../HardBreakNode'
@@ -30,13 +30,13 @@ interface VmrContainerNode {
   raw: string
 }
 
-const props = defineProps<{ node: VmrContainerNode, indexKey: number | string, isDark?: boolean, typewriter?: boolean, customId?: string }>()
+const props = defineProps<{ node: VmrContainerNode, indexKey: number | string, isDark?: boolean, typewriter?: boolean, fade?: boolean, customId?: string }>()
 
 // Build CSS class from container name
 const containerClass = computed(() => `vmr-container vmr-container-${props.node.name}`)
-const overrides = getCustomNodeComponents(props.customId)
+const overrides = useCustomNodeComponents(() => props.customId)
 
-const nodeComponents = {
+const nodeComponents = computed(() => ({
   // Inline nodes (used inside paragraphs)
   text: TextNode,
   paragraph: ParagraphNode,
@@ -59,11 +59,11 @@ const nodeComponents = {
   math_block: MathBlockNodeAsync,
   table: TableNode,
   // Custom overrides
-  ...overrides,
-}
+  ...overrides.value,
+}))
 
 function getNodeComponent(type: string) {
-  return nodeComponents[type] || FallbackComponent
+  return (nodeComponents.value as any)[type] || FallbackComponent
 }
 </script>
 
@@ -76,6 +76,8 @@ function getNodeComponent(type: string) {
       :custom-id="props.customId"
       :node="child"
       :index-key="`${indexKey || 'vmr-container'}-${index}`"
+      :typewriter="props.typewriter"
+      :fade="props.fade"
     />
   </div>
 </template>

@@ -175,6 +175,11 @@ export interface FootnoteReferenceNode extends BaseNode {
   id: string
 }
 
+export interface FootnoteAnchorNode extends BaseNode {
+  type: 'footnote_anchor'
+  id: string
+}
+
 export interface AdmonitionNode extends BaseNode {
   type: 'admonition'
   kind: string // 'note' | 'warning' | 'danger' | 'info' | 'tip' 等
@@ -264,7 +269,7 @@ export interface MarkdownToken {
   children?: MarkdownToken[]
   attrs?: [string, string][]
   markup?: string
-  meta?: any
+  meta?: unknown
   map?: [number, number]
   raw?: string
 }
@@ -300,6 +305,7 @@ export type ParsedNode
     | DefinitionItemNode
     | FootnoteNode
     | FootnoteReferenceNode
+    | FootnoteAnchorNode
     | AdmonitionNode
     | HardBreakNode
     | MathInlineNode

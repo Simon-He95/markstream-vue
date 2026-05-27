@@ -1,4 +1,4 @@
-import type { MarkdownIt } from 'markdown-it-ts'
+import type { MarkdownIt } from '../markdown-it-types'
 import type { MarkdownToken } from '../types'
 
 export function applyFixTableTokens(md: MarkdownIt) {
@@ -6,10 +6,10 @@ export function applyFixTableTokens(md: MarkdownIt) {
   // children) are present. We replace the token array with the
   // fixed version returned by `fixTableTokens`.
   md.core.ruler.after('block', 'fix_table_tokens', (state: unknown) => {
-    const s = state as unknown as { tokens?: any[] }
+    const s = state as unknown as { tokens?: MarkdownToken[], env?: { __markstreamFinal?: boolean }, src?: string }
     try {
       const toks = s.tokens ?? []
-      const fixed = fixTableTokens(toks)
+      const fixed = fixTableTokens(toks, !!s.env?.__markstreamFinal, s.src ?? '')
       if (Array.isArray(fixed))
         s.tokens = fixed
     }
@@ -122,11 +122,7 @@ function getPipeRowCells(line: string, requireTrailingPipe: boolean) {
   if (cells.at(-1) === '')
     cells.pop()
 
-  return cells.length > 0 && cells.every(cell => cell.length > 0) ? cells : null
-}
-
-function isSingleLineFallbackTable(line: string) {
-  return getPipeRowCells(line, false) !== null
+  return cells.length > 0 && cells.every(cell => cell.trim().length > 0) ? cells : null
 }
 
 function hasTrailingPipeHeaderRow(line: string) {
@@ -148,6 +144,24 @@ function isTableSeparatorRow(line: string) {
   return cells.length > 0 && cells.every(isSeparatorCell)
 }
 
+function isPartialSeparatorTail(cell: string) {
+  return /^(?:[:：]-*|:?-+:?)?$/.test(cell.trim())
+}
+
+function isTableSeparatorRowWithPartialTail(line: string) {
+  if (line === '')
+    return true
+  if (!line.startsWith('|'))
+    return false
+
+  const cells = line.slice(1).split('|')
+  const tail = cells.at(-1) ?? ''
+  const completedCells = cells.slice(0, -1)
+
+  return completedCells.every(isSeparatorCell)
+    && isPartialSeparatorTail(tail)
+}
+
 function isTruncatedSeparatorRow(line: string) {
   return line === '|' || line === '|:'
 }
@@ -157,7 +171,7 @@ function hasTrailingPipeHeaderRowWithoutColon(line: string) {
   return cells !== null && cells.every(cell => !cell.includes(':'))
 }
 
-export function fixTableTokens(tokens: MarkdownToken[]): MarkdownToken[] {
+export function fixTableTokens(tokens: MarkdownToken[], final = false, source = ''): MarkdownToken[] {
   const fixedTokens = [...tokens]
   if (tokens.length < 3)
     return fixedTokens
@@ -167,10 +181,24 @@ export function fixTableTokens(tokens: MarkdownToken[]): MarkdownToken[] {
     const tcontent = String(token.content ?? '')
     const headerContent = tcontent.split('\n')[0] ?? ''
     const [headerLine = '', separatorLine = '', ...rest] = tcontent.split('\n')
+    const hasTrailingNewlineSeparatorStart = !final
+      && !tcontent.includes('\n')
+      && /\r?\n$/.test(source)
+      && hasTrailingPipeHeaderRow(tcontent)
 
-    if (!tcontent.includes('\n') && isSingleLineFallbackTable(tcontent)) {
-      // 解析 table
-      const body = headerContent.slice(1).split('|').map(i => i.trim()).filter(Boolean).flatMap(i => createTh(i))
+    if (
+      !final
+      && (
+        (
+          tcontent.includes('\n')
+          && rest.length === 0
+          && hasTrailingPipeHeaderRow(headerLine)
+          && isTableSeparatorRowWithPartialTail(separatorLine)
+        )
+        || hasTrailingNewlineSeparatorStart
+      )
+    ) {
+      const body = headerContent.slice(1, -1).split('|').map(i => i.trim()).flatMap(i => createTh(i))
       const insert = ([
         ...createStart(),
         ...body,

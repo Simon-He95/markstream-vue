@@ -1,10 +1,10 @@
 import type { ComponentType } from 'react'
 
 export type CustomComponentDisplayMode = 'inline' | 'block'
-export type MarkstreamCustomComponent<P = any> = ComponentType<P> & {
+export type MarkstreamCustomComponent<P = never> = ComponentType<P> & {
   markstreamDisplay?: CustomComponentDisplayMode
 }
-export type CustomComponentMap = Record<string, MarkstreamCustomComponent<any>>
+export type CustomComponentMap = Record<string, MarkstreamCustomComponent>
 
 const GLOBAL_KEY = '__global__'
 
@@ -89,14 +89,14 @@ export function clearGlobalCustomComponents() {
   bumpRevision()
 }
 
-export function getCustomComponentDisplay(component: ComponentType<any> | null | undefined): CustomComponentDisplayMode | undefined {
-  return (component as MarkstreamCustomComponent<any> | null | undefined)?.markstreamDisplay
+export function getCustomComponentDisplay(component: ComponentType<never> | null | undefined): CustomComponentDisplayMode | undefined {
+  return (component as MarkstreamCustomComponent | null | undefined)?.markstreamDisplay
 }
 
-export function withMarkstreamComponentDisplay<T extends ComponentType<any>>(
+export function withMarkstreamComponentDisplay<T extends ComponentType<never>>(
   component: T,
   display: CustomComponentDisplayMode,
 ) {
-  ;(component as MarkstreamCustomComponent<any>).markstreamDisplay = display
+  ;(component as MarkstreamCustomComponent).markstreamDisplay = display
   return component as T & { markstreamDisplay: CustomComponentDisplayMode }
 }

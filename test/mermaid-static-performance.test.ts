@@ -15,14 +15,14 @@ afterEach(() => {
 })
 
 describe('mermaid static render performance', () => {
-  it('starts completed diagrams in preview mode with a reserved preview height', async () => {
+  it('promotes completed diagrams from SSR fallback to preview with a reserved height', async () => {
     vi.useFakeTimers()
     vi.stubGlobal('IntersectionObserver', undefined as any)
 
     const fakeMermaid = {
       initialize: vi.fn(),
       render: vi.fn(async () => ({
-        svg: '<svg viewBox="0 0 100 100"><g /></svg>',
+        svg: '<svg viewBox="0 0 100 100"><rect width="1" height="1" /></svg>',
       })),
     }
 
@@ -50,7 +50,12 @@ describe('mermaid static render performance', () => {
       },
     })
 
-    expect(wrapper.find('[data-markstream-mermaid="1"]').attributes('data-markstream-mode')).toBe('pending')
+    expect(wrapper.find('[data-markstream-mermaid="1"]').attributes('data-markstream-mode')).toBe('fallback')
+    expect(wrapper.find('.mermaid-source-panel').exists()).toBe(true)
+
+    await flushVueUpdates()
+
+    expect(['pending', 'preview']).toContain(wrapper.find('[data-markstream-mermaid="1"]').attributes('data-markstream-mode'))
     expect(wrapper.find('.mermaid-source-panel').exists()).toBe(false)
     expect((wrapper.get('.mermaid-preview-area').element as HTMLElement).style.height).toBe('500px')
 
@@ -103,6 +108,11 @@ describe('mermaid static render performance', () => {
     await flushVueUpdates()
 
     expect(fakeMermaid.render).toHaveBeenCalledTimes(1)
+    expect(fakeMermaid.render.mock.calls[0]?.[1]).toContain('"flowchart":{"htmlLabels":false}')
+    expect(fakeMermaid.initialize).toHaveBeenCalledWith(expect.objectContaining({
+      securityLevel: 'strict',
+      flowchart: { htmlLabels: false },
+    }))
     expect(canParseOffthread).not.toHaveBeenCalled()
     expect(findPrefixOffthread).not.toHaveBeenCalled()
 

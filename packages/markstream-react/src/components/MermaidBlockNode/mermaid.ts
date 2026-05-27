@@ -1,15 +1,38 @@
 let cachedMermaid: any = null
 let importAttempted = false
 let lastInitKey: string | null = null
-let pendingImport: Promise<any | null> | null = null
+let pendingImport: Promise<MermaidModule | null> | null = null
 
-function computeInitKey(config: Record<string, any>) {
-  const securityLevel = String(config?.securityLevel ?? 'loose')
+export interface MermaidModule {
+  render: (id: string, source: string) => Promise<MermaidRenderResult> | MermaidRenderResult
+  parse?: (source: string) => Promise<unknown> | unknown
+  initialize?: (config?: Record<string, unknown>) => unknown
+  mermaidAPI?: {
+    render?: MermaidModule['render']
+    parse?: MermaidModule['parse']
+    initialize?: MermaidModule['initialize']
+  }
+}
+
+export type MermaidRenderResult = string | {
+  svg?: string
+  bindFunctions?: (element: Element) => unknown
+}
+
+interface MermaidInitConfig extends Record<string, unknown> {
+  securityLevel?: unknown
+  flowchart?: {
+    htmlLabels?: unknown
+  }
+}
+
+function computeInitKey(config: MermaidInitConfig) {
+  const securityLevel = String(config?.securityLevel ?? 'strict')
   const htmlLabels = config?.flowchart?.htmlLabels
   return `${securityLevel}|htmlLabels:${htmlLabels === false ? '0' : '1'}`
 }
 
-function ensureInitialized(instance: any, config?: Record<string, any>) {
+function ensureInitialized(instance: any, config?: MermaidInitConfig) {
   if (!instance || !config)
     return
   const key = computeInitKey(config)
@@ -27,7 +50,7 @@ function ensureInitialized(instance: any, config?: Record<string, any>) {
   }
 }
 
-export async function getMermaid(initConfig?: Record<string, any>) {
+export async function getMermaid(initConfig?: MermaidInitConfig): Promise<MermaidModule | null> {
   if (cachedMermaid) {
     ensureInitialized(cachedMermaid, initConfig)
     return cachedMermaid
@@ -56,8 +79,8 @@ export async function getMermaid(initConfig?: Record<string, any>) {
           cachedMermaid = candidate
         if (!cachedMermaid)
           throw new Error('Mermaid module did not export expected API')
-        ensureInitialized(cachedMermaid, initConfig ?? { startOnLoad: false, securityLevel: 'loose' })
-        return cachedMermaid
+        ensureInitialized(cachedMermaid, initConfig ?? { startOnLoad: false, securityLevel: 'strict', flowchart: { htmlLabels: false } })
+        return cachedMermaid as MermaidModule
       }
       catch (err) {
         console.warn('[markstream-react] Failed to load mermaid:', err)

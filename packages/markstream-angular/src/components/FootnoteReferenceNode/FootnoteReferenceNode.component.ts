@@ -6,7 +6,7 @@ import { getString } from '../shared/node-helpers'
   selector: 'markstream-angular-footnote-reference-node',
   standalone: true,
   template: `
-    <sup class="markstream-nested-footnote-ref">
+    <sup [attr.id]="referenceId" class="markstream-nested-footnote-ref">
       <a [attr.href]="href">[{{ id }}]</a>
     </sup>
   `,
@@ -21,5 +21,9 @@ export class FootnoteReferenceNodeComponent {
 
   get href() {
     return `#fnref--${this.id}`
+  }
+
+  get referenceId() {
+    return `fnref-${this.id}`
   }
 }

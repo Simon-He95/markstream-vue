@@ -12,7 +12,7 @@ import {
   renderNode as serverRenderNode,
 } from '../packages/markstream-react/src/server-renderer/index'
 
-const packageRequire = createRequire(new URL('../packages/markstream-react/package.json', import.meta.url))
+const packageRequire = createRequire(new URL('../package.json', import.meta.url))
 const React = packageRequire('react') as typeof import('react')
 const { renderToStaticMarkup } = packageRequire('react-dom/server') as typeof import('react-dom/server')
 

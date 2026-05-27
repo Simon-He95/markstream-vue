@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { MarkdownCodeBlockPreviewPayload } from '../../types/component-props'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -25,7 +26,10 @@ const props = defineProps({
   showTooltips: { type: Boolean, default: undefined },
 })
 
-const emits = defineEmits(['previewCode', 'copy'])
+const emits = defineEmits<{
+  (e: 'previewCode', payload: MarkdownCodeBlockPreviewPayload): void
+  (e: 'copy', code: string): void
+}>()
 const { t } = useSafeI18n()
 
 const codeLanguage = ref<string>(normalizeLanguageIdentifier(String(props.node.language ?? '')))

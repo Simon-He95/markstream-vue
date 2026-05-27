@@ -38,6 +38,34 @@ vi.mock('../src/components/NodeRenderer', () => ({
         type: Object,
         default: () => ({}),
       },
+      viewportPriority: {
+        type: Boolean,
+        default: true,
+      },
+      batchRendering: {
+        type: Boolean,
+        default: true,
+      },
+      maxLiveNodes: {
+        type: Number,
+        default: 320,
+      },
+      liveNodeBuffer: {
+        type: Number,
+        default: 60,
+      },
+      initialRenderBatchSize: {
+        type: Number,
+        default: 40,
+      },
+      renderBatchSize: {
+        type: Number,
+        default: 80,
+      },
+      renderBatchDelay: {
+        type: Number,
+        default: 16,
+      },
     },
     template: '<div data-testid="preview">{{ content }}</div>',
   },
@@ -355,7 +383,7 @@ describe('playground /test smoke', () => {
     })
 
     wrapper.unmount()
-  })
+  }, 15000)
 
   it('starts streaming and progressively updates the preview', async () => {
     vi.useFakeTimers()
@@ -446,13 +474,18 @@ describe('playground /test smoke', () => {
   })
 
   it('opens preview share links directly in preview-only mode', async () => {
+    window.localStorage.setItem('vmr-test-batch-rendering', 'false')
     window.history.replaceState({}, '', buildTestPageHref('/test', '## shared only', 'preview'))
 
     const wrapper = await mountTestPage()
+    const preview = wrapper.getComponent({ name: 'MarkdownRenderStub' })
 
     expect(wrapper.find('textarea').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('Cross-framework regression lab')
     expect(wrapper.get('[data-testid="preview"]').text()).toBe('## shared only')
+    expect(preview.props('batchRendering')).toBe(true)
+    expect(preview.props('viewportPriority')).toBe(false)
+    expect(preview.props('maxLiveNodes')).toBe(0)
     expect(wrapper.get('[data-testid="immersive-preview-back-button"]').text()).toContain('Test Page')
     expect(wrapper.get('[data-testid="immersive-preview-star-link"]').attributes('href')).toBe('https://github.com/Simon-He95/markstream-vue')
 
@@ -516,6 +549,49 @@ describe('playground /test smoke', () => {
     await nextTick()
 
     expect(preview.props('infographicProps')).toEqual({ maxHeight: 'none' })
+
+    wrapper.unmount()
+  })
+
+  it('keeps long fullscreen preview rendering batched without virtualization', async () => {
+    let fullscreenElement: Element | null = null
+    let previewCardElement: Element | null = null
+    const requestFullscreen = vi.fn(async () => {
+      fullscreenElement = previewCardElement
+      document.dispatchEvent(new Event('fullscreenchange'))
+    })
+
+    window.localStorage.setItem('vmr-test-batch-rendering', 'false')
+    Object.defineProperty(document, 'fullscreenElement', {
+      configurable: true,
+      get: () => fullscreenElement,
+    })
+    Object.defineProperty(HTMLElement.prototype, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreen,
+    })
+
+    const wrapper = await mountTestPage()
+    const textarea = wrapper.get('textarea')
+
+    await textarea.setValue(createLongMarkdown())
+    previewCardElement = wrapper.get('.workspace-card--preview').element
+
+    const preview = wrapper.getComponent({ name: 'MarkdownRenderStub' })
+
+    expect(preview.props('batchRendering')).toBe(false)
+    expect(preview.props('viewportPriority')).toBe(true)
+    expect(preview.props('maxLiveNodes')).toBe(320)
+
+    await wrapper.get('[data-testid="preview-fullscreen-button"]').trigger('click')
+    await nextTick()
+
+    expect(preview.props('batchRendering')).toBe(true)
+    expect(preview.props('viewportPriority')).toBe(false)
+    expect(preview.props('maxLiveNodes')).toBe(0)
+    expect(preview.props('initialRenderBatchSize')).toBe(240)
+    expect(preview.props('renderBatchSize')).toBe(180)
+    expect(preview.props('renderBatchDelay')).toBe(0)
 
     wrapper.unmount()
   })

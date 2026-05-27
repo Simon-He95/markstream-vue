@@ -75,17 +75,17 @@ setCustomComponents('docs', { thinking: ThinkingNode })
 
 高级钩子是为 Markdown 添加领域语法的强大方式，无需更改核心解析器。
 
-### Typewriter 属性
+### Typewriter 与 fade 属性
 
-`MarkdownRender` 支持 `typewriter` 布尔属性，控制非 `code_block` 节点的轻量 fade 表现。新节点仍然会走小型 enter 过渡，而流式过程中原地追加出来的那段新文本也会单独补一段短 fade，不再让整个节点容器一起变暗。适用于演示 UI，但在 SSR 或打印/导出场景下可能不需要。
+`MarkdownRender` 支持 `typewriter` 布尔属性，用于流式内容增长时显示闪烁打字光标。它默认是 `false`，需要光标时再显式开启。同时支持独立的 `fade` 布尔属性，用于控制非 `code_block` 节点进入淡入和流式追加文本淡入。这样可以保留光标，同时在 SSR、打印或导出场景里关闭动画。
 
 示例：
 
 ```vue
-<MarkdownRender :content="markdown" :typewriter="false" />
+<MarkdownRender :content="markdown" :typewriter="true" :fade="false" />
 ```
 
-CSS 变量：`--typewriter-fade-duration` 和 `--typewriter-fade-ease` 用于首屏 enter 过渡；`--stream-update-fade-duration` 和 `--stream-update-fade-ease` 用于流式追加文本时那段短 fade。若不单独覆盖，流式追加的 fade 会默认沿用 `typewriter` 的时长和缓动。
+CSS 变量：`--typewriter-cursor-color` 用于打字光标颜色；`--fade-duration` 和 `--fade-ease` 用于首屏 enter 过渡；`--stream-update-fade-duration` 和 `--stream-update-fade-ease` 用于流式追加文本时那段短 fade。若不单独覆盖，流式追加的 fade 会默认沿用 `fade` 的时长和缓动。
 
 ## 国际化（i18n）
 

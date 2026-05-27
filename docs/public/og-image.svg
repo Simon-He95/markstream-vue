@@ -1,0 +1,59 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#07111f"/>
+  <rect x="48" y="48" width="1104" height="534" rx="36" fill="url(#panel)" stroke="#1e3348" stroke-width="2"/>
+  <g transform="translate(104 166) scale(2.16)">
+    <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#tileBg)"/>
+    <rect x="9.5" y="9.5" width="109" height="109" rx="26" fill="none" stroke="#fff" stroke-opacity=".08"/>
+    <circle cx="32" cy="28" r="3" fill="#43d67b" opacity=".85"/>
+    <circle cx="44" cy="28" r="3" fill="#20c7bd" opacity=".75"/>
+    <circle cx="56" cy="28" r="3" fill="#4cc9f0" opacity=".65"/>
+    <g transform="translate(0 5)">
+      <path d="M31 93V33l33 33 33-33v60" fill="none" stroke="#020617" stroke-opacity=".26" stroke-width="23" stroke-linecap="square" stroke-linejoin="round"/>
+      <path d="M31 93V33l33 33 33-33v60" fill="none" stroke="url(#msGradSoft)" stroke-width="16" stroke-linecap="square" stroke-linejoin="round"/>
+      <path d="M31 93V33l33 33" fill="none" stroke="#f8fafc" stroke-opacity=".84" stroke-width="5.6" stroke-linecap="square" stroke-linejoin="round"/>
+      <rect x="15" y="42" width="24" height="8" rx="3" fill="url(#msGrad)" opacity=".92"/>
+      <rect x="8" y="61" width="31" height="8" rx="3" fill="url(#msGrad)" opacity=".74"/>
+      <rect x="20" y="80" width="20" height="8" rx="3" fill="url(#msGrad)" opacity=".58"/>
+      <rect x="103" y="84" width="10" height="9" rx="2" fill="url(#msGrad)" opacity=".9"/>
+    </g>
+  </g>
+  <text x="430" y="250" fill="#f8fafc" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="76" font-weight="750">markstream-<tspan fill="url(#msGradText)">vue</tspan></text>
+  <text x="432" y="318" fill="#a7f3d0" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="30" font-weight="700">Streaming-friendly Markdown renderer</text>
+  <text x="432" y="372" fill="#cbd5e1" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="24">Docs, APIs, migration guides, and framework examples</text>
+  <g transform="translate(432 432)">
+    <rect width="94" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="47" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">Vue 3</text>
+    <rect x="110" width="92" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="156" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">React</text>
+    <rect x="218" width="104" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="270" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">Svelte</text>
+    <rect x="338" width="104" height="40" rx="20" fill="#0f2534" stroke="#1f6f6b"/>
+    <text x="390" y="25" fill="#d1fae5" font-family="Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="16" font-weight="700" text-anchor="middle">Angular</text>
+  </g>
+  <defs>
+    <linearGradient id="panel" x1="78" y1="70" x2="1088" y2="576" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102033"/>
+      <stop offset="1" stop-color="#06131f"/>
+    </linearGradient>
+    <linearGradient id="msGrad" x1="18" y1="18" x2="112" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#43d67b"/>
+      <stop offset=".52" stop-color="#20c7bd"/>
+      <stop offset="1" stop-color="#4cc9f0"/>
+    </linearGradient>
+    <linearGradient id="msGradSoft" x1="20" y1="20" x2="108" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7df28f"/>
+      <stop offset=".55" stop-color="#50dca5"/>
+      <stop offset="1" stop-color="#3bc6f2"/>
+    </linearGradient>
+    <linearGradient id="msGradText" x1="784" y1="187" x2="986" y2="265" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#43d67b"/>
+      <stop offset=".52" stop-color="#20c7bd"/>
+      <stop offset="1" stop-color="#4cc9f0"/>
+    </linearGradient>
+    <radialGradient id="tileBg" cx="50%" cy="12%" r="92%">
+      <stop stop-color="#1d2b3b"/>
+      <stop offset=".62" stop-color="#0c1724"/>
+      <stop offset="1" stop-color="#050a12"/>
+    </radialGradient>
+  </defs>
+</svg>

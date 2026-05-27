@@ -1,8 +1,10 @@
 import type { AfterViewInit, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core'
+import type { SmoothMarkdownStreamOptions } from 'markstream-core'
 import type { RenderedHtmlEnhancementHandle } from '../../enhanceRenderedHtml'
 import type {
   AngularRenderableNode,
   AngularRenderContext,
+  CodeBlockPreviewPayload,
   NodeRendererEvents,
   NodeRendererProps,
 } from '../shared/node-helpers'
@@ -13,6 +15,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  forwardRef,
   inject,
   Input,
   Output,
@@ -20,6 +23,7 @@ import {
 } from '@angular/core'
 import { getCustomNodeComponents, subscribeCustomComponents } from '../../customComponents'
 import { disposeRenderedHtmlEnhancements, enhanceRenderedHtml } from '../../enhanceRenderedHtml'
+import { SmoothMarkdownStreamService } from '../../services/smooth-markdown-stream.service'
 import { NodeOutletComponent } from '../NodeOutlet/NodeOutlet.component'
 import {
   buildRenderContext,
@@ -32,6 +36,7 @@ import {
   resolveDeferNodes,
   resolveVirtualizationEnabled,
 } from '../shared/render-window'
+import { MARKSTREAM_SMOOTH_STREAMING_SCOPE } from '../shared/smooth-streaming-scope'
 
 interface VisibleNodeEntry {
   node: AngularRenderableNode
@@ -57,6 +62,12 @@ const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
   selector: 'markstream-angular',
   standalone: true,
   imports: [CommonModule, NodeOutletComponent],
+  providers: [
+    {
+      provide: MARKSTREAM_SMOOTH_STREAMING_SCOPE,
+      useExisting: forwardRef(() => NodeRendererComponent),
+    },
+  ],
   template: `
     <div
       #root
@@ -83,6 +94,7 @@ const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
         <div
           *ngIf="entry.render; else nodePlaceholder"
           class="node-content"
+          [class.fade-node]="entry.animate"
           [class.typewriter-node]="entry.animate"
           [attr.data-node-index]="entry.index"
         >
@@ -104,6 +116,13 @@ const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
         [style.height.px]="bottomSpacerHeight"
         aria-hidden="true"
       ></div>
+
+      <span
+        *ngIf="showTypewriterCursor"
+        #typewriterCursor
+        class="typewriter-cursor"
+        aria-hidden="true"
+      ></span>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -111,8 +130,14 @@ const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
 export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnInit, AfterViewInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef)
   private readonly hostRef = inject(ElementRef<HTMLElement>)
+  private readonly smoothStream = new SmoothMarkdownStreamService()
+  private readonly parentSmoothStreamingScope = inject(
+    MARKSTREAM_SMOOTH_STREAMING_SCOPE,
+    { optional: true, skipSelf: true },
+  )
 
   @ViewChild('root') private rootRef?: ElementRef<HTMLElement>
+  @ViewChild('typewriterCursor') private typewriterCursorRef?: ElementRef<HTMLSpanElement>
 
   @Input() content = ''
   @Input() nodes?: readonly AngularRenderableNode[] | null
@@ -121,25 +146,29 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   @Input() customMarkdownIt?: NodeRendererProps['customMarkdownIt']
   @Input() debugPerformance?: boolean
   @Input() customHtmlTags?: readonly string[]
+  @Input() htmlPolicy: NodeRendererProps['htmlPolicy'] = 'safe'
   @Input() viewportPriority?: boolean
   @Input() codeBlockStream = true
-  @Input() codeBlockDarkTheme?: any
-  @Input() codeBlockLightTheme?: any
-  @Input() codeBlockMonacoOptions?: Record<string, any>
+  @Input() codeBlockDarkTheme?: NodeRendererProps['codeBlockDarkTheme']
+  @Input() codeBlockLightTheme?: NodeRendererProps['codeBlockLightTheme']
+  @Input() codeBlockMonacoOptions?: NodeRendererProps['codeBlockMonacoOptions']
   @Input() renderCodeBlocksAsPre = false
   @Input() codeBlockMinWidth?: string | number
   @Input() codeBlockMaxWidth?: string | number
-  @Input() codeBlockProps?: Record<string, any>
-  @Input() mermaidProps?: Record<string, any>
-  @Input() d2Props?: Record<string, any>
-  @Input() infographicProps?: Record<string, any>
+  @Input() codeBlockProps?: NodeRendererProps['codeBlockProps']
+  @Input() mermaidProps?: NodeRendererProps['mermaidProps']
+  @Input() d2Props?: NodeRendererProps['d2Props']
+  @Input() infographicProps?: NodeRendererProps['infographicProps']
   @Input() customComponents?: NodeRendererProps['customComponents']
   @Input() showTooltips = true
   @Input() themes?: string[]
   @Input() isDark = false
   @Input() customId?: string
   @Input() indexKey?: number | string
-  @Input() typewriter = true
+  /** Show a blinking typewriter cursor while streamed content grows. Default: false */
+  @Input() typewriter = false
+  /** Enable/disable non-code-node enter and streamed-text fade animations. Default: true */
+  @Input() fade = true
   @Input() batchRendering = true
   @Input() initialRenderBatchSize = 40
   @Input() renderBatchSize = 80
@@ -150,9 +179,11 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   @Input() maxLiveNodes = 320
   @Input() liveNodeBuffer = 60
   @Input() allowHtml = true
+  @Input() smoothStreaming: boolean | 'auto' = 'auto'
+  @Input() smoothStreamingOptions?: SmoothMarkdownStreamOptions
 
   @Output() copy = new EventEmitter<string>()
-  @Output() handleArtifactClick = new EventEmitter<any>()
+  @Output() handleArtifactClick = new EventEmitter<CodeBlockPreviewPayload>()
   @Output() click = new EventEmitter<MouseEvent>()
   @Output() mouseover = new EventEmitter<MouseEvent>()
   @Output() mouseout = new EventEmitter<MouseEvent>()
@@ -186,9 +217,80 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   private enhancementHandle: RenderedHtmlEnhancementHandle | null = null
   private postRenderTimer: number | null = null
   private unsubscribeCustomComponents?: () => void
+  private isSyncingSmoothStream = false
+  private hasMountedForSmoothStreaming = false
+  private unsubscribeSmoothStream?: () => void
+  private previousRenderContent = ''
+  private previousEffectiveFinal: boolean | undefined
+  private previousRenderVersionSource: unknown
+
+  // ── Typewriter cursor ──
+  showTypewriterCursor = false
+  private typewriterCursorTimeout: ReturnType<typeof setTimeout> | undefined
+  private lastTypewriterContentLength = 0
+  private static readonly TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES = new Set(['code_block', 'admonition', 'table', 'math_block', 'html_block', 'image'])
+
+  get hasNodes(): boolean {
+    return Array.isArray(this.nodes)
+  }
+
+  get smoothStreamingEligible(): boolean {
+    if (this.smoothStreaming === false)
+      return false
+    if (this.hasNodes)
+      return false
+    // When the parent renderer is already pacing content, avoid double-pacing
+    // in nested renderers (e.g. thinking blocks, custom tag content).
+    // Only applies in 'auto' mode — smoothStreaming === true explicitly opts in.
+    if (this.smoothStreaming !== true && this.parentSmoothStreamingScope?.isSmoothStreamingEnabled())
+      return false
+    if (this.smoothStreaming === true)
+      return true
+    return this.typewriter === true || (this.maxLiveNodes ?? 0) <= 0
+  }
+
+  get smoothStreamingEnabled(): boolean {
+    // Mounted gate: prevent smooth streaming from pacing initial static content
+    // on the first client render (avoids blank flash).
+    // Only applies in 'auto' mode — smoothStreaming === true explicitly opts in
+    // and the gate is always open. SSR (typeof window === 'undefined') also opens
+    // the gate because the core controller has no RAF and will flush immediately.
+    const gateOpen = typeof window === 'undefined'
+      || this.hasMountedForSmoothStreaming
+      || this.smoothStreaming === true
+
+    return gateOpen && this.smoothStreamingEligible
+  }
+
+  get renderContent(): string {
+    return this.smoothStreamingEnabled ? this.smoothStream.visible : (this.content ?? '')
+  }
+
+  get rawContent(): string {
+    return this.content ?? ''
+  }
+
+  get smoothSourceSynced(): boolean {
+    return this.hasNodes || this.smoothStream.source === this.rawContent
+  }
+
+  get requestedFinal(): boolean | undefined {
+    const base = this.parseOptions ?? {} as any
+    return this.final ?? base.final
+  }
+
+  get effectiveFinal(): boolean | undefined {
+    if (this.smoothStreamingEnabled && this.requestedFinal != null)
+      return Boolean(this.requestedFinal && this.smoothSourceSynced && this.smoothStream.caughtUp)
+    return this.requestedFinal
+  }
 
   get resolvedIndexPrefix() {
     return this.indexKey != null ? String(this.indexKey) : 'renderer'
+  }
+
+  isSmoothStreamingEnabled(): boolean {
+    return this.smoothStreamingEnabled
   }
 
   get resolvedInitialBatchSize() {
@@ -243,12 +345,68 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes.content || changes.nodes)
-      this.streamRenderVersion += 1
+    this.ensureSmoothStreamInitialized()
+
+    const previousRenderContent = this.renderContent
+    const previousEffectiveFinal = this.effectiveFinal
+
+    this.syncSmoothStream()
+
+    // When smooth streaming is active, raw content/final appends should not
+    // trigger a full rebuild unless the visible (renderContent) or effectiveFinal
+    // actually advanced. The smooth stream subscription already calls rebuild()
+    // when visible ticks forward, so skipping here avoids redundant parse/rebuild
+    // cycles driven by raw chunk cadence.
+    // Only skip when *only* raw stream inputs (content/final) changed — if any
+    // other input (isDark, customHtmlTags, codeBlockProps, etc.) also changed in
+    // this cycle, we must rebuild to honour those changes.
+    const changeKeys = Object.keys(changes)
+    const onlyRawStreamChanges = changeKeys.every(key => key === 'content' || key === 'final')
+
+    if (
+      this.smoothStreamingEnabled
+      && onlyRawStreamChanges
+      && changes.content
+      && previousRenderContent === this.renderContent
+      && previousEffectiveFinal === this.effectiveFinal
+    ) {
+      return
+    }
+
     this.rebuild()
   }
 
   ngOnInit() {
+    this.smoothStream.init(this.smoothStreamingOptions)
+
+    this.unsubscribeSmoothStream = this.smoothStream.subscribe(() => {
+      if (this.isSyncingSmoothStream)
+        return
+
+      const nextRenderContent = this.renderContent
+      const nextEffectiveFinal = this.effectiveFinal
+
+      if (
+        nextRenderContent !== this.previousRenderContent
+        || nextEffectiveFinal !== this.previousEffectiveFinal
+      ) {
+        this.rebuild()
+      }
+    })
+
+    const previousRenderContent = this.renderContent
+    const previousEffectiveFinal = this.effectiveFinal
+
+    this.hasMountedForSmoothStreaming = true
+    this.syncSmoothStream()
+
+    if (
+      previousRenderContent !== this.renderContent
+      || previousEffectiveFinal !== this.effectiveFinal
+    ) {
+      this.rebuild()
+    }
+
     this.unsubscribeCustomComponents = subscribeCustomComponents(() => {
       this.rebuild()
     })
@@ -259,6 +417,8 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   }
 
   ngOnDestroy() {
+    this.unsubscribeSmoothStream?.()
+    this.unsubscribeSmoothStream = undefined
     this.stopBatching()
     this.clearPostRenderWork()
     this.enhancementToken += 1
@@ -266,10 +426,12 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
     this.unsubscribeCustomComponents?.()
     this.unsubscribeCustomComponents = undefined
     this.disconnectObserver()
+    this.smoothStream.ngOnDestroy()
     if (this.enhancementTimer != null && typeof window !== 'undefined') {
       window.clearTimeout(this.enhancementTimer)
       this.enhancementTimer = null
     }
+    this.clearTypewriterCursorTimeout()
   }
 
   trackByEntry = (_index: number, entry: VisibleNodeEntry) => {
@@ -292,10 +454,68 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
       this.mouseout.emit(event)
   }
 
+  private ensureSmoothStreamInitialized(): void {
+    if (this.smoothStream)
+      this.smoothStream.init(this.smoothStreamingOptions)
+  }
+
+  private syncSmoothStream() {
+    if (!this.smoothStream)
+      return
+
+    this.isSyncingSmoothStream = true
+
+    try {
+      const nextContent = this.content ?? ''
+
+      if (this.hasNodes) {
+        this.smoothStream.reset('')
+        return
+      }
+
+      if (!this.smoothStreamingEnabled) {
+        this.smoothStream.reset(nextContent)
+        if (this.requestedFinal)
+          this.smoothStream.finish({ flush: true })
+        return
+      }
+
+      const source = this.smoothStream.source
+
+      if (!nextContent) {
+        this.smoothStream.reset('')
+      }
+      else if (nextContent === source) {
+        // no-op
+      }
+      else if (nextContent.startsWith(source)) {
+        this.smoothStream.enqueue(nextContent.slice(source.length))
+      }
+      else {
+        this.smoothStream.reset(nextContent)
+      }
+
+      if (this.requestedFinal)
+        this.smoothStream.finish()
+    }
+    finally {
+      this.isSyncingSmoothStream = false
+    }
+  }
+
   private rebuild() {
     this.stopBatching()
     this.disposeEnhancements()
     this.cleanupTransientState()
+
+    // Bump streamRenderVersion based on renderContent/nodes (not raw content)
+    const renderVersionSource = this.hasNodes ? this.nodes : this.renderContent
+    if (this.previousRenderVersionSource !== renderVersionSource) {
+      this.streamRenderVersion += 1
+      this.previousRenderVersionSource = renderVersionSource
+    }
+    this.previousRenderContent = this.renderContent
+    this.previousEffectiveFinal = this.effectiveFinal
 
     const scopedCustomComponents = getCustomNodeComponents(this.customId)
     const mergedCustomComponents = this.customComponents
@@ -313,13 +533,20 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
     this.renderContext = buildRenderContext(
       {
         ...this,
+        content: this.renderContent,
+        final: this.effectiveFinal,
+        fade: this.fade,
         customComponents: mergedCustomComponents,
       },
       events,
       this.textStreamState,
       this.streamRenderVersion,
     )
-    this.parsedNodes = resolveParsedNodes(this)
+    this.parsedNodes = resolveParsedNodes({
+      ...this,
+      content: this.renderContent,
+      final: this.effectiveFinal,
+    })
     this.trimMeasuredState()
 
     const total = this.parsedNodes.length
@@ -339,6 +566,7 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
       this.nodeVisibility.clear()
 
     this.refreshVisibleEntries()
+    this.updateTypewriterCursorState()
     this.cdr.markForCheck()
     this.schedulePostRenderWork()
 
@@ -389,7 +617,7 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
       let animate = false
       if (
         render
-        && this.typewriter !== false
+        && this.fade !== false
         && String((node as any)?.type || '') !== 'code_block'
         && !this.nodeSeen.has(index)
       ) {
@@ -727,7 +955,7 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
       return
 
     const handle = await enhanceRenderedHtml(root, {
-      final: this.final,
+      final: this.effectiveFinal,
       isDark: this.isDark,
       renderCodeBlocksAsPre: this.renderCodeBlocksAsPre,
       monacoOptions: this.codeBlockMonacoOptions,
@@ -758,5 +986,137 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
     const root = this.rootRef?.nativeElement || this.hostRef.nativeElement.querySelector('.markstream-angular') as HTMLElement | null
     if (root)
       disposeRenderedHtmlEnhancements(root)
+  }
+
+  // ── Typewriter cursor ──
+  private shouldSkipTypewriterCursorForNode(node: unknown): boolean {
+    if (!node || typeof node !== 'object')
+      return false
+    const type = (node as Record<string, unknown>).type
+    return typeof type === 'string' && NodeRendererComponent.TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES.has(type)
+  }
+
+  private shouldShowTypewriterCursorForCurrentNodes(): boolean {
+    const lastNode = this.parsedNodes[this.parsedNodes.length - 1]
+    return !this.shouldSkipTypewriterCursorForNode(lastNode)
+  }
+
+  private getNodeTextLength(node: unknown): number {
+    if (!node || typeof node !== 'object')
+      return 0
+    const record = node as Record<string, unknown>
+    const direct = record.raw ?? record.content ?? record.code
+    if (typeof direct === 'string')
+      return direct.length
+    const children = record.children
+    if (Array.isArray(children))
+      return children.reduce((total: number, child: unknown) => total + this.getNodeTextLength(child), 0)
+    const items = record.items
+    if (Array.isArray(items))
+      return items.reduce((total: number, item: unknown) => total + this.getNodeTextLength(item), 0)
+    return 0
+  }
+
+  private getTypewriterContentLength(): number {
+    if (this.nodes?.length)
+      return (this.nodes as unknown[]).reduce<number>((total, node) => total + this.getNodeTextLength(node), 0)
+    // Use raw content length, not renderContent (which may be the paced-out
+    // visible portion when smooth streaming is active).
+    return (this.content ?? '').length
+  }
+
+  private clearTypewriterCursorTimeout() {
+    if (!this.typewriterCursorTimeout)
+      return
+    clearTimeout(this.typewriterCursorTimeout)
+    this.typewriterCursorTimeout = undefined
+  }
+
+  private getLastTextNode(root: HTMLElement): Text | null {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const text = node.textContent ?? ''
+        if (!text.trim())
+          return NodeFilter.FILTER_REJECT
+        const parent = node.parentElement
+        if (!parent)
+          return NodeFilter.FILTER_REJECT
+        if (parent.closest('.typewriter-cursor, .height-estimation-probes, [data-node-type="code_block"], [data-node-type="admonition"], [data-node-type="table"], [data-node-type="math_block"], [data-node-type="html_block"], [data-node-type="image"], script, style'))
+          return NodeFilter.FILTER_REJECT
+        return NodeFilter.FILTER_ACCEPT
+      },
+    })
+    let last: Text | null = null
+    let current = walker.nextNode()
+    while (current) {
+      last = current as Text
+      current = walker.nextNode()
+    }
+    return last
+  }
+
+  private updateTypewriterCursorPosition() {
+    if (typeof window === 'undefined' || !this.showTypewriterCursor || !this.rootRef?.nativeElement || !this.typewriterCursorRef?.nativeElement)
+      return
+    const root = this.rootRef.nativeElement
+    const cursor = this.typewriterCursorRef.nativeElement
+    const lastText = this.getLastTextNode(root)
+    const rootRect = root.getBoundingClientRect()
+    let left = 0
+    let top = 0
+    let height = 20
+
+    if (lastText?.textContent) {
+      const range = document.createRange()
+      const end = lastText.textContent.length
+      range.setStart(lastText, Math.max(0, end - 1))
+      range.setEnd(lastText, end)
+      const rects = typeof range.getClientRects === 'function'
+        ? range.getClientRects()
+        : undefined
+      const rect = rects?.[rects.length - 1] ?? lastText.parentElement?.getBoundingClientRect()
+      if (rect) {
+        left = rect.right - rootRect.left + root.scrollLeft
+        top = rect.top - rootRect.top + root.scrollTop
+        height = rect.height || height
+      }
+      range.detach()
+    }
+
+    cursor.style.transform = `translate(${Math.max(0, left)}px, ${Math.max(0, top)}px)`
+    cursor.style.height = `${height}px`
+  }
+
+  private updateTypewriterCursorState() {
+    if (typeof window === 'undefined' || this.hasNodes)
+      return
+
+    // When the stream is final (and effective — smooth streaming has caught up),
+    // hide the cursor immediately.
+    if (this.effectiveFinal) {
+      this.showTypewriterCursor = false
+      this.clearTypewriterCursorTimeout()
+      return
+    }
+
+    const nextLength = this.getTypewriterContentLength()
+    const cursorAllowed = this.shouldShowTypewriterCursorForCurrentNodes()
+    if (this.typewriter === false || !cursorAllowed || nextLength <= this.lastTypewriterContentLength) {
+      if (this.typewriter === false || !cursorAllowed)
+        this.showTypewriterCursor = false
+      this.lastTypewriterContentLength = nextLength
+      return
+    }
+
+    this.lastTypewriterContentLength = nextLength
+    this.showTypewriterCursor = true
+    this.clearTypewriterCursorTimeout()
+    requestAnimationFrame(() => {
+      this.updateTypewriterCursorPosition()
+    })
+    this.typewriterCursorTimeout = setTimeout(() => {
+      this.showTypewriterCursor = false
+      this.cdr.markForCheck()
+    }, 3000)
   }
 }

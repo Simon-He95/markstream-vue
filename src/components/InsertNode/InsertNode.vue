@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { getCustomNodeComponents } from '../../utils/nodeComponents'
+import { computed } from 'vue'
+import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import EmojiNode from '../EmojiNode'
 import EmphasisNode from '../EmphasisNode'
 import FootnoteReferenceNode from '../FootnoteReferenceNode'
@@ -7,6 +8,7 @@ import HighlightNode from '../HighlightNode'
 import HtmlInlineNode from '../HtmlInlineNode'
 import InlineCodeNode from '../InlineCodeNode'
 import LinkNode from '../LinkNode'
+import NodeChildRenderer from '../NodeChildRenderer'
 import { MathInlineNodeAsync } from '../NodeRenderer/asyncComponent'
 import ReferenceNode from '../ReferenceNode'
 import StrikethroughNode from '../StrikethroughNode'
@@ -31,10 +33,10 @@ const props = defineProps<{
   indexKey?: number | string
 }>()
 
-const overrides = getCustomNodeComponents(props.customId)
+const overrides = useCustomNodeComponents(() => props.customId)
 
 // Available node components for child rendering; prefer custom overrides
-const nodeComponents = {
+const nodeComponents = computed(() => ({
   text: TextNode,
   inline_code: InlineCodeNode,
   link: LinkNode,
@@ -49,16 +51,16 @@ const nodeComponents = {
   footnote_reference: FootnoteReferenceNode,
   math_inline: MathInlineNodeAsync,
   reference: ReferenceNode,
-  ...overrides,
-}
+  ...overrides.value,
+}))
 </script>
 
 <template>
   <ins class="insert-node">
-    <component
-      :is="nodeComponents[child.type]"
+    <NodeChildRenderer
       v-for="(child, index) in node.children"
       :key="`${indexKey || 'insert'}-${index}`"
+      :components="nodeComponents"
       :node="child"
       :custom-id="props.customId"
       :index-key="`${indexKey || 'insert'}-${index}`"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { MarkdownCodeBlockPreviewPayload } from '../../types/component-props'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -70,7 +71,10 @@ const props = withDefaults(
   },
 )
 
-const emits = defineEmits(['previewCode', 'copy'])
+const emits = defineEmits<{
+  (e: 'previewCode', payload: MarkdownCodeBlockPreviewPayload): void
+  (e: 'copy', code: string): void
+}>()
 const { t } = useSafeI18n()
 
 const codeLanguage = ref<string>(normalizeLanguageIdentifier(props.node.language))
@@ -304,7 +308,9 @@ async function ensureStreamMarkdownLoaded() {
       const mod = await import('stream-markdown')
       createShikiRenderer = mod.createShikiStreamRenderer
       registerHighlight = mod.registerHighlight
-      const defaultLangs = Array.isArray((mod as any).defaultLanguages) ? (mod as any).defaultLanguages : undefined
+      const defaultLangs = Array.isArray((mod as { defaultLanguages?: unknown }).defaultLanguages)
+        ? (mod as { defaultLanguages: unknown[] }).defaultLanguages
+        : undefined
       registeredHighlightLanguages = defaultLangs ? new Set(defaultLangs.map((l: string) => l.toLowerCase())) : undefined
       ensureHighlightThemesRegistered(props.themes)
     }

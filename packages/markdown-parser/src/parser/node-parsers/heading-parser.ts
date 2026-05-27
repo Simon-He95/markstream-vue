@@ -7,7 +7,7 @@ export function parseHeading(
   options?: ParseOptions,
 ): HeadingNode {
   const token = tokens[index]
-  const attrs = (token as any)?.attrs as any[] | null | undefined
+  const attrs = token.attrs
   const attrsRecord = Array.isArray(attrs) && attrs.length
     ? Object.fromEntries(
         attrs
@@ -25,7 +25,7 @@ export function parseHeading(
     level: headingLevel,
     text: headingContent,
     ...(attrsRecord ? { attrs: attrsRecord } : {}),
-    children: parseInlineTokens(headingContentToken.children || [], headingContent, undefined, options as any),
+    children: parseInlineTokens(headingContentToken.children || [], headingContent, undefined, options),
     raw: headingContent,
   }
 }

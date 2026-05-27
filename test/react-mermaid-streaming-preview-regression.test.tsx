@@ -1,7 +1,6 @@
-/* eslint-disable antfu/no-import-node-modules-by-path */
+import React, { act } from 'react'
+import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import React, { act } from '../packages/markstream-react/node_modules/react'
-import { createRoot } from '../packages/markstream-react/node_modules/react-dom/client'
 
 async function flushReact() {
   await act(async () => {
@@ -47,7 +46,7 @@ describe('markstream-react mermaid streaming preview regression', () => {
       initialize: vi.fn(),
       parse: vi.fn(async () => true),
       render: vi.fn(async () => ({
-        svg: '<svg data-rendered="gantt" viewBox="0 0 10 10"><g /></svg>',
+        svg: '<svg data-rendered="gantt" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>',
         bindFunctions: vi.fn(),
       })),
     }
@@ -97,7 +96,7 @@ describe('markstream-react mermaid streaming preview regression', () => {
       initialize: vi.fn(),
       parse: vi.fn(async () => true),
       render: vi.fn(async (_id: string, code: string) => ({
-        svg: `<svg data-rendered="${code.includes('Active task') ? 'unsafe' : 'prefix'}" viewBox="0 0 10 10"><g /></svg>`,
+        svg: `<svg data-rendered="${code.includes('Active task') ? 'unsafe' : 'prefix'}" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>`,
         bindFunctions: vi.fn(),
       })),
     }
@@ -155,7 +154,7 @@ describe('markstream-react mermaid streaming preview regression', () => {
         return true
       }),
       render: vi.fn(async (_id: string, code: string) => ({
-        svg: `<svg data-rendered="${code.includes('B-->C') ? 'full' : 'prefix'}" viewBox="0 0 10 10"><g /></svg>`,
+        svg: `<svg data-rendered="${code.includes('B-->C') ? 'full' : 'prefix'}" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>`,
         bindFunctions: vi.fn(),
       })),
     }

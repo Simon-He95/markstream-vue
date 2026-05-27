@@ -109,6 +109,8 @@ describe('html_block parser', () => {
     expect(String(html?.raw ?? '')).toBe(markdown)
     expect(String(html?.content ?? '')).toContain('<p>首先。。。。</p>')
     expect(summary?.tag).toBe('summary')
+    expect(summary?.children?.[0]?.type).toBe('text')
+    expect(summary?.children?.[0]?.content).toContain('Thinking')
     expect(html?.children?.[1]?.type).toBe('paragraph')
     expect(html?.children?.[2]?.type).toBe('paragraph')
   })
@@ -188,15 +190,15 @@ body
     const nodes = parseMarkdownToStructure(markdown, md, { final: true }) as any[]
     const html = firstHtml(nodes) as any
     const summary = html?.children?.[0]
-    const summaryParagraph = summary?.children?.[0]
+    const summaryChildren = summary?.children ?? []
 
     expect(nodes).toHaveLength(1)
     expect(summary?.tag).toBe('summary')
     expect(html?.attrs).toEqual([['open', '']])
-    expect(summaryParagraph?.children?.[0]?.type).toBe('strong')
-    expect(summaryParagraph?.children?.[0]?.children?.[0]?.content).toBe('sum')
-    expect(summaryParagraph?.children?.[2]?.type).toBe('emphasis')
-    expect(summaryParagraph?.children?.[2]?.children?.[0]?.content).toBe('x')
+    expect(summaryChildren?.[0]?.type).toBe('strong')
+    expect(summaryChildren?.[0]?.children?.[0]?.content).toBe('sum')
+    expect(summaryChildren?.[2]?.type).toBe('emphasis')
+    expect(summaryChildren?.[2]?.children?.[0]?.content).toBe('x')
     expect(html?.children?.[1]?.children?.[0]?.content).toBe('body')
   })
 
@@ -220,7 +222,7 @@ para
     expect(html?.children?.map((child: any) => child?.type === 'html_block' ? `${child?.type}:${child?.tag}` : child?.type))
       .toEqual(['paragraph', 'html_block:summary', 'paragraph', 'html_block:div', 'paragraph'])
     expect(html?.children?.[0]?.children?.[0]?.content).toBe('lead')
-    expect(html?.children?.[1]?.children?.[0]?.children?.[0]?.content).toBe('sum')
+    expect(html?.children?.[1]?.children?.[0]?.content).toBe('sum')
     expect(html?.children?.[2]?.children?.[0]?.content).toBe('text')
     expect(html?.children?.[3]?.tag).toBe('div')
     expect(html?.children?.[4]?.children?.[0]?.content).toBe('para')

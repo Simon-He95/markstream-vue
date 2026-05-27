@@ -26,8 +26,8 @@ const props = defineProps<{
   indexKey?: number | string
   value?: number
   customId?: string
-  /** Forwarded flag to enable/disable non-code node enter transition */
   typewriter?: boolean
+  fade?: boolean
   showTooltips?: boolean
 }>()
 
@@ -50,6 +50,7 @@ const liValueAttr = computed(() =>
       :nodes="itemNode?.children ?? []"
       :custom-id="props.customId"
       :typewriter="props.typewriter"
+      :fade="props.fade"
       :batch-rendering="false"
       @copy="$emit('copy', $event)"
     />

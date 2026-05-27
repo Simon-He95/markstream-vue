@@ -22,6 +22,14 @@ Looking for other frameworks?
 - Vue 2.6: use [`markstream-vue2`](./packages/markstream-vue2/README.md) (a baseline port with fewer advanced features)
 - React: see `packages/markstream-react` at [`packages/markstream-react/README.md`](./packages/markstream-react/README.md) (first-pass port)
 
+## 1.0 stability scope
+
+`markstream-vue@1.0` is scoped to the Vue 3 renderer package. The stable surface is `MarkdownRender`, streaming content rendering, pre-parsed node rendering, the safe HTML policy, optional Mermaid / KaTeX / Monaco / D2 / Infographic integrations, CSS exports, worker client subpaths, and SSR imports for Vite / Nuxt / VitePress.
+
+Experimental surfaces are the cross-framework adapters, repository skills/prompts, low-level worker entrypoints beyond documented clients, and internal performance/debug props such as `indexKey`, `renderAsFragment`, `debugPerformance`, batch budget internals, and height-estimation experiments.
+
+For the full release contract and Go / No-Go checklist, see [1.0 Release Readiness](./docs/guide/release-1-0.md). For reproducible performance evidence, run `pnpm benchmark:1.0` and use the generated [1.0 Benchmark Report](./docs/guide/benchmark-1-0.md).
+
 ## Contents
 
 - [TL;DR Highlights](#tldr-highlights)
@@ -73,6 +81,8 @@ Looking for other frameworks?
 - Playground (interactive demo): https://markstream-vue.simonhe.me/
 - Interactive test page (shareable links, easy reproduction): https://markstream-vue.simonhe.me/test
 - Docs: https://markstream-vue-docs.simonhe.me/guide/
+- Showcase: https://markstream-vue-docs.simonhe.me/guide/showcase
+- 1.0 benchmark report: run `pnpm benchmark:1.0`
 - AI/LLM context (project map): https://markstream-vue-docs.simonhe.me/llms
 - AI/LLM context (中文): https://markstream-vue-docs.simonhe.me/llms.zh-CN
 - One-click StackBlitz demo: https://stackblitz.com/github/Simon-He95/markstream-vue?file=playground/src/App.vue
@@ -80,23 +90,19 @@ Looking for other frameworks?
 - Nuxt playground: `pnpm play:nuxt`
 - Discord: https://discord.gg/vkzdkjeRCW
 
-## CLI helpers for skills and prompts
+## Repository skills and prompts
 
-If you want the packaged AI assets without cloning the repo:
+If you want the AI assets without cloning the repo:
 
 ```bash
 npx skills add Simon-He95/markstream-vue
-npx markstream-vue skills list
-npx markstream-vue skills install
-npx markstream-vue prompts list
-npx markstream-vue prompts show install-markstream
 ```
 
 Recommended usage:
 
 - `npx skills add Simon-He95/markstream-vue` is the primary path for Codex-compatible skill discovery because it reads `.agents/skills` directly from the GitHub repository
-- `skills install` installs the bundled skills into your agent skill directory (default: `~/.agents/skills`)
-- `prompts list` and `prompts show` to discover and copy maintained prompt templates
+- `markstream-vue@1.0` no longer exposes the `markstream-vue` CLI or any CLI `bin`; repository scripts such as `pnpm skills:list` and `pnpm prompts:list` are contributor-only helpers for cloned checkouts
+- prompts remain in the repository under `prompts/` for direct copying or future separate-package work
 
 Other `npx skills add` forms also work:
 
@@ -151,7 +157,8 @@ createApp({
 }).mount('#app')
 ```
 
-Import `markstream-vue/index.css` after your reset (e.g., Tailwind `@layer components`) so renderer styles win over utility classes. Install optional peers such as `stream-monaco`, `shiki`, `stream-markdown`, `mermaid`, and `katex` only when you need Monaco code blocks, Shiki highlighting, diagrams, or math.
+Import `markstream-vue/index.css` after your reset (e.g., use `@import 'markstream-vue/index.css' layer(components);` for Tailwind) so renderer styles win over utility classes. Install optional peers such as `stream-monaco`, `shiki`, `stream-markdown`, `mermaid`, and `katex` only when you need Monaco code blocks, Shiki highlighting, diagrams, or math.
+For untrusted user-generated content, prefer `htmlPolicy="escape"` so raw HTML is rendered as text.
 If your app intentionally scales root font size on mobile, use `markstream-vue/index.px.css` to avoid `rem`-based global scaling side effects.
 
 Renderer CSS is scoped under an internal `.markstream-vue` container to minimize global style conflicts. If you render exported node components outside of `MarkdownRender`, wrap them in an element with class `markstream-vue`.
@@ -258,35 +265,37 @@ Then use `<MarkdownRender :content="md" />` in your pages.
 
 ## ⏱️ Streaming in 30 seconds
 
-Render streamed Markdown (SSE/websocket) with incremental updates:
+Render streamed Markdown (SSE/websocket) with built-in smooth pacing:
 
 ```ts
-import type { ParsedNode } from 'markstream-vue'
-import MarkdownRender, { getMarkdown, parseMarkdownToStructure } from 'markstream-vue'
+import MarkdownRender from 'markstream-vue'
 import { ref } from 'vue'
 
-const nodes = ref<ParsedNode[]>([])
-const buffer = ref('')
-const md = getMarkdown()
+const content = ref('')
+const final = ref(false)
 
-function addChunk(chunk: string) {
-  buffer.value += chunk
-  nodes.value = parseMarkdownToStructure(buffer.value, md)
+eventSource.onmessage = (event) => {
+  content.value += event.data
 }
-
-// e.g., inside your SSE/onmessage handler
-eventSource.onmessage = event => addChunk(event.data)
+eventSource.addEventListener('done', () => {
+  final.value = true
+})
 
 // template
 // <MarkdownRender
-//   :nodes="nodes"
+//   :content="content"
+//   :final="final"
 //   :max-live-nodes="0"
-//   :batch-rendering="{
-//     renderBatchSize: 16,
-//     renderBatchDelay: 8,
-//   }"
+//   :batch-rendering="true"
+//   :render-batch-size="16"
+//   :render-batch-delay="8"
+//   :render-batch-budget-ms="4"
+//   :fade="false"
+//   :typewriter="true"
 // />
 ```
+
+`smooth-streaming` is enabled by default in typewriter/incremental mode (`typewriter` or `max-live-nodes <= 0`). Disable per surface with `:smooth-streaming="false"` if you want raw chunk cadence.
 
 Switch rendering style per surface:
 
@@ -308,6 +317,14 @@ const md = getMarkdown()
 const nodes = parseMarkdownToStructure('# Hello\n\nThis is parsed once', md)
 // send `nodes` JSON to the client
 ```
+
+> Warning: `parseMarkdownToStructure` defaults to `streamParse: 'auto'`: compatible `md` instances use `md.stream.parse` for non-final top-level parses and retain the latest source/token cache. Final one-shot parses use the regular parser unless you pass `{ streamParse: true }`; pass `{ streamParse: false }` to opt out. If you reuse one `md` instance for unrelated one-shot documents, pass `{ final: true }` or `{ streamParse: false }`.
+
+```ts
+const nodes = parseMarkdownToStructure(source, md, { final: true })
+```
+
+When `MarkdownRender` parses its own `content`, it intentionally defaults `parseOptions.streamParse` to `true` so streaming parses use `md.stream.parse`. When `final` changes, the renderer invalidates the stream cache and reparses with final semantics to avoid stale loading or unclosed-token state. Pass `:parse-options="{ streamParse: 'auto' }"` to keep final content parses on the regular parser, or `false` to opt out entirely.
 
 ```vue
 <!-- client -->
@@ -332,7 +349,7 @@ const md = getMarkdown() // match server setup
 
 function addChunk(chunk: string) {
   buffer.value += chunk
-  nodes.value = parseMarkdownToStructure(buffer.value, md)
+  nodes.value = parseMarkdownToStructure(buffer.value, md, { final: false })
 }
 ```
 
@@ -431,17 +448,19 @@ Parse hooks example (match server + client):
 
 - Latest: [Releases](https://github.com/Simon-He95/markstream-vue/releases) — see highlights and upgrade notes.
 - Full history: [CHANGELOG.md](./CHANGELOG.md)
-- Recent highlights (0.0.3-beta.1/beta.0):
-  - Parser bumped to `stream-markdown-parser@0.0.36` for parsing fixes.
-  - Monaco upgrades with more languages/themes + diff-friendly code block tweaks.
-  - HTML/SVG preview dialog and AST debug view in the playground.
+- 1.0 launch notes:
+  - Stable Vue 3 renderer API, SSR imports, CSS exports, Tailwind export, worker client exports, and safe HTML defaults.
+  - `markstream-vue@1.0.0`, `markstream-core@1.0.0`, and `stream-markdown-parser@1.0.0` ship together.
+  - Public benchmark report: run `pnpm benchmark:1.0` or use the `1.0 Benchmark` workflow artifact.
+  - Migration guide: [Migrating to 1.0](./docs/guide/migration-1-0.md).
 
 ## 🧭 Showcase & examples
 
 Build something with markstream-vue? Open a PR to add it here (include a link + 1 screenshot/GIF). Ideal fits: AI/chat UIs, streaming docs, diff/code-review panes, or Markdown-driven pages with embedded Vue components.
 
 - **FlowNote** — streaming Markdown note app demo (SSE + virtual window) — https://markstream-vue.simonhe.me/
-- **AI Chat surface** — playground “test” page showing incremental batches + share links — https://markstream-vue.simonhe.me/test
+- **Diagnostic Studio** — shareable repro links, render-mode switching, diff/thinking/stress samples, annotations, PDF export — https://markstream-vue.simonhe.me/test
+- **1.0 Showcase guide** — launch-ready demo matrix for chat, long docs, code review, diagrams, custom components, and safe HTML — https://markstream-vue-docs.simonhe.me/guide/showcase
 
 ## 📺 Introduction Video
 

@@ -2,11 +2,10 @@
  * @vitest-environment jsdom
  */
 
+import React, { act, StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it } from 'vitest'
-/* eslint-disable antfu/no-import-node-modules-by-path */
-import React, { act, StrictMode } from '../packages/markstream-react/node_modules/react'
-import { createRoot } from '../packages/markstream-react/node_modules/react-dom/client'
-import { renderToStaticMarkup } from '../packages/markstream-react/node_modules/react-dom/server'
 import { NodeRenderer } from '../packages/markstream-react/src/components/NodeRenderer'
 import { NodeRenderer as ServerNodeRenderer } from '../packages/markstream-react/src/server'
 

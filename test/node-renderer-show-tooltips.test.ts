@@ -44,4 +44,24 @@ describe('nodeRenderer showTooltips prop', () => {
     expect(link.exists()).toBe(true)
     expect(link.attributes('title')).toBe('https://vuejs.org')
   })
+
+  it('uses visible IDN text for punycoded bare URL tooltips', async () => {
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: 'http://你好.com',
+      },
+    })
+    await flushAll()
+
+    const link = wrapper.find('a[href="http://xn--6qq79v.com"]')
+    expect(link.exists()).toBe(true)
+    expect(link.text()).toBe('http://你好.com')
+
+    await link.trigger('mouseenter', { clientX: 10, clientY: 10 })
+    await new Promise(resolve => setTimeout(resolve, 100))
+    await flushAll()
+
+    expect(document.querySelector('.tooltip-element')?.textContent?.trim()).toBe('http://你好.com')
+    await link.trigger('mouseleave')
+  })
 })

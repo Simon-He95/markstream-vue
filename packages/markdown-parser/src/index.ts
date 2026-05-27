@@ -1,5 +1,10 @@
-import type { MarkdownIt, MarkdownItPlugin } from 'markdown-it-ts'
 import type { FactoryOptions } from './factory'
+import type {
+  CompatibleMarkdownItPlugin,
+  MarkdownIt,
+  MarkdownItPlugin,
+} from './markdown-it-types'
+import type { MarkdownToken } from './types'
 import markdownItFootnote from 'markdown-it-footnote'
 import markdownItIns from 'markdown-it-ins'
 import markdownItMark from 'markdown-it-mark'
@@ -17,9 +22,13 @@ import {
 // Module-level registry for callers that want to add plugins to every
 // `getMarkdown()` instance without modifying call sites. Useful for tests
 // or apps that want a central place to `use` plugins.
-const _registeredMarkdownPlugins: Array<unknown> = []
+export type MarkdownPluginRegistration<TParams extends unknown[] = any[]>
+  = | CompatibleMarkdownItPlugin<TParams>
+    | readonly [CompatibleMarkdownItPlugin<TParams>, ...TParams]
 
-export function registerMarkdownPlugin(plugin: unknown) {
+const _registeredMarkdownPlugins: MarkdownPluginRegistration[] = []
+
+export function registerMarkdownPlugin(plugin: MarkdownPluginRegistration) {
   _registeredMarkdownPlugins.push(plugin)
 }
 
@@ -33,13 +42,14 @@ export { setDefaultMathOptions } from './config'
 // Re-export parser functions
 export { parseInlineTokens, parseMarkdownToStructure, processTokens }
 export type { MathOptions } from './config'
-export type { MarkdownIt }
 
 // Re-export utilities
 export * from './customHtmlTags'
 export { findMatchingClose } from './findMatchingClose'
 export * from './htmlRenderUtils'
 export * from './htmlTags'
+export type { MarkdownIt } from './markdown-it-types'
+export * from './mermaidSvgSanitizer'
 export { parseFenceToken } from './parser/inline-parsers/fence-parser'
 
 // Re-export plugins
@@ -50,13 +60,32 @@ export { applyMath, KATEX_COMMANDS, normalizeStandaloneBackslashT } from './plug
 export * from './types'
 
 export interface GetMarkdownOptions extends FactoryOptions {
-  plugin?: Array<unknown>
+  plugin?: MarkdownPluginRegistration[]
   apply?: Array<(md: MarkdownIt) => void>
   /**
    * Custom translation function or translation map for UI texts
    * @default { 'common.copy': 'Copy' }
    */
   i18n?: ((key: string) => string) | Record<string, string>
+}
+
+function escapeHtml(value: unknown) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function sanitizeFenceLanguage(info: string) {
+  const firstToken = String(info || 'text').trim().split(/\s+/)[0] || 'text'
+  const normalized = firstToken.replace(/[^\w+.#:-]/g, '-').replace(/-+/g, '-')
+  return normalized || 'text'
+}
+
+function makeSafeDomId(value: string) {
+  return value.replace(/[^\w:.+-]/g, '-').replace(/-+/g, '-')
 }
 
 export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: GetMarkdownOptions = {}) {
@@ -86,10 +115,9 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
       // allow both [plugin, opts] tuple or plugin function
       const pluginItem = p as unknown
       if (Array.isArray(pluginItem)) {
-        const fn = pluginItem[0]
-        const opts = pluginItem[1]
+        const [fn, ...params] = pluginItem
         if (typeof fn === 'function')
-          md.use(fn, opts)
+          md.use(fn as MarkdownItPlugin, ...params)
       }
       else if (typeof pluginItem === 'function') {
         md.use(pluginItem as MarkdownItPlugin)
@@ -112,14 +140,13 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
     }
   }
 
-  // Apply any globally registered plugins (via registerMarkdownPlugin)
+  // Apply globally registered plugins (via registerMarkdownPlugin)
   if (_registeredMarkdownPlugins.length) {
     for (const p of _registeredMarkdownPlugins) {
       if (Array.isArray(p)) {
-        const fn = p[0] as any
-        const opts = p[1]
+        const [fn, ...params] = p
         if (typeof fn === 'function')
-          md.use(fn, opts)
+          md.use(fn, ...params)
       }
       else if (typeof p === 'function') {
         md.use(p as MarkdownItPlugin)
@@ -134,9 +161,8 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
   md.use(markdownItMark)
   // Safely resolve default export or the module itself for checkbox plugin
   type CheckboxPluginFn = (md: MarkdownIt, opts?: unknown) => void
-  const markdownItCheckboxPlugin = ((markdownItCheckbox as unknown) as {
-    default?: CheckboxPluginFn
-  }).default ?? markdownItCheckbox
+  const checkboxModule = markdownItCheckbox as unknown as { default?: CheckboxPluginFn } & CheckboxPluginFn
+  const markdownItCheckboxPlugin = checkboxModule.default ?? checkboxModule
   md.use(markdownItCheckboxPlugin)
   md.use(markdownItIns)
   md.use(markdownItFootnote)
@@ -179,7 +205,7 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
 
   // wave rule (legacy)
   const waveRule = (state: unknown, silent?: boolean) => {
-    const s = state as unknown as { pos: number, src: string, push: (type: string, tag?: string, nesting?: number) => any }
+    const s = state as unknown as { pos: number, src: string, push: (type: string, tag?: string, nesting?: number) => MarkdownToken }
     const start = s.pos
     if (s.src[start] !== '~')
       return false
@@ -206,15 +232,15 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
     const info = String(tokenShape.info ?? '').trim()
     const str = String(tokenShape.content ?? '')
     const encodedCode = btoa(unescape(encodeURIComponent(str)))
-    const language = String(info ?? 'text')
-    const uniqueId = `editor-${msgId}-${idx}-${language}`
+    const language = sanitizeFenceLanguage(info)
+    const escapedLanguage = escapeHtml(language)
+    const uniqueId = makeSafeDomId(`editor-${msgId}-${idx}-${language}`)
+    const copyLabel = escapeHtml(t('common.copy'))
 
-    return `<div class="code-block" data-code="${encodedCode}" data-lang="${language}" id="${uniqueId}">
+    return `<div class="code-block" data-code="${encodedCode}" data-lang="${escapedLanguage}" id="${uniqueId}">
       <div class="code-header">
-        <span class="code-lang">${language.toUpperCase()}</span>
-        <button class="copy-button" data-code="${encodedCode}">${t(
-          'common.copy',
-        )}</button>
+        <span class="code-lang">${escapeHtml(language.toUpperCase())}</span>
+        <button class="copy-button" data-code="${encodedCode}">${copyLabel}</button>
       </div>
       <div class="code-editor"></div>
     </div>`
@@ -245,7 +271,7 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
     return !/^\d+$/.test(nextLabel)
   }
   const referenceInline = (state: unknown, silent?: boolean) => {
-    const s = state as unknown as { src: string, pos: number, push: (type: string, tag?: string, nesting?: number) => any }
+    const s = state as unknown as { src: string, pos: number, push: (type: string, tag?: string, nesting?: number) => MarkdownToken }
     if (s.src[s.pos] !== '[')
       return false
     const match = RE_REFERENCE.exec(s.src.slice(s.pos))

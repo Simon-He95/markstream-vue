@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { HtmlPolicy } from 'stream-markdown-parser'
+import type { NodeRendererProps } from '../../types/node-renderer-props'
 import { normalizeCustomHtmlTags } from 'stream-markdown-parser'
-import { computed } from 'vue'
-import { getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText } from '../../utils/htmlRenderer'
-import { getCustomNodeComponents } from '../../utils/nodeComponents'
+import { computed, defineAsyncComponent, inject } from 'vue'
+import { getCustomNodeAttrs, getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText } from '../../utils/htmlRenderer'
+import { isReservedNodeComponentKey, useCustomNodeComponents } from '../../utils/nodeComponents'
 import CheckboxNode from '../CheckboxNode'
 import EmojiNode from '../EmojiNode'
 import EmphasisNode from '../EmphasisNode'
@@ -40,9 +42,34 @@ const props = defineProps<{
   customId?: string
   indexKey?: number | string
   customHtmlTags?: readonly string[]
+  parseOptions?: NodeRendererProps['parseOptions']
+  customMarkdownIt?: NodeRendererProps['customMarkdownIt']
 }>()
 
-const overrides = getCustomNodeComponents(props.customId)
+const overrides = useCustomNodeComponents(() => props.customId)
+const inheritedHtmlPolicy = inject<{ value?: HtmlPolicy } | undefined>('markstreamHtmlPolicy', undefined)
+const inheritedParseOptions = inject<{ value?: NodeRendererProps['parseOptions'] } | undefined>('markstreamParseOptions', undefined)
+const inheritedCustomMarkdownIt = inject<{ value?: NodeRendererProps['customMarkdownIt'] } | undefined>('markstreamCustomMarkdownIt', undefined)
+const inheritedNestedRendererProps = inject<{ value?: Partial<NodeRendererProps> } | undefined>('markstreamNestedRendererProps', undefined)
+const resolvedHtmlPolicy = computed<HtmlPolicy>(() => inheritedHtmlPolicy?.value ?? 'safe')
+const resolvedParseOptions = computed(() => props.parseOptions ?? inheritedParseOptions?.value)
+const resolvedCustomMarkdownIt = computed(() => props.customMarkdownIt ?? inheritedCustomMarkdownIt?.value)
+const resolvedCustomHtmlTags = computed(() => props.customHtmlTags ?? inheritedNestedRendererProps?.value?.customHtmlTags)
+const nestedRendererProps = computed<Partial<NodeRendererProps>>(() => {
+  const inherited = inheritedNestedRendererProps?.value ?? {}
+  return {
+    ...inherited,
+    customId: props.customId ?? inherited.customId,
+    customHtmlTags: resolvedCustomHtmlTags.value,
+    parseOptions: resolvedParseOptions.value,
+    customMarkdownIt: resolvedCustomMarkdownIt.value,
+    htmlPolicy: resolvedHtmlPolicy.value,
+  }
+})
+const StructuredNodeRenderer = defineAsyncComponent({
+  loader: () => import('../NodeRenderer'),
+  suspensible: false,
+})
 
 function isWhitespaceText(child: NodeChild) {
   return child.type === 'text' && String((child as any).content ?? '').trim() === ''
@@ -72,7 +99,7 @@ const isMediaOnlyParagraph = computed(() => (
 ))
 
 const customHtmlTagsSet = computed<Set<string>>(() => {
-  return new Set(normalizeCustomHtmlTags(props.customHtmlTags))
+  return new Set(normalizeCustomHtmlTags(resolvedCustomHtmlTags.value))
 })
 
 const renderedChildren = computed(() => {
@@ -107,11 +134,11 @@ function getChildProps(child: NodeChild, index: number) {
     'node': child,
     'index-key': `${props.indexKey}-${index}`,
     'custom-id': props.customId,
-    'custom-html-tags': props.customHtmlTags,
+    'custom-html-tags': resolvedCustomHtmlTags.value,
   }
 }
 
-const nodeComponents = {
+const nodeComponents = computed(() => ({
   inline_code: InlineCodeNode,
   image: ImageNode,
   link: LinkNode,
@@ -133,11 +160,11 @@ const nodeComponents = {
   footnote_anchor: FootnoteAnchorNode,
   footnote_reference: FootnoteReferenceNode,
   text: TextNode,
-  ...overrides,
-}
+  ...overrides.value,
+}))
 
 // Process children to handle non-whitelisted custom HTML tags
-function processChild(child: NodeChild): { child: NodeChild, component: any } {
+function processChild(child: NodeChild): { child: NodeChild, component: any, isCustomComponent: boolean } {
   if (child.type === 'html_block' || child.type === 'html_inline') {
     const tag = String((child as any).tag ?? '').trim().toLowerCase()
       || getHtmlTagFromContent((child as any).content)
@@ -152,27 +179,79 @@ function processChild(child: NodeChild): { child: NodeChild, component: any } {
           raw: rawContent,
         } as NodeChild,
         component: TextNode,
+        isCustomComponent: false,
       }
     }
   }
 
-  return { child, component: (nodeComponents as any)[child.type] }
+  return {
+    child,
+    component: (nodeComponents.value as any)[child.type],
+    isCustomComponent: Boolean((overrides.value as any)[child.type] && !isReservedNodeComponentKey(String(child.type))),
+  }
 }
+
+const processedChildren = computed(() => renderedChildren.value.map((child, index) => {
+  const processed = processChild(child)
+  return {
+    ...processed,
+    index,
+    key: `${props.indexKey || 'paragraph'}-${index}`,
+    customAttrs: processed.isCustomComponent
+      ? getCustomNodeAttrs(processed.child as any, resolvedHtmlPolicy.value)
+      : undefined,
+    hasSlotChildren: Array.isArray((processed.child as any).children) && (processed.child as any).children.length > 0,
+    slotContent: String((processed.child as any).content ?? ''),
+    originalChild: child,
+  }
+}))
 </script>
 
 <template>
   <p dir="auto" class="paragraph-node">
     <template
-      v-for="(child, index) in renderedChildren"
-      :key="`${indexKey || 'paragraph'}-${index}`"
+      v-for="item in processedChildren"
+      :key="item.key"
     >
-      <template v-if="isMediaOnlyParagraph && isWhitespaceText(child)">
-        {{ getTextContent(child) }}
+      <template v-if="isMediaOnlyParagraph && isWhitespaceText(item.originalChild)">
+        {{ getTextContent(item.originalChild) }}
       </template>
       <component
-        :is="processChild(child).component"
+        :is="item.component"
+        v-else-if="item.isCustomComponent"
+        v-bind="item.customAttrs"
+        :node="item.child"
+        :loading="(item.child as any).loading"
+        :index-key="item.key"
+        :custom-id="props.customId"
+        :custom-html-tags="resolvedCustomHtmlTags"
+        :is-dark="nestedRendererProps.isDark"
+      >
+        <StructuredNodeRenderer
+          v-if="item.hasSlotChildren"
+          v-bind="nestedRendererProps"
+          :nodes="(item.child as any).children"
+          :index-key="item.key"
+          :batch-rendering="false"
+          :defer-nodes-until-visible="false"
+          :render-as-fragment="true"
+        />
+        <StructuredNodeRenderer
+          v-else-if="item.slotContent"
+          v-bind="nestedRendererProps"
+          :content="item.slotContent"
+          :final="!(item.child as any).loading"
+          :index-key="`${item.key}-content`"
+          :smooth-streaming="false"
+          :batch-rendering="false"
+          :defer-nodes-until-visible="false"
+          :render-as-fragment="true"
+        />
+      </component>
+      <component
+        :is="item.component"
         v-else
-        v-bind="getChildProps(processChild(child).child, index)"
+        v-bind="getChildProps(item.child, item.index)"
       />
     </template>
   </p>

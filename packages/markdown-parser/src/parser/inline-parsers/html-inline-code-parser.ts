@@ -56,7 +56,7 @@ function getTagSets(customTags?: readonly string[]) {
   }
   const entry = {
     customTagSet: new Set(normalized),
-    allowedTagSet: buildAllowedHtmlTagSet({ customHtmlTags: customTags as any }),
+    allowedTagSet: buildAllowedHtmlTagSet({ customHtmlTags: customTags }),
   }
   TAG_SET_CACHE.set(customTags, entry)
   return entry
@@ -108,8 +108,8 @@ function normalizeStandardHtmlChildren(children: ParsedNode[]) {
       return
     const last = normalized[normalized.length - 1] as ParsedNode | undefined
     if (last?.type === 'text') {
-      ; (last as any).content = String((last as any).content ?? '') + text
-      ; (last as any).raw = String((last as any).raw ?? '') + text
+      last.content = `${last.content}${text}`
+      last.raw = `${last.raw}${text}`
       return
     }
     normalized.push({
@@ -124,14 +124,14 @@ function normalizeStandardHtmlChildren(children: ParsedNode[]) {
       continue
 
     if (child.type === 'reference' || child.type === 'footnote_reference') {
-      pushText(String((child as any).raw ?? ''))
+      pushText(String(child.raw ?? ''))
       continue
     }
 
-    if (Array.isArray((child as any).children)) {
+    if ('children' in child && Array.isArray(child.children)) {
       normalized.push({
-        ...(child as any),
-        children: normalizeStandardHtmlChildren(((child as any).children ?? []) as ParsedNode[]),
+        ...child,
+        children: normalizeStandardHtmlChildren(child.children),
       } as ParsedNode)
       continue
     }

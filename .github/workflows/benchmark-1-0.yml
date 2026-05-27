@@ -1,0 +1,77 @@
+name: 1.0 Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - src/**
+      - packages/markstream-core/**
+      - packages/markdown-parser/**
+      - playground/src/**
+      - playground-shared/**
+      - scripts/benchmark-1-0.mjs
+      - scripts/e2e-*-performance.mjs
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/benchmark-1-0.yml
+  pull_request:
+    paths:
+      - src/**
+      - packages/markstream-core/**
+      - packages/markdown-parser/**
+      - playground/src/**
+      - playground-shared/**
+      - scripts/benchmark-1-0.mjs
+      - scripts/e2e-*-performance.mjs
+      - package.json
+      - pnpm-lock.yaml
+      - .github/workflows/benchmark-1-0.yml
+  schedule:
+    - cron: '0 18 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Playground Performance Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run 1.0 benchmark
+        run: pnpm benchmark:1.0
+
+      - name: Append benchmark summary
+        if: always()
+        run: |
+          if [ -f benchmark/latest-summary.md ]; then
+            cat benchmark/latest-summary.md >> "$GITHUB_STEP_SUMMARY"
+          elif [ -f benchmark/latest-partial-summary.md ]; then
+            cat benchmark/latest-partial-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-1-0
+          path: benchmark/

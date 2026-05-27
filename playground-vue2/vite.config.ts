@@ -86,6 +86,14 @@ export default defineConfig({
         find: 'stream-markdown-parser/',
         replacement: resolve(__dirname, '../packages/markdown-parser/src/'),
       },
+      {
+        find: /^markstream-core$/,
+        replacement: resolve(__dirname, '../packages/markstream-core/src/index.ts'),
+      },
+      {
+        find: /^markstream-core\//,
+        replacement: `${resolve(__dirname, '../packages/markstream-core/src')}/`,
+      },
     ],
   },
   server: {

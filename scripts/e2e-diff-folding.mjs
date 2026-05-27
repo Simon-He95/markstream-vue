@@ -397,7 +397,11 @@ async function run() {
     const context = await browser.newContext()
     await context.addInitScript(() => {
       localStorage.setItem('vmr-settings-stream-delay', '4')
+      localStorage.setItem('vmr-settings-stream-delay-min', '4')
+      localStorage.setItem('vmr-settings-stream-delay-max', '4')
       localStorage.setItem('vmr-settings-stream-chunk-size', '16')
+      localStorage.setItem('vmr-settings-stream-chunk-size-min', '16')
+      localStorage.setItem('vmr-settings-stream-chunk-size-max', '16')
       localStorage.setItem('vmr-test-render-mode', 'monaco')
       localStorage.setItem('vmr-test-code-stream', 'false')
       localStorage.setItem('vmr-test-viewport-priority', 'false')

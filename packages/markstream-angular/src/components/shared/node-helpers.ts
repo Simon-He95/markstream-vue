@@ -1,5 +1,6 @@
-import type { Type } from '@angular/core'
-import type { BaseNode, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type { SmoothMarkdownStreamOptions } from 'markstream-core'
+import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type { CustomComponentMap } from '../../customComponents'
 import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme } from '../../types/monaco'
 import {
   getHtmlTagFromContent,
@@ -22,9 +23,78 @@ export {
 
 export type AngularRenderableNode = (ParsedNode | BaseNode) & Record<string, unknown>
 
+export interface CodeBlockPreviewPayload {
+  node: AngularRenderableNode
+  artifactType: 'text/html' | 'image/svg+xml'
+  artifactTitle: string
+  id: string
+}
+
+export type NodeRendererCodeBlockProps = Partial<{
+  stream: boolean
+  darkTheme: CodeBlockMonacoTheme
+  lightTheme: CodeBlockMonacoTheme
+  themes: CodeBlockMonacoTheme[]
+  monacoOptions: CodeBlockMonacoOptions
+  minWidth: string | number
+  maxWidth: string | number
+  isShowPreview: boolean
+  enableFontSizeControl: boolean
+  showHeader: boolean
+  showCopyButton: boolean
+  showExpandButton: boolean
+  showPreviewButton: boolean
+  showCollapseButton: boolean
+  showFontSizeButtons: boolean
+  htmlPreviewAllowScripts: boolean
+  htmlPreviewSandbox: string
+}> & Record<string, unknown>
+
+export type NodeRendererMermaidProps = Partial<{
+  maxHeight: string | null
+  estimatedPreviewHeightPx: number
+  workerTimeoutMs: number
+  parseTimeoutMs: number
+  renderTimeoutMs: number
+  fullRenderTimeoutMs: number
+  renderDebounceMs: number
+  showHeader: boolean
+  showModeToggle: boolean
+  showCopyButton: boolean
+  showExportButton: boolean
+  showFullscreenButton: boolean
+  showCollapseButton: boolean
+  showZoomControls: boolean
+  isStrict: boolean
+  enableMermaidInteractions: boolean
+}> & Record<string, unknown>
+
+export type NodeRendererD2Props = Partial<{
+  maxHeight: string | null
+  themeId: number | null
+  darkThemeId: number | null
+  showHeader: boolean
+  showModeToggle: boolean
+  showCopyButton: boolean
+  showExportButton: boolean
+  showCollapseButton: boolean
+}> & Record<string, unknown>
+
+export type NodeRendererInfographicProps = Partial<{
+  maxHeight: string | null
+  estimatedPreviewHeightPx: number
+  showHeader: boolean
+  showModeToggle: boolean
+  showCopyButton: boolean
+  showCollapseButton: boolean
+  showExportButton: boolean
+  showFullscreenButton: boolean
+  showZoomControls: boolean
+}> & Record<string, unknown>
+
 export interface NodeRendererEvents {
   onCopy?: (code: string) => void
-  onHandleArtifactClick?: (payload: any) => void
+  onHandleArtifactClick?: (payload: CodeBlockPreviewPayload) => void
 }
 
 export interface NodeRendererProps {
@@ -35,6 +105,7 @@ export interface NodeRendererProps {
   customMarkdownIt?: (md: MarkdownIt) => MarkdownIt
   debugPerformance?: boolean
   customHtmlTags?: readonly string[]
+  htmlPolicy?: HtmlPolicy
   viewportPriority?: boolean
   codeBlockStream?: boolean
   codeBlockDarkTheme?: CodeBlockMonacoTheme
@@ -43,17 +114,19 @@ export interface NodeRendererProps {
   renderCodeBlocksAsPre?: boolean
   codeBlockMinWidth?: string | number
   codeBlockMaxWidth?: string | number
-  codeBlockProps?: Record<string, any>
-  mermaidProps?: Record<string, any>
-  d2Props?: Record<string, any>
-  infographicProps?: Record<string, any>
-  customComponents?: Record<string, Type<any>>
+  codeBlockProps?: NodeRendererCodeBlockProps
+  mermaidProps?: NodeRendererMermaidProps
+  d2Props?: NodeRendererD2Props
+  infographicProps?: NodeRendererInfographicProps
+  customComponents?: CustomComponentMap
   showTooltips?: boolean
   themes?: CodeBlockMonacoTheme[]
   isDark?: boolean
   customId?: string
   indexKey?: number | string
   typewriter?: boolean
+  /** Enable/disable non-code-node enter and streamed-text fade animations. Default: true */
+  fade?: boolean
   batchRendering?: boolean
   initialRenderBatchSize?: number
   renderBatchSize?: number
@@ -64,6 +137,8 @@ export interface NodeRendererProps {
   maxLiveNodes?: number
   liveNodeBuffer?: number
   allowHtml?: boolean
+  smoothStreaming?: boolean | 'auto'
+  smoothStreamingOptions?: SmoothMarkdownStreamOptions
 }
 
 export interface AngularRenderContext {
@@ -72,20 +147,22 @@ export interface AngularRenderContext {
   indexKey?: string
   final?: boolean
   typewriter?: boolean
+  fade?: boolean
   textStreamState?: Map<string, string>
   streamRenderVersion?: number
   showTooltips?: boolean
   codeBlockStream?: boolean
   renderCodeBlocksAsPre?: boolean
   allowHtml?: boolean
+  htmlPolicy?: HtmlPolicy
   customHtmlTags?: readonly string[]
   parseOptions?: ParseOptions
   customMarkdownIt?: (md: MarkdownIt) => MarkdownIt
-  codeBlockProps?: Record<string, any>
-  mermaidProps?: Record<string, any>
-  d2Props?: Record<string, any>
-  infographicProps?: Record<string, any>
-  customComponents?: Record<string, Type<any>>
+  codeBlockProps?: NodeRendererCodeBlockProps
+  mermaidProps?: NodeRendererMermaidProps
+  d2Props?: NodeRendererD2Props
+  infographicProps?: NodeRendererInfographicProps
+  customComponents?: CustomComponentMap
   codeBlockThemes?: {
     themes?: CodeBlockMonacoTheme[]
     darkTheme?: CodeBlockMonacoTheme
@@ -125,7 +202,7 @@ export function buildRenderContext(
 ): AngularRenderContext {
   const customHtmlTags = normalizeCustomHtmlTags([
     ...(props.customHtmlTags || []),
-    ...((((props.parseOptions as any)?.customHtmlTags) || []) as string[]),
+    ...(props.parseOptions?.customHtmlTags || []),
   ])
 
   return {
@@ -134,12 +211,14 @@ export function buildRenderContext(
     indexKey: props.indexKey != null ? String(props.indexKey) : undefined,
     final: props.final,
     typewriter: props.typewriter,
+    fade: props.fade,
     textStreamState,
     streamRenderVersion,
     showTooltips: props.showTooltips,
     codeBlockStream: props.codeBlockStream,
     renderCodeBlocksAsPre: props.renderCodeBlocksAsPre,
     allowHtml: props.allowHtml !== false,
+    htmlPolicy: props.htmlPolicy ?? 'safe',
     customHtmlTags,
     parseOptions: props.parseOptions,
     customMarkdownIt: props.customMarkdownIt,
@@ -170,7 +249,7 @@ export function resolveParsedNodes(props: NodeRendererProps): AngularRenderableN
 
   const normalizedTags = normalizeCustomHtmlTags([
     ...(props.customHtmlTags || []),
-    ...((((props.parseOptions as any)?.customHtmlTags) || []) as string[]),
+    ...(props.parseOptions?.customHtmlTags || []),
   ])
   const cacheKey = `${props.customId || 'markstream-angular'}::${normalizedTags.join(',')}`
   let markdown = markdownCache.get(cacheKey)
@@ -189,7 +268,7 @@ export function resolveParsedNodes(props: NodeRendererProps): AngularRenderableN
   if (typeof props.final === 'boolean')
     options.final = props.final
   if (normalizedTags.length > 0)
-    (options as any).customHtmlTags = normalizedTags
+    options.customHtmlTags = normalizedTags
 
   return hydrateCustomTagContent(
     parseMarkdownToStructure(content, parser, options) as AngularRenderableNode[],

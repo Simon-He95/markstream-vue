@@ -384,7 +384,7 @@ This heading is rendered with a custom component.
 
 ## Streaming Content
 
-markstream-vue2 supports streaming markdown content, which is useful for AI-generated content:
+markstream-vue2 supports streaming markdown content with built-in smooth pacing for AI-generated content:
 
 ```vue
 <script>
@@ -395,6 +395,7 @@ export default {
   data() {
     return {
       markdown: '',
+      isFinal: false,
       fullText: `# Streaming Demo
 
 This content is being streamed **in small chunks**.
@@ -415,6 +416,7 @@ console.log('Streaming enabled:', streaming)
   methods: {
     startStreaming() {
       this.markdown = ''
+      this.isFinal = false
       let i = 0
       const interval = setInterval(() => {
         if (i < this.fullText.length) {
@@ -422,6 +424,7 @@ console.log('Streaming enabled:', streaming)
           i++
         }
         else {
+          this.isFinal = true
           clearInterval(interval)
         }
       }, 20)
@@ -435,9 +438,33 @@ console.log('Streaming enabled:', streaming)
     <button @click="startStreaming">
       Start Streaming
     </button>
-    <MarkdownRender :content="markdown" />
+    <MarkdownRender
+      custom-id="chat"
+      :content="markdown"
+      :final="isFinal"
+      :max-live-nodes="0"
+      :batch-rendering="true"
+      :typewriter="true"
+    />
   </div>
 </template>
+```
+
+The default `smooth-streaming="auto"` enables pacing when `typewriter` is on or `max-live-nodes <= 0`. Use `:smooth-streaming="true"` only if you want first-screen content to also start from blank — this bypasses the mounted gate and can cause hydration mismatch or blank flash in SSR scenarios.
+
+Fine-tune pacing with `smooth-streaming-options`:
+
+```vue
+<MarkdownRender
+  :content="markdown"
+  :final="isFinal"
+  :smooth-streaming-options="{
+    minCharsPerSecond: 45,
+    maxCharsPerSecond: 1200,
+    targetLatencyMs: 900,
+    catchUpLatencyMs: 350,
+  }"
+/>
 ```
 
 ## VitePress Integration (Vue 2)

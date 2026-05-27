@@ -40,11 +40,13 @@ The primary component for rendering markdown content in Vue 2.
 | `final` | `boolean` | `false` | Marks the input as end-of-stream; stops emitting streaming `loading` nodes |
 | `parse-options` | `ParseOptions` | - | Parser options and token hooks (only when `content` is provided) |
 | `custom-html-tags` | `string[]` | - | HTML-like tags emitted as custom nodes (e.g. `thinking`) |
+| `html-policy` | `'safe' \| 'escape' \| 'trusted'` | `'safe'` | Controls `html_block` / `html_inline` rendering. `safe` blocks active/embed/form tags, `escape` shows literal HTML text, and `trusted` restores the broader trusted HTML behavior while still stripping scripts and unsafe attrs. |
 | `custom-markdown-it` | `(md: MarkdownIt) => MarkdownIt` | - | Customize the internal MarkdownIt instance |
 | `debug-performance` | `boolean` | `false` | Log parse/render timing and virtualization stats (dev only) |
 | `is-dark` | `boolean` | `false` | Theme flag forwarded to heavy nodes; adds `.dark` to the root container |
 | `index-key` | `number \| string` | - | Key prefix when rendering multiple instances in lists |
-| `typewriter` | `boolean` | `true` | Enable the non-code-node enter transition |
+| `typewriter` | `boolean` | `false` | Shows the blinking typewriter cursor while streamed content grows |
+| `fade` | `boolean` | `true` | Enables non-code-node enter fade and appended-text fade |
 | `show-tooltips` | `boolean` | `true` | Global tooltip switch for `LinkNode` and code block nodes |
 
 #### Streaming & heavy-node toggles
@@ -55,6 +57,8 @@ The primary component for rendering markdown content in Vue 2.
 | `code-block-stream` | `true` | Stream code block updates as content arrives |
 | `viewport-priority` | `true` | Defer heavy work (Monaco/Mermaid/D2/KaTeX) until near viewport |
 | `defer-nodes-until-visible` | `true` | Render heavy nodes as placeholders until visible (non-virtualized mode only) |
+| `smooth-streaming` | `'auto'` | Enables built-in pacing for streaming `content` updates (`boolean | 'auto'`) |
+| `smooth-streaming-options` | - | Fine-tune pacing (`SmoothMarkdownStreamOptions`) |
 
 #### Performance (virtualization & batching)
 
@@ -104,8 +108,20 @@ The primary component for rendering markdown content in Vue 2.
 
 Streaming notes:
 - Keep `viewport-priority` enabled to prevent offscreen Mermaid / Monaco / D2 work from running while text is still streaming.
-- For high-frequency SSE, prefer passing `nodes` instead of reparsing the full `content` string every chunk.
+- For jittery SSE or AI token streams, start with `content` + built-in `smooth-streaming`.
+- Use `nodes` when a worker, store, or custom AST pipeline already owns parsing.
+- Mermaid strict mode is now the default. Set `:mermaid-props="{ isStrict: false }"` only for trusted diagrams that need loose Mermaid HTML-label behavior.
 - Common Mermaid tuning keys: `renderDebounceMs`, `contentStableDelayMs`, `previewPollDelayMs`, `previewPollMaxDelayMs`, `previewPollMaxAttempts`.
+
+Trusted compatibility example:
+
+```vue
+<MarkdownRender
+  :content="trustedMarkdown"
+  html-policy="trusted"
+  :mermaid-props="{ isStrict: false }"
+/>
+```
 
 #### Events
 

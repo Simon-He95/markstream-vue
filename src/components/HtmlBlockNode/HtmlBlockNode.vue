@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { NON_STRUCTURING_HTML_TAGS, sanitizeHtmlContent, sanitizeHtmlTokenAttrs, tokenAttrsToRecord } from 'stream-markdown-parser'
-import { computed, defineAsyncComponent, defineComponent, onBeforeUnmount, ref, watch } from 'vue'
+import type { HtmlPolicy } from 'stream-markdown-parser'
+import type { NodeRendererProps } from '../../types/node-renderer-props'
+import { isHtmlTagBlocked, NON_STRUCTURING_HTML_TAGS, sanitizeHtmlContent, sanitizeHtmlTokenAttrs, tokenAttrsToRecord } from 'stream-markdown-parser'
+import { computed, defineAsyncComponent, defineComponent, inject, onBeforeUnmount, ref, watch } from 'vue'
 import { useViewportPriority } from '../../composables/viewportPriority'
 import { hasCustomComponents, parseHtmlToVNodes } from '../../utils/htmlRenderer'
-import { customComponentsRevision, getCustomNodeComponents } from '../../utils/nodeComponents'
+import { useCustomNodeComponents } from '../../utils/nodeComponents'
 
 const props = defineProps<{
   node: {
@@ -15,7 +17,20 @@ const props = defineProps<{
     loading?: boolean
   }
   customId?: string
+  htmlPolicy?: HtmlPolicy
 }>()
+
+const inheritedHtmlPolicy = inject<{ value?: HtmlPolicy } | undefined>('markstreamHtmlPolicy', undefined)
+const inheritedNestedRendererProps = inject<{ value?: Partial<NodeRendererProps> } | undefined>('markstreamNestedRendererProps', undefined)
+const resolvedHtmlPolicy = computed<HtmlPolicy>(() => props.htmlPolicy ?? inheritedHtmlPolicy?.value ?? 'safe')
+const nestedRendererProps = computed<Partial<NodeRendererProps>>(() => {
+  const inherited = inheritedNestedRendererProps?.value ?? {}
+  return {
+    ...inherited,
+    customId: props.customId ?? inherited.customId,
+    htmlPolicy: resolvedHtmlPolicy.value,
+  }
+})
 
 const StructuredNodeRenderer = defineAsyncComponent({
   loader: () => import('../NodeRenderer'),
@@ -23,19 +38,22 @@ const StructuredNodeRenderer = defineAsyncComponent({
 })
 
 const boundAttrs = computed(() => {
-  const sanitizedAttrs = sanitizeHtmlTokenAttrs(props.node.attrs)
+  const sanitizedAttrs = sanitizeHtmlTokenAttrs(props.node.attrs, resolvedHtmlPolicy.value)
+  if (!sanitizedAttrs)
+    return undefined
+  const record = tokenAttrsToRecord(sanitizedAttrs)
+  return Object.keys(record).length > 0 ? record : undefined
+})
+const structuredBoundAttrs = computed(() => {
+  const tagName = String(props.node.tag || '').trim()
+  const sanitizedAttrs = sanitizeHtmlTokenAttrs(props.node.attrs, resolvedHtmlPolicy.value, tagName)
   if (!sanitizedAttrs)
     return undefined
   const record = tokenAttrsToRecord(sanitizedAttrs)
   return Object.keys(record).length > 0 ? record : undefined
 })
 
-// Get custom components from global registry
-const customComponents = computed(() => {
-  // Track revision so we re-parse when mappings change.
-  void customComponentsRevision.value
-  return getCustomNodeComponents(props.customId)
-})
+const customComponents = useCustomNodeComponents(() => props.customId)
 
 // Dynamic wrapper component for rendering VNodes
 const DynamicRenderer = defineComponent({
@@ -56,7 +74,10 @@ const shouldRender = ref(typeof window === 'undefined')
 const renderContent = ref(props.node.content)
 const structuredChildren = computed(() => Array.isArray(props.node.children) ? props.node.children : [])
 const structuredTag = computed(() => String(props.node.tag || 'div'))
-const isBlockedStructuredTag = computed(() => NON_STRUCTURING_HTML_TAGS.has(structuredTag.value.trim().toLowerCase()))
+const isBlockedStructuredTag = computed(() => {
+  const tag = structuredTag.value.trim().toLowerCase()
+  return NON_STRUCTURING_HTML_TAGS.has(tag) || isHtmlTagBlocked(tag, resolvedHtmlPolicy.value)
+})
 const isStructured = computed(() => structuredChildren.value.length > 0 && !!props.node.tag && !isBlockedStructuredTag.value)
 
 // Computed property to determine render mode and content
@@ -72,11 +93,14 @@ const renderMode = computed(() => {
   if (!content)
     return { mode: 'html', content: '' }
 
+  if (resolvedHtmlPolicy.value === 'escape')
+    return { mode: 'html', content: sanitizeHtmlContent(content, resolvedHtmlPolicy.value) }
+
   // Streaming HTML blocks are expensive to re-render via `innerHTML` because it
   // replaces the whole subtree on every tick. Prefer the VNode parser while
   // the node is still in a loading mid-state to keep DOM stable.
   if (props.node.loading) {
-    const nodes = parseHtmlToVNodes(content, customComponents.value)
+    const nodes = parseHtmlToVNodes(content, customComponents.value, resolvedHtmlPolicy.value)
     if (nodes === null)
       return { mode: 'text', content: props.node.raw ?? content }
     return { mode: 'dynamic', nodes }
@@ -84,12 +108,12 @@ const renderMode = computed(() => {
 
   // Check if content contains custom components
   if (!hasCustomComponents(content, customComponents.value))
-    return { mode: 'html', content: sanitizeHtmlContent(content) }
+    return { mode: 'html', content: sanitizeHtmlContent(content, resolvedHtmlPolicy.value) }
 
   // Parse and build VNode tree
-  const nodes = parseHtmlToVNodes(content, customComponents.value)
+  const nodes = parseHtmlToVNodes(content, customComponents.value, resolvedHtmlPolicy.value)
   if (nodes === null)
-    return { mode: 'html', content: sanitizeHtmlContent(content) } // Fallback to sanitized HTML if parsing fails
+    return { mode: 'html', content: sanitizeHtmlContent(content, resolvedHtmlPolicy.value) } // Fallback to sanitized HTML if parsing fails
 
   return { mode: 'dynamic', nodes }
 })
@@ -147,13 +171,13 @@ onBeforeUnmount(() => {
     :is="isStructured ? structuredTag : 'div'"
     ref="htmlRef"
     class="html-block-node"
-    v-bind="isStructured ? boundAttrs : undefined"
+    v-bind="isStructured ? structuredBoundAttrs : undefined"
   >
     <template v-if="shouldRender">
       <StructuredNodeRenderer
         v-if="renderMode.mode === 'structured'"
+        v-bind="nestedRendererProps"
         :nodes="structuredChildren"
-        :custom-id="customId"
         :batch-rendering="false"
         :defer-nodes-until-visible="false"
         :render-as-fragment="true"

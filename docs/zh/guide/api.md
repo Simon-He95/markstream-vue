@@ -31,6 +31,12 @@ Markdown 字符串 → getMarkdown() → markdown-it-ts 实例
 
 两者均可在 Node/浏览器使用。处理大文档时可复用 `md` 实例避免重复初始化插件。
 
+> 注意：`parseMarkdownToStructure` 默认是 `streamParse: 'auto'`：兼容的 `md` 实例会在非 final 顶层解析时使用 stream parser，并保留最近一次 source/token cache。final 一次性解析默认走普通 parser；需要强制 stream 时传 `{ streamParse: true }`，需要关闭时传 `{ streamParse: false }`。如果复用同一个 `md` 解析互不相关的一次性文档，请传 `{ final: true }` 或 `{ streamParse: false }`。
+
+```ts
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+```
+
 ## 自定义组件与作用域
 
 通过 `setCustomComponents(customId?, mapping)` 覆盖任意节点渲染器，再在 `MarkdownRender` 上传入匹配的 `custom-id`，即可限定覆盖范围。
@@ -104,11 +110,12 @@ const doc = '<thinking>Need a plan</thinking>'
 ## 其他导出
 
 - 节点组件：`CodeBlockNode`、`MarkdownCodeBlockNode`、`MermaidBlockNode`、`MathBlockNode`、`ImageNode` 等（详见 [组件与节点渲染器](/zh/guide/components)）。
+- `sanitizeImageSrc(value)`：自定义图片组件需要复用内置 strict 图片 URL 策略时可直接使用。
 - 工具：`VueRendererMarkdown`（全局组件插件）与共享类型定义（组件 props/解析器类型；参考 [/zh/guide/parser-api](/zh/guide/parser-api) 或 npm 上的 `stream-markdown-parser` README）。
 
 ## 样式 & 排障提醒
 
-- 先引入 reset，再在 `@layer components` 导入 `markstream-vue/index.css`，防止 Tailwind/UnoCSS 覆盖。参考 [Tailwind 指南](/zh/guide/tailwind)。
+- 先引入 reset，再使用 `@import 'markstream-vue/index.css' layer(components);`，防止 Tailwind/UnoCSS 覆盖。参考 [Tailwind 指南](/zh/guide/tailwind)。
 - 同伴依赖中，KaTeX 需要自己的 CSS；Mermaid 不需要。缺失 KaTeX 样式时通常表现为空白公式。
 - 使用 `custom-id` + `[data-custom-id="docs"]` 来局部覆盖样式。
 - 遇到样式异常时，依照 [排查清单](/zh/guide/troubleshooting#css-looks-wrong-start-here) 逐项检查。

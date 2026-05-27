@@ -30,7 +30,7 @@ Symptoms:
 Check in this order:
 
 1. import your reset before `markstream-vue/index.css`
-2. if you use Tailwind or UnoCSS, wrap the import in `@layer components`
+2. if you use Tailwind or UnoCSS, use `@import '...' layer(components)`
 3. if math is enabled, import `katex/dist/katex.min.css`
 4. if the renderer lives in a larger app surface, scope overrides with `custom-id`
 

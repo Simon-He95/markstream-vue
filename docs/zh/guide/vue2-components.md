@@ -44,7 +44,8 @@ import type { CodeBlockNode } from 'stream-markdown-parser'
 | `debug-performance` | `boolean` | `false` | 输出解析/渲染耗时与虚拟化统计（仅 dev） |
 | `is-dark` | `boolean` | `false` | 暗色主题标记，转发给重型节点并在根容器加 `.dark` |
 | `index-key` | `number \| string` | - | 列表渲染时的 key 前缀 |
-| `typewriter` | `boolean` | `true` | 非代码节点进入动画 |
+| `typewriter` | `boolean` | `false` | 流式内容增长时显示闪烁的打字光标 |
+| `fade` | `boolean` | `true` | 启用非代码节点进入渐入动画和追加文本渐入效果 |
 | `show-tooltips` | `boolean` | `true` | 全局控制 `LinkNode` 与代码块节点 tooltip |
 
 #### 流式与重节点开关
@@ -55,6 +56,8 @@ import type { CodeBlockNode } from 'stream-markdown-parser'
 | `code-block-stream` | `true` | 随内容到达流式更新代码块 |
 | `viewport-priority` | `true` | 将 Monaco/Mermaid/D2/KaTeX 等重型工作延迟到接近视口时 |
 | `defer-nodes-until-visible` | `true` | 重型节点先占位，接近可视区再渲染（仅非虚拟化模式） |
+| `smooth-streaming` | `'auto'` | 启用内置流式 `content` 更新节奏控制（`boolean | 'auto'`） |
+| `smooth-streaming-options` | - | 微调节奏参数（`SmoothMarkdownStreamOptions`） |
 
 #### 性能（虚拟化与批次渲染）
 
@@ -104,7 +107,8 @@ import type { CodeBlockNode } from 'stream-markdown-parser'
 
 流式建议：
 - 保持 `viewport-priority` 开启，避免离屏 Mermaid / Monaco / D2 在文字仍在流式更新时继续做后台工作。
-- 高频 SSE 更推荐直接传 `nodes`，而不是每个 chunk 都重跑整篇 `content` 解析。
+- 抖动较大的 SSE 或 AI token 流推荐从 `content` + 内置 `smooth-streaming` 开始。
+- 当已有 worker、store 或自定义 AST 管线负责解析时，使用 `nodes` 模式。
 - Mermaid 常用调优项包括：`renderDebounceMs`、`contentStableDelayMs`、`previewPollDelayMs`、`previewPollMaxDelayMs`、`previewPollMaxAttempts`。
 
 #### 事件

@@ -10,7 +10,7 @@ interface FootnoteReferenceNode {
 const props = defineProps<{
   node: FootnoteReferenceNode
 }>()
-const href = `#footnote-${props.node.id}`
+const href = `#fnref--${props.node.id}`
 function handleScroll() {
   if (typeof document === 'undefined') {
     // SSR: nothing to do

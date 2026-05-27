@@ -1,9 +1,12 @@
 import type React from 'react'
-import type { BaseNode, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type { CustomComponentMap } from './customComponents'
+import type { SmoothMarkdownStreamOptions } from './hooks/useSmoothMarkdownStream'
 import type {
   CodeBlockMonacoOptions,
   CodeBlockMonacoTheme,
   CodeBlockNodeProps,
+  CodeBlockPreviewPayload,
   D2BlockNodeProps,
   InfographicBlockNodeProps,
   MermaidBlockNodeProps,
@@ -28,6 +31,7 @@ export interface NodeRendererProps {
    * Forwarded to `getMarkdown()` and merged into parseOptions.
    */
   customHtmlTags?: readonly string[]
+  htmlPolicy?: HtmlPolicy
   viewportPriority?: boolean
   codeBlockStream?: boolean
   codeBlockDarkTheme?: CodeBlockMonacoTheme
@@ -45,7 +49,20 @@ export interface NodeRendererProps {
   isDark?: boolean
   customId?: string
   indexKey?: number | string
+  /** Show a blinking typewriter cursor while streamed content grows. Default: false */
   typewriter?: boolean
+  /** Enable/disable non-code-node enter and streamed-text fade animations. Default: true */
+  fade?: boolean
+  /**
+   * Enable built-in smooth pacing for streaming `content` updates.
+   * - `true`: force-enable smooth streaming (content mode only)
+   * - `false`: force-disable smooth streaming
+   * - `'auto'` (default): enable only when typewriter/incremental mode is active
+   * Applies when rendering from `content` (not `nodes`).
+   */
+  smoothStreaming?: boolean | 'auto'
+  /** Options forwarded to the built-in smooth streaming controller. Read once when the renderer is created. */
+  smoothStreamingOptions?: SmoothMarkdownStreamOptions
   batchRendering?: boolean
   initialRenderBatchSize?: number
   renderBatchSize?: number
@@ -56,7 +73,7 @@ export interface NodeRendererProps {
   maxLiveNodes?: number
   liveNodeBuffer?: number
   onCopy?: (code: string) => void
-  onHandleArtifactClick?: (payload: any) => void
+  onHandleArtifactClick?: (payload: CodeBlockPreviewPayload) => void
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void
   onMouseOver?: (event: React.MouseEvent<HTMLElement>) => void
   onMouseOut?: (event: React.MouseEvent<HTMLElement>) => void
@@ -67,10 +84,13 @@ export interface RenderContext {
   isDark?: boolean
   indexKey?: string
   typewriter?: boolean
+  /** Enable/disable fade animations. Default: true */
+  fade?: boolean
   textStreamState?: Map<string, string>
   streamRenderVersion?: number
-  customComponents?: Record<string, React.ComponentType<any>>
+  customComponents?: CustomComponentMap
   customHtmlTags?: readonly string[]
+  htmlPolicy?: HtmlPolicy
   codeBlockProps?: NodeRendererCodeBlockProps
   mermaidProps?: Partial<Omit<MermaidBlockNodeProps, 'node' | 'loading' | 'isDark'>>
   d2Props?: Partial<Omit<D2BlockNodeProps, 'node' | 'loading' | 'isDark'>>
@@ -88,7 +108,7 @@ export interface RenderContext {
   }
   events: {
     onCopy?: (code: string) => void
-    onHandleArtifactClick?: (payload: any) => void
+    onHandleArtifactClick?: (payload: CodeBlockPreviewPayload) => void
   }
 }
 

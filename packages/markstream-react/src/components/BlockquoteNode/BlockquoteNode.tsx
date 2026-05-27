@@ -25,6 +25,7 @@ export function BlockquoteNode(props: NodeComponentProps<{ type: 'blockquote', c
               codeBlockMonacoOptions={ctx.codeBlockThemes?.monacoOptions}
               codeBlockMinWidth={ctx.codeBlockThemes?.minWidth}
               codeBlockMaxWidth={ctx.codeBlockThemes?.maxWidth}
+              htmlPolicy={ctx.htmlPolicy}
               showTooltips={ctx.showTooltips}
               onCopy={ctx.events.onCopy}
               onHandleArtifactClick={ctx.events.onHandleArtifactClick}

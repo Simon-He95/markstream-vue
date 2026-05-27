@@ -10,8 +10,8 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
+import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getMermaid } from '../../optional/mermaid'
-import { toSafeSvgMarkup } from '../../sanitizeSvg'
 import { canParseOffthread, findPrefixOffthread } from '../../workers/mermaidWorkerClient'
 import { clampPreviewHeight, estimateMermaidPreviewHeight, parsePositiveNumber } from '../shared/diagram-height'
 import { getString } from '../shared/node-helpers'
@@ -27,6 +27,7 @@ let mermaidRenderSequence = 0
 let mermaidRenderQueue: Promise<void> = Promise.resolve()
 
 type MermaidTheme = 'light' | 'dark'
+type MermaidBindFunctions = (element: Element) => unknown
 
 function enqueueMermaidRender<T>(run: () => Promise<T>) {
   const next = mermaidRenderQueue.then(run, run)
@@ -201,6 +202,7 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   private destroyed = false
   private renderToken = 0
   private copyTimer: number | null = null
+  private lastMermaidBindFunctions: MermaidBindFunctions | null = null
 
   get mergedProps() {
     return {
@@ -290,7 +292,7 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   }
 
   get strictMode() {
-    return this.mergedProps.isStrict === true
+    return this.mergedProps.isStrict !== false
   }
 
   get resolvedLoading() {
@@ -489,13 +491,12 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
         return
 
       const svg = typeof rendered === 'string' ? rendered : rendered?.svg
-      if (this.isBrokenMermaidSvg(svg))
-        throw new Error('Mermaid produced invalid SVG during preview')
-      const safeSvg = toSafeSvgMarkup(svg)
+      const safeSvg = toSafeMermaidSvgMarkup(svg)
       if (!safeSvg)
-        throw new Error('Mermaid returned empty output.')
+        throw new Error('Mermaid produced invalid SVG during preview')
 
       this.svgMarkup = safeSvg
+      this.lastMermaidBindFunctions = typeof rendered === 'string' ? null : rendered?.bindFunctions ?? null
       if (!this.svgMarkup)
         this.showSource = true
       this.syncSvgHosts()
@@ -536,6 +537,18 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
       setElementHtml(this.modalHost?.nativeElement, this.svgMarkup)
     else
       setElementHtml(this.modalHost?.nativeElement, '')
+    this.bindMermaidInteractions(this.previewHost?.nativeElement)
+    if (this.modalOpen)
+      this.bindMermaidInteractions(this.modalHost?.nativeElement)
+  }
+
+  private bindMermaidInteractions(element: Element | null | undefined) {
+    if (this.mergedProps.enableMermaidInteractions !== true || !this.svgMarkup || !element?.querySelector('svg'))
+      return
+    try {
+      this.lastMermaidBindFunctions?.(element)
+    }
+    catch {}
   }
 
   private scheduleHostSync() {
@@ -692,39 +705,6 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
       lines.pop()
     }
     return lines.join('\n')
-  }
-
-  private isBrokenMermaidSvg(svg: string | null | undefined) {
-    if (!svg || typeof DOMParser === 'undefined')
-      return !svg
-
-    const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml')
-    const svgEl = parsed.documentElement
-    if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
-      return true
-
-    const viewBox = svgEl.getAttribute('viewBox')
-    if (viewBox) {
-      const parts = viewBox.trim().split(/[\s,]+/)
-      if (parts.length === 4) {
-        const width = Number.parseFloat(parts[2] || '')
-        const height = Number.parseFloat(parts[3] || '')
-        if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0)
-          return true
-      }
-    }
-
-    const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll('*'))]
-    for (const node of nodes) {
-      for (const attr of Array.from(node.attributes)) {
-        if (/\bNaN\b/i.test(attr.value))
-          return true
-        if (attr.name === 'style' && /max-width:\s*0(?:px)?/i.test(attr.value))
-          return true
-      }
-    }
-
-    return false
   }
 
   private withTimeout<T>(run: () => Promise<T>, timeoutMs: number) {

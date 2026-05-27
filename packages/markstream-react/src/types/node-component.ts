@@ -9,5 +9,7 @@ export interface NodeComponentProps<TNode = unknown> {
   customId?: string
   isDark?: boolean
   typewriter?: boolean
+  /** Enable/disable fade animations. Default: true */
+  fade?: boolean
   children?: React.ReactNode
 }

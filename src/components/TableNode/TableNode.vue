@@ -32,6 +32,7 @@ const props = defineProps<{
   indexKey: string | number
   isDark?: boolean
   typewriter?: boolean
+  fade?: boolean
   customId?: string
 }>()
 
@@ -161,6 +162,7 @@ onBeforeUnmount(stopColumnResize)
               :index-key="`table-th-${props.indexKey}`"
               :custom-id="props.customId"
               :typewriter="props.typewriter"
+              :fade="props.fade"
               @copy="$emit('copy', $event)"
             />
             <button
@@ -195,6 +197,7 @@ onBeforeUnmount(stopColumnResize)
               :index-key="`table-td-${props.indexKey}`"
               :custom-id="props.customId"
               :typewriter="props.typewriter"
+              :fade="props.fade"
               @copy="$emit('copy', $event)"
             />
           </td>

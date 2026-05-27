@@ -6,7 +6,9 @@
     "paths": {
       "@/*": ["src/*"],
       "stream-markdown-parser": ["../markdown-parser/dist/index.d.ts"],
-      "stream-markdown-parser/*": ["../markdown-parser/dist/*"]
+      "stream-markdown-parser/*": ["../markdown-parser/dist/*"],
+      "markstream-core": ["../markstream-core/src/index.ts"],
+      "markstream-core/*": ["../markstream-core/src/*"]
     },
     "types": [],
     "declaration": true,

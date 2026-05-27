@@ -1,5 +1,5 @@
 export type TestLabSampleId = 'baseline' | 'thinking' | 'diff' | 'stress'
-export type TestLabFrameworkId = 'vue3' | 'vue2' | 'react' | 'angular'
+export type TestLabFrameworkId = 'vue3' | 'vue2' | 'react' | 'angular' | 'svelte'
 
 export interface TestLabFrameworkCard {
   id: TestLabFrameworkId
@@ -45,6 +45,13 @@ export const TEST_LAB_FRAMEWORKS: ReadonlyArray<TestLabFrameworkCard> = [
     origin: 'https://markstream-angular.pages.dev',
     localPort: 4175,
   },
+  {
+    id: 'svelte',
+    label: 'Svelte',
+    note: 'Svelte 5 / parity lab',
+    origin: 'https://markstream-svelte.pages.dev',
+    localPort: 4176,
+  },
 ] as const
 
 export const TEST_LAB_SAMPLES: ReadonlyArray<TestLabSampleCard> = [
@@ -54,7 +61,7 @@ export const TEST_LAB_SAMPLES: ReadonlyArray<TestLabSampleCard> = [
     summary: '标题、强调、数学、Mermaid、infographic 和 D2 一次看全。',
     content: `# Markstream Test Lab
 
-在这里可以快速验证 **Vue 3 / Vue 2 / React / Angular** 四套渲染器的表现是否一致。
+在这里可以快速验证 **Vue 3 / Vue 2 / React / Angular / Svelte** 五套渲染器的表现是否一致。
 
 ## 基础格式
 
@@ -105,7 +112,7 @@ data
 ## D2
 
 \`\`\`d2
-App: Angular
+App: Playground
 Parser: Markdown AST
 Renderer: Enhanced HTML
 Lab: Playground/Test
@@ -121,7 +128,7 @@ App -> Parser -> Renderer -> Lab
     content: `# Thinking / Nested Blocks
 
 <thinking>
-在这个 thinking 容器里，我们希望 Angular 和 Vue / React 一样，仍然按正常 markdown 节点树渲染。
+在这个 thinking 容器里，我们希望 Svelte、Angular 和 Vue / React 一样，仍然按正常 markdown 节点树渲染。
 
 ## Nested Mermaid
 
@@ -153,23 +160,63 @@ export function ensureParity(name: string) {
     summary: '观察 diff code block、长文本和流式更新的稳定性。',
     content: `# Diff Regression
 
-下面这个样例更适合观察 **code block stream** 和折叠逻辑：
+下面这个样例更适合观察 **Diff / JSON** 的折叠区域和高度同步：
 
-\`\`\`diff typescript
-diff --git a/src/render.ts b/src/render.ts
-index 0000000..1111111 100644
---- a/src/render.ts
-+++ b/src/render.ts
-@@ -1,7 +1,12 @@
--export function render(input) {
--  return input
-+export function render(input: string) {
-+  if (!input.trim())
-+    return 'empty'
-+
-+  const normalized = input.replace(/\\r\\n/g, '\\n')
-+  return normalized
- }
+\`\`\`diff json:package.json
+{
+  "name": "markstream-vue",
+  "type": "module",
+- "version": "0.0.49",
++ "version": "0.0.54-beta.1",
+  "packageManager": "pnpm@10.16.1",
+  "description": "A Vue 3 component that renders Markdown string content as HTML, supporting custom components and advanced markdown features.",
+  "author": "Simon He",
+  "license": "MIT",
+  "homepage": "https://markstream-vue-docs.simonhe.me/guide/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Simon-He95/markstream-vue.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Simon-He95/markstream-vue/issues"
+  },
+  "keywords": [
+    "vue",
+    "vue3",
+    "markdown",
+    "markdown-to-html",
+    "markdown-renderer",
+    "streaming-markdown",
+    "streaming-renderer",
+    "vue-markdown",
+    "vue-markdown-renderer",
+    "markdown-preview",
+    "markdown-viewer",
+    "vue-component",
+    "nuxt",
+    "vitepress",
+    "vite",
+    "sse",
+    "ai",
+    "chat-ui",
+    "docs-site",
+    "mermaid",
+    "katex",
+    "monaco-editor"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ]
+}
 \`\`\`
 
 再加一段普通代码，方便对比 Monaco / MarkdownCodeBlock / PreCodeNode：
@@ -209,6 +256,7 @@ export function TestHarness() {
 | Vue 2 | \`/test\` | 兼容回归 |
 | React | \`/test\` | 跨框架对照 |
 | Angular | \`/test\` | baseline 对照 |
+| Svelte | \`/test\` | 新框架对照 |
 
 ## HTML
 
@@ -219,7 +267,7 @@ export function TestHarness() {
 
 ## 长段落
 
-Markstream 现在不仅要处理单次完整渲染，还要处理 AI 场景下不断追加的 markdown 内容，所以这个页面更像一个回归驾驶舱。你可以一边编辑左侧输入，一边切换 Vue 2、React 或 Angular 的 test page，用同一段内容观察差异，判断问题是解析层、组件层，还是框架适配层。
+Markstream 现在不仅要处理单次完整渲染，还要处理 AI 场景下不断追加的 markdown 内容，所以这个页面更像一个回归驾驶舱。你可以一边编辑左侧输入，一边切换 Vue 2、React、Angular 或 Svelte 的 test page，用同一段内容观察差异，判断问题是解析层、组件层，还是框架适配层。
 `,
   },
 ] as const

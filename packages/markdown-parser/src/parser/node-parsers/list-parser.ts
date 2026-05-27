@@ -6,6 +6,7 @@ import type {
   ParseOptions,
 } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseCommonBlockToken } from './block-token-parser'
 import { parseBlockquote } from './blockquote-parser'
 import { containerTokenHandlers } from './container-token-handlers'
@@ -101,6 +102,7 @@ export function parseList(
 ): [ListNode, number] {
   const token = tokens[index]
   const listItems: ListItemNode[] = []
+  const linkifyContext = createLinkifyDemotionContextTracker(options, true)
   let j = index + 1
 
   while (
@@ -124,29 +126,33 @@ export function parseList(
           trimInlineTokenTail(contentToken)
           itemChildren.push({
             type: 'paragraph',
-            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), preToken, options as any),
+            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), preToken, linkifyContext.options()),
             raw: String(contentToken.content ?? ''),
           })
+          linkifyContext.remember(String(contentToken.content ?? ''))
           k += 3 // Skip paragraph_open, inline, paragraph_close
         }
         else if (tokens[k].type === 'blockquote_open') {
           // Parse blockquote within list item
-          const [blockquoteNode, newIndex] = parseBlockquote(tokens, k, options)
+          const [blockquoteNode, newIndex] = parseBlockquote(tokens, k, linkifyContext.options())
           itemChildren.push(blockquoteNode)
+          linkifyContext.remember(blockquoteNode.raw)
           k = newIndex
         }
         else if (
           tokens[k].type === 'bullet_list_open'
           || tokens[k].type === 'ordered_list_open'
         ) {
-          const [nestedListNode, newIndex] = parseList(tokens, k, options)
+          const [nestedListNode, newIndex] = parseList(tokens, k, linkifyContext.options())
           itemChildren.push(nestedListNode)
+          linkifyContext.remember(nestedListNode.raw)
           k = newIndex
         }
         else {
-          const handled = parseCommonBlockToken(tokens, k, options, containerTokenHandlers)
+          const handled = parseCommonBlockToken(tokens, k, linkifyContext.options(), containerTokenHandlers)
           if (handled) {
             itemChildren.push(handled[0])
+            linkifyContext.remember(handled[0].raw)
             k = handled[1]
           }
           else {

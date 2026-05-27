@@ -131,6 +131,41 @@ describe('vue2 nested html helper', () => {
     expect(html).toBe('&lt;span&gt;partial')
   })
 
+  it('renders footnote html with the same anchors as markstream-vue', () => {
+    const html = renderNestedMarkdownToHtml({
+      nodes: [
+        {
+          type: 'paragraph',
+          raw: '',
+          children: [
+            { type: 'text', raw: '', content: 'Ref' },
+            { type: 'footnote_reference', raw: '[^1]', id: '1' },
+          ],
+        },
+        {
+          type: 'footnote',
+          raw: '',
+          id: '1',
+          children: [
+            {
+              type: 'paragraph',
+              raw: '',
+              children: [
+                { type: 'text', raw: '', content: 'Footnote body' },
+                { type: 'footnote_anchor', raw: '↩︎', id: '1' },
+              ],
+            },
+          ],
+        },
+      ] as any,
+    })
+
+    expect(html).toContain('<sup id="fnref-1" class="footnote-reference markstream-nested-footnote-ref"><span href="#fnref--1" title="查看脚注 1" class="footnote-link cursor-pointer">[1]</span></sup>')
+    expect(html).toContain('<div id="fnref--1" class="footnote-node markstream-nested-footnote"><div class="footnote-node__content">')
+    expect(html).toContain('<a class="footnote-anchor" href="#fnref-1" title="返回引用 1" aria-label="返回引用 1">↩︎</a>')
+    expect(html).not.toContain('href="#footnote-1"')
+  })
+
   it('renders structured html wrappers while leaving blocked tags unstructured', () => {
     const structuredHtml = renderMarkdownNodeToHtml(
       {
@@ -187,7 +222,8 @@ describe('vue2 nested html helper', () => {
       } as any,
     )
 
-    expect(blockedHtml).toBe('<script>\n\n- alpha\n\n</script>')
+    expect(blockedHtml).toBe('')
+    expect(blockedHtml).not.toContain('<script')
     expect(blockedHtml).not.toContain('<ul>')
 
     const literalHtml = renderMarkdownNodeToHtml(

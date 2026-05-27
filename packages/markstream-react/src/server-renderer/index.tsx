@@ -1,7 +1,17 @@
-import type { MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type {
+  DefinitionItemNode as DefinitionItemNodeType,
+  HtmlPolicy,
+  ListItemNode as ListItemNodeType,
+  MarkdownIt,
+  ParsedNode,
+  ParseOptions,
+  TableCellNode as TableCellNodeType,
+  TableRowNode as TableRowNodeType,
+} from 'stream-markdown-parser'
 import type { HtmlPreviewFrameProps } from '../components/CodeBlockNode/HtmlPreviewFrame'
 import type { MarkdownCodeBlockNodeProps } from '../components/MarkdownCodeBlockNode/MarkdownCodeBlockNode'
 import type { TooltipProps } from '../components/Tooltip/Tooltip'
+import type { CustomComponentMap } from '../customComponents'
 import type { NodeRendererProps, RenderContext } from '../types'
 import type {
   CodeBlockNodeProps,
@@ -18,10 +28,14 @@ import type { NodeComponentProps } from '../types/node-component'
 import React from 'react'
 import {
   getMarkdown,
+  isHtmlTagBlocked,
   mergeCustomHtmlTags,
   NON_STRUCTURING_HTML_TAGS,
   parseMarkdownToStructure,
+  sanitizeHtmlAttrs,
   sanitizeHtmlTokenAttrs,
+  sanitizeImageSrc,
+  shouldOpenLinkInNewTab,
   shouldRenderUnknownHtmlTagAsText,
   stripCustomHtmlWrapper,
 } from 'stream-markdown-parser'
@@ -89,8 +103,12 @@ function renderStaticCodeShell(
   )
 }
 
-function mergeHtmlBlockWrapperProps(attrs?: [string, string | null][] | null) {
-  const normalized = normalizeDomAttrs((tokenAttrsToProps(sanitizeHtmlTokenAttrs(attrs ?? undefined)) as Record<string, string> | undefined) || {})
+function mergeHtmlBlockWrapperProps(
+  attrs?: [string, string | null][] | null,
+  htmlPolicy: HtmlPolicy = 'safe',
+  tagName?: string,
+) {
+  const normalized = normalizeDomAttrs((tokenAttrsToProps(sanitizeHtmlTokenAttrs(attrs ?? undefined, htmlPolicy, tagName)) as Record<string, string> | undefined) || {})
   const next = { ...normalized }
   const existing = typeof next.className === 'string' ? next.className.trim() : ''
   next.className = existing ? `html-block-node ${existing}` : 'html-block-node'
@@ -99,7 +117,7 @@ function mergeHtmlBlockWrapperProps(attrs?: [string, string | null][] | null) {
 
 function createRenderContext(
   props: NodeRendererProps,
-  customComponents: Record<string, React.ComponentType<any>>,
+  customComponents: CustomComponentMap,
   indexPrefix: string,
   customHtmlTags: readonly string[],
 ): RenderContext {
@@ -107,6 +125,7 @@ function createRenderContext(
     customId: props.customId,
     customComponents,
     customHtmlTags,
+    htmlPolicy: props.htmlPolicy ?? 'safe',
     isDark: props.isDark,
     indexKey: indexPrefix,
     typewriter: props.typewriter,
@@ -453,11 +472,11 @@ export function ListItemNode(props: NodeComponentProps<{ type: 'list_item', chil
   )
 }
 
-export function ListNode(props: NodeComponentProps<{ type: 'list', ordered?: boolean, start?: number, items?: any[] }>) {
+export function ListNode(props: NodeComponentProps<{ type: 'list', ordered?: boolean, start?: number, items?: ListItemNodeType[] }>) {
   const { node, ctx, renderNode: renderNodeProp, indexKey } = props
   const Tag = node.ordered ? 'ol' : 'ul'
   const startAttr = node.ordered && node.start ? node.start : undefined
-  const ListItemComponent = ((ctx && getCustomNodeComponents(ctx.customId).list_item) || ListItemNode) as any
+  const ListItemComponent = ((ctx && getCustomNodeComponents(ctx.customId).list_item) || ListItemNode) as React.ComponentType<NodeComponentProps<ListItemNodeType> & { value?: number }>
   return (
     <Tag
       className={node.ordered
@@ -465,7 +484,7 @@ export function ListNode(props: NodeComponentProps<{ type: 'list', ordered?: boo
         : 'list-node my-5 pl-[calc(13/8*1em)] list-disc max-lg:my-[calc(4/3*1em)] max-lg:pl-[calc(14/9*1em)]'}
       start={startAttr}
     >
-      {node.items?.map((item: any, idx: number) => (
+      {node.items?.map((item, idx: number) => (
         <ListItemComponent
           key={`${String(indexKey ?? 'list')}-${idx}`}
           node={item}
@@ -482,7 +501,7 @@ export function ListNode(props: NodeComponentProps<{ type: 'list', ordered?: boo
   )
 }
 
-export function TableNode(props: NodeComponentProps<{ type: 'table', header?: any, rows?: any[], loading?: boolean }>) {
+export function TableNode(props: NodeComponentProps<{ type: 'table', header?: TableRowNodeType, rows?: TableRowNodeType[], loading?: boolean }>) {
   const { node, ctx, renderNode: renderNodeProp, indexKey } = props
   const headerCells = Array.isArray(node?.header?.cells) ? node.header.cells : []
   const isLoading = Boolean(node?.loading)
@@ -501,7 +520,7 @@ export function TableNode(props: NodeComponentProps<{ type: 'table', header?: an
       <table className={`my-8 text-sm table-node${isLoading ? ' table-node--loading' : ''}`} aria-busy={isLoading}>
         <thead className="border-[var(--table-border,#cbd5e1)]">
           <tr className="border-b">
-            {headerCells.map((cell: any, idx: number) => (
+            {headerCells.map((cell: TableCellNodeType, idx: number) => (
               <th key={`header-${idx}`} className={`font-semibold p-[calc(4/7*1em)] ${getAlignClass(cell.align)}`} dir="auto">
                 {ctx && renderNodeProp ? renderInline(cell.children, ctx, `${String(indexKey ?? 'table')}-th-${idx}`, renderNodeProp) : null}
               </th>
@@ -509,9 +528,9 @@ export function TableNode(props: NodeComponentProps<{ type: 'table', header?: an
           </tr>
         </thead>
         <tbody>
-          {bodyRows.map((row: any, rowIdx: number) => (
+          {bodyRows.map((row: TableRowNodeType, rowIdx: number) => (
             <tr key={`row-${rowIdx}`} className={rowIdx < bodyRows.length - 1 ? 'border-[var(--table-border,#cbd5e1)] border-b' : 'border-[var(--table-border,#cbd5e1)]'}>
-              {row.cells?.map((cell: any, cellIdx: number) => (
+              {row.cells?.map((cell: TableCellNodeType, cellIdx: number) => (
                 <td key={`cell-${rowIdx}-${cellIdx}`} className={`p-[calc(4/7*1em)] ${getAlignClass(cell.align)}`} dir="auto">
                   {ctx && renderNodeProp ? renderInline(cell.children, ctx, `${String(indexKey ?? 'table')}-row-${rowIdx}-${cellIdx}`, renderNodeProp) : null}
                 </td>
@@ -530,12 +549,12 @@ export function TableNode(props: NodeComponentProps<{ type: 'table', header?: an
   )
 }
 
-export function DefinitionListNode(props: NodeComponentProps<{ type: 'definition_list', items?: any[] }>) {
+export function DefinitionListNode(props: NodeComponentProps<{ type: 'definition_list', items?: DefinitionItemNodeType[] }>) {
   const { node, ctx, renderNode: renderNodeProp, indexKey } = props
   const items = Array.isArray(node.items) ? node.items : []
   return (
     <dl className="definition-list" data-index-key={indexKey}>
-      {items.map((item: any, idx: number) => (
+      {items.map((item, idx: number) => (
         <div key={`${String(indexKey ?? 'definition')}-${idx}`} className="mb-4">
           <dt className="definition-term font-semibold">
             {ctx && renderNodeProp ? renderInline(item.term, ctx, `${String(indexKey ?? 'definition')}-term-${idx}`, renderNodeProp) : null}
@@ -552,7 +571,7 @@ export function DefinitionListNode(props: NodeComponentProps<{ type: 'definition
 export function FootnoteNode(props: NodeComponentProps<{ type: 'footnote', id: string, children?: ParsedNode[] }>) {
   const { node, ctx, renderNode: renderNodeProp, indexKey } = props
   return (
-    <div id={`footnote-${node.id}`} className="footnote-node flex mt-2 mb-2 text-sm leading-relaxed border-t border-[#eaecef] pt-2">
+    <div id={`fnref--${node.id}`} className="footnote-node flex text-sm leading-relaxed border-t border-[var(--footnote-border,#eaecef)] pt-2">
       <div className="flex-1">
         {ctx && renderNodeProp ? renderNodeChildren(node.children, ctx, String(indexKey ?? `footnote-${node.id}`), renderNodeProp) : null}
       </div>
@@ -562,14 +581,14 @@ export function FootnoteNode(props: NodeComponentProps<{ type: 'footnote', id: s
 
 export function FootnoteReferenceNode(props: NodeComponentProps<{ type: 'footnote_reference', id: string }>) {
   const { node } = props
-  const href = `#footnote-${node.id}`
+  const href = `#fnref--${node.id}`
   return (
     <sup id={`fnref-${node.id}`} className="footnote-reference">
-      <a href={href} title={`View footnote ${node.id}`} className="footnote-link">
+      <span {...({ href } as React.HTMLAttributes<HTMLSpanElement> & { href: string })} title={`查看脚注 ${node.id}`} className="footnote-link cursor-pointer">
         [
         {node.id}
         ]
-      </a>
+      </span>
     </sup>
   )
 }
@@ -578,9 +597,9 @@ export function FootnoteAnchorNode(props: NodeComponentProps<{ type: 'footnote_a
   const { node } = props
   return (
     <a
-      className="footnote-anchor text-sm text-[#0366d6] hover:underline"
+      className="footnote-anchor text-sm hover:underline cursor-pointer"
       href={`#fnref-${node.id}`}
-      title={`Back to reference ${node.id}`}
+      title={`返回引用 ${node.id}`}
     >
       ↩︎
     </a>
@@ -764,9 +783,11 @@ export function LinkNode(props: NodeComponentProps<LinkNodeProps['node']> & {
       ? String(props.animationIteration)
       : (props.animationIteration ?? 'infinite'),
   } as React.CSSProperties
+  const safeHref = sanitizeHtmlAttrs({ href: String(node.href ?? '') }).href
   const title = typeof node.title === 'string' && node.title.trim().length > 0
     ? node.title
-    : String(node.href ?? '')
+    : String(safeHref ?? '')
+  const openInNewTab = shouldOpenLinkInNewTab(safeHref)
 
   if (node.loading) {
     return (
@@ -789,11 +810,11 @@ export function LinkNode(props: NodeComponentProps<LinkNodeProps['node']> & {
   return (
     <a
       className="link-node"
-      href={node.href}
+      href={safeHref || undefined}
       title={title}
       aria-label={`Link: ${title}`}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={openInNewTab ? '_blank' : undefined}
+      rel={openInNewTab ? 'noopener noreferrer' : undefined}
       style={cssVars}
     >
       {ctx && renderNodeProp
@@ -812,9 +833,13 @@ export function LinkNode(props: NodeComponentProps<LinkNodeProps['node']> & {
 
 export function ImageNode(rawProps: ImageNodeProps) {
   const props = rawProps
+  const src = sanitizeImageSrc(props.node.src) || sanitizeImageSrc(props.fallbackSrc)
+  if (!src)
+    return null
+
   return (
     <img
-      src={props.node.src}
+      src={src}
       alt={String(props.node.alt ?? props.node.title ?? '')}
       title={String(props.node.title ?? props.node.alt ?? '')}
       className="image-node__img is-loaded"
@@ -943,12 +968,13 @@ export function HtmlBlockNode(props: NodeComponentProps<{
     structuredChildren.length > 0
     && structuredTag
     && !NON_STRUCTURING_HTML_TAGS.has(structuredTag)
+    && !isHtmlTagBlocked(structuredTag, props.ctx?.htmlPolicy ?? 'safe')
     && props.ctx
     && props.renderNode
   ) {
     return React.createElement(
       structuredTag,
-      mergeHtmlBlockWrapperProps((props.node as any)?.attrs ?? null),
+      mergeHtmlBlockWrapperProps((props.node as any)?.attrs ?? null, props.ctx?.htmlPolicy ?? 'safe', structuredTag),
       renderNodeChildren(
         structuredChildren,
         props.ctx,
@@ -959,7 +985,7 @@ export function HtmlBlockNode(props: NodeComponentProps<{
   }
 
   const customComponents = getCustomNodeComponents(props.customId)
-  const nodes = parseHtmlToReactNodes(String(props.node.content ?? ''), customComponents)
+  const nodes = parseHtmlToReactNodes(String(props.node.content ?? ''), customComponents, props.ctx?.htmlPolicy ?? 'safe')
   if (nodes == null)
     return <>{String(props.node.content ?? '')}</>
   return <>{nodes}</>
@@ -967,7 +993,7 @@ export function HtmlBlockNode(props: NodeComponentProps<{
 
 export function HtmlInlineNode(props: NodeComponentProps<{ type: 'html_inline', content?: string }>) {
   const customComponents = getCustomNodeComponents(props.customId)
-  const nodes = parseHtmlToReactNodes(String(props.node.content ?? ''), customComponents)
+  const nodes = parseHtmlToReactNodes(String(props.node.content ?? ''), customComponents, props.ctx?.htmlPolicy ?? 'safe')
   if (nodes == null)
     return <>{String(props.node.content ?? '')}</>
   return <>{nodes}</>
@@ -1174,7 +1200,7 @@ export function renderNode(node: ParsedNode, key: React.Key, ctx: RenderContext)
     case 'html_block':
       return <HtmlBlockNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} customId={ctx.customId} />
     case 'html_inline':
-      return <HtmlInlineNode key={key} node={node as any} typewriter={ctx.typewriter} customId={ctx.customId} />
+      return <HtmlInlineNode key={key} node={node as any} ctx={ctx} typewriter={ctx.typewriter} customId={ctx.customId} />
     case 'vmr_container':
       return <VmrContainerNode key={key} node={node as any} ctx={ctx} renderNode={renderNode} indexKey={key} typewriter={ctx.typewriter} />
     case 'label_open':

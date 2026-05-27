@@ -27,22 +27,22 @@ const interval = setInterval(() => {
 </template>
 ```
 
-## Typewriter + TypeScript example
-- Use `typewriter` prop to enable enter transition
+## Typewriter + fade example
+- Use `typewriter` for the blinking stream cursor and `fade` for enter/appended-text fade.
 
 ## Rendering with `nodes`
 - Call `parseMarkdownToStructure` from `stream-markdown-parser` and pass `nodes` to `MarkdownRender` for custom rendering.
 
-Try this — quickly stream a Markdown string with `typewriter` enabled:
+Try this — quickly stream a Markdown string with the cursor and fade enabled:
 
 ```vue
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'
 
-const md = '# Streaming test\n\nThis text appears with a subtle enter animation.'
+const md = '# Streaming test\n\nThis text appears with a subtle enter animation and cursor.'
 </script>
 
 <template>
-  <MarkdownRender :content="md" :typewriter="true" />
+  <MarkdownRender :content="md" :typewriter="true" :fade="true" />
 </template>
 ```

@@ -46,6 +46,8 @@ yarn add stream-markdown-parser
 - `registerMarkdownPlugin(plugin)` / `clearRegisteredMarkdownPlugins()` — add or remove global plugins that run for every `getMarkdown()` call (useful for feature flags or tests).
 - `parseMarkdownToStructure(markdown, md, parseOptions)` — convert Markdown into the streaming-friendly AST consumed by `markstream-vue` and other renderers.
 - `processTokens(tokens)` / `parseInlineTokens(children, content?, preToken?, options?)` — low-level helpers if you want to bypass the built-in AST pipeline.
+- `sanitizeImageSrc(value)` — apply the same strict image URL policy used by Markstream image renderers.
+- `sanitizeMermaidSvg(svg)` / `toSafeMermaidSvgMarkup(svg)` / `toSafeSvgElement(svg)` / `isBrokenMermaidSvg(svg)` — sanitize or validate Mermaid SVG with `DOMParser`; in plain Node runtimes without `DOMParser`, the sanitizer helpers return `null` / `''` / `null`.
 - `applyMath`, `applyContainers`, `normalizeStandaloneBackslashT`, `findMatchingClose`, etc. — utilities for custom parsing or linting workflows.
 
 ## Usage
@@ -219,6 +221,18 @@ Parses markdown content into a structured node tree.
 - `md` (MarkdownItCore): A markdown-it-ts instance created with `getMarkdown()`
 - `options` (ParseOptions, optional): Parsing options with hooks
 
+> Warning: The default `streamParse: 'auto'` uses markdown-it-ts' stream parser
+> for non-final top-level parses when `md.stream.enabled === true` and keeps the
+> parser's latest source and token cache on that `md` instance. Final one-shot
+> parses use the regular parser unless you pass `{ streamParse: true }`; if you
+> reuse one `md` instance for unrelated one-shot documents, pass `{ final: true }`
+> or `{ streamParse: false }`. Callers that do not want stream cache can opt out:
+
+```ts
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+const optOutNodes = parseMarkdownToStructure(source, md, { streamParse: false })
+```
+
 **Returns:** `ParsedNode[]` - An array of parsed nodes
 
 #### `processTokens(tokens)`
@@ -260,6 +274,9 @@ interface ParseOptions {
   validateLink?: (url: string) => boolean
   // When true, treats the input as complete (end-of-stream)
   final?: boolean
+  // 'auto' uses stream parsing for non-final top-level documents.
+  // Set true to force stream parsing for final parses; false to opt out.
+  streamParse?: boolean | 'auto'
   // Require closing `**` for strong parsing (default: false)
   requireClosingStrong?: boolean
 }

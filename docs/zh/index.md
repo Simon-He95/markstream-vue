@@ -1,10 +1,10 @@
 ---
 layout: home
-description: 面向 Vue、React、Angular 和 Nuxt 的流式 Markdown 渲染器，提供安装、VitePress、AI 聊天、组件覆盖与迁移的任务式文档入口。
+description: 面向 Vue、React、Angular、Svelte 和 Nuxt 的流式 Markdown 渲染器，提供安装、VitePress、AI 聊天、组件覆盖与迁移的任务式文档入口。
 hero:
   name: markstream-vue
   text: 面向流式输出的 Markdown 渲染器
-  tagline: Vue 3 • Vue 2 • React • Angular • Nuxt
+  tagline: Vue 3 • Vue 2 • React • Angular • Svelte • Nuxt
   actions:
     - theme: brand
       text: 按场景安装
@@ -104,6 +104,7 @@ features:
 | Vue 2 (`markstream-vue2`) | [Vue 2 快速开始](/zh/guide/vue2-quick-start) | 你还在 Vue 2.6 / 2.7 环境 | [在线演示](https://markstream-vue2.pages.dev/) |
 | React (`markstream-react`) | [React 快速开始](/zh/guide/react-quick-start) | 你是 React 用户，或正从 `react-markdown` 迁移 | [在线演示](https://markstream-react.pages.dev/) |
 | Angular (`markstream-angular`) | [Angular 快速开始](/zh/guide/angular-quick-start) | 你使用 standalone Angular 组件 | [在线演示](https://markstream-angular.pages.dev/) |
+| Svelte (`markstream-svelte`) | [Svelte 快速开始](/zh/guide/svelte) | 你使用 Svelte 5，并希望复用一致的渲染 API 和 worker 路径 | [在线演示](https://markstream-svelte.pages.dev/) |
 
 ## 常用入口
 

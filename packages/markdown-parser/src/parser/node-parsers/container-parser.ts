@@ -1,5 +1,6 @@
 import type { AdmonitionNode, MarkdownToken, ParsedNode, ParseOptions, TextNode } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseBasicBlockToken } from './block-token-parser'
 import { parseBlockquote } from './blockquote-parser'
 import { parseList } from './list-parser'
@@ -67,6 +68,7 @@ export function parseContainer(
     title = kind.charAt(0).toUpperCase() + kind.slice(1)
 
   const children: ParsedNode[] = []
+  const linkifyContext = createLinkifyDemotionContextTracker(options, true)
   let j = index + 1
 
   // Accept closing tokens: 'container_close' or 'container_<kind>_close'
@@ -90,11 +92,13 @@ export function parseContainer(
           }
         }
         const _children = i !== -1 ? childrenArr.slice(0, i) : childrenArr
-        children.push({
+        const paragraphNode = {
           type: 'paragraph',
-          children: parseInlineTokens(_children || [], undefined, undefined, options as any),
+          children: parseInlineTokens(_children || [], undefined, undefined, linkifyContext.options()),
           raw: String(contentToken.content ?? '').replace(/\n:+$/, '').replace(/\n\s*:::\s*$/, ''),
-        })
+        } as ParsedNode
+        children.push(paragraphNode)
+        linkifyContext.remember(paragraphNode.raw)
       }
       j += 3
     }
@@ -102,19 +106,22 @@ export function parseContainer(
       tokens[j].type === 'bullet_list_open'
       || tokens[j].type === 'ordered_list_open'
     ) {
-      const [listNode, newIndex] = parseList(tokens, j, options)
+      const [listNode, newIndex] = parseList(tokens, j, linkifyContext.options())
       children.push(listNode)
+      linkifyContext.remember(listNode.raw)
       j = newIndex
     }
     else if (tokens[j].type === 'blockquote_open') {
-      const [blockquoteNode, newIndex] = parseBlockquote(tokens, j, options)
+      const [blockquoteNode, newIndex] = parseBlockquote(tokens, j, linkifyContext.options())
       children.push(blockquoteNode)
+      linkifyContext.remember(blockquoteNode.raw)
       j = newIndex
     }
     else {
-      const handled = parseBasicBlockToken(tokens, j, options)
+      const handled = parseBasicBlockToken(tokens, j, linkifyContext.options())
       if (handled) {
         children.push(handled[0])
+        linkifyContext.remember(handled[0].raw)
         j = handled[1]
       }
       else {

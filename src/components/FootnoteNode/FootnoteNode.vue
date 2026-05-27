@@ -14,6 +14,7 @@ const props = defineProps<{
   node: FootnoteNode
   indexKey: string | number
   typewriter?: boolean
+  fade?: boolean
   customId?: string
 }>()
 
@@ -33,6 +34,7 @@ defineEmits(['copy'])
         :nodes="props.node.children"
         :custom-id="props.customId"
         :typewriter="props.typewriter"
+        :fade="props.fade"
         @copy="$emit('copy', $event)"
       />
     </div>

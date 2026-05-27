@@ -10,7 +10,8 @@ import { clampMermaidPreviewHeight, estimateMermaidPreviewHeight, getMermaidDiag
 import { safeRaf } from '../../utils/safeRaf'
 import { canParseOffthread as canParseOffthreadClient, findPrefixOffthread as findPrefixOffthreadClient, terminateWorker as terminateMermaidWorker } from '../../workers/mermaidWorkerClient'
 
-import { getMermaid, isMermaidEnabled } from './mermaid'
+import { getMermaid } from './mermaid'
+import { toSafeSvgElement } from './mermaidSvgSanitizer'
 
 const props = withDefaults(
   // 全屏按钮禁用状态
@@ -36,7 +37,8 @@ const props = withDefaults(
     showCollapseButton: true,
     showZoomControls: true,
     enableWheelZoom: false,
-    isStrict: false,
+    isStrict: true,
+    enableMermaidInteractions: false,
     showTooltips: true,
   },
 )
@@ -52,8 +54,7 @@ const DOMPURIFY_CONFIG = {
   SAFE_FOR_TEMPLATES: true,
 } as const
 
-const mermaidInitiallyEnabled = typeof window !== 'undefined' && isMermaidEnabled()
-const mermaidAvailable = ref(mermaidInitiallyEnabled)
+const mermaidAvailable = ref(false)
 const mermaidSecurityLevel = computed(() => props.isStrict ? 'strict' : 'loose')
 const mermaidInitConfig = computed(() => ({
   startOnLoad: false,
@@ -62,95 +63,55 @@ const mermaidInitConfig = computed(() => ({
   flowchart: mermaidSecurityLevel.value === 'strict' ? { htmlLabels: false } : undefined,
 }))
 
-function neutralizeScriptProtocols(raw: string) {
-  return raw
-    .replace(/["']\s*javascript:/gi, '#')
-    .replace(/\bjavascript:/gi, '#')
-    .replace(/["']\s*vbscript:/gi, '#')
-    .replace(/\bvbscript:/gi, '#')
-    .replace(/\bdata:text\/html/gi, '#')
+type MermaidBindFunctions = (element: Element) => unknown
+
+interface RenderedMermaidSvg {
+  svg: string
+  bindTarget: Element
 }
 
-const DISALLOWED_STYLE_PATTERNS = [/javascript:/i, /expression\s*\(/i, /url\s*\(\s*javascript:/i, /@import/i]
-const SAFE_URL_PROTOCOLS = /^(?:https?:|mailto:|tel:|#|\/|data:image\/(?:png|gif|jpe?g|webp);)/i
-
-function sanitizeUrl(value: string | null | undefined) {
-  if (!value)
-    return ''
-  const trimmed = value.trim()
-  if (SAFE_URL_PROTOCOLS.test(trimmed))
-    return trimmed
-  return ''
+interface CachedMermaidSvg {
+  svg: string
+  bindFunctions?: MermaidBindFunctions | null
 }
 
-function scrubSvgElement(svgEl: SVGElement) {
-  const forbiddenTags = new Set(['script'])
-  const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll<SVGElement>('*'))]
-  for (const node of nodes) {
-    if (forbiddenTags.has(node.tagName.toLowerCase())) {
-      node.remove()
-      continue
-    }
-    const attrs = Array.from(node.attributes)
-    for (const attr of attrs) {
-      const name = attr.name
-      if (/^on/i.test(name)) {
-        node.removeAttribute(name)
-        continue
-      }
-      if (name === 'style' && attr.value) {
-        const val = attr.value
-        if (DISALLOWED_STYLE_PATTERNS.some(re => re.test(val))) {
-          node.removeAttribute(name)
-          continue
-        }
-      }
-      if ((name === 'href' || name === 'xlink:href') && attr.value) {
-        const safe = sanitizeUrl(attr.value)
-        if (!safe) {
-          node.removeAttribute(name)
-          continue
-        }
-        // ensure sanitized value is applied
-        if (safe !== attr.value)
-          node.setAttribute(name, safe)
-      }
-    }
-  }
-}
-
-function toSafeSvgElement(svg: string | null | undefined): SVGElement | null {
-  if (typeof window === 'undefined' || typeof DOMParser === 'undefined')
-    return null
-  if (!svg)
-    return null
-  const neutralized = neutralizeScriptProtocols(svg)
-  // DOMPurify may strip harmless label styles/text; rely on manual scrub after parse
-  const parsed = new DOMParser().parseFromString(neutralized, 'image/svg+xml')
-  const svgEl = parsed.documentElement
-  if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
-    return null
-  const svgElement = svgEl as unknown as SVGElement
-  scrubSvgElement(svgElement)
-  return svgElement
-}
-
-function setSafeSvg(target: HTMLElement | null | undefined, svg: string | null | undefined) {
+function setSafeSvg(target: HTMLElement | null | undefined, svg: string | null | undefined): RenderedMermaidSvg | null {
   if (!target)
-    return ''
-  try {
-    target.replaceChildren()
+    return null
+  const safeElement = toSafeSvgElement<SVGElement>(svg)
+  if (!safeElement)
+    return null
+  const layer = appendBufferedSvgLayer(target, safeElement)
+  return {
+    svg: safeElement.outerHTML,
+    bindTarget: layer,
   }
-  catch {
-    // fallback for older environments
-    target.innerHTML = ''
+}
+
+function removeNodesAfterNextPaint(nodes: ChildNode[]) {
+  const remove = () => {
+    for (const node of nodes)
+      node.parentNode?.removeChild(node)
   }
-  const safeElement = toSafeSvgElement(svg)
-  if (safeElement) {
-    target.appendChild(safeElement)
-    return target.innerHTML
+  if (typeof requestAnimationFrame !== 'function') {
+    setTimeout(remove, 32)
+    return
   }
-  return ''
+  requestAnimationFrame(() => {
+    requestAnimationFrame(remove)
+  })
+}
+
+function appendBufferedSvgLayer(target: HTMLElement, svgElement: SVGElement) {
+  const previousNodes = Array.from(target.childNodes)
+  const layer = document.createElement('div')
+  layer.dataset.mermaidSvgLayer = '1'
+  layer.style.zIndex = '1'
+  layer.appendChild(svgElement)
+  target.insertBefore(layer, target.firstChild)
+  if (previousNodes.length > 0)
+    removeNodesAfterNextPaint(previousNodes)
+  return layer
 }
 
 function clearElement(target: HTMLElement | null | undefined) {
@@ -164,60 +125,28 @@ function clearElement(target: HTMLElement | null | undefined) {
   }
 }
 
-function renderSvgToTarget(target: HTMLElement | null | undefined, svg: string | null | undefined) {
+function renderSvgToTarget(
+  target: HTMLElement | null | undefined,
+  svg: string | null | undefined,
+  options: { keepPreviousOnFailure?: boolean } = {},
+): RenderedMermaidSvg | null {
   if (!target)
-    return ''
-  if (mermaidSecurityLevel.value === 'strict') {
-    return setSafeSvg(target, svg)
-  }
-  try {
-    target.replaceChildren()
-  }
-  catch {
-    target.innerHTML = ''
-  }
-  if (svg) {
-    try {
-      target.insertAdjacentHTML('afterbegin', svg)
-    }
-    catch {
-      target.innerHTML = svg
-    }
-  }
-  return target.innerHTML
+    return null
+  const rendered = setSafeSvg(target, svg)
+  if (!rendered && !options.keepPreviousOnFailure)
+    clearElement(target)
+  return rendered
 }
 
-function isBrokenMermaidSvg(svg: string | null | undefined) {
-  if (!svg || typeof DOMParser === 'undefined')
-    return !svg
+let lastMermaidBindFunctions: MermaidBindFunctions | null = null
 
-  const parsed = new DOMParser().parseFromString(svg, 'image/svg+xml')
-  const svgEl = parsed.documentElement
-  if (!svgEl || svgEl.nodeName.toLowerCase() !== 'svg')
-    return true
-
-  const viewBox = svgEl.getAttribute('viewBox')
-  if (viewBox) {
-    const parts = viewBox.trim().split(/[\s,]+/)
-    if (parts.length === 4) {
-      const width = Number.parseFloat(parts[2] || '')
-      const height = Number.parseFloat(parts[3] || '')
-      if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0)
-        return true
-    }
+function bindMermaidInteractions(element: Element | null | undefined) {
+  if (!props.enableMermaidInteractions || !element?.querySelector('svg'))
+    return
+  try {
+    lastMermaidBindFunctions?.(element)
   }
-
-  const nodes = [svgEl, ...Array.from(svgEl.querySelectorAll('*'))]
-  for (const node of nodes) {
-    for (const attr of Array.from(node.attributes)) {
-      if (/\bNaN\b/i.test(attr.value))
-        return true
-      if (attr.name === 'style' && /max-width:\s*0(?:px)?/i.test(attr.value))
-        return true
-    }
-  }
-
-  return false
+  catch {}
 }
 
 const { t } = useSafeI18n()
@@ -255,7 +184,10 @@ const baseFixedCode = computed(() => {
 function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
   const baseCode = code
   const themeValue = theme === 'dark' ? 'dark' : 'default'
-  const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
+  const initConfig: Record<string, unknown> = { theme: themeValue }
+  if (mermaidSecurityLevel.value === 'strict')
+    initConfig.flowchart = { htmlLabels: false }
+  const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
   if (baseCode.trim().startsWith('%%{')) {
     return baseCode
   }
@@ -275,10 +207,28 @@ function clampPreviewHeight(height: number) {
   return clampMermaidPreviewHeight(height, minHeight, maxHeight)
 }
 
-function resolveInitialContainerHeight() {
-  return `${clampPreviewHeight(
+function resolveEstimatedPreviewHeight() {
+  return clampPreviewHeight(
     parsePositiveNumber(props.estimatedPreviewHeightPx) ?? estimateMermaidPreviewHeight(baseFixedCode.value),
-  )}px`
+  )
+}
+
+function resolveInitialContainerHeight() {
+  return `${resolveEstimatedPreviewHeight()}px`
+}
+
+const lastSvgSnapshot = ref<string | null>(null)
+
+function hasPreviewSvg() {
+  return !!mermaidContent.value?.querySelector('svg')
+}
+
+function shouldFreezeStreamingPreviewHeight() {
+  return props.loading !== false && hasPreviewSvg()
+}
+
+function shouldKeepPreviewForEmptyStreamingSource() {
+  return props.loading !== false && (hasPreviewSvg() || !!lastSvgSnapshot.value)
 }
 
 // Zoom state
@@ -287,7 +237,7 @@ const translateX = ref(0)
 const translateY = ref(0)
 const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0 })
-const showSource = ref(!mermaidInitiallyEnabled)
+const showSource = ref(true)
 const userToggledShowSource = ref(false)
 const isRendering = ref(false)
 const renderQueue = ref<Promise<boolean> | null>(null)
@@ -359,17 +309,17 @@ function scheduleRenderRetry(delayMs = 600) {
 }
 
 const containerHeight = ref<string>(resolveInitialContainerHeight())
+const contentHeight = ref<string>(containerHeight.value)
 let resizeObserver: ResizeObserver | null = null
 
 // rendering state management
 const hasRenderedOnce = ref(false)
 const isThemeRendering = ref(false)
 const svgCache = ref<{
-  light?: string
-  dark?: string
+  light?: CachedMermaidSvg
+  dark?: CachedMermaidSvg
 }>({})
 
-const lastSvgSnapshot = ref<string | null>(null)
 // 新增：记录上一次渲染的 code（去除所有空白字符）
 const lastRenderedCode = ref<string>('')
 const renderToken = ref(0)
@@ -524,6 +474,7 @@ function renderErrorToContainer(error: unknown) {
     ? getComputedStyle(mermaidContent.value).getPropertyValue('--ms-size-diagram-min-height').trim()
     : ''
   containerHeight.value = tokenH || '360px'
+  contentHeight.value = containerHeight.value
   hasRenderError.value = true
   // 在错误显示时，停止任何预览轮询，避免错误被覆盖
   stopPreviewPolling()
@@ -577,7 +528,10 @@ function onCopyHover(e: Event) {
 // Apply theme header to arbitrary code snippet
 function applyThemeTo(code: string, theme: 'light' | 'dark') {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
-  const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
+  const initConfig: Record<string, unknown> = { theme: themeValue }
+  if (mermaidSecurityLevel.value === 'strict')
+    initConfig.flowchart = { htmlLabels: false }
+  const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
   const trimmed = code.trimStart()
   if (trimmed.startsWith('%%{'))
     return code
@@ -781,9 +735,10 @@ function resolveMaxContainerHeight() {
  * 健壮地计算并更新容器高度，优先使用viewBox，并提供getBBox作为后备
  * @param newContainerWidth - 可选的容器宽度，由ResizeObserver提供以确保精确
  */
-function updateContainerHeight(newContainerWidth?: number) {
+function updateContainerHeight(newContainerWidth?: number, options?: { force?: boolean }) {
   if (!mermaidContainer.value || !mermaidContent.value)
     return
+  const freezePreviewHeight = !options?.force && shouldFreezeStreamingPreviewHeight()
 
   const svgElement = mermaidContent.value.querySelector('svg')
   if (!svgElement)
@@ -843,10 +798,15 @@ function updateContainerHeight(newContainerWidth?: number) {
     // 如果外部传入了宽度，则使用它，否则自己获取
     const containerWidth
       = newContainerWidth ?? mermaidContainer.value.clientWidth
+    const renderedSvgWidth = svgElement.getBoundingClientRect().width
+    const effectiveWidth = renderedSvgWidth > 0 ? renderedSvgWidth : containerWidth
     const maxHeight = resolveMaxContainerHeight()
-    const newHeight = containerWidth * aspectRatio
+    const newHeight = effectiveWidth * aspectRatio
     const resolvedHeight = maxHeight == null ? newHeight : Math.min(newHeight, maxHeight)
-    containerHeight.value = `${resolvedHeight}px`
+    const previewHeight = Math.max(resolvedHeight, resolveEstimatedPreviewHeight())
+    contentHeight.value = `${Math.max(newHeight, previewHeight)}px`
+    if (!freezePreviewHeight)
+      containerHeight.value = `${previewHeight}px`
   }
 }
 
@@ -861,6 +821,36 @@ function handleKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape' && isModalOpen.value) {
     closeModal()
   }
+}
+
+function mountModalClone() {
+  if (!mermaidContainer.value || !modalContent.value)
+    return false
+  if (modalContent.value.firstElementChild?.getAttribute('data-mermaid-modal-clone') === '1')
+    return true
+
+  // clone the container for modal and add fullscreen to the clone (not original)
+  const clone = mermaidContainer.value.cloneNode(true) as HTMLElement
+  clone.dataset.mermaidModalClone = '1'
+  clone.classList.add('fullscreen')
+  clone.style.height = '100%'
+  clone.style.maxHeight = '100%'
+
+  // find the wrapper inside the clone using the data attribute and keep a ref
+  const wrapper = clone.querySelector(
+    '[data-mermaid-wrapper]',
+  ) as HTMLElement | null
+  if (wrapper) {
+    modalCloneWrapper.value = wrapper
+    // apply current transform to the clone so it matches the original state
+    wrapper.style.transform = (transformStyle.value as any).transform
+  }
+
+  // clear any previous content and append the clone
+  clearElement(modalContent.value)
+  modalContent.value.appendChild(clone)
+  bindMermaidInteractions(clone)
+  return true
 }
 
 function openModal() {
@@ -879,27 +869,8 @@ function openModal() {
   }
 
   nextTick(() => {
-    if (mermaidContainer.value && modalContent.value) {
-      // clone the container for modal and add fullscreen to the clone (not original)
-      const clone = mermaidContainer.value.cloneNode(true) as HTMLElement
-      clone.classList.add('fullscreen')
-      clone.style.height = '100%'
-      clone.style.maxHeight = '100%'
-
-      // find the wrapper inside the clone using the data attribute and keep a ref
-      const wrapper = clone.querySelector(
-        '[data-mermaid-wrapper]',
-      ) as HTMLElement | null
-      if (wrapper) {
-        modalCloneWrapper.value = wrapper
-        // apply current transform to the clone so it matches the original state
-        wrapper.style.transform = (transformStyle.value as any).transform
-      }
-
-      // clear any previous content and append the clone
-      clearElement(modalContent.value)
-      modalContent.value.appendChild(clone)
-    }
+    if (!mountModalClone())
+      nextTick(mountModalClone)
   })
 }
 
@@ -923,6 +894,11 @@ function closeModal() {
     catch {}
   }
 }
+
+watch(modalContent, (element) => {
+  if (isModalOpen.value && element)
+    mountModalClone()
+})
 
 function checkContentStability() {
   if (!usesProgressivePreview.value)
@@ -1256,11 +1232,17 @@ async function initMermaid() {
         { timeoutMs: timeouts.value.fullRender },
       )
       const svg = res?.svg
-      if (isBrokenMermaidSvg(svg))
-        throw new Error('Mermaid produced invalid SVG during preview')
 
       if (mermaidContent.value) {
-        const rendered = renderSvgToTarget(mermaidContent.value, svg)
+        const rendered = renderSvgToTarget(mermaidContent.value, svg, { keepPreviousOnFailure: props.loading !== false })
+        if (!rendered) {
+          if (isThemeRendering.value)
+            isThemeRendering.value = false
+          return false
+        }
+        const bindFunctions = res?.bindFunctions ?? null
+        lastMermaidBindFunctions = bindFunctions
+        bindMermaidInteractions(rendered.bindTarget)
         // Successful full render clears Partial preview state
         if (!hasRenderedOnce.value && !isThemeRendering.value) {
           safeRaf(() => updateContainerHeight())
@@ -1274,7 +1256,7 @@ async function initMermaid() {
         }
         const currentTheme = props.isDark ? 'dark' : 'light'
         if (rendered)
-          svgCache.value[currentTheme] = rendered
+          svgCache.value[currentTheme] = { svg: rendered.svg, bindFunctions }
         if (isThemeRendering.value) {
           isThemeRendering.value = false
         }
@@ -1321,6 +1303,8 @@ function normalizeMermaidSource(code: string) {
 async function renderStaticDiagram() {
   const base = baseFixedCode.value
   if (!base.trim()) {
+    if (shouldKeepPreviewForEmptyStreamingSource())
+      return
     if (mermaidContent.value)
       clearElement(mermaidContent.value)
     lastSvgSnapshot.value = null
@@ -1380,9 +1364,13 @@ async function renderPartial(code: string) {
       { timeoutMs: timeouts.value.render },
     )
     const svg = res?.svg
-    if (mermaidContent.value && svg && !isBrokenMermaidSvg(svg)) {
-      renderSvgToTarget(mermaidContent.value, svg)
-      safeRaf(() => updateContainerHeight())
+    if (mermaidContent.value && svg) {
+      const rendered = renderSvgToTarget(mermaidContent.value, svg, { keepPreviousOnFailure: true })
+      if (rendered) {
+        lastMermaidBindFunctions = res?.bindFunctions ?? null
+        bindMermaidInteractions(rendered.bindTarget)
+        safeRaf(() => updateContainerHeight())
+      }
     }
   }
   catch {
@@ -1409,6 +1397,8 @@ async function progressiveRender() {
   // 新增：去除所有空白字符后做比较
   const normalizedBase = base.replace(/\s+/g, '')
   if (!base.trim()) {
+    if (shouldKeepPreviewForEmptyStreamingSource())
+      return
     if (mermaidContent.value)
       clearElement(mermaidContent.value)
     lastSvgSnapshot.value = null
@@ -1459,7 +1449,11 @@ async function progressiveRender() {
   // If we cannot apply partial and also shouldn't restore cached (e.g., error state), bail
   const cached = svgCache.value[theme]
   if (cached && mermaidContent.value) {
-    renderSvgToTarget(mermaidContent.value, cached)
+    const rendered = renderSvgToTarget(mermaidContent.value, cached.svg)
+    if (rendered) {
+      lastMermaidBindFunctions = cached.bindFunctions ?? null
+      bindMermaidInteractions(rendered.bindTarget)
+    }
   }
   // else: keep current DOM (could be empty on very first run)
 }
@@ -1600,9 +1594,11 @@ function startPreviewPolling() {
 // Watch for code changes (only base code, not theme changes)
 watch(
   () => baseFixedCode.value,
-  () => {
-    hasRenderedOnce.value = false
-    svgCache.value = {}
+  (code) => {
+    if (code.trim() || props.loading === false) {
+      hasRenderedOnce.value = false
+      svgCache.value = {}
+    }
     if (!usesProgressivePreview.value) {
       stopPreviewPolling()
       if (canScheduleViewportWork() && !showSource.value)
@@ -1634,7 +1630,11 @@ watch(() => props.isDark, async () => {
   const cachedForTheme = svgCache.value[targetTheme]
   if (cachedForTheme) {
     if (mermaidContent.value) {
-      renderSvgToTarget(mermaidContent.value, cachedForTheme)
+      const rendered = renderSvgToTarget(mermaidContent.value, cachedForTheme.svg)
+      if (rendered) {
+        lastMermaidBindFunctions = cachedForTheme.bindFunctions ?? null
+        bindMermaidInteractions(rendered.bindTarget)
+      }
     }
     return
   }
@@ -1677,7 +1677,12 @@ watch(
       if (hasRenderedOnce.value && svgCache.value[currentTheme]) {
         await nextTick()
         if (mermaidContent.value) {
-          renderSvgToTarget(mermaidContent.value, svgCache.value[currentTheme]!)
+          const cached = svgCache.value[currentTheme]!
+          const rendered = renderSvgToTarget(mermaidContent.value, cached.svg)
+          if (rendered) {
+            lastMermaidBindFunctions = cached.bindFunctions ?? null
+            bindMermaidInteractions(rendered.bindTarget)
+          }
         }
         // Restoring full render from cache -> hide Partial badge
         zoom.value = savedTransformState.value.zoom
@@ -1720,8 +1725,14 @@ watch(
   async (loaded, prev) => {
     if (prev === true && loaded === false) {
       const base = baseFixedCode.value.trim()
-      if (!base)
+      if (!base) {
+        if (mermaidContent.value)
+          clearElement(mermaidContent.value)
+        lastSvgSnapshot.value = null
+        lastRenderedCode.value = ''
+        hasRenderError.value = false
         return cleanupAfterLoadingSettled()
+      }
       const theme = props.isDark ? 'dark' : 'light'
       const normalizedBase = base.replace(/\s+/g, '')
 
@@ -1730,8 +1741,14 @@ watch(
         await nextTick()
         // 保险：如果 DOM 被清空但有缓存，恢复一次，不触发重新渲染
         if (mermaidContent.value && !mermaidContent.value.querySelector('svg') && svgCache.value[theme]) {
-          renderSvgToTarget(mermaidContent.value, svgCache.value[theme]!)
+          const cached = svgCache.value[theme]!
+          const rendered = renderSvgToTarget(mermaidContent.value, cached.svg)
+          if (rendered) {
+            lastMermaidBindFunctions = cached.bindFunctions ?? null
+            bindMermaidInteractions(rendered.bindTarget)
+          }
         }
+        updateContainerHeight(undefined, { force: true })
         // 渲染已完成，清理后台任务
         cleanupAfterLoadingSettled()
         return
@@ -1825,8 +1842,10 @@ watch(
 watch(
   [() => props.estimatedPreviewHeightPx, () => baseFixedCode.value],
   () => {
-    if (!hasRenderedOnce.value && !showSource.value)
+    if (!hasRenderedOnce.value && !hasPreviewSvg() && !showSource.value) {
       containerHeight.value = resolveInitialContainerHeight()
+      contentHeight.value = containerHeight.value
+    }
   },
 )
 
@@ -2077,6 +2096,7 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
             <div
               ref="mermaidContent"
               class="_mermaid w-full text-center flex items-center justify-center min-h-full"
+              :style="{ height: contentHeight }"
             />
           </div>
         </div>
@@ -2150,7 +2170,7 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
   align-items: center;
   justify-content: center;
 }
-.icon-slot :deep(svg) {
+.icon-slot svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -2248,10 +2268,21 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
 
 /* ── Mermaid SVG content ── */
 ._mermaid {
+  position: relative;
   font-family: inherit;
   content-visibility: auto;
   contain: content;
   contain-intrinsic-size: var(--ms-size-diagram-min-height) 240px;
+}
+
+._mermaid :deep([data-mermaid-svg-layer]) {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 100%;
 }
 
 ._mermaid :deep(svg) {

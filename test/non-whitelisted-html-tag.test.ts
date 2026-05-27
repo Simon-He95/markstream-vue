@@ -92,7 +92,7 @@ describe('non-whitelisted custom HTML tags', () => {
     }
   })
 
-  it('renders closed non-whitelisted custom tag as raw HTML', async () => {
+  it('renders closed non-whitelisted custom tag as escaped text in safe mode', async () => {
     const scopeId = 'closed-unknown-tag'
     const markdown = `<echat-url>content</echat-url>`
     const wrapper = await mount(MarkdownRender, {
@@ -105,7 +105,7 @@ describe('non-whitelisted custom HTML tags', () => {
     await flushAll()
     try {
       const html = wrapper.html()
-      expect(html).toMatch(/<echat-url[^>]*>content<\/echat-url>/i)
+      expect(html).toContain('&lt;echat-url&gt;content&lt;/echat-url&gt;')
     }
     finally {
       wrapper.unmount()

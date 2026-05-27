@@ -1,9 +1,9 @@
-import type { MarkdownIt } from 'markdown-it-ts'
+import type { MarkdownIt } from '../markdown-it-types'
 
 export function applyRenderRules(md: MarkdownIt) {
-  // Narrow external `any` surface to `unknown` and use local casts where
+  // Narrow external loose surface to `unknown` and use local casts where
   // needed to interact with markdown-it runtime objects. This reduces the
-  // exported `any` footprint while preserving runtime behavior.
+  // exported type footprint while preserving runtime behavior.
   const defaultImage
     = md.renderer.rules.image
       || function (tokens: unknown, idx: number, options: unknown, env: unknown, self: unknown) {

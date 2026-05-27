@@ -263,7 +263,7 @@ export interface MarkdownToken {
   children?: MarkdownToken[]
   attrs?: [string, string][]
   markup?: string
-  meta?: any
+  meta?: unknown
   map?: [number, number]
   raw?: string
 }

@@ -31,7 +31,7 @@ vi.mock('../packages/markstream-angular/src/optional/mermaid', () => ({
       if (mermaidState.failOnBToC && source.includes('B-->C'))
         throw new Error('Incomplete mermaid graph')
       return {
-        svg: `<svg data-mermaid="1">${source}</svg>`,
+        svg: `<svg data-mermaid="1"><text>${source}</text></svg>`,
       }
     }),
   })),

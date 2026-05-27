@@ -36,12 +36,17 @@ Thanks for helping improve the project! This guide keeps contributions fast and 
 
 ## Releases & tags (monorepo)
 
-This repository publishes multiple packages (`markstream-vue`, `markstream-vue2`, `markstream-react`, `stream-markdown-parser`). To keep tags unambiguous, we use **namespaced tags**:
+This repository publishes multiple packages (`markstream-vue`, `markstream-vue2`, `markstream-react`, `markstream-angular`, `markstream-svelte`, `markstream-core`, `stream-markdown-parser`). To keep tags unambiguous, we use **namespaced tags**:
 
 - `markstream-vue@<version>`
 - `markstream-vue2@<version>`
 - `markstream-react@<version>`
+- `markstream-angular@<version>`
+- `markstream-svelte@<version>`
+- `markstream-core@<version>`
 - `stream-markdown-parser@<version>`
+
+Framework package releases now run an automated check that blocks publish when the required `markstream-core` version is not on npm yet. If it fails, release `markstream-core` first.
 
 Avoid creating bare `v<version>` tags (they mix different package versions in a monorepo).
 
@@ -54,7 +59,7 @@ Nightly tags can be **dependency-driven**: when `stream-markdown-parser` changes
 
 ### Common commands
 
-- Tag current version of a package: `pnpm tag:vue3` / `pnpm tag:vue2` / `pnpm tag:react` / `pnpm tag:parser`
-- Tag + push to remote: `pnpm tag:vue3:push` / `pnpm tag:vue2:push` / `pnpm tag:react:push` / `pnpm tag:parser:push`
+- Tag current version of a package: `pnpm tag:vue3` / `pnpm tag:vue2` / `pnpm tag:react` / `pnpm tag:angular` / `pnpm tag:core` / `pnpm tag:parser`
+- Tag + push to remote: `pnpm tag:vue3:push` / `pnpm tag:vue2:push` / `pnpm tag:react:push` / `pnpm tag:angular:push` / `pnpm tag:core:push` / `pnpm tag:parser:push`
 - Backfill namespaced tags from existing legacy `v*` tags (dry run): `pnpm tag:backfill:dry`
 - Apply backfill locally: `pnpm tag:backfill` (add `-- --push` to also push tags)

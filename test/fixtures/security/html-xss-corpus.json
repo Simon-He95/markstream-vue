@@ -1,0 +1,90 @@
+[
+  {
+    "name": "script tag",
+    "html": "<script>alert(1)</script>"
+  },
+  {
+    "name": "image event handler",
+    "html": "<img src=x onerror=alert(1)>"
+  },
+  {
+    "name": "javascript link",
+    "html": "<a href=\"javascript:alert(1)\">x</a>"
+  },
+  {
+    "name": "vbscript link",
+    "html": "<a href=\"vbscript:msgbox(1)\">x</a>"
+  },
+  {
+    "name": "iframe srcdoc",
+    "html": "<iframe srcdoc=\"<script>alert(1)</script>\"></iframe>"
+  },
+  {
+    "name": "svg event handler",
+    "html": "<svg onload=alert(1)>"
+  },
+  {
+    "name": "math javascript href",
+    "html": "<math href=\"javascript:alert(1)\">"
+  },
+  {
+    "name": "style javascript url",
+    "html": "<div style=\"background:url(javascript:alert(1))\">x</div>"
+  },
+  {
+    "name": "style import",
+    "html": "<div style=\"@import url(javascript:alert(1))\">x</div>"
+  },
+  {
+    "name": "object javascript data",
+    "html": "<object data=\"javascript:alert(1)\"></object>"
+  },
+  {
+    "name": "embed javascript src",
+    "html": "<embed src=\"javascript:alert(1)\">"
+  },
+  {
+    "name": "form javascript action",
+    "html": "<form action=\"javascript:alert(1)\"></form>"
+  },
+  {
+    "name": "data image svg href",
+    "html": "<a href=\"data:image/svg+xml,<svg onload=alert(1)>\">x</a>"
+  },
+  {
+    "name": "mixed case javascript",
+    "html": "<a href=\"JaVaScRiPt:alert(1)\">x</a>"
+  },
+  {
+    "name": "encoded entity protocol",
+    "html": "<a href=\"jav&#x61;script:alert(1)\">x</a>"
+  },
+  {
+    "name": "encoded whitespace javascript",
+    "html": "<a href=\"java&#x0A;script:alert(1)\">x</a>"
+  },
+  {
+    "name": "leading whitespace protocol",
+    "html": "<a href=\"   javascript:alert(1)\">x</a>"
+  },
+  {
+    "name": "svg data image",
+    "html": "<img src=\"data:image/svg+xml,<svg onload=alert(1)></svg>\">"
+  },
+  {
+    "name": "meta refresh",
+    "html": "<meta http-equiv=\"refresh\" content=\"0;url=javascript:alert(1)\">"
+  },
+  {
+    "name": "formaction javascript",
+    "html": "<button formaction=\"javascript:alert(1)\">x</button>"
+  },
+  {
+    "name": "style tag import",
+    "html": "<style>@import url(javascript:alert(1));</style>"
+  },
+  {
+    "name": "foreignObject iframe srcdoc",
+    "html": "<svg><foreignObject><iframe srcdoc=\"<script>alert(1)</script>\"></iframe></foreignObject></svg>"
+  }
+]

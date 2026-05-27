@@ -1,4 +1,14 @@
-export type InfographicLoader = () => Promise<any> | any
+export interface InfographicInstance {
+  render: (source: string) => unknown
+  destroy?: () => unknown
+  on?: (event: string, handler: (payload: unknown) => void) => unknown
+}
+
+export interface InfographicConstructor {
+  new (options: { container: HTMLElement, width?: string | number, height?: string | number }): InfographicInstance
+}
+
+export type InfographicLoader = () => Promise<unknown> | unknown
 
 const defaultInfographicLoader: InfographicLoader = () => import('@antv/infographic')
 
@@ -18,7 +28,7 @@ export function isInfographicEnabled() {
   return infographicLoader !== null
 }
 
-export async function getInfographic() {
+export async function getInfographic(): Promise<InfographicConstructor | null> {
   if (cachedInfographic)
     return cachedInfographic
 
@@ -58,5 +68,5 @@ export async function getInfographic() {
     cachedInfographic = defaultExport
   }
 
-  return cachedInfographic
+  return cachedInfographic as InfographicConstructor
 }

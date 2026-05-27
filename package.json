@@ -1,8 +1,8 @@
 {
   "name": "markstream-vue",
   "type": "module",
-  "version": "0.0.14-beta.2",
-  "packageManager": "pnpm@10.33.0",
+  "version": "1.0.1-beta.1",
+  "packageManager": "pnpm@10.33.4",
   "description": "Streaming-friendly Vue 3 Markdown renderer for docs sites, AI chat UIs, and large documents.",
   "author": "Simon He",
   "license": "MIT",
@@ -60,52 +60,46 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
+      "import": "./dist/index.js"
     },
     "./utils": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "import": "./dist/index.js"
     },
     "./utils/katex-threshold": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "types": "./dist/utils/katex-threshold.d.ts",
+      "import": "./dist/utils/katex-threshold.js"
     },
     "./utils/performance-monitor": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "types": "./dist/utils/performance-monitor.d.ts",
+      "import": "./dist/utils/performance-monitor.js"
     },
     "./utils/safeRaf": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/safeRaf.js",
-      "require": "./dist/safeRaf.js"
+      "types": "./dist/utils/safeRaf.d.ts",
+      "import": "./dist/utils/safeRaf.js"
     },
     "./index.css": "./dist/index.css",
     "./index.px.css": "./dist/index.px.css",
     "./index.tailwind.css": "./dist/index.tailwind.css",
-    "./tailwind": "./dist/tailwind.ts",
+    "./tailwind": {
+      "types": "./dist/tailwind.d.ts",
+      "import": "./dist/tailwind.js"
+    },
     "./workers/katexWorkerClient": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "types": "./dist/workers/katexWorkerClient.d.ts",
+      "import": "./dist/workers/katexWorkerClient.js"
     },
     "./workers/mermaidWorkerClient": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "types": "./dist/workers/mermaidWorkerClient.d.ts",
+      "import": "./dist/workers/mermaidWorkerClient.js"
     },
     "./workers/katexCdnWorker": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "types": "./dist/workers/katexCdnWorker.d.ts",
+      "import": "./dist/workers/katexCdnWorker.js"
     },
     "./workers/mermaidCdnWorker": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/exports.js",
-      "require": "./dist/exports.js"
+      "types": "./dist/workers/mermaidCdnWorker.d.ts",
+      "import": "./dist/workers/mermaidCdnWorker.js"
     },
     "./workers/katexRenderer.worker": "./dist/workers/katexRenderer.worker.js",
     "./workers/mermaidParser.worker": "./dist/workers/mermaidParser.worker.js"
@@ -113,26 +107,25 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": {
-    "markstream-vue": "./bin/markstream-vue.mjs"
-  },
   "files": [
-    ".agents",
-    "bin",
-    "dist",
-    "dist/workers",
-    "prompts"
+    "dist"
   ],
   "scripts": {
     "dev": "pnpm run -C playground dev",
     "test": "vitest",
+    "test:api": "pnpm test:api:strict",
+    "test:api:loose": "pnpm run build:parser && pnpm exec tsc -p tsconfig.public-api.node-no-dom.json --noEmit && pnpm run build && pnpm exec vue-tsc -p tsconfig.public-api.json --noEmit && pnpm exec vue-tsc -p tsconfig.public-api.package.json --noEmit && node scripts/check-public-api.mjs && node scripts/check-public-api-runtime.mjs && node scripts/check-package-exports.mjs && node scripts/check-subpath-isolation.mjs",
+    "test:api:strict": "pnpm run build:parser && pnpm exec tsc -p tsconfig.public-api.node-no-dom.json --noEmit && pnpm run build && pnpm exec vue-tsc -p tsconfig.public-api.json --noEmit && pnpm exec vue-tsc -p tsconfig.public-api.package.json --noEmit && node scripts/check-public-api.mjs --strict && node scripts/check-public-api-runtime.mjs && node scripts/check-package-exports.mjs && node scripts/check-subpath-isolation.mjs",
+    "test:api:update": "pnpm run build:parser && pnpm exec tsc -p tsconfig.public-api.node-no-dom.json --noEmit && pnpm run build && pnpm exec vue-tsc -p tsconfig.public-api.json --noEmit && pnpm exec vue-tsc -p tsconfig.public-api.package.json --noEmit && node scripts/check-public-api.mjs --update && node scripts/check-public-api-runtime.mjs && node scripts/check-package-exports.mjs && node scripts/check-subpath-isolation.mjs",
     "test:perf:height-estimation-experiment": "node scripts/benchmark-height-estimation-experiment.mjs",
     "test:e2e:diff-folding": "node scripts/e2e-diff-folding.mjs",
     "test:e2e:codeblock-highlight-stability": "node scripts/e2e-codeblock-highlight-stability.mjs",
     "test:e2e:height-estimation-experiment": "node scripts/e2e-height-estimation-experiment.mjs",
     "test:e2e:main-playground-performance": "node scripts/e2e-main-playground-performance.mjs",
     "test:e2e:playground-performance": "node scripts/e2e-playground-performance.mjs",
+    "benchmark:1.0": "node scripts/benchmark-1-0.mjs",
     "test:e2e:angular-playground": "node scripts/e2e-angular-playground.mjs",
+    "test:e2e:svelte-playground": "node scripts/e2e-svelte-playground.mjs",
     "test:e2e:diff-theme-switch": "node scripts/e2e-diff-theme-switch.mjs",
     "test:e2e:nuxt-ssr": "node scripts/e2e-nuxt-ssr.mjs",
     "test:e2e:katex-unicode-unit": "node scripts/e2e-katex-unicode-unit-regression.mjs",
@@ -141,8 +134,9 @@
     "test:ui": "vitest --ui",
     "test:update": "vitest -u",
     "typecheck": "vue-tsc --noEmit",
-    "check:ssr": "vitest --run -t \"SSR import safety\"",
-    "prepublishOnly": "npm run build",
+    "check:ssr": "vitest --run test/ssr-import.test.ts test/ssr-render-to-string.test.ts",
+    "release:verify": "pnpm run build:parser && pnpm run build:core && pnpm lint && pnpm typecheck && pnpm exec vitest --run --testTimeout=10000 && pnpm run test:api:strict && MARKSTREAM_SMOKE_SKIP_BUILD=1 pnpm run test:smoke:pack && MARKSTREAM_SMOKE_SKIP_BUILD=1 pnpm run test:smoke:pack:optional",
+    "prepublishOnly": "pnpm run build:parser && npm run build && pnpm run check:workspace-deps-published && MARKSTREAM_SMOKE_SKIP_BUILD=1 pnpm run test:smoke:pack && MARKSTREAM_SMOKE_SKIP_BUILD=1 pnpm run test:smoke:pack:optional",
     "play": "pnpm run -C playground dev",
     "play:angular": "pnpm run -C playground-angular dev",
     "play:vue2": "pnpm run -C playground-vue2 dev",
@@ -156,19 +150,23 @@
     "play:react": "pnpm run -C playground-react18 dev",
     "play:react18": "pnpm run -C playground-react18 dev",
     "play:react19": "pnpm run -C playground-react19 dev",
+    "play:svelte": "pnpm run -C playground-svelte dev",
     "play:next14": "pnpm run build:parser && pnpm --filter markstream-react build && pnpm run -C playground-next14 dev",
     "play:next15": "pnpm run build:parser && pnpm --filter markstream-react build && pnpm run -C playground-next15 dev",
     "play:angular:build": "pnpm run -C playground-angular build",
     "play:react:build": "pnpm run -C playground-react18 build",
     "play:react18:build": "pnpm run -C playground-react18 build",
     "play:react19:build": "pnpm run -C playground-react19 build",
+    "play:svelte:build": "pnpm run -C playground-svelte build",
     "play:angular:preview": "pnpm run -C playground-angular preview",
     "play:react:preview": "pnpm run -C playground-react18 preview",
     "play:react18:preview": "pnpm run -C playground-react18 preview",
     "play:react19:preview": "pnpm run -C playground-react19 preview",
+    "play:svelte:preview": "pnpm run -C playground-svelte preview",
     "preview": "pnpm run -C playground preview",
     "build:parser": "pnpm run -C packages/markdown-parser build",
-    "build": "vite build --mode npm && vite build --config vite.config.tailwind.ts --mode npm && node scripts/copy-tailwind-css.mjs && node scripts/generate-px-css.mjs && pnpm run build:dts",
+    "build:core": "pnpm run -C packages/markstream-core build",
+    "build": "pnpm run build:core && vite build --mode npm && node scripts/write-tailwind-types.mjs && vite build --config vite.config.tailwind.ts --mode npm && node scripts/copy-tailwind-css.mjs && node scripts/generate-px-css.mjs && pnpm run build:dts",
     "build:analyze": "ANALYZE=true pnpm build",
     "size:check": "node scripts/check-package-size.mjs",
     "docs:dev": "vitepress dev docs",
@@ -192,9 +190,19 @@
     "build:dts": "rollup -c ./scripts/rollup.dts.config.mjs && node ./scripts/clean-dts.cjs",
     "build:demo": "vite build",
     "build:view": "vite preview",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s -r 0",
-    "release": "bumpp --all --commit --no-tag --no-push --execute 'conventional-changelog -p angular -i CHANGELOG.md -s -r 0' && pnpm publish && node scripts/tag-package.mjs --package-json package.json --push",
+    "changelog": "conventional-changelog -p angular --tag-prefix markstream-vue@ -i CHANGELOG.md -s -r 1",
+    "release": "bumpp --all --commit --no-tag --no-push --execute 'conventional-changelog -p angular --tag-prefix markstream-vue@ -i CHANGELOG.md -s -r 1' && pnpm run check:workspace-deps-published && pnpm publish && node scripts/tag-package.mjs --package-json package.json --push",
     "release:angular": "pnpm run -C packages/markstream-angular release",
+    "release:parser": "pnpm run -C packages/markdown-parser release",
+    "release:gate:1.0": "pnpm run release:verify && pnpm run docs:build:ci && pnpm run size:check && pnpm run check:packed-workspace-deps && MARKSTREAM_RELEASE_GATE=1 MARKSTREAM_BENCHMARK_OUTPUT_DIR=.tmp/benchmark pnpm run benchmark:1.0",
+    "publish:parser:current": "node scripts/publish-current-package.mjs --package-json packages/markdown-parser/package.json",
+    "publish:core:current": "node scripts/publish-current-package.mjs --package-json packages/markstream-core/package.json",
+    "publish:vue3:current": "pnpm run check:workspace-deps-published && pnpm run check:packed-workspace-deps && node scripts/publish-current-package.mjs --package-json package.json",
+    "publish:parser:dry-run": "node scripts/publish-current-package.mjs --package-json packages/markdown-parser/package.json --dry-run",
+    "publish:core:dry-run": "node scripts/publish-current-package.mjs --package-json packages/markstream-core/package.json --dry-run",
+    "publish:vue3:dry-run": "pnpm run check:workspace-deps-local && pnpm run check:packed-workspace-deps && node scripts/publish-current-package.mjs --package-json package.json --dry-run",
+    "release:dry-run:1.0": "pnpm run release:gate:1.0 && pnpm run publish:parser:dry-run && pnpm run publish:core:dry-run && pnpm run publish:vue3:dry-run",
+    "release:1.0": "pnpm run release:gate:1.0 && pnpm run publish:parser:current && pnpm run publish:core:current && pnpm run publish:vue3:current",
     "tag": "node scripts/tag-package.mjs",
     "tag:vue3": "node scripts/tag-package.mjs --package-json package.json",
     "tag:vue3:push": "node scripts/tag-package.mjs --package-json package.json --push",
@@ -206,13 +214,25 @@
     "tag:angular:push": "node scripts/tag-package.mjs --package-json packages/markstream-angular/package.json --push",
     "tag:parser": "node scripts/tag-package.mjs --package-json packages/markdown-parser/package.json",
     "tag:parser:push": "node scripts/tag-package.mjs --package-json packages/markdown-parser/package.json --push",
+    "tag:core": "node scripts/tag-package.mjs --package-json packages/markstream-core/package.json",
+    "tag:core:push": "node scripts/tag-package.mjs --package-json packages/markstream-core/package.json --push",
+    "release:core": "pnpm run -C packages/markstream-core release",
     "tag:backfill:dry": "node scripts/backfill-legacy-tags.mjs --dry-run",
     "tag:backfill": "node scripts/backfill-legacy-tags.mjs --apply",
     "tag:prune:v:dry": "node scripts/prune-tags.mjs --pattern 'v*' --dry-run",
     "tag:prune:v:local": "node scripts/prune-tags.mjs --pattern 'v*' --apply --local",
     "tag:prune:v:all": "node scripts/prune-tags.mjs --pattern 'v*' --apply --local --remote-delete",
     "check:peer-deps": "node ./scripts/check-peer-deps.cjs",
+    "check:core-published": "node ./scripts/check-core-published.mjs --package-json package.json --core-package-json packages/markstream-core/package.json",
+    "check:workspace-deps-local": "node ./scripts/check-workspace-deps-local.mjs",
+    "check:workspace-deps-published": "node ./scripts/check-workspace-deps-published.mjs",
+    "check:packed-workspace-deps": "node ./scripts/check-packed-workspace-deps.mjs --package-json package.json",
     "test:e2e:link-tooltip-streaming": "node scripts/e2e-link-tooltip-streaming.mjs",
+    "test:smoke:core": "pnpm run -C packages/markstream-core build && node -e \"import('markstream-core').then((m) => { if (!m.createSmoothMarkdownStream) process.exit(1) })\" && node -e \"const { createRequire } = require('node:module'); const req = createRequire(process.cwd() + '/'); const m = req('markstream-core'); if (!m.createSmoothMarkdownStream) process.exit(1)\"",
+    "test:smoke:minimal": "node scripts/smoke-minimal-install.mjs",
+    "test:smoke:pack": "node scripts/smoke-packed-package.mjs",
+    "test:smoke:pack:optional": "MARKSTREAM_SMOKE_WITH_OPTIONAL_PEERS=1 node scripts/smoke-packed-package.mjs",
+    "test:smoke:vue2-cjs": "pnpm run -C packages/markstream-core build && pnpm run -C packages/markstream-vue2 build && node -e \"const { createRequire } = require('node:module'); const path = require('node:path'); const req = createRequire(path.resolve('./packages/markstream-vue2/dist/index.cjs')); req('markstream-core')\"",
     "test:e2e:vue2-cli-smoke": "node scripts/e2e-vue2-cli-smoke.mjs",
     "test:e2e:math-streaming-stability": "node scripts/e2e-math-streaming-stability.mjs",
     "test:e2e:next14-ssr": "node scripts/e2e-next-ssr.mjs --playground playground-next14 --version next14",
@@ -225,7 +245,7 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "stream-markdown": ">=0.0.15",
-    "stream-monaco": ">=0.0.40",
+    "stream-monaco": ">=0.0.41",
     "vue": ">=3.0.0",
     "vue-i18n": ">=9"
   },
@@ -255,6 +275,7 @@
   "dependencies": {
     "@chenglou/pretext": "^0.0.5",
     "@floating-ui/dom": "^1.7.6",
+    "markstream-core": "workspace:*",
     "stream-markdown-parser": "workspace:*"
   },
   "devDependencies": {
@@ -262,10 +283,12 @@
     "@shikijs/vitepress-twoslash": "^4.0.2",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/node": "^18.19.130",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-vue": "^5.2.4",
-    "@vitest/ui": "^4.1.2",
-    "@vue/test-utils": "^2.4.6",
-    "autoprefixer": "^10.4.27",
+    "@vitest/ui": "^4.1.6",
+    "@vue/test-utils": "^2.4.10",
+    "autoprefixer": "^10.5.0",
     "brotli-compress": "^1.3.3",
     "bumpp": "^8.2.1",
     "conventional-changelog-cli": "^5.0.0",
@@ -274,26 +297,28 @@
     "lint-staged": "^13.3.0",
     "lz-string": "^1.5.0",
     "markdown-it-emoji": "^3.0.0",
-    "material-icon-theme": "^5.33.1",
+    "material-icon-theme": "^5.34.0",
     "picocolors": "^1.1.1",
-    "playwright-core": "^1.59.0",
+    "playwright-core": "^1.60.0",
     "postcss-cli": "^11.0.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "rollup": "^3.30.0",
     "rollup-plugin-dts": "^5.3.1",
     "rollup-plugin-visualizer": "^6.0.11",
     "tailwindcss": "^3.4.19",
-    "terser": "^5.46.1",
-    "tsx": "^4.21.0",
+    "terser": "^5.47.1",
+    "tsx": "^4.22.0",
     "typescript": "^5.9.3",
     "unplugin-class-extractor": "^0.0.22",
     "unplugin-vue-components": "^28.8.0",
-    "vite": "^7.3.1",
+    "vite": "^7.3.3",
     "vite-plugin-dts": "^4.5.4",
     "vite-plugin-pages": "^0.33.3",
     "vite-svg-loader": "^5.1.1",
     "vitepress": "^1.6.4",
-    "vitest": "^4.1.2",
-    "vue": "^3.5.31",
+    "vitest": "^4.1.6",
+    "vue": "^3.5.34",
     "vue-tsc": "^2.2.12"
   },
   "pnpm": {

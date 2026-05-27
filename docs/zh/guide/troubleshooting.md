@@ -16,7 +16,7 @@
 
   快速修复：
 
-  - 将 `markstream-vue/index.css` 放进 `@layer components { ... }`（详见 Tailwind 页面），稳定 CSS 顺序。
+  - 使用 `@import 'markstream-vue/index.css' layer(components);` 导入（详见 Tailwind 页面），稳定 CSS 顺序。
   - Tailwind 里设置 `prefix`（例如 `tw-`）减少与组件库 class 冲突。
   - 用容器选择器或 `:deep` 把覆盖范围限制在渲染区域。
 
@@ -69,12 +69,10 @@
 @import 'markstream-vue/index.css';
 ```
 
-2. **使用 CSS layer** —— Tailwind/UnoCSS 在 `@layer components`/`utilities` 中输出工具类，如果包的 CSS 在这些 layer 之前导入，样式可能被覆盖。把库的样式包裹在 layer 里：
+2. **使用 CSS layer** —— Tailwind/UnoCSS 在 `@layer components`/`utilities` 中输出工具类，如果包的 CSS 在这些 layer 之前导入，样式可能被覆盖。使用 `@import '...' layer(components)` 把库的样式放进指定 layer：
 
 ```css
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 UnoCSS 也可以通过 `preflights` 注入：

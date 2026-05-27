@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CodeBlockMonacoTheme, CodeBlockNodeProps } from '../../types/component-props'
+import type { CodeBlockMonacoTheme, CodeBlockNodeProps, CodeBlockPreviewPayload } from '../../types/component-props'
 import type { MonacoDiffEditorViewLike, MonacoDisposableLike, MonacoEditorViewLike, MonacoNamespaceLike, MonacoRuntimeOptions } from './monaco'
 // Avoid static import of `stream-monaco` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
@@ -44,7 +44,10 @@ const props = withDefaults(
   },
 )
 
-const emits = defineEmits(['previewCode', 'copy'])
+const emits = defineEmits<{
+  (e: 'previewCode', payload: CodeBlockPreviewPayload): void
+  (e: 'copy', code: string): void
+}>()
 
 // Chrome warns when Monaco registers non-passive touchstart listeners.
 // Scope the workaround to editor boot so the host page prototype is restored.
@@ -222,12 +225,16 @@ let runtimeMonacoOptions: MonacoRuntimeOptions | null = null
 const isDiff = computed(() => props.node.diff)
 const diffStats = ref({ removed: 0, added: 0 })
 const diffStatsAriaLabel = computed(() => `-${diffStats.value.removed} +${diffStats.value.added}`)
-const disabledDiffHideUnchangedRegions = Object.freeze({ enabled: false })
 const defaultDiffHideUnchangedRegions = Object.freeze({
   enabled: true,
   contextLineCount: 2,
   minimumLineCount: 4,
   revealLineCount: 5,
+})
+const disabledDiffHideUnchangedRegions = Object.freeze({
+  ...defaultDiffHideUnchangedRegions,
+  enabled: false,
+  revealLineCount: 0,
 })
 function resolveDiffHideUnchangedRegionsOption(value: unknown) {
   if (typeof value === 'boolean')
@@ -609,7 +616,7 @@ function getVerticalPaddingSafe(editor: MonacoEditorViewLike | null | undefined)
   }
   catch {}
 
-  const rawPadding = (resolvedMonacoOptions.value as Record<string, any> | undefined)?.padding as { top?: unknown, bottom?: unknown } | undefined
+  const rawPadding = (resolvedMonacoOptions.value as Record<string, unknown> | undefined)?.padding as { top?: unknown, bottom?: unknown } | undefined
   const top = typeof rawPadding?.top === 'number' ? rawPadding.top : 0
   const bottom = typeof rawPadding?.bottom === 'number' ? rawPadding.bottom : 0
   if (top > 0 || bottom > 0)
@@ -2245,15 +2252,14 @@ watch(
                 catch {}
               }
               syncRuntimeMonacoOptions()
-              const pair = resolveDiffRenderPair(
-                String(props.node.originalCode ?? ''),
-                String(props.node.updatedCode ?? ''),
-              )
-              await updateDiffCode(
-                pair.original,
-                pair.updated,
-                monacoLanguage.value,
-              )
+              editorMounted.value = false
+              editorDisplayReady.value = false
+              editorCreated.value = false
+              clearEditorHeightSyncBindings()
+              clearInlineFoldProxies()
+              safeClean()
+              await nextTick()
+              await ensureEditorCreation(codeEditor.value as HTMLElement)
               if (isUnmounted || !isDiff.value)
                 return
               refreshDiffPresentation()
@@ -2383,6 +2389,8 @@ onUnmounted(() => {
       <HtmlPreviewFrame
         v-if="showInlinePreview && !hasPreviewListener && isPreviewable && codeLanguage === 'html'"
         :code="props.node.code"
+        :html-preview-allow-scripts="props.htmlPreviewAllowScripts"
+        :html-preview-sandbox="props.htmlPreviewSandbox"
         :is-dark="props.isDark"
         :on-close="() => (showInlinePreview = false)"
       />

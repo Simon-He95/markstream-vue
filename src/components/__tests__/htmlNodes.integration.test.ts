@@ -158,6 +158,89 @@ describe('htmlBlockNode - Custom Components Integration', () => {
     expect(wrapper.html()).not.toContain('alert(1)')
   })
 
+  it('should block active HTML tags by default', async () => {
+    const wrapper = mount(HtmlBlockNode, {
+      props: {
+        node: {
+          content: '<div>Safe</div><iframe src="https://example.com"></iframe><form><button>Submit</button></form>',
+          loading: false,
+        },
+        customId: testId,
+      },
+    })
+
+    await nextTick()
+
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.text()).toBe('Safe')
+  })
+
+  it('should allow broader HTML tags with trusted policy', async () => {
+    const wrapper = mount(HtmlBlockNode, {
+      props: {
+        node: {
+          content: '<iframe src="https://example.com"></iframe><div>Safe</div>',
+          loading: false,
+        },
+        customId: testId,
+        htmlPolicy: 'trusted',
+      },
+    })
+
+    await nextTick()
+
+    expect(wrapper.find('iframe').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Safe')
+  })
+
+  it('should render custom-looking HTML as text with escape policy', async () => {
+    const wrapper = mount(HtmlBlockNode, {
+      props: {
+        node: {
+          content: '<testcomp data-type="safe">Content</testcomp>',
+          loading: false,
+        },
+        customId: testId,
+        htmlPolicy: 'escape',
+      },
+    })
+
+    await nextTick()
+
+    expect(wrapper.find('.test-component').exists()).toBe(false)
+    expect(wrapper.text()).toContain('<testcomp data-type="safe">Content</testcomp>')
+  })
+
+  it('should inherit htmlPolicy through nested NodeRenderer instances', async () => {
+    const wrapper = mount(MarkdownRender, {
+      props: {
+        htmlPolicy: 'trusted',
+        batchRendering: false,
+        deferNodesUntilVisible: false,
+        nodes: [
+          {
+            type: 'blockquote',
+            raw: '',
+            children: [
+              {
+                type: 'html_block',
+                content: '<iframe src="https://example.com"></iframe>',
+                raw: '<iframe src="https://example.com"></iframe>',
+                loading: false,
+              },
+            ],
+          },
+        ] as any,
+      },
+    })
+
+    await flushAll()
+    await nextTick()
+
+    expect(wrapper.find('blockquote iframe').exists()).toBe(true)
+  })
+
   it('should pass props correctly to custom components', () => {
     const wrapper = mount(HtmlBlockNode, {
       props: {
@@ -443,7 +526,7 @@ describe('component Behavior', () => {
     const htmlBlock = wrapper.find('.html-block-node')
     expect(htmlBlock.exists()).toBe(true)
     expect(htmlBlock.element.tagName).toBe('SPAN')
-    expect(htmlBlock.attributes('style')).toContain('font-size: 12px;')
+    expect(htmlBlock.attributes('style')).toBeUndefined()
     expect(wrapper.findAll('ul')).toHaveLength(1)
     expect(wrapper.findAll('ol')).toHaveLength(1)
 
@@ -624,6 +707,7 @@ Markstream 现在不仅要处理单次完整渲染，还要处理 AI 场景下�
     expect(details.exists()).toBe(true)
     expect(details.element.firstElementChild?.tagName).toBe('SUMMARY')
     expect(details.find('summary').text()).toBe('展开看一段 HTML')
+    expect(details.find('summary > p.paragraph-node').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('<summary>')
     expect(wrapper.text()).not.toContain('</details>')
   })
@@ -642,9 +726,9 @@ Markstream 现在不仅要处理单次完整渲染，还要处理 AI 场景下�
               content: '<summary>outer</summary>',
               children: [
                 {
-                  type: 'paragraph',
+                  type: 'text',
                   raw: 'outer',
-                  children: [{ type: 'text', raw: 'outer', content: 'outer' }],
+                  content: 'outer',
                 },
               ],
             },
@@ -665,9 +749,9 @@ Markstream 现在不仅要处理单次完整渲染，还要处理 AI 场景下�
                   content: '<summary>inner</summary>',
                   children: [
                     {
-                      type: 'paragraph',
+                      type: 'text',
                       raw: 'inner',
-                      children: [{ type: 'text', raw: 'inner', content: 'inner' }],
+                      content: 'inner',
                     },
                   ],
                 },
@@ -695,6 +779,8 @@ Markstream 现在不仅要处理单次完整渲染，还要处理 AI 场景下�
     expect(detailsNodes).toHaveLength(2)
     expect(detailsNodes[0].element.firstElementChild?.tagName).toBe('SUMMARY')
     expect(detailsNodes[1].element.firstElementChild?.tagName).toBe('SUMMARY')
+    expect(detailsNodes[0].find('summary > p.paragraph-node').exists()).toBe(false)
+    expect(detailsNodes[1].find('summary > p.paragraph-node').exists()).toBe(false)
     expect(detailsNodes[0].find('summary').text()).toBe('outer')
     expect(detailsNodes[1].find('summary').text()).toBe('inner')
   })

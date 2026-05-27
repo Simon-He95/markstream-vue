@@ -1,7 +1,9 @@
 <script setup lang="ts">
 // 定义链接节点
+import { shouldOpenLinkInNewTab } from 'stream-markdown-parser'
 import { computed, nextTick, onBeforeUnmount, onMounted, onUpdated, ref, useAttrs } from 'vue-demi'
 import { ensureTooltipMounted, hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
+import { sanitizeAttrs } from '../../utils/htmlRenderer'
 import EmphasisNode from '../EmphasisNode/EmphasisNode.vue'
 import HtmlInlineNode from '../HtmlInlineNode'
 import ImageNode from '../ImageNode'
@@ -110,17 +112,52 @@ const nodeComponents = {
 
 // forward any non-prop attributes (e.g. custom-id) to the rendered element
 const attrs = useAttrs()
+const nodeAttrs = computed(() => {
+  const rawAttrs = (props.node as any)?.attrs
+  if (!rawAttrs || typeof rawAttrs !== 'object')
+    return {}
+
+  const normalized: Record<string, string> = {}
+
+  if (Array.isArray(rawAttrs)) {
+    for (const attr of rawAttrs) {
+      if (!Array.isArray(attr) || !attr[0])
+        continue
+      normalized[String(attr[0])] = String(attr[1] ?? '')
+    }
+  }
+  else {
+    for (const [key, value] of Object.entries(rawAttrs)) {
+      if (!key || value == null || value === false)
+        continue
+      normalized[key] = value === true ? '' : String(value)
+    }
+  }
+
+  return sanitizeAttrs(normalized)
+})
 const anchorEl = ref<HTMLElement | null>(null)
 const isHovering = ref(false)
 const anchorAttrs = computed(() => {
-  const merged = { ...(attrs as Record<string, unknown>) }
+  const merged = {
+    ...(attrs as Record<string, unknown>),
+    ...nodeAttrs.value,
+  }
   // `title` is controlled by `showTooltip` behavior and should not be overridden.
   delete (merged as Record<string, unknown>).title
+  delete (merged as Record<string, unknown>).href
+  delete (merged as Record<string, unknown>).target
+  delete (merged as Record<string, unknown>).rel
   return merged
 })
+const safeHref = computed(() => {
+  const href = String(props.node?.href ?? '')
+  return sanitizeAttrs({ href }).href
+})
+const openInNewTab = computed(() => shouldOpenLinkInNewTab(safeHref.value))
 
 function getTooltipText() {
-  return props.node?.title || props.node?.href || props.node?.text || ''
+  return props.node?.title || safeHref.value || props.node?.text || ''
 }
 
 function isPointerInsideAnchor(el: HTMLElement | null) {
@@ -169,7 +206,7 @@ const title = computed(() => {
   const rawTitle = props.node?.title
   if (typeof rawTitle === 'string' && rawTitle.trim().length > 0)
     return rawTitle
-  return String(props.node?.href ?? '')
+  return String(safeHref.value ?? '')
 })
 
 onMounted(() => {
@@ -199,12 +236,12 @@ onBeforeUnmount(() => {
     v-if="!node.loading"
     ref="anchorEl"
     class="link-node"
-    :href="node.href"
+    :href="safeHref"
     :title="showTooltip ? '' : title"
     :aria-label="`Link: ${title}`"
     :aria-hidden="node.loading ? 'true' : 'false'"
-    target="_blank"
-    rel="noopener noreferrer"
+    :target="openInNewTab ? '_blank' : undefined"
+    :rel="openInNewTab ? 'noopener noreferrer' : undefined"
     v-bind="anchorAttrs"
     :style="cssVars"
     @mouseenter="(e) => onAnchorEnter(e)"

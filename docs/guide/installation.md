@@ -66,9 +66,7 @@ The package entry already imports the default stylesheet, but when your app uses
 @import 'modern-css-reset';
 @tailwind base;
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 Also import KaTeX CSS when you use math:

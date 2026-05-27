@@ -235,6 +235,9 @@ export class NodeOutletComponent {
     if (type !== 'html_block' && type !== 'html_inline')
       return false
 
+    if (this.context?.htmlPolicy === 'escape')
+      return true
+
     const tag = this.htmlTag
     if (!tag)
       return false

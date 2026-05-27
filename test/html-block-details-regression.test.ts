@@ -39,8 +39,8 @@ describe('html block details regression', () => {
     expect(summary?.type).toBe('html_block')
     expect(summary?.tag).toBe('summary')
     expect(summary?.attrs).toBeUndefined()
-    expect(summary?.children?.[0]?.type).toBe('paragraph')
-    expect(summary?.children?.[0]?.children?.[0]?.content).toContain('Thinking')
+    expect(summary?.children?.[0]?.type).toBe('text')
+    expect(summary?.children?.[0]?.content).toContain('Thinking')
     expect(introParagraph?.type).toBe('paragraph')
     expect(introParagraph?.children?.[0]?.content).toContain('这里是详情')
     expect(details?.children?.[2]?.type).toBe('paragraph')
@@ -169,17 +169,16 @@ body
     const nodes = parseMarkdownToStructure(markdown, md, { final: true }) as any[]
     const details = nodes[0]
     const summary = details?.children?.[0]
-    const summaryParagraph = summary?.children?.[0]
+    const summaryChildren = summary?.children ?? []
 
     expect(nodes).toHaveLength(1)
     expect(details?.tag).toBe('details')
     expect(summary?.tag).toBe('summary')
     expect(details?.attrs).toEqual([['open', '']])
-    expect(summaryParagraph?.type).toBe('paragraph')
-    expect(summaryParagraph?.children?.[0]?.type).toBe('strong')
-    expect(summaryParagraph?.children?.[0]?.children?.[0]?.content).toBe('sum')
-    expect(summaryParagraph?.children?.[2]?.type).toBe('emphasis')
-    expect(summaryParagraph?.children?.[2]?.children?.[0]?.content).toBe('x')
+    expect(summaryChildren?.[0]?.type).toBe('strong')
+    expect(summaryChildren?.[0]?.children?.[0]?.content).toBe('sum')
+    expect(summaryChildren?.[2]?.type).toBe('emphasis')
+    expect(summaryChildren?.[2]?.children?.[0]?.content).toBe('x')
     expect(details?.children?.[1]?.children?.[0]?.content).toBe('body')
   })
 
@@ -204,7 +203,7 @@ para
     expect(details?.children?.map((child: any) => child?.type === 'html_block' ? `${child?.type}:${child?.tag}` : child?.type))
       .toEqual(['paragraph', 'html_block:summary', 'paragraph', 'html_block:div', 'paragraph'])
     expect(details?.children?.[0]?.children?.[0]?.content).toBe('lead')
-    expect(details?.children?.[1]?.children?.[0]?.children?.[0]?.content).toBe('sum')
+    expect(details?.children?.[1]?.children?.[0]?.content).toBe('sum')
     expect(details?.children?.[2]?.children?.[0]?.content).toBe('text')
     expect(details?.children?.[3]?.tag).toBe('div')
     expect(details?.children?.[4]?.children?.[0]?.content).toBe('para')

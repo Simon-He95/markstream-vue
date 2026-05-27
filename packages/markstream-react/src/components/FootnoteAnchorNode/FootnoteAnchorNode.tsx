@@ -14,9 +14,9 @@ export function FootnoteAnchorNode(props: NodeComponentProps<{ type: 'footnote_a
 
   return (
     <a
-      className="footnote-anchor text-sm text-[#0366d6] hover:underline cursor-pointer"
+      className="footnote-anchor text-sm hover:underline cursor-pointer"
       href={`#fnref-${node.id}`}
-      title={`Back to reference ${node.id}`}
+      title={`返回引用 ${node.id}`}
       onClick={handleScroll}
     >
       ↩︎

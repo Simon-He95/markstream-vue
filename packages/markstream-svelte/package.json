@@ -1,0 +1,98 @@
+{
+  "name": "markstream-svelte",
+  "type": "module",
+  "version": "0.0.1-beta.5",
+  "description": "Svelte Markdown renderer for Markstream, aligned with markstream-vue and markstream-react.",
+  "author": "Simon He",
+  "license": "MIT",
+  "homepage": "https://github.com/Simon-He95/markstream-vue#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Simon-He95/markstream-vue.git",
+    "directory": "packages/markstream-svelte"
+  },
+  "bugs": {
+    "url": "https://github.com/Simon-He95/markstream-vue/issues"
+  },
+  "keywords": [
+    "svelte",
+    "markdown",
+    "markdown-renderer",
+    "streaming-markdown",
+    "markstream",
+    "markstream-svelte"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "svelte": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "svelte": "./dist/index.js",
+      "import": "./dist/index.js"
+    },
+    "./index.css": "./dist/index.css",
+    "./index.px.css": "./dist/index.px.css",
+    "./index.tailwind.css": "./dist/index.tailwind.css",
+    "./workers/katexRenderer.worker": "./dist/workers/katexRenderer.worker.js",
+    "./workers/mermaidParser.worker": "./dist/workers/mermaidParser.worker.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "pnpm --dir ../markstream-core build && svelte-package -i src -o dist && postcss src/index.css -o dist/index.css && cp dist/index.css dist/index.tailwind.css && node ../../scripts/generate-px-css.mjs",
+    "dev": "vite dev",
+    "preview": "vite preview",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "prepublishOnly": "pnpm run build && pnpm run check:core-published",
+    "check:core-published": "node ../../scripts/check-core-published.mjs --package-json package.json --core-package-json ../markstream-core/package.json",
+    "release": "pnpm run check:core-published && bumpp --commit --no-tag --no-push && pnpm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
+  },
+  "peerDependencies": {
+    "@antv/infographic": "^0.2.3",
+    "@terrastruct/d2": ">=0.1.33",
+    "katex": ">=0.16.22",
+    "mermaid": ">=11",
+    "stream-monaco": ">=0.0.41",
+    "svelte": ">=5 <6"
+  },
+  "peerDependenciesMeta": {
+    "@antv/infographic": {
+      "optional": true
+    },
+    "@terrastruct/d2": {
+      "optional": true
+    },
+    "katex": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    },
+    "stream-monaco": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.7.6",
+    "markstream-core": "workspace:*",
+    "stream-markdown-parser": "workspace:*"
+  },
+  "devDependencies": {
+    "@sveltejs/package": "^2.5.7",
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "@types/node": "^18.19.130",
+    "autoprefixer": "^10.5.0",
+    "postcss-cli": "^11.0.1",
+    "svelte": "^5.55.7",
+    "svelte-check": "^4.4.8",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.3"
+  }
+}

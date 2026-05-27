@@ -1,5 +1,14 @@
-import type { App, Component, Plugin } from 'vue'
+import type { MathOptions } from 'stream-markdown-parser'
+import type { App, Component, DefineComponent, Plugin } from 'vue'
 import type { CustomComponents as MarkstreamCustomComponents } from './types'
+import type {
+  CodeBlockNodeProps,
+  D2BlockNodeProps,
+  InfographicBlockNodeProps,
+  MathBlockNodeProps,
+  MathInlineNodeProps,
+  MermaidBlockNodeProps,
+} from './types/component-props'
 import type { LanguageIconResolver } from './utils/languageIcon'
 import { setDefaultMathOptions } from 'stream-markdown-parser'
 import { defineAsyncComponent } from 'vue'
@@ -42,25 +51,36 @@ import ThematicBreakNode from './components/ThematicBreakNode'
 import Tooltip from './components/Tooltip'
 import VmrContainerNode from './components/VmrContainerNode'
 import { setDefaultI18nMap } from './composables/useSafeI18n'
+import { useSmoothMarkdownStream } from './composables/useSmoothMarkdownStream'
 import { setIconTheme } from './icon-themes'
 import { setLanguageIconResolver } from './utils/languageIcon'
-import { clearGlobalCustomComponents, getCustomNodeComponents, removeCustomComponents, setCustomComponents } from './utils/nodeComponents'
+import { clearGlobalCustomComponents, createCustomComponentsRef, getCustomNodeComponents, MARKSTREAM_CUSTOM_COMPONENTS_KEY, removeCustomComponents, setCustomComponents } from './utils/nodeComponents'
 import './index.css'
 // Re-add top-level worker imports so builds emit worker bundles into `dist/`
 import './workers/katexRenderer.worker?worker'
 import './workers/mermaidParser.worker?worker'
 
-const CodeBlockNode = defineAsyncComponent(() => import('./components/CodeBlockNode'))
-const MathBlockNode = defineAsyncComponent(() => import('./components/MathBlockNode'))
-const MathInlineNode = defineAsyncComponent(() => import('./components/MathInlineNode'))
-const MermaidBlockNode = defineAsyncComponent(() => import('./components/MermaidBlockNode'))
-const InfographicBlockNode = defineAsyncComponent(() => import('./components/InfographicBlockNode'))
-const D2BlockNode = defineAsyncComponent(() => import('./components/D2BlockNode'))
+function definePublicAsyncComponent<TProps extends object>(
+  loader: () => Promise<{ default: Component }>,
+): DefineComponent<TProps> {
+  return defineAsyncComponent(loader) as DefineComponent<TProps>
+}
+
+const CodeBlockNode = definePublicAsyncComponent<CodeBlockNodeProps>(() => import('./components/CodeBlockNode'))
+const MathBlockNode = definePublicAsyncComponent<MathBlockNodeProps>(() => import('./components/MathBlockNode'))
+const MathInlineNode = definePublicAsyncComponent<MathInlineNodeProps>(() => import('./components/MathInlineNode'))
+const MermaidBlockNode = definePublicAsyncComponent<MermaidBlockNodeProps>(() => import('./components/MermaidBlockNode'))
+const InfographicBlockNode = definePublicAsyncComponent<InfographicBlockNodeProps>(() => import('./components/InfographicBlockNode'))
+const D2BlockNode = definePublicAsyncComponent<D2BlockNodeProps>(() => import('./components/D2BlockNode'))
 
 export type { D2Loader } from './components/D2BlockNode/d2'
 export type { KatexLoader } from './components/MathInlineNode/katex'
 
 export type { MermaidLoader } from './components/MermaidBlockNode/mermaid'
+export type {
+  SmoothMarkdownStreamController,
+  SmoothMarkdownStreamOptions,
+} from './composables/useSmoothMarkdownStream'
 export type {
   CodeBlockDiffAppearance,
   CodeBlockDiffHideUnchangedRegions,
@@ -75,11 +95,13 @@ export type {
   CodeBlockMonacoTheme,
   CodeBlockMonacoThemeObject,
   CodeBlockNodeProps,
+  CodeBlockPreviewPayload,
   CodeBlockThemeProp,
   D2BlockNodeProps,
   ImageNodeProps,
   InfographicBlockNodeProps,
   LinkNodeProps,
+  MarkdownCodeBlockPreviewPayload,
   MathBlockNodeProps,
   MathInlineNodeProps,
   MermaidBlockEvent,
@@ -97,6 +119,13 @@ export { KATEX_COMMANDS, normalizeStandaloneBackslashT, setDefaultMathOptions } 
 export type { MathOptions } from 'stream-markdown-parser'
 
 export interface CustomComponents extends MarkstreamCustomComponents {}
+
+export interface MarkstreamVuePluginOptions {
+  components?: Partial<MarkstreamCustomComponents>
+  getLanguageIcon?: LanguageIconResolver
+  iconTheme?: string
+  mathOptions?: MathOptions
+}
 
 export {
   AdmonitionNode,
@@ -155,6 +184,7 @@ export {
   TextNode,
   ThematicBreakNode,
   Tooltip,
+  useSmoothMarkdownStream,
   VmrContainerNode,
 }
 
@@ -202,7 +232,7 @@ const componentMap: Record<string, Component> = {
 }
 
 export const VueRendererMarkdown: Plugin = {
-  install(app: App, options?: { getLanguageIcon?: LanguageIconResolver, iconTheme?: string, mathOptions?: any }) {
+  install(app: App, options?: MarkstreamVuePluginOptions) {
     Object.entries(componentMap).forEach(([name, component]) => {
       app.component(name, component)
     })
@@ -215,5 +245,7 @@ export const VueRendererMarkdown: Plugin = {
     // avoid importing inside module scope to keep SSR safe
     if (options?.mathOptions)
       setDefaultMathOptions(options.mathOptions)
+    if (options?.components)
+      app.provide(MARKSTREAM_CUSTOM_COMPONENTS_KEY, createCustomComponentsRef(options.components))
   },
 }

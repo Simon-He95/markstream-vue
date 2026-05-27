@@ -1,4 +1,5 @@
-/* eslint-disable antfu/no-import-node-modules-by-path */
+import React, { act, StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 /**
  * @vitest-environment jsdom
  *
@@ -9,8 +10,6 @@
  * This prevents content loss and ensures surrounding Markdown renders correctly.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import React, { act, StrictMode } from '../packages/markstream-react/node_modules/react'
-import { createRoot } from '../packages/markstream-react/node_modules/react-dom/client'
 import { HtmlBlockNode } from '../packages/markstream-react/src/components/HtmlBlockNode/HtmlBlockNode'
 import { HtmlInlineNode } from '../packages/markstream-react/src/components/HtmlInlineNode/HtmlInlineNode'
 import { NodeRenderer } from '../packages/markstream-react/src/components/NodeRenderer'
@@ -64,6 +63,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
             customId: scopeId,
             customHtmlTags: ['my-tag'],
             final: true,
+            smoothStreaming: false,
           })),
         )
       })
@@ -93,6 +93,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
         })),
       )
     })
@@ -152,6 +153,153 @@ describe('react: non-whitelisted custom HTML tags', () => {
     root.unmount()
   })
 
+  it('blocks active html tags by default and allows them with trusted policy', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+
+    await act(async () => {
+      root.render(
+        React.createElement(StrictMode, null, React.createElement(NodeRenderer as any, {
+          nodes: [
+            {
+              type: 'html_block',
+              content: '<div>Safe</div><iframe src="https://example.com"></iframe><form><input name="q"></form>',
+              raw: '',
+            },
+          ],
+          final: true,
+          smoothStreaming: false,
+        })),
+      )
+    })
+    await flushReact()
+
+    expect(host.querySelector('iframe')).toBeNull()
+    expect(host.querySelector('form')).toBeNull()
+    expect(host.querySelector('input')).toBeNull()
+
+    await act(async () => {
+      root.render(
+        React.createElement(StrictMode, null, React.createElement(NodeRenderer as any, {
+          nodes: [
+            {
+              type: 'html_block',
+              content: '<iframe src="https://example.com"></iframe>',
+              raw: '',
+            },
+          ],
+          htmlPolicy: 'trusted',
+          final: true,
+          smoothStreaming: false,
+        })),
+      )
+    })
+    await flushReact()
+
+    expect(host.querySelector('iframe')).toBeTruthy()
+
+    root.unmount()
+  })
+
+  it('keeps registered custom components live while rendering unknown tags as literal text on the dynamic path', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    const MyComp: React.FC<React.PropsWithChildren> = ({ children }) => (
+      <mark data-react-custom="1">{children}</mark>
+    )
+
+    await act(async () => {
+      root.render(
+        React.createElement(StrictMode, null, React.createElement(HtmlBlockNode as any, {
+          node: {
+            type: 'html_block',
+            content: '<mycomp>ok</mycomp><unknown-tag>keep</unknown-tag>',
+            loading: false,
+          },
+          customId: 'react-dynamic-html-mixed',
+          customComponents: { mycomp: MyComp },
+        })),
+      )
+    })
+    await flushReact()
+
+    expect(host.querySelector('[data-react-custom="1"]')?.textContent).toBe('ok')
+    expect(host.textContent).toContain('keep')
+    expect(host.querySelector('unknown-tag')).toBeNull()
+    expect(host.innerHTML).toContain('&lt;unknown-tag&gt;keep&lt;/unknown-tag&gt;')
+
+    root.unmount()
+  })
+
+  it('keeps registered custom components live for inline dynamic html while rendering unknown tags as literal text', async () => {
+    const scopeId = 'react-inline-dynamic-html-mixed'
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    const MyComp: React.FC<React.PropsWithChildren> = ({ children }) => (
+      <mark data-react-inline-custom="1">{children}</mark>
+    )
+
+    setCustomComponents(scopeId, { mycomp: MyComp })
+
+    try {
+      await act(async () => {
+        root.render(
+          React.createElement(StrictMode, null, React.createElement(HtmlInlineNode as any, {
+            node: {
+              type: 'html_inline',
+              content: '<mycomp>ok</mycomp><unknown-tag>keep</unknown-tag>',
+              loading: false,
+              autoClosed: true,
+            },
+            customId: scopeId,
+          })),
+        )
+      })
+      await flushReact()
+
+      expect(host.querySelector('[data-react-inline-custom="1"]')?.textContent).toBe('ok')
+      expect(host.textContent).toContain('keep')
+      expect(host.querySelector('unknown-tag')).toBeNull()
+      expect(host.innerHTML).toContain('&lt;unknown-tag&gt;keep&lt;/unknown-tag&gt;')
+    }
+    finally {
+      root.unmount()
+      removeCustomComponents(scopeId)
+    }
+  })
+
+  it('escapes html when htmlPolicy is escape', async () => {
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+
+    await act(async () => {
+      root.render(
+        React.createElement(StrictMode, null, React.createElement(NodeRenderer as any, {
+          nodes: [
+            {
+              type: 'html_block',
+              content: '<div>Escaped</div>',
+              raw: '',
+            },
+          ],
+          htmlPolicy: 'escape',
+          final: true,
+          smoothStreaming: false,
+        })),
+      )
+    })
+    await flushReact()
+
+    expect(host.innerHTML).toContain('&lt;div&gt;Escaped&lt;/div&gt;')
+    expect(host.textContent).toContain('<div>Escaped</div>')
+
+    root.unmount()
+  })
+
   it('renders markdown children inside standard html wrappers exactly once', async () => {
     const scopeId = 'react-structured-html-wrapper'
     const markdown = `<span style="font-size: 12px;">
@@ -170,6 +318,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
         })),
       )
     })
@@ -201,6 +350,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
         })),
       )
     })
@@ -212,7 +362,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
     root.unmount()
   })
 
-  it('renders closed non-whitelisted custom tag as raw HTML', async () => {
+  it('renders closed non-whitelisted custom tag as escaped text in safe mode', async () => {
     const scopeId = 'react-closed-unknown-tag'
     const markdown = `<echat-url>content</echat-url>`
     const host = document.createElement('div')
@@ -225,12 +375,13 @@ describe('react: non-whitelisted custom HTML tags', () => {
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
         })),
       )
     })
     await flushReact()
 
-    expect(host.innerHTML).toMatch(/<echat-url[^>]*>content<\/echat-url>/i)
+    expect(host.innerHTML).toContain('&lt;echat-url&gt;content&lt;/echat-url&gt;')
 
     root.unmount()
   })
@@ -249,6 +400,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
           // NOT adding 'unknown-tag' to customHtmlTags
         })),
       )
@@ -280,6 +432,7 @@ describe('react: non-whitelisted custom HTML tags', () => {
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
           // NOT adding 'echat-url' to customHtmlTags
         })),
       )
@@ -343,6 +496,7 @@ After list.`
           content: markdown,
           customId: scopeId,
           final: true,
+          smoothStreaming: false,
           // NOT adding 'custom-tag' to customHtmlTags
         })),
       )

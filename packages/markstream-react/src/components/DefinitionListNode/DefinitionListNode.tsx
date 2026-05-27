@@ -1,13 +1,14 @@
+import type { DefinitionItemNode } from 'stream-markdown-parser'
 import type { NodeComponentProps } from '../../types/node-component'
 import React from 'react'
 import { renderInline } from '../../renderers/renderChildren'
 
-export function DefinitionListNode(props: NodeComponentProps<{ type: 'definition_list', items?: any[] }>) {
+export function DefinitionListNode(props: NodeComponentProps<{ type: 'definition_list', items?: DefinitionItemNode[] }>) {
   const { node, ctx, renderNode, indexKey } = props
   const items = Array.isArray(node.items) ? node.items : []
   return (
     <dl className="definition-list" data-index-key={indexKey}>
-      {items.map((item: any, idx: number) => (
+      {items.map((item, idx: number) => (
         <div key={`${String(indexKey ?? 'definition')}-${idx}`} className="mb-4">
           <dt className="definition-term font-semibold">
             {ctx && renderNode ? renderInline(item.term, ctx, `${String(indexKey ?? 'definition')}-term-${idx}`, renderNode) : null}

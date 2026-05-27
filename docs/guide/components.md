@@ -98,7 +98,7 @@ setIconTheme('material')
 
 - **Best for**: full markdown documents in Vite, Nuxt, VitePress.
 - **Key props**: `content` / `nodes`, `custom-id`, `final`, `parse-options`, `custom-html-tags`
-- **CSS order**: import reset first, then add `markstream-vue/index.css` inside `@layer components`.
+- **CSS order**: import reset first, then use `@import 'markstream-vue/index.css' layer(components);`.
 
 ### CSS scope
 
@@ -178,9 +178,7 @@ setCustomComponents('docs', {
 @import 'modern-css-reset';
 @tailwind base;
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 
 [data-custom-id='docs'] .prose {
   max-width: 720px;

@@ -57,6 +57,7 @@ const streamChunkSizeMax = useLocalStorage<number>('vmr-settings-stream-chunk-si
 const streamBurstiness = useLocalStorage<number>('vmr-settings-stream-burstiness', 35)
 const streamTransportMode = useLocalStorage<StreamTransportMode>('vmr-settings-stream-transport-mode', 'readable-stream')
 const streamSliceMode = useLocalStorage<StreamSliceMode>('vmr-settings-stream-slice-mode', 'pure-random')
+const smoothStreaming = useLocalStorage<boolean>('vmr-settings-smooth-streaming', true)
 const normalizedChunkDelayRange = computed(() => normalizeStreamRange(
   Number(streamChunkDelayMin.value),
   Number(streamChunkDelayMax.value),
@@ -101,6 +102,8 @@ const selectedStreamPresetId = computed<StreamPresetId>({
 const streamPresetDescription = computed(() => activeStreamPreset.value?.description ?? 'Custom min/max window with your own burst profile.')
 const streamChunkRangeLabel = computed(() => `${normalizedChunkSizeRange.value.min}-${normalizedChunkSizeRange.value.max}`)
 const streamDelayRangeLabel = computed(() => `${normalizedChunkDelayRange.value.min}-${normalizedChunkDelayRange.value.max}ms`)
+const isBenchmarkMode = typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('benchmark') === '1'
+const benchmarkRenderChat = ref(true)
 const {
   content,
   isPaused,
@@ -413,6 +416,19 @@ function scheduleCheckMinHeight() {
 }
 
 onMounted(() => {
+  const benchmarkWindow = window as Window & { __markstreamBenchmarkUnmount?: () => void }
+  if (isBenchmarkMode) {
+    benchmarkWindow.__markstreamBenchmarkUnmount = () => {
+      stopStreamSimulation()
+      __roContainer?.disconnect()
+      __roContent?.disconnect()
+      __mo?.disconnect()
+      __roContainer = null
+      __roContent = null
+      __mo = null
+      benchmarkRenderChat.value = false
+    }
+  }
   startStreamSimulation()
   // 初始检查和观察
   const container = messagesContainer.value
@@ -448,6 +464,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  const benchmarkWindow = window as Window & { __markstreamBenchmarkUnmount?: () => void }
+  delete benchmarkWindow.__markstreamBenchmarkUnmount
   stopStreamSimulation()
   __roContainer?.disconnect()
   __roContent?.disconnect()
@@ -647,6 +665,30 @@ onBeforeUnmount(() => {
             </div>
           </button>
         </div>
+
+        <div class="setting-row-inline">
+          <label class="setting-label">Smooth Stream</label>
+          <button
+            class="theme-toggle"
+            :class="{ 'theme-toggle--dark': smoothStreaming }"
+            @click.stop="smoothStreaming = !smoothStreaming"
+          >
+            <div class="theme-toggle__thumb">
+              <Transition
+                enter-active-class="transition-all duration-300 ease-out"
+                leave-active-class="transition-all duration-200 ease-in"
+                enter-from-class="opacity-0 scale-0 rotate-90"
+                enter-to-class="opacity-100 scale-100 rotate-0"
+                leave-from-class="opacity-100 scale-100 rotate-0"
+                leave-to-class="opacity-0 scale-0 rotate-90"
+                mode="out-in"
+              >
+                <Icon v-if="smoothStreaming" key="smooth-on" icon="carbon:checkmark" class="theme-toggle__icon theme-toggle__icon--moon" />
+                <Icon v-else key="smooth-off" icon="carbon:close" class="theme-toggle__icon theme-toggle__icon--sun" />
+              </Transition>
+            </div>
+          </button>
+        </div>
       </aside>
     </Transition>
 
@@ -657,7 +699,11 @@ onBeforeUnmount(() => {
         <header class="chat-header">
           <div class="chat-header__brand">
             <div class="chat-header__logo">
-              <Icon icon="carbon:machine-learning-model" class="chat-header__logo-icon" />
+              <img
+                src="/vue-markdown-icon.svg"
+                alt=""
+                class="chat-header__logo-icon"
+              >
             </div>
             <div class="chat-header__info">
               <h1 class="chat-header__title">
@@ -699,6 +745,15 @@ onBeforeUnmount(() => {
             <button class="nav-btn nav-btn--themes" @click="goToThemeGallery">
               <Icon icon="carbon:color-palette" class="nav-btn__icon" />
               <span class="nav-btn__text">Themes</span>
+            </button>
+
+            <button
+              class="nav-btn nav-btn--retry"
+              :disabled="isStreaming && !isPaused"
+              @click="() => { stopStreamSimulation(); startStreamSimulation() }"
+            >
+              <Icon icon="carbon:restart" class="nav-btn__icon" />
+              <span class="nav-btn__text">Retry</span>
             </button>
 
             <button
@@ -753,7 +808,10 @@ onBeforeUnmount(() => {
         <!-- Messages area -->
         <main ref="messagesContainer" class="chat-messages chatbot-messages">
           <MarkdownRender
+            v-if="benchmarkRenderChat"
             :content="content"
+            :smooth-streaming="smoothStreaming"
+            :fade="!smoothStreaming"
             :code-block-dark-theme="selectedTheme || undefined"
             :code-block-light-theme="selectedTheme || undefined"
             :code-block-monaco-options="playgroundMonacoOptions"
@@ -761,6 +819,7 @@ onBeforeUnmount(() => {
             :custom-html-tags="['thinking']"
             :escape-html-tags="['question', 'answer']"
             :is-dark="isDark"
+            :debug-performance="isBenchmarkMode"
             :data-theme="activeBrandTheme || undefined"
             custom-id="playground-demo"
             class="chat-messages__content"
@@ -1087,7 +1146,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
+  height: 100vh;
   padding: 20px;
   transition: padding-right 0.3s ease;
 }
@@ -1100,7 +1159,7 @@ onBeforeUnmount(() => {
 .chat-container {
   width: 100%;
   max-width: 960px;
-  min-height: calc(100vh - 40px);
+  height: calc(100vh - 40px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1155,9 +1214,9 @@ onBeforeUnmount(() => {
 }
 
 .chat-header__logo-icon {
-  width: 22px;
-  height: 22px;
-  color: #fff;
+  width: 30px;
+  height: 30px;
+  display: block;
 }
 
 .chat-header__info {
@@ -1322,6 +1381,7 @@ onBeforeUnmount(() => {
 .nav-btn--github { background: #24292f; }
 .nav-btn--docs { background: #0f766e; }
 .nav-btn--themes { background: #0e7490; }
+.nav-btn--retry { background: #0f766e; }
 .nav-btn--stream { background: #c2410c; }
 .nav-btn--test { background: #0369a1; }
 .nav-btn--cdn { background: #475569; }
@@ -1331,9 +1391,9 @@ onBeforeUnmount(() => {
   flex: 1;
   display: flex;
   flex-direction: column-reverse;
-  overflow-y: visible;
+  overflow-y: auto;
   scroll-behavior: smooth;
-  overscroll-behavior: auto;
+  overscroll-behavior: contain;
 }
 
 .chat-messages > .markdown-renderer {
@@ -1373,7 +1433,7 @@ onBeforeUnmount(() => {
 @media (max-width: 768px) {
   .chat-wrapper { padding: 10px; }
   .chat-wrapper--with-sidebar { padding-right: 10px; }
-  .chat-container { border-radius: 18px; min-height: calc(100vh - 20px); }
+  .chat-container { border-radius: 18px; height: calc(100vh - 20px); }
   .chat-header__nav { gap: 4px; }
   .chat-overview { grid-template-columns: 1fr; padding: 14px 16px; }
   .chat-overview__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }

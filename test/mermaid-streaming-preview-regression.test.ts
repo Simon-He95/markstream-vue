@@ -37,7 +37,7 @@ describe('mermaid streaming preview regression', () => {
     const fakeMermaid = {
       initialize: vi.fn(),
       render: vi.fn(async () => ({
-        svg: '<svg data-rendered="gantt" viewBox="0 0 10 10"><g /></svg>',
+        svg: '<svg data-rendered="gantt" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>',
       })),
     }
 
@@ -81,7 +81,7 @@ describe('mermaid streaming preview regression', () => {
     const fakeMermaid = {
       initialize: vi.fn(),
       render: vi.fn(async (_id: string, code: string) => ({
-        svg: `<svg data-rendered="${code.includes('Active task') ? 'unsafe' : 'prefix'}" viewBox="0 0 10 10"><g /></svg>`,
+        svg: `<svg data-rendered="${code.includes('Active task') ? 'unsafe' : 'prefix'}" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>`,
       })),
     }
 
@@ -129,7 +129,7 @@ describe('mermaid streaming preview regression', () => {
     const fakeMermaid = {
       initialize: vi.fn(),
       render: vi.fn(async (_id: string, code: string) => ({
-        svg: `<svg data-rendered="${code.includes('B-->C') ? 'full' : 'prefix'}" viewBox="0 0 10 10"><g /></svg>`,
+        svg: `<svg data-rendered="${code.includes('B-->C') ? 'full' : 'prefix'}" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>`,
       })),
     }
 
@@ -270,6 +270,152 @@ describe('mermaid streaming preview regression', () => {
 
     expect(canParseOffthread).toHaveBeenCalled()
     expect(errorSpy).not.toHaveBeenCalled()
+    expect(wrapper.find('div._mermaid svg').exists()).toBe(false)
+  })
+
+  it('keeps the current preview height while streamed source changes after a preview exists', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('IntersectionObserver', undefined as any)
+
+    const fakeMermaid = {
+      initialize: vi.fn(),
+      render: vi.fn(async () => ({
+        svg: '<svg data-rendered="preview" viewBox="0 0 100 100"><rect width="1" height="1" /></svg>',
+      })),
+    }
+
+    vi.doMock('../src/workers/mermaidWorkerClient', () => ({
+      canParseOffthread: vi.fn(async () => true),
+      findPrefixOffthread: vi.fn(async () => null),
+      terminateWorker: vi.fn(),
+    }))
+    vi.doMock('../src/components/MermaidBlockNode/mermaid', () => ({
+      getMermaid: vi.fn(async () => fakeMermaid),
+      isMermaidEnabled: vi.fn(() => true),
+    }))
+
+    const MermaidBlockNode = (await import('../src/components/MermaidBlockNode/MermaidBlockNode.vue')).default
+    const wrapper = mount(MermaidBlockNode as any, {
+      props: {
+        node: createNode('graph LR\nA-->B\n'),
+        loading: true,
+        estimatedPreviewHeightPx: 500,
+      },
+    })
+
+    await flushVueUpdates()
+    ;(wrapper.vm as any).mermaidAvailable = true
+    ;(wrapper.vm as any).viewportReady = true
+    ;(wrapper.vm as any).showSource = false
+    ;(wrapper.vm as any).containerHeight = '420px'
+    wrapper.get('div._mermaid').element.innerHTML = '<svg data-rendered="preview" viewBox="0 0 100 100"><rect width="1" height="1" /></svg>'
+    await flushVueUpdates()
+
+    await wrapper.setProps({
+      node: createNode('graph LR\nA-->B\nB-->C\nC-->D\n'),
+    })
+    await flushVueUpdates()
+
+    expect((wrapper.get('.mermaid-preview-area').element as HTMLElement).style.height).toBe('420px')
+  })
+
+  it('keeps the previous preview when a streaming render returns a blank SVG', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('IntersectionObserver', undefined as any)
+
+    const fakeMermaid = {
+      initialize: vi.fn(),
+      render: vi.fn(async () => ({
+        svg: '<svg data-rendered="blank" viewBox="0 0 100 100"><defs><marker id="m" /></defs></svg>',
+      })),
+    }
+
+    vi.doMock('../src/workers/mermaidWorkerClient', () => ({
+      canParseOffthread: vi.fn(async () => true),
+      findPrefixOffthread: vi.fn(async () => null),
+      terminateWorker: vi.fn(),
+    }))
+    vi.doMock('../src/components/MermaidBlockNode/mermaid', () => ({
+      getMermaid: vi.fn(async () => fakeMermaid),
+      isMermaidEnabled: vi.fn(() => true),
+    }))
+
+    const MermaidBlockNode = (await import('../src/components/MermaidBlockNode/MermaidBlockNode.vue')).default
+    const wrapper = mount(MermaidBlockNode as any, {
+      props: {
+        node: createNode('graph LR\nA-->B\n'),
+        loading: true,
+      },
+    })
+
+    await flushVueUpdates()
+    ;(wrapper.vm as any).mermaidAvailable = true
+    ;(wrapper.vm as any).viewportReady = true
+    ;(wrapper.vm as any).showSource = false
+    wrapper.get('div._mermaid').element.innerHTML = '<svg data-rendered="previous" viewBox="0 0 100 100"><rect width="1" height="1" /></svg>'
+    await flushVueUpdates()
+
+    await wrapper.setProps({
+      node: createNode('graph LR\nA-->B\nB-->C\n'),
+    })
+    await vi.advanceTimersByTimeAsync(400)
+    await settleStreamingRender()
+
+    expect(wrapper.find('svg[data-rendered="previous"]').exists()).toBe(true)
+    expect(wrapper.find('svg[data-rendered="blank"]').exists()).toBe(false)
+  })
+
+  it('keeps the previous preview when streamed Mermaid source is temporarily empty', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('IntersectionObserver', undefined as any)
+
+    const fakeMermaid = {
+      initialize: vi.fn(),
+      render: vi.fn(async () => ({
+        svg: '<svg data-rendered="next" viewBox="0 0 100 100"><rect width="1" height="1" /></svg>',
+      })),
+    }
+
+    vi.doMock('../src/workers/mermaidWorkerClient', () => ({
+      canParseOffthread: vi.fn(async () => true),
+      findPrefixOffthread: vi.fn(async () => null),
+      terminateWorker: vi.fn(),
+    }))
+    vi.doMock('../src/components/MermaidBlockNode/mermaid', () => ({
+      getMermaid: vi.fn(async () => fakeMermaid),
+      isMermaidEnabled: vi.fn(() => true),
+    }))
+
+    const MermaidBlockNode = (await import('../src/components/MermaidBlockNode/MermaidBlockNode.vue')).default
+    const wrapper = mount(MermaidBlockNode as any, {
+      props: {
+        node: createNode('graph LR\nA-->B\n'),
+        loading: true,
+      },
+    })
+
+    await flushVueUpdates()
+    ;(wrapper.vm as any).mermaidAvailable = true
+    ;(wrapper.vm as any).viewportReady = true
+    ;(wrapper.vm as any).showSource = false
+    await flushVueUpdates()
+    await vi.advanceTimersByTimeAsync(400)
+    await settleStreamingRender()
+
+    wrapper.get('div._mermaid').element.innerHTML = '<svg data-rendered="previous" viewBox="0 0 100 100"><rect width="1" height="1" /></svg>'
+    await flushVueUpdates()
+
+    await wrapper.setProps({
+      node: createNode(''),
+    })
+    await vi.advanceTimersByTimeAsync(400)
+    await settleStreamingRender()
+
+    expect(wrapper.find('svg[data-rendered="previous"]').exists()).toBe(true)
+
+    await wrapper.setProps({ loading: false })
+    await flushVueUpdates()
+
     expect(wrapper.find('div._mermaid svg').exists()).toBe(false)
   })
 })

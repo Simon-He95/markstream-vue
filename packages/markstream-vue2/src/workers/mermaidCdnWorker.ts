@@ -43,7 +43,8 @@ export function buildMermaidCDNWorkerSource(options: MermaidCDNWorkerOptions): s
   const mermaidUrlLiteral = stringifyForWorker(options.mermaidUrl)
   const initializeOptions = {
     startOnLoad: false,
-    securityLevel: 'loose',
+    securityLevel: 'strict',
+    flowchart: { htmlLabels: false },
     ...(options.initializeOptions || {}),
   }
   const initLiteral = stringifyForWorker(initializeOptions)

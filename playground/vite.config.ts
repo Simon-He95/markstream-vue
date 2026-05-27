@@ -60,6 +60,7 @@ export default defineConfig(({ command }) => {
         'markstream-vue': path.resolve(__dirname, '../src/exports.ts'),
         'markstream-angular': path.resolve(__dirname, '../packages/markstream-angular/src/index.ts'),
         'stream-markdown-parser': path.resolve(__dirname, '../packages/markdown-parser/src/index.ts'),
+        'markstream-core': path.resolve(__dirname, '../packages/markstream-core/src/index.ts'),
         'vue-i18n': preferredVueI18nEntry,
         ...(streamMonacoAlias
           ? { 'stream-monaco': streamMonacoAlias }
@@ -72,6 +73,7 @@ export default defineConfig(({ command }) => {
       // stuck behind Vite's optimized-deps cache.
       exclude: [
         'stream-markdown-parser',
+        'markstream-core',
         ...(streamMonacoAlias === localStreamMonacoSource ? ['stream-monaco'] : []),
       ],
     },

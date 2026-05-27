@@ -8,12 +8,12 @@ description: 为 thinking 等可信标签接入自定义组件，在不改解析
 
 推荐路径是：
 
-1. 用 `custom-html-tags` 声明这个标签
-2. 用 `setCustomComponents` 把它映射到自定义组件
-3. 用 `custom-id` 把覆盖范围限制在当前业务区域
+1. 用带 `components` 映射的 `VueRendererMarkdown` 安装插件，获得 app 级隔离
+2. 用 `MarkdownRender` 渲染内容
+3. 只在兼容旧接入或一次性客户端应用时继续使用全局 `setCustomComponents`
 
-`custom-html-tags` 里请传标签式名字，比如 `thinking`、`answer-box`、`my_component`。
-像 `foo:bar` 这种 namespaced 形式会被忽略；`code_block` 这类内置 override key 会继续保留给节点渲染器覆盖，所以可信自定义标签仍然需要显式写进 `custom-html-tags`。
+自定义组件请使用标签式名字，比如 `thinking`、`answer-box`、`my_component`。
+像 `foo:bar` 这种 namespaced 形式会被忽略；`code_block` 这类内置 override key 会继续保留给节点渲染器覆盖，不会被当成自定义标签。通过 `VueRendererMarkdown` 或 `setCustomComponents` 注册的非 reserved 组件 key 会自动合并进 renderer 的 custom-tag set。
 
 只有当这条路径不够用时，再去碰解析器钩子。
 
@@ -21,15 +21,20 @@ description: 为 thinking 等可信标签接入自定义组件，在不改解析
 
 ## 1. 最简单的自定义标签接法
 
-```ts twoslash
-import type { Component } from 'vue'
-import { setCustomComponents } from 'markstream-vue'
+```ts
+import MarkdownRender, { VueRendererMarkdown } from 'markstream-vue'
+import { createApp } from 'vue'
+import App from './App.vue'
+import ThinkingNode from './ThinkingNode.vue'
 
-declare const ThinkingNode: Component
-
-setCustomComponents('chat', {
-  thinking: ThinkingNode,
-})
+createApp(App)
+  .use(VueRendererMarkdown, {
+    components: {
+      thinking: ThinkingNode,
+    },
+  })
+  .component('MarkdownRender', MarkdownRender)
+  .mount('#app')
 ```
 
 ```vue twoslash
@@ -41,14 +46,30 @@ const markdown = '<thinking>Step by step</thinking>'
 
 <template>
   <MarkdownRender
-    custom-id="chat"
-    :custom-html-tags="['thinking']"
     :content="markdown"
   />
 </template>
 ```
 
-一旦这个标签被加入白名单，解析器就会直接产出 `type` 等于标签名本身的自定义节点。
+通过 `VueRendererMarkdown` 或 `setCustomComponents` 注册非 reserved 标签组件后，这些 key 会进入 renderer 的 custom-tag set。解析器会直接产出 `type` 等于标签名本身的自定义节点。
+
+旧接入仍然可以使用 scoped global API：
+
+```ts twoslash
+import type { Component } from 'vue'
+import { setCustomComponents } from 'markstream-vue'
+
+declare const ThinkingNode: Component
+
+setCustomComponents('chat', { thinking: ThinkingNode })
+```
+
+```vue
+<MarkdownRender
+  custom-id="chat"
+  :content="markdown"
+/>
+```
 
 ## 2. 一个实用的 Vue 组件写法
 
@@ -104,6 +125,8 @@ const props = defineProps<{
 - `autoClosed`：流式阶段是否发生过临时自动补闭合
 
 `attrs` 的具体形状可能会因来源而不同，所以更好的做法是把它当成“原始属性容器”，在你的组件里按需归一化。
+
+渲染器复用节点时，会对 `attrs`、`data`、`props`、`payload` 这类常见自定义对象字段做结构比较。如果 parser hook 给自定义节点挂了其他对象字段，内容变化时请替换对象本身。
 
 ## 4. 重复和嵌套的自定义标签
 

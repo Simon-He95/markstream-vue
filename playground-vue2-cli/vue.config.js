@@ -63,6 +63,7 @@ function setAliasIfExists(alias, key, filePath) {
 }
 
 const markstreamVue2Root = resolvePackageRoot('markstream-vue2')
+const markstreamCoreRoot = resolvePackageRoot('markstream-core') || resolveNodeModulesPackageRoot('markstream-core')
 const streamMonacoRoot = resolvePackageRoot('stream-monaco')
 const streamMarkdownRoot = resolvePackageRoot('stream-markdown') || resolveNodeModulesPackageRoot('stream-markdown')
 const floatingUiDomEntry = tryResolve('@floating-ui/dom')
@@ -127,6 +128,7 @@ setAliasIfExists(
   'markstream-vue2$',
   markstreamVue2Root ? path.join(markstreamVue2Root, 'dist/index.cjs') : null,
 )
+setAliasIfExists(alias, 'markstream-core$', markstreamCoreRoot ? path.join(markstreamCoreRoot, 'dist/index.cjs') : null)
 
 // Webpack 4 doesn't support `package.json#exports`, so subpath imports like
 // `markstream-vue2/index.css` won't resolve. Map them to real files in `dist/`.

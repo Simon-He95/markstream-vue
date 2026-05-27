@@ -1,5 +1,6 @@
 import type { ImageNodeProps } from '../../types/component-props'
 import React, { useEffect, useState } from 'react'
+import { sanitizeImageSrc } from 'stream-markdown-parser'
 
 const DEFAULT_PROPS = {
   fallbackSrc: '',
@@ -13,34 +14,48 @@ export interface ImageNodeReactEvents {
   onClick?: (payload: [event: React.MouseEvent<HTMLImageElement>, src: string]) => void
 }
 
+type ImageStage = 'primary' | 'fallback' | 'failed'
+
+function resolveImageState(primarySrc: string, fallbackSrc: string, loading?: boolean): { src: string, stage: ImageStage } {
+  if (loading || primarySrc)
+    return { src: primarySrc, stage: 'primary' }
+  if (fallbackSrc)
+    return { src: fallbackSrc, stage: 'fallback' }
+  return { src: '', stage: 'failed' }
+}
+
 export function ImageNode(rawProps: ImageNodeProps & ImageNodeReactEvents) {
   const props = { ...DEFAULT_PROPS, ...rawProps }
+  const safeNodeSrc = sanitizeImageSrc(props.node.src)
+  const safeFallbackSrc = sanitizeImageSrc(props.fallbackSrc)
+  const initialImageState = resolveImageState(safeNodeSrc, safeFallbackSrc, props.node.loading)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [hasError, setHasError] = useState(false)
-  const [fallbackTried, setFallbackTried] = useState(false)
+  const [activeSrc, setActiveSrc] = useState(initialImageState.src)
+  const [imageStage, setImageStage] = useState<ImageStage>(initialImageState.stage)
 
-  const displaySrc = hasError && props.fallbackSrc
-    ? props.fallbackSrc
-    : props.node.src
+  const displaySrc = activeSrc
 
   useEffect(() => {
+    const next = resolveImageState(safeNodeSrc, safeFallbackSrc, props.node.loading)
+    setActiveSrc(next.src)
+    setImageStage(next.stage)
     setImageLoaded(false)
-    setHasError(false)
-  }, [displaySrc])
-
-  useEffect(() => {
-    setFallbackTried(false)
-  }, [props.node.src])
+    setHasError(next.stage === 'failed')
+  }, [safeNodeSrc, safeFallbackSrc, props.node.loading])
 
   const handleImageError = () => {
-    if (props.fallbackSrc && !fallbackTried) {
-      setFallbackTried(true)
-      setHasError(true)
+    if (imageStage === 'primary' && safeFallbackSrc && safeFallbackSrc !== activeSrc) {
+      setActiveSrc(safeFallbackSrc)
+      setImageStage('fallback')
+      setImageLoaded(false)
+      setHasError(false)
+      return
     }
-    else {
-      setHasError(true)
-      props.onError?.(props.node.src)
-    }
+
+    setImageStage('failed')
+    setHasError(true)
+    props.onError?.(activeSrc)
   }
 
   const handleImageLoad = () => {
@@ -57,7 +72,7 @@ export function ImageNode(rawProps: ImageNodeProps & ImageNodeReactEvents) {
     props.onClick?.([event, displaySrc])
   }
 
-  if (!props.node.loading && !hasError) {
+  if (!props.node.loading && imageStage !== 'failed' && displaySrc) {
     return (
       <img
         key="image"
@@ -76,7 +91,7 @@ export function ImageNode(rawProps: ImageNodeProps & ImageNodeReactEvents) {
     )
   }
 
-  if (!hasError) {
+  if (props.node.loading && !hasError) {
     return (
       <span key="placeholder" className="image-node__placeholder">
         {props.usePlaceholder
@@ -93,7 +108,7 @@ export function ImageNode(rawProps: ImageNodeProps & ImageNodeReactEvents) {
     )
   }
 
-  if (!props.node.loading && !props.fallbackSrc) {
+  if (!props.node.loading && imageStage === 'failed') {
     return (
       <span className="image-node__error">
         <svg

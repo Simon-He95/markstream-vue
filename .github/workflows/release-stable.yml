@@ -44,6 +44,25 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Install pnpm
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+
+      - name: Install dependencies
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Run release verification
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        run: pnpm release:verify
+
       - name: Build changelog body
         id: changelog
         if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}

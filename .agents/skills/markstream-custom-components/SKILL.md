@@ -24,6 +24,7 @@ Read [references/patterns.md](references/patterns.md) before choosing an overrid
 4. Preserve nested Markdown when needed.
    - For trusted custom tags with inner Markdown, render `node.content` with a nested renderer.
    - Pass the same custom-tag allowlist to nested renderers.
+   - Nested renderers inside a smooth-streaming parent are automatically suppressed from double pacing — do not add `smooth-streaming` to child renderers.
 5. Keep props and cleanup intact.
    - Preserve `node`, `loading`, `indexKey`, `customId`, and `isDark`.
    - For `mermaid` and `infographic` overrides, preserve `estimatedPreviewHeightPx` so async preview shells keep stable height during remounts.

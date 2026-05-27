@@ -1,0 +1,57 @@
+{
+  "name": "markstream-core",
+  "type": "module",
+  "version": "1.0.0",
+  "packageManager": "pnpm@10.33.4",
+  "description": "Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream",
+  "author": "Simon He",
+  "license": "MIT",
+  "homepage": "https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-core",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Simon-He95/markstream-vue.git",
+    "directory": "packages/markstream-core"
+  },
+  "bugs": {
+    "url": "https://github.com/Simon-He95/markstream-vue/issues"
+  },
+  "keywords": [
+    "streaming",
+    "smooth-streaming",
+    "typewriter",
+    "markdown",
+    "framework-agnostic",
+    "markstream"
+  ],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "dev": "tsdown --watch",
+    "build": "tsdown",
+    "test": "vitest",
+    "test:run": "vitest --run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --cache",
+    "lint:fix": "eslint . --cache --fix",
+    "prepublishOnly": "pnpm run build",
+    "release": "bumpp --commit --no-tag --no-push && npm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
+  },
+  "devDependencies": {
+    "tsdown": "^0.15.12",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.6"
+  }
+}

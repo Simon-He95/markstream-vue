@@ -1,4 +1,5 @@
-import type { MarkdownIt } from 'markdown-it-ts'
+import type { MarkdownIt, Token } from '../markdown-it-types'
+import type { MarkdownToken } from '../types'
 import markdownItContainer from 'markdown-it-container'
 
 function parseLooseInlineAttrs(input: string): Record<string, unknown> | null {
@@ -143,7 +144,7 @@ export function applyContainers(md: MarkdownIt) {
         const tokensAny = tokens as unknown as import('../types').MarkdownToken[]
         const token = tokensAny[idx]
         // `nesting` is a runtime-only property present on MarkdownIt tokens.
-        // Narrow the shape with `unknown` -> specific minimal interface to avoid `as any`.
+        // Narrow the shape with `unknown` -> specific minimal interface.
         const tokenShape = token as unknown as { nesting?: number }
         if (tokenShape.nesting === 1) {
           return `<div class="vmr-container vmr-container-${name}">`
@@ -160,15 +161,19 @@ export function applyContainers(md: MarkdownIt) {
     'fence',
     'vmr_container_fallback',
     (state: unknown, startLine: number, endLine: number, silent: boolean) => {
+      type MutableMarkdownToken = MarkdownToken & {
+        attrSet: (name: string, value: string) => void
+        meta?: Record<string, unknown> | null
+      }
       interface ParserState {
         bMarks: number[]
         tShift: number[]
         eMarks: number[]
         src: string
-        env: unknown
-        push: (type: string, tag?: string, nesting?: number) => any
-        tokens: any[]
-        md: any
+        env: Record<string, unknown>
+        push: (type: string, tag?: string, nesting?: number) => MutableMarkdownToken
+        tokens: MarkdownToken[]
+        md: MarkdownIt
         line: number
       }
       const s = state as unknown as ParserState
@@ -237,7 +242,7 @@ export function applyContainers(md: MarkdownIt) {
       if (silent)
         return true
 
-      const envFinal = !!(s.env as any)?.__markstreamFinal
+      const envFinal = !!s.env.__markstreamFinal
 
       let nextLine = startLine + 1
       let found = false
@@ -259,11 +264,11 @@ export function applyContainers(md: MarkdownIt) {
         nextLine = endLine
 
       const tokenOpen = s.push('vmr_container_open', 'div', 1)
-      // `tokenOpen` is runtime token object; keep using runtime helpers but avoid casting `s` to `any`.
+      // `tokenOpen` is runtime token object; keep using runtime helpers.
       tokenOpen.attrSet('class', `vmr-container vmr-container-${name}`)
 
       // Mark unclosed containers for downstream consumers (optional).
-      ;(tokenOpen.meta as any) = { ...(tokenOpen.meta as any), unclosed: !found && !envFinal }
+      tokenOpen.meta = { ...(tokenOpen.meta ?? {}), unclosed: !found && !envFinal }
 
       // If args are present (non-JSON payload right after the name), preserve them as a data attribute.
       if (argsStr)
@@ -325,10 +330,10 @@ export function applyContainers(md: MarkdownIt) {
           prevToken.raw = innerSrc
         }
 
-        const innerTokens: any[] = []
+        const innerTokens: Token[] = []
         // Use the same env as the parent block parser to ensure all block rules are available
         s.md.block.parse(innerSrc, s.md, s.env, innerTokens)
-        s.tokens.push(...innerTokens)
+        s.tokens.push(...(innerTokens as unknown as MarkdownToken[]))
       }
 
       if (found)

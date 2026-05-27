@@ -100,9 +100,7 @@ const source = `
 ```css
 /* docs/.vitepress/theme/style.css */
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 
 [data-custom-id='docs'] .prose {
   max-width: 72ch;
@@ -112,7 +110,7 @@ const source = `
 实用规则：
 
 - 站点有 reset，就先加载 reset，再加载这里
-- 如果你用了 Tailwind / UnoCSS，把它放进 `@layer components`
+- 如果你用了 Tailwind / UnoCSS，使用 `@import '...' layer(components)`
 - 如果你启用了 KaTeX，还要额外引入 `katex/dist/katex.min.css`
 
 深入看： [Tailwind 集成与样式顺序](/zh/guide/tailwind)

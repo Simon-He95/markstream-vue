@@ -2,8 +2,13 @@ import type { BaseNode, MarkdownIt, ParseOptions } from 'stream-markdown-parser'
 import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure } from 'stream-markdown-parser'
 import { hydrateCustomTagContent } from './hydrateCustomTagContent'
 
+type NestedMarkdownSourceNode = BaseNode & {
+  children?: BaseNode[]
+  content?: string
+}
+
 export interface NestedMarkdownNodesInput {
-  node?: (BaseNode & Record<string, any>) | null
+  node?: NestedMarkdownSourceNode | null
   nodes?: readonly BaseNode[] | null
   content?: string | null
 }
@@ -42,7 +47,7 @@ export function parseNestedMarkdownToNodes(
   return hydrateCustomTagContent(
     parseMarkdownToStructure(content, markdown, parseOptions),
     content,
-    mergeCustomHtmlTags(options.customHtmlTags, (parseOptions as any)?.customHtmlTags),
+    mergeCustomHtmlTags(options.customHtmlTags, parseOptions?.customHtmlTags),
   )
 }
 
@@ -60,19 +65,19 @@ function resolveParseOptions(
 ): ParseOptions | undefined {
   const base = options.parseOptions ?? {}
   const resolvedFinal = options.final ?? resolveFinalFromNode(input.node)
-  const customHtmlTags = mergeCustomHtmlTags(options.customHtmlTags, (base as any).customHtmlTags)
+  const customHtmlTags = mergeCustomHtmlTags(options.customHtmlTags, base.customHtmlTags)
 
   if (resolvedFinal == null && customHtmlTags.length === 0)
     return base
 
   return {
-    ...(base as any),
+    ...base,
     ...(resolvedFinal == null ? {} : { final: resolvedFinal }),
     ...(customHtmlTags.length === 0 ? {} : { customHtmlTags }),
   } as ParseOptions
 }
 
-function resolveFinalFromNode(node?: (BaseNode & Record<string, any>) | null) {
+function resolveFinalFromNode(node?: NestedMarkdownSourceNode | null) {
   if (!node || typeof node !== 'object')
     return undefined
   if (typeof node.loading === 'boolean')
@@ -81,7 +86,7 @@ function resolveFinalFromNode(node?: (BaseNode & Record<string, any>) | null) {
 }
 
 function resolveMarkdownInstance(options: NestedMarkdownNodesOptions) {
-  const normalizedTags = mergeCustomHtmlTags(options.customHtmlTags, (options.parseOptions as any)?.customHtmlTags)
+  const normalizedTags = mergeCustomHtmlTags(options.customHtmlTags, options.parseOptions?.customHtmlTags)
   const cacheKey = `${options.cacheKey || DEFAULT_CACHE_KEY}::${normalizedTags.join(',')}`
   let markdown = markdownCache.get(cacheKey)
 

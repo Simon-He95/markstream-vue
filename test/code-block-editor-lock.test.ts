@@ -745,8 +745,18 @@ describe('codeBlockNode diff defaults', () => {
     await waitForCreateDiffEditorCalls(1, helpers)
 
     const monacoOptions = helpers.useMonaco.mock.calls[0]?.[0] ?? {}
-    expect(monacoOptions.diffHideUnchangedRegions).toEqual({ enabled: false })
-    expect(monacoOptions.hideUnchangedRegions).toEqual({ enabled: false })
+    expect(monacoOptions.diffHideUnchangedRegions).toEqual({
+      enabled: false,
+      contextLineCount: 2,
+      minimumLineCount: 4,
+      revealLineCount: 0,
+    })
+    expect(monacoOptions.hideUnchangedRegions).toEqual({
+      enabled: false,
+      contextLineCount: 2,
+      minimumLineCount: 4,
+      revealLineCount: 0,
+    })
 
     wrapper.unmount()
   })
@@ -985,7 +995,7 @@ describe('codeBlockNode diff defaults', () => {
     wrapper.unmount()
   })
 
-  it('refreshes diff presentation without recreating when loading transitions from true to false', async () => {
+  it('recreates diff presentation when loading transitions from true to false', async () => {
     const helpers = getStreamMonacoHelpers()
 
     const wrapper = mount(CodeBlockNode, {
@@ -1016,9 +1026,9 @@ describe('codeBlockNode diff defaults', () => {
     await wrapper.setProps({ loading: false })
     await flushPendingMicrotasks()
 
-    expect(helpers.createDiffEditor).not.toHaveBeenCalled()
-    expect(helpers.safeClean).not.toHaveBeenCalled()
-    expect(helpers.updateDiff).toHaveBeenCalledWith(
+    expect(helpers.safeClean).toHaveBeenCalled()
+    expect(helpers.createDiffEditor).toHaveBeenCalledWith(
+      expect.any(HTMLElement),
       'const a = 1\\nconst b = 2\\n',
       'const a = 1\\nconst c = 3\\n',
       'diff',
@@ -1026,9 +1036,6 @@ describe('codeBlockNode diff defaults', () => {
     await vi.waitFor(() => {
       expect(helpers.refreshDiffPresentation).toHaveBeenCalled()
     })
-    expect(
-      helpers.updateDiff.mock.invocationCallOrder[0],
-    ).toBeLessThan(helpers.refreshDiffPresentation.mock.invocationCallOrder[0])
 
     wrapper.unmount()
   })
@@ -1065,7 +1072,7 @@ describe('codeBlockNode diff defaults', () => {
     await wrapper.setProps({ loading: false })
     await flushPendingMicrotasks()
 
-    expect(helpers.safeClean).not.toHaveBeenCalled()
+    expect(helpers.safeClean).toHaveBeenCalled()
     await vi.waitFor(() => {
       expect(helpers.refreshDiffPresentation).toHaveBeenCalled()
     })

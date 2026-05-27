@@ -1,4 +1,4 @@
-import type { LinkNode, MarkdownToken, ParseOptions } from '../../types'
+import type { InternalParseOptions, LinkNode, MarkdownToken, ParseOptions } from '../../types'
 import { parseInlineTokens } from '../index'
 
 type AttrTuple = [string, string]
@@ -72,19 +72,19 @@ export function parseLinkToken(
 
   const lastLinkToken = linkTokens[linkTokens.length - 1]
   if (
-    (options as any)?.__insideStrong
+    (options as InternalParseOptions | undefined)?.__insideStrong
     && lastLinkToken?.type === 'text'
     && String(lastLinkToken.content ?? '').endsWith('**')
     && !linkTokens.some(token => token.type === 'strong_open')
   ) {
     const originalContent = String(lastLinkToken.content ?? '')
-    const originalRaw = String((lastLinkToken as any).raw ?? originalContent)
+    const originalRaw = String(lastLinkToken.raw ?? originalContent)
     lastLinkToken.content = originalContent.slice(0, -2)
     lastLinkToken.raw = originalRaw.replace(/\*\*$/, '')
   }
 
   // Parse the collected tokens as inline content
-  const children = parseInlineTokens(linkTokens, undefined, undefined, options as any)
+  const children = parseInlineTokens(linkTokens, undefined, undefined, options)
   const linkText = children
     .map((node) => {
       const nodeAny = node as unknown as { content?: string, raw?: string }

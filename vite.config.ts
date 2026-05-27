@@ -39,7 +39,7 @@ export default defineConfig(({ mode }) => {
         tsconfigPath: './tsconfig.build.json',
       }),
       UnpluginClassExtractor({
-        output: 'dist/tailwind.ts',
+        output: 'dist/tailwind.js',
         include: [/\/src\/components\/(?:[^/]+\/)*[^/]+\.vue(\?.*)?$/],
       }) as any,
     ]
@@ -75,11 +75,19 @@ export default defineConfig(({ mode }) => {
       },
       sourcemap: false,
       lib: {
-        entry: './src/exports.ts',
-        // produce both ESM Only
+        entry: {
+          'index': './src/exports.ts',
+          'utils/katex-threshold': './src/entries/utils-katex-threshold.ts',
+          'utils/performance-monitor': './src/entries/utils-performance-monitor.ts',
+          'utils/safeRaf': './src/entries/utils-safeRaf.ts',
+          'workers/katexWorkerClient': './src/entries/workers-katexWorkerClient.ts',
+          'workers/mermaidWorkerClient': './src/entries/workers-mermaidWorkerClient.ts',
+          'workers/katexCdnWorker': './src/entries/workers-katexCdnWorker.ts',
+          'workers/mermaidCdnWorker': './src/entries/workers-mermaidCdnWorker.ts',
+        },
         formats: ['es'],
         name,
-        fileName: (format: string) => (format === 'cjs' ? 'index.cjs' : 'index.js'),
+        fileName: (_, entryName) => `${entryName}.js`,
       },
       rollupOptions: {
         external: (id: string) => {
@@ -116,6 +124,7 @@ export default defineConfig(({ mode }) => {
             'stream-monaco',
             'stream-markdown',
             'stream-markdown-parser',
+            'markstream-core',
             'monaco-editor',
             'shiki',
           ].includes(id)
@@ -126,8 +135,7 @@ export default defineConfig(({ mode }) => {
             vue: 'Vue',
           },
           exports: 'named',
-          // Don't override entryFileNames here - let lib.fileName control the main library output
-          // Workers will be handled by worker.rollupOptions.output below
+          // Workers are handled by worker.rollupOptions.output below.
           chunkFileNames: '[name].js',
           assetFileNames: (assetInfo: any) => {
             try {
@@ -151,6 +159,8 @@ export default defineConfig(({ mode }) => {
     alias['markstream-vue'] = '/src/exports.ts'
     alias['stream-markdown-parser'] = '/packages/markdown-parser/src/index.ts'
     alias['stream-markdown-parser/*'] = '/packages/markdown-parser/src/*'
+    alias['markstream-core'] = '/packages/markstream-core/src/index.ts'
+    alias['markstream-core/*'] = '/packages/markstream-core/src/*'
   }
 
   return {
@@ -179,6 +189,6 @@ export default defineConfig(({ mode }) => {
     css: {
       postcss: './postcss.config.cjs',
     },
-    resolve: { alias },
+    resolve: { alias, dedupe: ['react', 'react-dom'] },
   }
 })

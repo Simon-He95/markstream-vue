@@ -12,7 +12,7 @@ export interface CodeBlockMonacoThemeObject {
 
 export type CodeBlockMonacoTheme = string | CodeBlockMonacoThemeObject
 
-export type CodeBlockMonacoLanguage = string | ((...args: any[]) => unknown)
+export type CodeBlockMonacoLanguage = string | ((...args: unknown[]) => unknown)
 
 export interface CodeBlockDiffHideUnchangedRegionsOptions {
   enabled?: boolean
@@ -76,8 +76,8 @@ export interface CodeBlockMonacoOptions {
   diffHunkActionsOnHover?: boolean
   diffHunkHoverHideDelayMs?: number
   onDiffHunkAction?: (context: CodeBlockDiffHunkActionContext) => void | boolean | Promise<void | boolean>
-  scrollbar?: Record<string, any>
-  [key: string]: any
+  scrollbar?: Record<string, unknown>
+  [key: string]: unknown
 }
 
 export interface CodeBlockNodeProps {
@@ -100,6 +100,8 @@ export interface CodeBlockNodeProps {
   showCollapseButton?: boolean
   showFontSizeButtons?: boolean
   showTooltips?: boolean
+  htmlPreviewAllowScripts?: boolean
+  htmlPreviewSandbox?: string
   customId?: string
 }
 
@@ -167,12 +169,28 @@ export interface MermaidBlockNodeProps {
   showCollapseButton?: boolean
   showZoomControls?: boolean
   enableWheelZoom?: boolean
+  // Defaults to true. Set false only for trusted diagrams that need loose Mermaid HTML labels.
   isStrict?: boolean
+  // Defaults to false. Set true only for trusted diagrams that need Mermaid-generated click bindings after sanitized SVG mount.
+  enableMermaidInteractions?: boolean
   showTooltips?: boolean
   onRenderError?: (error: unknown, code: string, container: HTMLElement) => boolean | void
 }
 
-export interface MermaidBlockEvent<TPayload = any> {
+export interface CodeBlockPreviewPayload {
+  node: CodeBlockNode
+  artifactType: 'text/html' | 'image/svg+xml'
+  artifactTitle: string
+  id: string
+}
+
+export interface MarkdownCodeBlockPreviewPayload {
+  type: 'text/html' | 'image/svg+xml'
+  content: string
+  title: string
+}
+
+export interface MermaidBlockEvent<TPayload = unknown> {
   payload?: TPayload
   defaultPrevented: boolean
   preventDefault: () => void

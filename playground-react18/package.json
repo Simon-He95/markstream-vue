@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@iconify/react": "^4.1.1",
+    "@iconify/react": "^5.2.1",
     "markstream-react": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -18,12 +18,12 @@
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.11.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "^10.5.0",
     "monaco-editor": "^0.52.2",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.14",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^7.3.3",
     "vite-plugin-monaco-editor-esm": "^2.0.2"
   }
 }

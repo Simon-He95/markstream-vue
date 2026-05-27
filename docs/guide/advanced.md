@@ -75,17 +75,17 @@ setCustomComponents('docs', { thinking: ThinkingNode })
 
 Advanced hooks are a powerful way to add domain-specific grammar to Markdown without changing the core parser.
 
-### Typewriter prop
+### Typewriter and fade props
 
-`MarkdownRender` accepts a `typewriter` boolean prop which controls whether non-`code_block` nodes use subtle fade treatment. New nodes still get the small enter transition, and when streamed text grows in place the newly appended text fragment replays a short fade instead of dimming the whole node container. This is useful for demo UIs but may be undesirable in SSR or print/export flows where deterministic output is needed.
+`MarkdownRender` accepts a `typewriter` boolean prop for the blinking stream cursor. It defaults to `false`; enable it when you want the cursor during streaming. It also accepts a separate `fade` boolean prop for the subtle non-`code_block` enter transition and appended-text fade. This lets you keep the cursor while disabling fade for deterministic SSR, print, or export flows.
 
 Example:
 
 ```vue
-<MarkdownRender :content="markdown" :typewriter="false" />
+<MarkdownRender :content="markdown" :typewriter="true" :fade="false" />
 ```
 
-CSS variables: `--typewriter-fade-duration` and `--typewriter-fade-ease` tune the initial enter transition; `--stream-update-fade-duration` and `--stream-update-fade-ease` tune the short replayed fade used for newly appended streamed text. When the stream-specific variables are not set, the appended-text fade falls back to the same duration and easing as `typewriter`.
+CSS variables: `--typewriter-cursor-color` tunes the cursor color; `--fade-duration` and `--fade-ease` tune the initial enter transition; `--stream-update-fade-duration` and `--stream-update-fade-ease` tune the short replayed fade used for newly appended streamed text. When the stream-specific variables are not set, the appended-text fade falls back to the same duration and easing as `fade`.
 
 ## Internationalization (i18n)
 

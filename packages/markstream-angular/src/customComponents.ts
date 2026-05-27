@@ -1,6 +1,6 @@
 import type { Type } from '@angular/core'
 
-export type CustomComponentMap = Record<string, Type<any>>
+export type CustomComponentMap = Record<string, Type<unknown>>
 
 const GLOBAL_KEY = '__global__'
 

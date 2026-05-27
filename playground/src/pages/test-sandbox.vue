@@ -527,6 +527,21 @@ onBeforeUnmount(() => {
   min-height: calc(100vh - 320px);
 }
 
+.sandbox-canvas__mount :deep(.monaco-editor .ime-text-area) {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  resize: none;
+  border: 0;
+  overflow: hidden;
+  color: transparent;
+  background: transparent;
+  z-index: -10;
+  outline: none !important;
+}
+
 @media (max-width: 720px) {
   .sandbox-page {
     padding: 12px;

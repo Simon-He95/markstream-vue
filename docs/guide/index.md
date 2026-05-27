@@ -22,6 +22,7 @@ This guide is organized by task first, framework second. Start with the shortest
 - [Renderer & Node Components](/guide/components) for exported renderer and node component reference.
 - [Override Built-in Components](/guide/component-overrides) to replace `image`, `code_block`, `mermaid`, `link`, or other built-ins.
 - [Custom Tags & Advanced Components](/guide/custom-components) to support trusted tags such as `thinking`.
+- [YAML Front Matter Cookbook](/guide/frontmatter-cookbook) to extract page metadata or convert it into a trusted custom tag.
 - [Advanced Parser Hooks](/guide/advanced) and [Parser API](/guide/parser-api) for token or AST-level customization.
 
 ## I Want To Adopt It In An Existing App
@@ -45,6 +46,7 @@ This guide is organized by task first, framework second. Start with the shortest
 | [API Reference](/guide/api) | Parser helpers, scoping, and render-pipeline entry points |
 | [Renderer & Node Components](/guide/components) | Renderer and node component reference |
 | [Customization](/guide/component-overrides) | Override built-ins and add custom tags |
+| [YAML Front Matter](/guide/frontmatter-cookbook) | Extract metadata before rendering or map it to a trusted custom tag |
 
 ### Vue 2 (markstream-vue2)
 
@@ -70,6 +72,12 @@ This guide is organized by task first, framework second. Start with the shortest
 |------|-------------|
 | [Installation](/guide/angular-installation) | Angular specific setup |
 | [Quick Start](/guide/angular-quick-start) | Standalone Angular examples |
+
+### Svelte (markstream-svelte)
+
+| Page | Description |
+|------|-------------|
+| [Quick Start](/guide/svelte) | Svelte 5-only renderer usage, workers, and custom components |
 
 ### Nuxt
 

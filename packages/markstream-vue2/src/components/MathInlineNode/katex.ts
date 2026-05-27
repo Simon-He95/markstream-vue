@@ -1,13 +1,17 @@
-export type KatexLoader = () => Promise<any> | any
+export interface KatexModule {
+  renderToString: (content: string, options?: Record<string, unknown>) => string
+}
+
+export type KatexLoader = () => Promise<unknown> | unknown
 
 let katex: any = null
 let importAttempted = false
 let katexLoader: KatexLoader | null = defaultKatexLoader
 
-function normalizeKatexModule(mod: any) {
+function normalizeKatexModule(mod: any): KatexModule | null {
   const resolved = mod?.default ?? mod
   if (resolved && typeof resolved.renderToString === 'function')
-    return resolved
+    return resolved as KatexModule
   return null
 }
 
@@ -62,7 +66,7 @@ export function isKatexEnabled() {
   return typeof katexLoader === 'function'
 }
 
-export async function getKatex() {
+export async function getKatex(): Promise<KatexModule | null> {
   const globalKatex = getGlobalKatex()
   if (globalKatex) {
     katex = globalKatex

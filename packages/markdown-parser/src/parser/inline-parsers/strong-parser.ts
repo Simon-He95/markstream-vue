@@ -1,4 +1,4 @@
-import type { MarkdownToken, ParsedNode, ParseOptions, StrongNode } from '../../types'
+import type { InternalParseOptions, MarkdownToken, ParsedNode, ParseOptions, StrongNode } from '../../types'
 import { parseInlineTokens } from '../index'
 
 const ESCAPED_PUNCTUATION_RE = /\\([\\()[\]`$|*_\-!])/g
@@ -53,10 +53,11 @@ export function parseStrongToken(
   }
 
   // Parse inner tokens to handle nested elements
-  children.push(...parseInlineTokens(innerTokens, resolveInnerRaw(raw, strongText), undefined, {
-    ...(options as any),
+  const innerOptions: InternalParseOptions = {
+    ...(options),
     __insideStrong: true,
-  }))
+  }
+  children.push(...parseInlineTokens(innerTokens, resolveInnerRaw(raw, strongText), undefined, innerOptions))
 
   const node: StrongNode = {
     type: 'strong',

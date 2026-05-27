@@ -71,6 +71,14 @@ export default defineConfig({
         replacement: `${path.resolve(__dirname, '../packages/markdown-parser/src')}/`,
       },
       {
+        find: /^markstream-core$/,
+        replacement: path.resolve(__dirname, '../packages/markstream-core/src/index.ts'),
+      },
+      {
+        find: /^markstream-core\//,
+        replacement: `${path.resolve(__dirname, '../packages/markstream-core/src')}/`,
+      },
+      {
         find: /^@terrastruct\/d2$/,
         replacement: path.resolve(__dirname, './src/vendor/d2-bundled-stub.ts'),
       },

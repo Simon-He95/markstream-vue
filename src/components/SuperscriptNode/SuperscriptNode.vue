@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { getCustomNodeComponents } from '../../utils/nodeComponents'
+import { computed } from 'vue'
+import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import EmojiNode from '../EmojiNode'
 import EmphasisNode from '../EmphasisNode'
 import FootnoteReferenceNode from '../FootnoteReferenceNode'
@@ -8,6 +9,7 @@ import HtmlInlineNode from '../HtmlInlineNode'
 import InlineCodeNode from '../InlineCodeNode'
 import InsertNode from '../InsertNode'
 import LinkNode from '../LinkNode'
+import NodeChildRenderer from '../NodeChildRenderer'
 import { MathInlineNodeAsync } from '../NodeRenderer/asyncComponent'
 import ReferenceNode from '../ReferenceNode'
 import StrikethroughNode from '../StrikethroughNode'
@@ -31,10 +33,10 @@ const props = defineProps<{
   indexKey?: number | string
 }>()
 
-const overrides = getCustomNodeComponents(props.customId)
+const overrides = useCustomNodeComponents(() => props.customId)
 
 // Available node components for child rendering; prefer custom overrides
-const nodeComponents = {
+const nodeComponents = computed(() => ({
   text: TextNode,
   inline_code: InlineCodeNode,
   link: LinkNode,
@@ -49,21 +51,20 @@ const nodeComponents = {
   emoji: EmojiNode,
   math_inline: MathInlineNodeAsync,
   reference: ReferenceNode,
-  ...overrides,
-}
+  ...overrides.value,
+}))
 </script>
 
 <template>
   <sup class="superscript-node">
     <template v-for="(child, index) in node.children" :key="`${indexKey || 'superscript'}-${index}`">
-      <component
-        :is="nodeComponents[child.type]"
-        v-if="nodeComponents[child.type]"
+      <NodeChildRenderer
+        :components="nodeComponents"
         :node="child"
         :custom-id="props.customId"
         :index-key="`${indexKey || 'superscript'}-${index}`"
+        fallback-to-text
       />
-      <span v-else>{{ (child as any).content || (child as any).raw }}</span>
     </template>
   </sup>
 </template>

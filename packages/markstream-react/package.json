@@ -1,7 +1,7 @@
 {
   "name": "markstream-react",
   "type": "module",
-  "version": "0.0.45",
+  "version": "0.0.49",
   "description": "React Markdown renderer optimized for large documents with progressive Mermaid rendering, streaming diff code blocks, and fast real-time preview. Built on stream-markdown AST for consistent rendering across frameworks. Perfect for documentation sites, AI chat interfaces, and content management systems.",
   "author": "Simon He",
   "license": "MIT",
@@ -85,13 +85,14 @@
   ],
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build --mode npm && vite build -c vite.config.tailwind.ts --mode npm && node ./scripts/copy-tailwind-css.mjs && node ../../scripts/generate-px-css.mjs && pnpm run build:dts && node ./scripts/ensure-next-client-directive.mjs",
+    "build": "pnpm --dir ../markstream-core build && vite build --mode npm && vite build -c vite.config.tailwind.ts --mode npm && node ./scripts/copy-tailwind-css.mjs && node ../../scripts/generate-px-css.mjs && pnpm run build:dts && node ./scripts/ensure-next-client-directive.mjs",
     "build:analyze": "ANALYZE=true pnpm build",
     "build:dts": "rollup -c ./scripts/rollup.dts.config.mjs && node ./scripts/clean-dts.cjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "size:check": "node ../../scripts/check-package-size.mjs",
-    "release": "bumpp --commit --no-tag --no-push && pnpm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
+    "check:core-published": "node ../../scripts/check-core-published.mjs --package-json package.json --core-package-json ../markstream-core/package.json",
+    "release": "pnpm run check:core-published && bumpp --commit --no-tag --no-push && pnpm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
   },
   "peerDependencies": {
     "@antv/infographic": "^0.2.3",
@@ -101,7 +102,7 @@
     "react": ">=18",
     "react-dom": ">=18",
     "stream-markdown": ">=0.0.15",
-    "stream-monaco": ">=0.0.40"
+    "stream-monaco": ">=0.0.41"
   },
   "peerDependenciesMeta": {
     "@antv/infographic": {
@@ -126,19 +127,20 @@
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
     "clsx": "^2.1.1",
+    "markstream-core": "workspace:*",
     "stream-markdown-parser": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.28",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react-swc": "^3.11.0",
-    "autoprefixer": "^10.4.27",
+    "autoprefixer": "^10.5.0",
     "rollup": "^3.30.0",
     "rollup-plugin-dts": "^5.3.1",
     "rollup-plugin-visualizer": "^6.0.11",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1",
+    "vite": "^7.3.3",
     "vite-plugin-dts": "^4.5.4"
   }
 }

@@ -8,14 +8,12 @@
 pnpm add mermaid
 ```
 
-Mermaid 不需要额外的 CSS 文件。使用 Tailwind/UnoCSS 时，请在 reset 之后、`@layer components` 中导入库的 CSS，避免 utilities 覆盖：
+Mermaid 不需要额外的 CSS 文件。使用 Tailwind/UnoCSS 时，请在 reset 之后使用 `@import '...' layer(components)` 导入库的 CSS，避免 utilities 覆盖：
 
 ```css
 @import 'modern-css-reset';
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 ## 2. 流式示例
@@ -65,9 +63,70 @@ B-->C[End]
 ## 3. 进阶组件：`MermaidBlockNode`
 
 若需要头部控制、导出按钮、伪全屏等能力，请参考 [`MermaidBlockNode`](/zh/guide/mermaid-block-node) 或通过 [setCustomComponents 进行覆盖](/zh/guide/mermaid-block-node-override)。仓库内的 playground 提供 `/mermaid-export-demo` 路由可直接试用。
-如果渲染的 Mermaid 来自用户/LLM 等不可信来源，可加上 `:is-strict="true"` 启用严格模式与 SVG 清理，阻断 HTML labels 或内联事件混入渲染结果。
+Mermaid 严格模式与 SVG 清理默认开启。只有可信图表确实需要 Mermaid loose 解析/渲染配置时，才设置 `:is-strict="false"`。Markstream 在挂载前仍会清理 Mermaid SVG 输出。
 
-## 4. 常见问题排查
+## 4. strict 默认开启后，哪些图可能会变
+
+把 Mermaid 从 loose 切到 strict 后，依赖 Mermaid HTML labels 或更宽松 Mermaid 解析/渲染的可信图表，渲染结果可能会和以前不同。
+
+常见表现：
+
+1. 依赖 `<br>`、`<span>` 或更复杂 HTML 片段的 label，显示不再和以前一致。
+2. 依赖宽松 HTML 处理的链接或交互，在最终 SVG 里被去掉。
+3. 以前能渲染的图，现在退化成更简单的纯文本 label，或者和旧版本效果不一致。
+
+如果图表来源是完全可信的，而且确实需要 Mermaid loose 配置，请按具体渲染面显式关闭 strict，而不是改回全局默认值。在 Markstream 渲染器中，`isStrict=false` 不代表原始 SVG 插入；最终 SVG 仍会被清理，因此 `foreignObject` 和 active HTML labels 可能会被移除。
+
+### Vue 3：让可信 Markdown 面使用 Mermaid loose 配置
+
+```vue
+<script setup lang="ts">
+import MarkdownRender from 'markstream-vue'
+
+const trustedMarkdown = `
+\`\`\`mermaid
+flowchart TD
+  A["<b>可信 HTML label</b><br/>第 2 行"] --> B
+\`\`\`
+`
+</script>
+
+<template>
+  <MarkdownRender
+    :content="trustedMarkdown"
+    :mermaid-props="{ isStrict: false }"
+  />
+</template>
+```
+
+### 直接使用组件
+
+```vue
+<MermaidBlockNode :node="node" :is-strict="false" />
+```
+
+### 其他框架入口
+
+```tsx
+import MarkdownRender from 'markstream-react'
+
+<MarkdownRender content={trustedMarkdown} mermaidProps={{ isStrict: false }} />
+```
+
+```html
+<markstream-angular
+  [content]="trustedMarkdown()"
+  [mermaidProps]="{ isStrict: false }"
+/>
+```
+
+```vue
+<MarkdownRender :content="trustedMarkdown" :mermaid-props="{ isStrict: false }" />
+```
+
+用户内容、AI 输出、或混合可信度的 Markdown 流，仍然建议保持默认 strict。
+
+## 5. 常见问题排查
 
 1. **未安装依赖**：确保执行 `pnpm add mermaid`。缺失时组件会退回显示原始文本。
 2. **版本过旧**：请使用 `mermaid` ≥ 11，旧版本无法兼容异步渲染。

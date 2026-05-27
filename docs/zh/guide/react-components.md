@@ -21,12 +21,16 @@ markstream-react 提供与 markstream-vue 相同强大的组件，但专为 Reac
 | `final` | `boolean` | `false` | 标记输入结束，停止输出 streaming `loading` 节点 |
 | `parseOptions` | `ParseOptions` | - | 解析选项与 token hooks（仅在传入 `content` 时生效） |
 | `customHtmlTags` | `readonly string[]` | - | 作为自定义节点输出的 HTML-like 标签（如 `thinking`） |
+| `htmlPolicy` | `'safe' \| 'escape' \| 'trusted'` | `'safe'` | 控制 `html_block` / `html_inline` 渲染。`safe` 阻止 active/embed/form 标签，`escape` 显示原始 HTML 文本，`trusted` 恢复更宽松的受信 HTML 行为但仍会剥离脚本和不安全属性。 |
 | `customMarkdownIt` | `(md: MarkdownIt) => MarkdownIt` | - | 自定义 MarkdownIt 实例 |
 | `debugPerformance` | `boolean` | `false` | 输出解析/渲染耗时与虚拟化统计（仅 dev） |
 | `isDark` | `boolean` | `false` | 暗色主题标记，转发给重型节点并在根容器加 `.dark` |
 | `indexKey` | `number \| string` | - | 列表渲染时的 key 前缀 |
-| `typewriter` | `boolean` | `true` | 非代码节点进入动画 |
+| `typewriter` | `boolean` | `false` | 流式内容增长时显示闪烁的打字光标 |
 | `showTooltips` | `boolean` | `true` | 全局控制 `LinkNode` 与代码块节点 tooltip |
+| `smoothStreaming` | `boolean \| 'auto'` | `'auto'` | 为流式 `content` 更新启用内置 pacing。`'auto'` 仅在 `typewriter=true` 或 `maxLiveNodes<=0` 时启用。设 `true` 强制启用，设 `false` 以原始 chunk 节奏渲染。 |
+| `smoothStreamingOptions` | `SmoothMarkdownStreamOptions` | - | 内置流式 pacing 的微调参数（`minCharsPerSecond`、`maxCharsPerSecond`、`targetLatencyMs`、`catchUpLatencyMs`、`catchUpThreshold`、`maxCommitFps`、`startDelayMs`、`maxCharsPerCommit`、`flushOnFinish`）。创建渲染器时读取；如需动态修改，用不同的 `key` 重新创建组件。 |
+| `fade` | `boolean` | `true` | 启用非代码节点进入渐入动画和追加文本渐入效果 |
 
 #### 流式与重节点开关
 
@@ -44,6 +48,8 @@ markstream-react 提供与 markstream-vue 相同强大的组件，但专为 Reac
 | `maxLiveNodes` | `320` | DOM 最大保留节点数（设为 `0` 关闭虚拟化） |
 | `liveNodeBuffer` | `60` | 视窗前后 overscan 缓冲 |
 | `batchRendering` | `true` | 在关闭虚拟化时启用批次渲染 |
+| `smoothStreaming` | `'auto'` | 在 typewriter / 增量模式下内置流式 pacing（`typewriter` 或 `maxLiveNodes <= 0`）。设 `true` 强制启用，设 `false` 以原始 chunk 节奏渲染。 |
+| `smoothStreamingOptions` | - | 微调 pacing：`minCharsPerSecond`、`maxCharsPerSecond`、`targetLatencyMs`、`catchUpLatencyMs`、`catchUpThreshold`、`maxCommitFps`、`startDelayMs`、`maxCharsPerCommit`、`flushOnFinish`。创建渲染器时读取一次；如需动态修改，用不同的组件 `key`。 |
 | `initialRenderBatchSize` | `40` | 批次渲染前先渲染的节点数量 |
 | `renderBatchSize` | `80` | 每个批次渲染的节点数量 |
 | `renderBatchDelay` | `16` | 每次批次前的额外延迟（ms） |
@@ -85,8 +91,20 @@ markstream-react 提供与 markstream-vue 相同强大的组件，但专为 Reac
 
 流式建议：
 - 保持 `viewportPriority` 开启，避免离屏 Mermaid / Monaco / D2 在文字仍在流式更新时继续做后台工作。
-- 高频 SSE 更推荐直接传 `nodes`，而不是每个 chunk 都重跑整篇 `content` 解析。
+- 抖动较大的 SSE 或 AI token 流推荐用 `content` + 内置 `smoothStreaming`。
+- 已有 worker、store 或自定义 AST 管线时才用 `nodes`。
+- Mermaid strict mode 现已默认开启。仅在需要宽松 Mermaid HTML-label 行为的可信图表中通过 `mermaidProps` 设置 `{ isStrict: false }`。
 - Mermaid 常用调优项包括：`renderDebounceMs`、`contentStableDelayMs`、`previewPollDelayMs`、`previewPollMaxDelayMs`、`previewPollMaxAttempts`。
+
+受信兼容示例：
+
+```tsx
+<MarkdownRender
+  content={trustedMarkdown}
+  htmlPolicy="trusted"
+  mermaidProps={{ isStrict: false }}
+/>
+```
 
 `NodeRendererCodeBlockProps` 会跟随公开的 `CodeBlockNode` props 结构（去掉 `node`），所以像 `showHeader`、`showFontSizeButtons`、`showTooltips` 这类字段都能直接获得补全，而不需要退回 `any`。
 
@@ -608,7 +626,7 @@ function App() {
 
 ## 流式传输支持
 
-markstream-react 支持流式 markdown 内容：
+markstream-react 支持流式 markdown 内容，并内置 smooth pacing：
 
 ```tsx
 import MarkdownRender from 'markstream-react'
@@ -616,6 +634,7 @@ import { useEffect, useState } from 'react'
 
 function StreamingDemo() {
   const [content, setContent] = useState('')
+  const [final, setFinal] = useState(false)
   const fullContent = `# 流式传输演示
 
 此内容正在**逐步**流式传输。
@@ -629,6 +648,7 @@ function StreamingDemo() {
         i++
       }
       else {
+        setFinal(true)
         clearInterval(interval)
       }
     }, 30)
@@ -636,8 +656,33 @@ function StreamingDemo() {
     return () => clearInterval(interval)
   }, [])
 
-  return <MarkdownRender content={content} />
+  return (
+    <MarkdownRender
+      content={content}
+      final={final}
+      maxLiveNodes={0}
+      batchRendering
+      typewriter
+    />
+  )
 }
+```
+
+默认 `smoothStreaming="auto"` 会在 `typewriter` 开启或 `maxLiveNodes <= 0` 时自动启用 pacing。只有在需要首屏内容也从空白开始 pacing 时才用 `smoothStreaming={true}`——这会跳过 mounted 门控，在 SSR 场景下可能导致 hydration 不匹配或空白闪烁。
+
+用 `smoothStreamingOptions` 微调 pacing 参数：
+
+```tsx
+<MarkdownRender
+  content={content}
+  final={final}
+  smoothStreamingOptions={{
+    minCharsPerSecond: 45,
+    maxCharsPerSecond: 1200,
+    targetLatencyMs: 900,
+    catchUpLatencyMs: 350,
+  }}
+/>
 ```
 
 ## TypeScript 支持

@@ -184,19 +184,14 @@ function scheduleCheckMinHeight() {
     const container = messagesContainer.value
     if (!container)
       return
-    const contentEl = Array.from(container.children).find(child =>
-      (child as HTMLElement).classList?.contains('markdown-renderer'),
-    ) as HTMLElement | undefined
-    if (!contentEl)
-      return
 
     const REQUIRED_OVERFLOW_CONFIRMATIONS = 2
     const REQUIRED_CLEAR_CONFIRMATIONS = 3
 
-    const hadClass = contentEl.classList.contains('disable-min-height')
+    const hadClass = container.classList.contains('disable-min-height')
 
     if (__minHeightDisabled || hadClass) {
-      contentEl.classList.add('disable-min-height')
+      container.classList.add('disable-min-height')
       const containerDelta = container.scrollHeight - container.clientHeight
       const shouldRemove = containerDelta > 1
       if (shouldRemove) {
@@ -208,14 +203,14 @@ function scheduleCheckMinHeight() {
         if (__clearConfirmations >= REQUIRED_CLEAR_CONFIRMATIONS) {
           __minHeightDisabled = false
           __overflowConfirmations = 0
-          contentEl.classList.remove('disable-min-height')
+          container.classList.remove('disable-min-height')
         }
       }
       return
     }
 
     // Not latched: probe by temporarily unsetting min-height (same rAF tick).
-    contentEl.classList.add('disable-min-height')
+    container.classList.add('disable-min-height')
     const containerDelta = container.scrollHeight - container.clientHeight
     const probeOverflow = containerDelta > 1
     if (probeOverflow)
@@ -239,7 +234,7 @@ function scheduleCheckMinHeight() {
       }
     }
     else {
-      contentEl.classList.remove('disable-min-height')
+      container.classList.remove('disable-min-height')
     }
   })
 }
@@ -489,7 +484,7 @@ onBeforeUnmount(() => {
   box-sizing: border-box;
 }
 
-.chatbot-messages > .markdown-renderer.disable-min-height {
+.chatbot-messages.disable-min-height > .markdown-renderer {
   min-height: unset !important;
 }
 

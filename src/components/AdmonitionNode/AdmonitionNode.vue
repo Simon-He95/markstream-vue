@@ -14,7 +14,7 @@ interface AdmonitionNode {
   open?: boolean
 }
 
-const props = defineProps<{ node: AdmonitionNode, indexKey: number | string, isDark?: boolean, typewriter?: boolean, customId?: string }>()
+const props = defineProps<{ node: AdmonitionNode, indexKey: number | string, isDark?: boolean, typewriter?: boolean, fade?: boolean, customId?: string }>()
 const emit = defineEmits(['copy'])
 
 const displayTitle = computed(() => {
@@ -68,6 +68,7 @@ const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
         :nodes="props.node.children"
         :custom-id="props.customId"
         :typewriter="props.typewriter"
+        :fade="props.fade"
         @copy="emit('copy', $event)"
       />
     </div>

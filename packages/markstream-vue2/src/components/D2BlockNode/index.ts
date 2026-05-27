@@ -1,7 +1,7 @@
 import D2BlockNode from './D2BlockNode.vue'
 
 interface Vue2App {
-  component: (name: string, component: any) => void
+  component: (name: string, component: unknown) => void
 }
 
 D2BlockNode.install = (app: Vue2App) => {

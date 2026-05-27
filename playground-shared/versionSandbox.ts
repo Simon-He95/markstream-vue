@@ -1,6 +1,6 @@
 import { withMarkdownHash } from './testPageState'
 
-export type SandboxFrameworkId = 'vue3' | 'vue2' | 'react18' | 'react19' | 'angular'
+export type SandboxFrameworkId = 'vue3' | 'vue2' | 'react18' | 'react19' | 'angular' | 'svelte'
 export type SandboxRenderSource = 'workspace' | 'npm'
 
 export interface SandboxFrameworkTarget {

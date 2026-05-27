@@ -5,7 +5,7 @@ import { defineConfig } from 'tsdown'
 // touching those packages directly, eliminating the SSR build flood of DEP0155 logs.
 const markdownItDeps = [
   /^markdown-it(?:-[\w-]+)?$/,
-  'markdown-it-ts',
+  /^markdown-it-ts(?:\/.*)?$/,
   'entities',
   'linkify-it',
   'mdurl',

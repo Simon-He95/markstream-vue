@@ -21,6 +21,7 @@ const props = defineProps<{
   node: DefinitionListNode
   indexKey: string | number
   typewriter?: boolean
+  fade?: boolean
   customId?: string
 }>()
 
@@ -37,6 +38,7 @@ defineEmits(['copy'])
           :nodes="item.term"
           :custom-id="props.customId"
           :typewriter="props.typewriter"
+          :fade="props.fade"
           @copy="$emit('copy', $event)"
         />
       </dt>
@@ -46,6 +48,7 @@ defineEmits(['copy'])
           :nodes="item.definition"
           :custom-id="props.customId"
           :typewriter="props.typewriter"
+          :fade="props.fade"
           @copy="$emit('copy', $event)"
         />
       </dd>

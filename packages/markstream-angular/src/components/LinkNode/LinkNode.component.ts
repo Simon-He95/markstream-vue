@@ -8,6 +8,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
+import { isUnsafeHtmlUrl, shouldOpenLinkInNewTab } from 'stream-markdown-parser'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
 import { NestedRendererComponent } from '../NestedRenderer/NestedRenderer.component'
 import { getNodeList, getString } from '../shared/node-helpers'
@@ -25,8 +26,8 @@ import { TextNodeComponent } from '../TextNode/TextNode.component'
       [attr.href]="href || null"
       [attr.title]="resolvedShowTooltip ? '' : title"
       [attr.aria-label]="'Link: ' + title"
-      target="_blank"
-      rel="noopener noreferrer"
+      [attr.target]="openInNewTab ? '_blank' : null"
+      [attr.rel]="openInNewTab ? 'noopener noreferrer' : null"
       [ngStyle]="cssVars"
       (mouseenter)="onAnchorEnter()"
       (mouseleave)="onAnchorLeave()"
@@ -73,12 +74,17 @@ export class LinkNodeComponent implements AfterViewInit, OnChanges, OnDestroy {
   private hovering = false
 
   get href() {
-    return getString((this.node as any)?.href)
+    const href = getString((this.node as any)?.href)
+    return href && !isUnsafeHtmlUrl(href) ? href : ''
   }
 
   get title() {
     const rawTitle = getString((this.node as any)?.title)
     return rawTitle || this.href
+  }
+
+  get openInNewTab() {
+    return shouldOpenLinkInNewTab(this.href)
   }
 
   get loading() {

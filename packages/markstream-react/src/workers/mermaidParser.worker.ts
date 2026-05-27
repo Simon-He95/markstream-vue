@@ -3,7 +3,7 @@ import mermaid from 'mermaid'
 
 declare const self: DedicatedWorkerGlobalScope
 
-mermaid.initialize({ startOnLoad: false, securityLevel: 'loose' })
+mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', flowchart: { htmlLabels: false } })
 
 type Theme = 'light' | 'dark'
 

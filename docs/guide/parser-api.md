@@ -29,6 +29,12 @@ Parameters:
 - `md` (MarkdownItCore): a markdown-it-ts instance created by `getMarkdown()`
 - `options` (ParseOptions, optional): contains transform hooks described below
 
+> Warning: The default `streamParse: 'auto'` uses `md.stream.parse` for non-final top-level parses when available and retains the latest source/token cache on the `md` instance. Final one-shot parses use the regular parser unless you pass `{ streamParse: true }`; pass `{ streamParse: false }` to opt out. If you reuse one `md` instance for unrelated one-shot documents, pass `{ final: true }` or `{ streamParse: false }`.
+
+```ts
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+```
+
 > Tip for custom components: for simple HTML‑like tags such as `<thinking>`, prefer the built‑in `customHtmlTags` / `custom-html-tags` allowlist so the parser emits custom nodes directly. Use `preTransformTokens` only when you need to reshape `content`/`attrs`. See [custom component parsing](/guide/advanced#custom-component-parsing) for details.
 
 Returns: `ParsedNode[]`
@@ -75,6 +81,8 @@ setDefaultMathOptions({
 - `findMatchingClose(src, startIdx, open, close)` — find matching delimiter
 - `parseFenceToken(token)` — parse code fence into `CodeBlockNode`
 - `normalizeStandaloneBackslashT(content, options?)` — normalize backslash-t sequences in math content
+- `sanitizeImageSrc(value)` — apply the same strict image URL policy used by the built-in image renderers
+- `sanitizeMermaidSvg(svg)` / `toSafeMermaidSvgMarkup(svg)` / `toSafeSvgElement(svg)` / `isBrokenMermaidSvg(svg)` — sanitize or validate Mermaid SVG with `DOMParser`; in plain Node runtimes without `DOMParser`, the sanitizer helpers return `null` / `''` / `null`
 
 ## Parse hooks (advanced)
 When calling `parseMarkdownToStructure` you can pass `ParseOptions` with these hooks:

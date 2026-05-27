@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { customComponentsRevision, getCustomNodeComponents } from '../../utils/nodeComponents'
+import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import ListItemNode from '../ListItemNode'
 
 // 节点子元素类型
@@ -17,7 +17,7 @@ interface ListItem {
   raw: string
 }
 
-const { node, customId, indexKey, typewriter, showTooltips } = defineProps<{
+const { node, customId, indexKey, typewriter, fade, showTooltips } = defineProps<{
   node: {
     type: 'list'
     ordered: boolean
@@ -28,15 +28,15 @@ const { node, customId, indexKey, typewriter, showTooltips } = defineProps<{
   customId?: string
   indexKey?: number | string
   typewriter?: boolean
+  fade?: boolean
   showTooltips?: boolean
 }>()
 
 defineEmits(['copy'])
 
+const customComponents = useCustomNodeComponents(() => customId)
 const listItemComponent = computed(() => {
-  void customComponentsRevision.value
-  const customComponents = getCustomNodeComponents(customId)
-  return (customComponents as any).list_item || ListItemNode
+  return (customComponents.value as any).list_item || ListItemNode
 })
 </script>
 
@@ -55,6 +55,7 @@ const listItemComponent = computed(() => {
       :custom-id="customId"
       :index-key="`${indexKey || 'list'}-${index}`"
       :typewriter="typewriter"
+      :fade="fade"
       :value="node.ordered ? (node.start ?? 1) + index : undefined"
       @copy="$emit('copy', $event)"
     />

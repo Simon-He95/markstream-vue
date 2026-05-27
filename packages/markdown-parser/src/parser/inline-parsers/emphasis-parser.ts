@@ -16,13 +16,14 @@ export function parseEmphasisToken(
 
   // Process tokens between em_open and em_close
   while (i < tokens.length && tokens[i].type !== 'em_close') {
-    emText += String(tokens[i].content ?? (tokens[i] as any)?.text ?? '')
+    const tokenText = tokens[i] as MarkdownToken & { text?: unknown }
+    emText += String(tokens[i].content ?? tokenText.text ?? '')
     innerTokens.push(tokens[i])
     i++
   }
 
   // Parse inner tokens to handle nested elements
-  children.push(...parseInlineTokens(innerTokens, undefined, undefined, options as any))
+  children.push(...parseInlineTokens(innerTokens, undefined, undefined, options))
 
   const node: EmphasisNode = {
     type: 'emphasis',

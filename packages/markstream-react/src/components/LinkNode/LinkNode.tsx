@@ -1,6 +1,7 @@
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { NodeComponentProps } from '../../types/node-component'
 import React, { useCallback, useMemo } from 'react'
+import { sanitizeHtmlAttrs, shouldOpenLinkInNewTab } from 'stream-markdown-parser'
 import { renderNodeChildren } from '../../renderers/renderChildren'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
 import { TextNode } from '../TextNode/TextNode'
@@ -56,17 +57,22 @@ export function LinkNode(props: NodeComponentProps<{
     props.underlineHeight,
   ])
 
+  const safeHref = useMemo(() => {
+    return sanitizeHtmlAttrs({ href: String(node.href ?? '') }).href
+  }, [node.href])
+
   const title = typeof node.title === 'string' && node.title.trim().length > 0
     ? node.title
-    : String(node.href ?? '')
+    : String(safeHref ?? '')
+  const openInNewTab = shouldOpenLinkInNewTab(safeHref)
 
   const onAnchorEnter = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!showTip)
       return
     const target = event.currentTarget as HTMLElement | null
-    const txt = String(node.title || node.href || node.text || '')
+    const txt = String(node.title || safeHref || node.text || '')
     showTooltipForAnchor(target, txt, 'top', false, { x: event.clientX, y: event.clientY }, isDark)
-  }, [isDark, node.href, node.text, node.title, showTip])
+  }, [isDark, node.text, node.title, safeHref, showTip])
 
   const onAnchorLeave = useCallback(() => {
     if (!showTip)
@@ -99,11 +105,11 @@ export function LinkNode(props: NodeComponentProps<{
   return (
     <a
       className="link-node"
-      href={node.href}
+      href={safeHref || undefined}
       title={showTip ? '' : title}
       aria-label={`Link: ${title}`}
-      target="_blank"
-      rel="noopener noreferrer"
+      target={openInNewTab ? '_blank' : undefined}
+      rel={openInNewTab ? 'noopener noreferrer' : undefined}
       style={cssVars}
       onMouseEnter={onAnchorEnter}
       onMouseLeave={onAnchorLeave}

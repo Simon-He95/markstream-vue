@@ -13,4 +13,13 @@ describe('markstream-vue2 link loading state', () => {
     expect(source).toContain('props.animationTiming ?? \'ease-in-out\'')
     expect(source).toContain('@keyframes underlinePulse')
   })
+
+  it('keeps href binding behind the safeHref sanitizer', () => {
+    const source = readFileSync(resolve(process.cwd(), 'packages/markstream-vue2/src/components/LinkNode/LinkNode.vue'), 'utf8')
+
+    expect(source).toContain('const safeHref = computed')
+    expect(source).toContain('return sanitizeAttrs({ href }).href')
+    expect(source).toContain(':href="safeHref"')
+    expect(source).toContain('delete (merged as Record<string, unknown>).href')
+  })
 })

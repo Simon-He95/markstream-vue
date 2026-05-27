@@ -6,12 +6,12 @@ This page is intentionally practical: copyable prompts, rollout checklists, and 
 
 ## Start with your goal
 
-- Want packaged skills you can install right now: jump to [Install the packaged skills](#install-the-packaged-skills)
+- Want repository skills you can install right now: jump to [Install the repository skills](#install-the-repository-skills)
 - Want ready-made prompt templates without cloning the repo: jump to [Copyable prompts](#2-copyable-prompts)
 - Want to migrate from another renderer with an assistant: start with [Copyable prompts](#2-copyable-prompts) and the rollout pattern below
 - Want to version reusable AI assets inside your own repo: read [Repository assets](#repository-assets)
 
-## Install the packaged skills
+## Install the repository skills
 
 For end users, the recommended command is the shared `skills` installer:
 
@@ -37,59 +37,31 @@ npx skills add https://github.com/Simon-He95/markstream-vue/tree/main/.agents/sk
 npx skills add git@github.com:Simon-He95/markstream-vue.git
 ```
 
-If you specifically want the package CLI, you can still use:
-
-```bash
-npx markstream-vue skills install
-# or
-pnpm dlx markstream-vue skills install
-```
-
-Useful variants:
-
-```bash
-npx markstream-vue skills list
-npx markstream-vue skills install --target codex
-npx markstream-vue skills install --target ./tmp/skills-test --mode copy --force
-```
-
 - `npx skills add Simon-He95/markstream-vue` is the primary recommendation for Codex-compatible skill installation
-- `skills install` defaults to `copy`, which is safer for `npx` and `dlx` usage
-- the default target is `~/.agents/skills`
-- `--target codex` targets `${CODEX_HOME:-~/.codex}/skills`
-- `--target` accepts either `agents`, `codex`, or any custom path
-- `--force` replaces existing installs at the target path
+- `markstream-vue@1.0` does not publish a CLI `bin`
+- repository scripts such as `pnpm skills:list` and `pnpm prompts:list` are maintainer helpers for cloned checkouts, not npm package surface
 
-The prompts stay in the repository under `prompts/`; the packaged installer only handles the skill folders.
-
-The same CLI can also expose bundled prompt templates:
-
-```bash
-npx markstream-vue prompts list
-npx markstream-vue prompts show install-markstream
-```
-
-That is usually the easiest way for npm users to discover the maintained prompt set without cloning the repository.
+The prompts stay in the repository under `prompts/`. Copy them from GitHub or from a cloned checkout; they are not published through the `markstream-vue` npm package.
 
 ## Repository assets
 
 This repository now includes reusable assets you can version with the codebase:
 
 - Task skills: `markstream-install`, `markstream-custom-components`, `markstream-migration`
-- Framework entry skills: `markstream-vue`, `markstream-nuxt`, `markstream-vue2`, `markstream-vue2-cli`, `markstream-vue2-vite`, `markstream-react`, `markstream-angular`
+- Framework entry skills: `markstream-vue`, `markstream-nuxt`, `markstream-vue2`, `markstream-vue2-cli`, `markstream-vue2-vite`, `markstream-react`, `markstream-angular`, `markstream-svelte`
 - `prompts/install-markstream.md`
 - `prompts/override-built-in-components.md`
 - `prompts/add-custom-tag-thinking.md`
 - `prompts/migrate-react-markdown.md`
 - `prompts/audit-markstream-integration.md`
 
-Use `.agents/skills/` when you want reusable Codex workflow assets that GitHub-based installers can discover automatically. The task skills cover cross-framework work; the framework entry skills make Vue 3, Nuxt, Vue 2, Vue 2 CLI, Vue 2 Vite, React, and Angular scenarios directly discoverable. Use `prompts/` when you want copyable starting prompts for humans or other assistants.
+Use `.agents/skills/` when you want reusable Codex workflow assets that GitHub-based installers can discover automatically. The task skills cover cross-framework work; the framework entry skills make Vue 3, Nuxt, Vue 2, Vue 2 CLI, Vue 2 Vite, React, Angular, and Svelte 5 scenarios directly discoverable. Use `prompts/` when you want copyable starting prompts for humans or other assistants.
 
 ## 1. Give the AI these five facts first
 
 Before you ask for code changes, include:
 
-- framework and version, for example Vue 3, Nuxt 3, React 18, or Angular 20
+- framework and version, for example Vue 3, Nuxt 3, React 18, Angular 20, or Svelte 5
 - CSS stack, for example Tailwind, UnoCSS, reset libraries, or a design system
 - rendering mode: static article, docs site, SSR, or streaming chat
 - required peers: Monaco, Mermaid, D2, KaTeX, or Shiki
@@ -141,8 +113,8 @@ If you are building a reusable prompt, template, or coding skill around markstre
 
 - detect the framework and package manager
 - install only the required peers for the requested features
-- place CSS after resets and inside `@layer components` when utility frameworks are involved
-- choose `content` for simple rendering and `nodes` plus `final` for streaming
+- place CSS after resets and use `@import '...' layer(components)` when utility frameworks are involved
+- choose `content` for simple rendering and most streaming chat; use built-in smooth streaming for jittery token streams; choose `nodes` plus `final` only for worker-preparsed/custom AST flows
 - use `custom-id` for overrides by default
 - point the user to the right docs page after making changes
 

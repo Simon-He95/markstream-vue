@@ -8,11 +8,11 @@
     "start": "next start"
   },
   "dependencies": {
-    "@antv/infographic": "^0.2.16",
+    "@antv/infographic": "^0.2.19",
     "@terrastruct/d2": "^0.1.33",
-    "katex": "^0.16.44",
+    "katex": "^0.16.46",
     "markstream-react": "workspace:*",
-    "mermaid": "^11.13.0",
+    "mermaid": "^11.15.0",
     "monaco-editor": "^0.52.2",
     "next": "14.2.35",
     "react": "18.3.1",

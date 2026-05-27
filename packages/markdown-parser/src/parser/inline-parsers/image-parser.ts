@@ -9,11 +9,11 @@ export function parseImageToken(token: MarkdownToken, loading = false): ImageNod
   // token. Remember which child provided attrs so we can prefer its content
   // over the parent's `token.content` (the parent may contain the raw
   // markdown string like `![alt](src "title")`).
-  let childWithAttrs: any = null
+  let childWithAttrs: MarkdownToken | null = null
   if ((!attrs || attrs.length === 0) && Array.isArray(token.children)) {
     for (const child of token.children) {
       // child.attrs may be null in markdown-it; check and use if populated
-      const childAttrs = (child as any)?.attrs
+      const childAttrs = child.attrs
       if (Array.isArray(childAttrs) && childAttrs.length > 0) {
         attrs = childAttrs
         childWithAttrs = child

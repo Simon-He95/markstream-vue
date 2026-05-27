@@ -1,0 +1,2042 @@
+/*
+ * Keep button defaults minimal, but don't override Tailwind utilities.
+ * Use :where() to keep specificity low so `.markstream-svelte .<utility>` wins.
+ */
+:where(.markstream-svelte) button {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+}
+
+markstream-svelte {
+  display: block;
+  width: 100%;
+}
+
+/* Theme variables for renderer colors */
+.markstream-svelte {
+  --border: 214.3 31.8% 91.4%;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --secondary: 210 40% 96%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --ms-background: var(--background);
+  --ms-foreground: var(--foreground);
+  --ms-muted: var(--muted);
+  --ms-muted-foreground: var(--muted-foreground);
+  --ms-secondary: var(--secondary);
+  --ms-secondary-foreground: var(--foreground);
+  --ms-accent: 210 40% 91%;
+  --ms-accent-foreground: var(--foreground);
+  --ms-border: var(--border);
+  --ms-popover: var(--background);
+  --ms-popover-foreground: var(--foreground);
+  --code-fg: hsl(var(--ms-foreground));
+  --code-action-fg: hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg: hsl(var(--ms-accent));
+  --code-action-hover-fg: hsl(var(--ms-accent-foreground));
+  --diagram-bg: hsl(var(--ms-muted));
+  --diagram-border: hsl(var(--ms-border));
+  --diagram-header-bg: hsl(var(--ms-muted));
+  --blockquote-border: hsl(var(--ms-muted-foreground) / 0.2);
+  --modal-overlay: hsl(0 0% 0% / 0.7);
+  --modal-bg: hsl(var(--ms-popover));
+  --modal-fg: hsl(var(--ms-popover-foreground));
+  --ms-text-label: 0.75rem;
+  --ms-action-btn-padding: 0.375rem;
+  --ms-action-btn-icon: 0.875rem;
+  --ms-inset-panel-x: 0.625rem;
+  --ms-inset-panel-y: 0.375rem;
+  --ms-inset-panel-body: 1rem;
+  --ms-gap-header-actions: 0.5rem;
+  --ms-flow-blockquote-y: 1.25em;
+  --ms-flow-blockquote-indent: 1.25em;
+  --ms-flow-diagram-y: 1.5em;
+  --ms-size-image-max-width: 24rem;
+  --ms-size-diagram-min-height: 360px;
+  --ms-duration-standard: 180ms;
+  --ms-duration-fast: 120ms;
+  --ms-duration-emphasis: 220ms;
+  --ms-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ms-shadow-subtle: 0 1px 3px 0 hsl(var(--ms-foreground) / 0.06);
+  --ms-shadow-modal: 0 10px 15px -3px hsl(var(--ms-foreground) / 0.1), 0 4px 6px -4px hsl(var(--ms-foreground) / 0.1);
+  color: hsl(var(--foreground));
+  font:
+    400 16px/1.72 "IBM Plex Sans", "Segoe UI", sans-serif;
+  word-break: break-word;
+  position: relative;
+  contain: layout;
+  content-visibility: auto;
+  contain-intrinsic-size: 800px 600px;
+}
+
+.markstream-svelte.virtualized {
+  content-visibility: visible;
+  contain-intrinsic-size: auto;
+}
+
+.dark .markstream-svelte,
+.markstream-svelte.dark {
+  --border: 217.2 32.6% 17.5%;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --secondary: 217.2 32.6% 17.5%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --ms-accent: 217.2 32.6% 24%;
+}
+
+.markstream-svelte > :first-child {
+  margin-top: 0;
+}
+
+.markstream-svelte > :last-child {
+  margin-bottom: 0;
+}
+
+.markstream-svelte .node-slot,
+.markstream-svelte .node-content {
+  width: 100%;
+}
+
+.markstream-svelte markstream-svelte-blockquote-node,
+.markstream-svelte markstream-svelte-paragraph-node {
+  display: flow-root;
+  width: 100%;
+}
+
+.markstream-svelte markstream-svelte-nested-renderer,
+.markstream-svelte markstream-svelte-node-outlet,
+.markstream-svelte markstream-svelte-image-node {
+  display: contents;
+}
+
+.markstream-svelte .node-placeholder {
+  width: 100%;
+  min-height: 1rem;
+  margin: 0.25rem 0;
+  border-radius: 0.5rem;
+  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
+  background-size: 200% 100%;
+  animation: node-placeholder-shimmer 1.1s ease-in-out infinite;
+}
+
+.markstream-svelte .node-spacer {
+  width: 100%;
+}
+
+.markstream-svelte .typewriter-node,
+.markstream-svelte .fade-node {
+  opacity: 0;
+  animation: typewriter-fade var(--fade-duration, var(--typewriter-fade-duration, 280ms)) var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))) both;
+  will-change: opacity;
+}
+
+.markstream-svelte .markstream-svelte-text-node {
+  display: inline;
+  font-weight: inherit;
+  vertical-align: baseline;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.markstream-svelte .markstream-svelte-text--centered {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.markstream-svelte .markstream-svelte-text__stream-delta {
+  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
+  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
+  animation-fill-mode: both;
+  will-change: opacity;
+}
+
+.markstream-svelte .markstream-svelte-text__stream-delta--a {
+  animation-name: markstream-svelte-text-stream-update-fade-a;
+}
+
+.markstream-svelte .markstream-svelte-text__stream-delta--b {
+  animation-name: markstream-svelte-text-stream-update-fade-b;
+}
+
+.markstream-svelte h1,
+.markstream-svelte h2,
+.markstream-svelte h3,
+.markstream-svelte h4,
+.markstream-svelte h5,
+.markstream-svelte h6 {
+  margin: 1.8rem 0 0.8rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.markstream-svelte h1 {
+  font-size: clamp(2rem, 4vw, 2.65rem);
+}
+
+.markstream-svelte h2 {
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}
+
+.markstream-svelte h3 {
+  font-size: 1.35rem;
+}
+
+.markstream-svelte h4 {
+  font-size: 1.15rem;
+}
+
+.markstream-svelte p,
+.markstream-svelte ul,
+.markstream-svelte ol,
+.markstream-svelte blockquote,
+.markstream-svelte pre,
+.markstream-svelte table,
+.markstream-svelte details,
+.markstream-svelte dl {
+  margin: 1rem 0;
+}
+
+.markstream-svelte ul,
+.markstream-svelte ol {
+  padding-left: 1.45rem;
+}
+
+.markstream-svelte li + li {
+  margin-top: 0.35rem;
+}
+
+.markstream-svelte li > p {
+  margin: 0.35rem 0;
+}
+
+.markstream-svelte a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.markstream-svelte .link-node {
+  color: var(--link-color, #0366d6);
+  text-decoration: none;
+}
+
+.markstream-svelte .link-node:hover {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}
+
+.markstream-svelte .link-loading {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  color: var(--link-color, #0366d6);
+}
+
+.markstream-svelte .link-loading .link-text-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.markstream-svelte .link-loading .link-text {
+  position: relative;
+  z-index: 2;
+}
+
+.markstream-svelte .link-loading-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--underline-height, 2px);
+  bottom: var(--underline-bottom, -3px);
+  background: currentColor;
+  border-radius: 999px;
+  will-change: opacity;
+  opacity: var(--underline-rest-opacity, 0.18);
+  animation: markstream-svelte-link-loading-pulse var(--underline-duration, 1.6s) var(--underline-timing, ease-in-out) var(--underline-iteration, infinite);
+}
+
+@keyframes markstream-svelte-link-loading-pulse {
+  0%, 100% { opacity: var(--underline-rest-opacity, 0.18); }
+  50% { opacity: var(--underline-opacity, 0.35); }
+}
+
+@keyframes markstream-svelte-text-stream-update-fade-a {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes markstream-svelte-text-stream-update-fade-b {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.markstream-svelte .typewriter-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  border-right: 2px solid currentColor;
+  pointer-events: none;
+  animation: typewriter-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes typewriter-cursor-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markstream-svelte .link-loading-indicator {
+    animation: none !important;
+    opacity: var(--underline-rest-opacity, 0.18);
+  }
+
+  .markstream-svelte .markstream-svelte-text__stream-delta {
+    animation: none !important;
+  }
+
+  .markstream-svelte .typewriter-node,
+  .markstream-svelte .fade-node {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  .markstream-svelte .typewriter-cursor {
+    animation: none !important;
+  }
+}
+
+.markstream-svelte strong {
+  font-weight: 700;
+}
+
+.markstream-svelte em {
+  font-style: italic;
+}
+
+.markstream-svelte code {
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.42rem;
+  background: rgba(15, 23, 42, 0.06);
+  font:
+    500 0.92em/1.5 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.markstream-svelte pre {
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+
+.markstream-svelte pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.markstream-svelte blockquote,
+.markstream-svelte .blockquote-node {
+  display: flow-root;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--blockquote-fg, hsl(var(--ms-muted-foreground)));
+  border-left: 3px solid var(--blockquote-border);
+  quotes: "\201C" "\201D" "\2018" "\2019";
+  margin-top: var(--ms-flow-blockquote-y);
+  margin-bottom: var(--ms-flow-blockquote-y);
+  padding-left: var(--ms-flow-blockquote-indent);
+  background: transparent;
+  border-radius: 0;
+}
+
+.markstream-svelte .blockquote-node .markstream-svelte,
+.markstream-svelte blockquote .markstream-svelte {
+  content-visibility: visible;
+  contain: content;
+  contain-intrinsic-size: 0 0;
+}
+
+.markstream-svelte .blockquote-node > markstream-svelte-nested-renderer,
+.markstream-svelte blockquote > markstream-svelte-nested-renderer,
+.markstream-svelte .blockquote-node > markstream-svelte-node-outlet,
+.markstream-svelte blockquote > markstream-svelte-node-outlet {
+  display: block;
+  width: 100%;
+}
+
+.markstream-svelte hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.markstream-svelte table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+.markstream-svelte th,
+.markstream-svelte td {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.markstream-svelte th {
+  position: relative;
+  background: rgba(15, 23, 42, 0.05);
+  font-weight: 700;
+}
+
+.markstream-svelte .table-node__resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 1;
+  width: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.markstream-svelte .table-node__resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0.35em;
+  bottom: 0.35em;
+  left: 50%;
+  width: 2px;
+  border-radius: 9999px;
+  background: rgba(94, 104, 121, 0.55);
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 0.12s ease;
+}
+
+.markstream-svelte .table-node__resize-handle:hover::after,
+.markstream-svelte .table-node__resize-handle:focus-visible::after {
+  opacity: 1;
+}
+
+.markstream-svelte table .markstream-svelte-text-node,
+.markstream-svelte table code {
+  white-space: inherit;
+  overflow-wrap: inherit;
+  word-break: inherit;
+  max-width: none;
+}
+
+.markstream-svelte img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.9rem;
+  vertical-align: middle;
+}
+
+.markstream-svelte .image-node-container {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: var(--ms-size-image-max-width);
+}
+
+.markstream-svelte .image-node__img {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  vertical-align: middle;
+  transition: opacity var(--ms-duration-emphasis) var(--ms-ease-standard);
+}
+
+.markstream-svelte .image-node__img.is-loading {
+  opacity: 0;
+}
+
+.markstream-svelte .image-node__img.is-loaded {
+  opacity: 1;
+}
+
+.markstream-svelte .image-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 8rem;
+  max-width: var(--ms-size-image-max-width);
+  background: hsl(var(--ms-muted));
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.markstream-svelte .image-shimmer {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 8rem;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--ms-muted)) 0%,
+    hsl(var(--ms-muted-foreground) / 0.06) 50%,
+    hsl(var(--ms-muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: markstream-svelte-image-shimmer 1.5s ease-in-out infinite;
+}
+
+.markstream-svelte .image-error {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  min-height: 4rem;
+  max-width: var(--ms-size-image-max-width);
+  background: hsl(var(--ms-muted));
+  color: hsl(var(--ms-muted-foreground));
+  font-size: var(--ms-text-label);
+  vertical-align: middle;
+}
+
+.markstream-svelte .image-node__raw-text {
+  font-size: var(--ms-text-label);
+  color: hsl(var(--ms-muted-foreground));
+}
+
+@keyframes markstream-svelte-image-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .markstream-svelte .image-shimmer {
+    animation: none !important;
+  }
+
+  .markstream-svelte .image-node__img {
+    transition: none !important;
+  }
+}
+
+.markstream-svelte details {
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.markstream-svelte summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.markstream-svelte dl {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.markstream-svelte dt {
+  font-weight: 700;
+}
+
+.markstream-svelte dd {
+  margin: 0 0 0.45rem 1rem;
+}
+
+.markstream-svelte input[type='checkbox'] {
+  margin-right: 0.4rem;
+}
+
+.markstream-svelte mark {
+  padding: 0.08rem 0.24rem;
+  border-radius: 0.3rem;
+  background: rgba(250, 204, 21, 0.28);
+}
+
+.markstream-svelte ins {
+  text-decoration-thickness: 0.08em;
+}
+
+.markstream-svelte del {
+  text-decoration-thickness: 0.08em;
+}
+
+/* Prevent mermaid temporary render containers from causing layout shift */
+body > div[id^="dmermaid-"] {
+  position: fixed;
+  top: -10000px;
+  left: 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.markstream-svelte .markstream-nested-custom {
+  display: block;
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.markstream-svelte .markstream-nested-custom--thinking {
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.08), rgba(255, 255, 255, 0.92));
+  border-color: rgba(14, 165, 233, 0.18);
+}
+
+.markstream-svelte .markstream-nested-admonition {
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+.markstream-svelte .markstream-nested-admonition__title {
+  margin-bottom: 0.55rem;
+  font-weight: 700;
+}
+
+.markstream-svelte .markstream-nested-admonition--warning {
+  border-color: rgba(245, 158, 11, 0.24);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.markstream-svelte .markstream-nested-admonition--error,
+.markstream-svelte .markstream-nested-admonition--danger {
+  border-color: rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.markstream-svelte .markstream-nested-admonition--tip {
+  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.07);
+}
+
+.markstream-svelte .markstream-nested-reference {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  margin: 0 0.125rem;
+  padding: 0 0.375rem;
+  border-radius: 0.375rem;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  vertical-align: baseline;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.markstream-svelte .footnote-node {
+  display: flex;
+  margin-top: var(--ms-flow-footnote-y);
+  margin-bottom: var(--ms-flow-footnote-y);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--footnote-border);
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+
+.markstream-svelte .footnote-node__content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.markstream-svelte .footnote-node .paragraph-node {
+  margin: 0;
+}
+
+.markstream-svelte .footnote-reference {
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: super;
+}
+
+.markstream-svelte .footnote-link {
+  color: var(--link-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.markstream-svelte .footnote-link:hover {
+  text-decoration: underline;
+}
+
+.markstream-svelte .footnote-anchor {
+  margin-left: 0.35rem;
+  color: var(--link-color);
+  font-size: 0.875em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.markstream-svelte .footnote-anchor:hover {
+  text-decoration: underline;
+}
+
+.markstream-svelte .math-inline-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.markstream-svelte .math-inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.markstream-svelte .math-inline--hidden {
+  visibility: hidden;
+}
+
+.markstream-svelte .math-inline__loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.markstream-svelte .math-inline__spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(94, 104, 121, 0.25);
+  border-top-color: rgba(94, 104, 121, 0.8);
+  animation: spin 1s linear infinite;
+}
+
+.markstream-svelte .math-block,
+.markstream-svelte .markstream-nested-math-block {
+  position: relative;
+  text-align: center;
+  overflow-x: auto;
+  min-height: 40px;
+  padding: 0.5rem;
+}
+
+.markstream-svelte .math-rendering {
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+.markstream-svelte .markstream-nested-math[data-markstream-katex="1"] .markstream-nested-math__source,
+.markstream-svelte .markstream-nested-math-block--rendered > .markstream-nested-math-block__source {
+  display: none;
+}
+
+.markstream-svelte .markstream-nested-math-block__render .katex-display {
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markstream-svelte .markstream-svelte-mermaid {
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+}
+
+.markstream-svelte.dark .markstream-svelte-mermaid,
+.dark .markstream-svelte .markstream-svelte-mermaid {
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+}
+
+.markstream-svelte .markstream-svelte-mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.markstream-svelte .mermaid-block {
+  margin: var(--ms-flow-diagram-y) 0;
+  border: 1px solid var(--diagram-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+  box-shadow: var(--ms-shadow-subtle);
+}
+
+.markstream-svelte.dark .mermaid-block,
+.dark .markstream-svelte .mermaid-block {
+  border-color: var(--diagram-border);
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+}
+
+.markstream-svelte.markstream-svelte-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: auto;
+  contain: none;
+  content-visibility: visible;
+  pointer-events: none;
+}
+
+.markstream-svelte .mermaid-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--modal-overlay);
+  pointer-events: auto;
+}
+
+.markstream-svelte .mermaid-modal-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+  box-shadow: var(--ms-shadow-modal);
+}
+
+.markstream-svelte .mermaid-modal-panel.is-dark {
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+}
+
+.markstream-svelte .mermaid-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.markstream-svelte .mermaid-modal-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.markstream-svelte .mermaid-modal-close {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.markstream-svelte .mermaid-modal-close:hover {
+  opacity: 1;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.markstream-svelte .mermaid-modal-controls {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.markstream-svelte .mermaid-modal-body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.markstream-svelte .mermaid-modal-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+.markstream-svelte .mermaid-modal-content svg,
+.markstream-svelte .infographic-modal-content svg {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+}
+
+.markstream-svelte .fullscreen {
+  width: 100%;
+  max-height: 100% !important;
+  height: 100% !important;
+}
+
+.markstream-svelte .mermaid-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: var(--ms-inset-panel-y) var(--ms-inset-panel-x);
+  border-bottom: 1px solid var(--diagram-border);
+  background: var(--diagram-header-bg);
+  color: hsl(var(--ms-foreground));
+}
+
+.markstream-svelte.dark .mermaid-header,
+.dark .markstream-svelte .mermaid-header {
+  background: var(--diagram-header-bg);
+  border-color: var(--diagram-border);
+}
+
+.markstream-svelte .mermaid-header__title,
+.markstream-svelte .icon-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.markstream-svelte .mermaid-header__title {
+  min-width: 0;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+.markstream-svelte .action-icon {
+  width: var(--ms-action-btn-icon);
+  height: var(--ms-action-btn-icon);
+  flex: 0 0 auto;
+}
+
+.markstream-svelte .icon-slot {
+  justify-content: center;
+}
+
+.markstream-svelte .icon-slot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.markstream-svelte .mermaid-title__text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markstream-svelte .mermaid-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ms-gap-header-actions);
+  grid-column: 3;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+.markstream-svelte .mermaid-action-btn,
+.markstream-svelte .mermaid-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  padding: var(--ms-action-btn-padding);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.markstream-svelte .mermaid-btn--icon {
+  width: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+  height: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+}
+
+.markstream-svelte .mermaid-action-btn svg,
+.markstream-svelte .mermaid-btn svg,
+.markstream-svelte .mermaid-toggle-btn svg {
+  display: block;
+  width: var(--ms-action-btn-icon);
+  height: var(--ms-action-btn-icon);
+  flex: 0 0 auto;
+}
+
+.markstream-svelte .mermaid-action-btn:hover:not(:disabled),
+.markstream-svelte .mermaid-btn:hover:not(:disabled) {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.markstream-svelte.dark .mermaid-btn:hover:not(:disabled),
+.dark .markstream-svelte .mermaid-btn:hover:not(:disabled) {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.markstream-svelte .mermaid-action-btn:active,
+.markstream-svelte .mermaid-btn:active {
+  transform: scale(0.98);
+}
+
+.markstream-svelte .mermaid-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.markstream-svelte .mermaid-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  grid-column: 2;
+  background: transparent;
+}
+
+.markstream-svelte .mermaid-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.markstream-svelte .mermaid-action-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.markstream-svelte .mermaid-toggle-btn:hover {
+  opacity: 0.9;
+}
+
+.markstream-svelte .mermaid-toggle-btn--active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+  opacity: 1;
+}
+
+.markstream-svelte.dark .mermaid-toggle-btn--active,
+.dark .markstream-svelte .mermaid-toggle-btn--active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+}
+
+.markstream-svelte .mermaid-body {
+  position: relative;
+  padding: 0;
+}
+
+.markstream-svelte .markstream-svelte-zoom-controls {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.markstream-svelte.dark .markstream-svelte-zoom-controls,
+.dark .markstream-svelte .markstream-svelte-zoom-controls {
+  background: rgba(15, 23, 42, 0.78);
+  border-color: rgba(71, 85, 105, 0.65);
+}
+
+.markstream-svelte .mermaid-preview {
+  width: 100%;
+  min-height: var(--ms-size-diagram-min-height);
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transform-origin: top center;
+}
+
+.markstream-svelte .mermaid-preview svg {
+  width: 100%;
+  height: auto;
+}
+
+.markstream-svelte .mermaid-source {
+  margin: 0;
+  padding: var(--ms-inset-panel-body);
+  border-radius: 0;
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+  box-shadow: none;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  overflow-x: auto;
+}
+
+.markstream-svelte .mermaid-source code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+
+.markstream-svelte .mermaid-error {
+  padding: 0.85rem 1rem;
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.15);
+  border-top: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+.markstream-svelte .mermaid-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(15, 23, 42, 0.6);
+}
+
+.markstream-svelte.dark .mermaid-loading,
+.dark .markstream-svelte .mermaid-loading {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.markstream-svelte .mermaid-spinner {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #2563eb;
+  animation: spin 1s linear infinite;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block {
+  margin: var(--ms-flow-diagram-y) 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--diagram-border);
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+  box-shadow: var(--ms-shadow-subtle);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: var(--ms-inset-panel-y) var(--ms-inset-panel-x);
+  border-bottom: 1px solid var(--diagram-border);
+  background: var(--diagram-header-bg);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  grid-column: 3;
+  gap: var(--ms-gap-header-actions);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__title-text {
+  overflow: hidden;
+  font:
+    500 var(--ms-text-label)/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ms-action-btn-padding);
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  box-shadow: none;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action--icon {
+  width: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+  height: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action:hover {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action:active {
+  transform: scale(0.98);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__action:disabled:hover {
+  background: transparent;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  font:
+    700 0.72rem/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__body {
+  position: relative;
+  overflow: auto;
+  padding: var(--ms-inset-panel-body);
+  background: var(--diagram-bg);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__body > :first-child {
+  margin-top: 0;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__body > :last-child {
+  margin-bottom: 0;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__body--code {
+  padding: 0;
+  background: #0b1220;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__body--code .monaco-editor,
+.markstream-svelte .markstream-svelte-enhanced-block__body--code .monaco-diff-editor {
+  min-height: inherit;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__details {
+  margin: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0;
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__details summary {
+  padding: 0.8rem 0.95rem;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block__source {
+  margin: 0;
+  border-radius: 0;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block--d2 svg,
+.markstream-svelte .markstream-svelte-enhanced-block--infographic svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.markstream-svelte .markstream-svelte-enhanced-block .markstream-svelte-enhanced-block__title-icon svg,
+.markstream-svelte .markstream-svelte-enhanced-block .markstream-svelte-enhanced-block__action svg {
+  width: var(--ms-action-btn-icon);
+  height: var(--ms-action-btn-icon);
+  flex: 0 0 auto;
+}
+
+.markstream-svelte .infographic-label {
+  color: hsl(var(--ms-muted-foreground));
+}
+
+.markstream-svelte .infographic-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  grid-column: 2;
+  background: transparent;
+}
+
+.markstream-svelte .infographic-mode-btn {
+  color: var(--code-action-fg);
+  opacity: 0.6;
+}
+
+.markstream-svelte .infographic-mode-btn:hover {
+  opacity: 0.9;
+}
+
+.markstream-svelte .infographic-mode-btn.is-active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+  opacity: 1;
+}
+
+.markstream-svelte .infographic-action-btn,
+.markstream-svelte .infographic-zoom-reset {
+  font-family: inherit;
+  color: var(--code-action-fg);
+}
+
+.markstream-svelte .infographic-action-btn:hover:not(:disabled),
+.markstream-svelte .infographic-zoom-reset:hover:not(:disabled) {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.markstream-svelte .infographic-block-body {
+  padding: 0;
+  background: var(--diagram-bg);
+}
+
+.markstream-svelte .infographic-source {
+  padding: var(--ms-inset-panel-body);
+  background: var(--diagram-bg);
+}
+
+.markstream-svelte .infographic-source-code {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+  box-shadow: none;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.markstream-svelte .infographic-source-code code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block,
+.dark .markstream-svelte .markstream-svelte-enhanced-block {
+  border-color: var(--diagram-border);
+  background: var(--diagram-bg);
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__header,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__header {
+  border-bottom-color: var(--diagram-border);
+  background: var(--diagram-header-bg);
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__action,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__action {
+  background: transparent;
+  box-shadow: none;
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__action:hover,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__action:hover {
+  background: var(--code-action-hover-bg);
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__action:disabled:hover,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__action:disabled:hover {
+  background: transparent;
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__badge,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__badge {
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__body,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__body {
+  background: var(--diagram-bg);
+}
+
+.markstream-svelte.dark .markstream-svelte-enhanced-block__details,
+.dark .markstream-svelte .markstream-svelte-enhanced-block__details {
+  border-top-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.96);
+}
+
+@keyframes node-placeholder-shimmer {
+  from {
+    background-position: 200% 0%;
+  }
+
+  to {
+    background-position: -200% 0%;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes typewriter-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.markstream-svelte .code-block-container {
+  --markstream-code-fallback-bg: #ffffff;
+  --markstream-code-fallback-fg: #111827;
+  --markstream-diff-shell-fg: #0f172a;
+  --markstream-diff-shell-muted: #64748b;
+  --markstream-diff-shell-border: rgba(148, 163, 184, 0.24);
+  --markstream-diff-shell-bg: #ffffff;
+  --markstream-diff-header-border: rgba(148, 163, 184, 0.18);
+  --markstream-diff-editor-bg: #111111;
+  --markstream-diff-editor-fg: #d4d4d4;
+  --markstream-diff-unchanged-fg: #d4d4d4;
+  --markstream-diff-unchanged-bg: rgba(64, 64, 64, 0.92);
+  --markstream-diff-unchanged-divider: rgba(255, 255, 255, 0.18);
+  --markstream-diff-focus: rgba(96, 165, 250, 0.42);
+  --markstream-diff-widget-shadow: rgba(0, 0, 0, 0.72);
+  --markstream-diff-action-hover: rgba(148, 163, 184, 0.18);
+  --markstream-diff-pane-divider: rgba(82, 82, 91, 0.34);
+  --markstream-diff-gutter-gap: 8px;
+  --markstream-diff-line-number: rgba(161, 161, 170, 0.68);
+  --markstream-diff-line-number-active: rgba(228, 228, 231, 0.82);
+  --markstream-diff-added-fg: #5eead4;
+  --markstream-diff-removed-fg: #fda4af;
+  --markstream-diff-added-line: rgba(13, 148, 136, 0.18);
+  --markstream-diff-removed-line: rgba(225, 29, 72, 0.18);
+  --markstream-diff-added-inline: rgba(45, 212, 191, 0.24);
+  --markstream-diff-removed-inline: rgba(251, 113, 133, 0.24);
+  --markstream-diff-added-inline-border: transparent;
+  --markstream-diff-removed-inline-border: transparent;
+  --markstream-diff-added-line-fill: rgba(13, 148, 136, 0.18);
+  --markstream-diff-removed-line-fill: rgba(225, 29, 72, 0.18);
+  margin: 1rem 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 18px 38px -28px rgba(15, 23, 42, 0.45);
+}
+
+.markstream-svelte .code-block-container.is-dark,
+.dark .markstream-svelte .code-block-container {
+  --markstream-code-fallback-bg: #111827;
+  --markstream-code-fallback-fg: #e5e7eb;
+  --markstream-diff-shell-fg: #e2e8f0;
+  --markstream-diff-shell-muted: #94a3b8;
+  --markstream-diff-shell-border: rgba(82, 82, 91, 0.56);
+  --markstream-diff-shell-bg: rgba(10, 10, 11, 0.99);
+  --markstream-diff-header-border: rgba(63, 63, 70, 0.82);
+  --markstream-diff-editor-bg: rgba(12, 12, 14, 0.99);
+  --markstream-diff-editor-fg: #b6c2d3;
+  --markstream-diff-unchanged-fg: #cbd5e1;
+  --markstream-diff-unchanged-bg: rgba(24, 24, 27, 0.92);
+  --markstream-diff-unchanged-divider: rgba(255, 255, 255, 0.18);
+  --markstream-diff-action-hover: rgba(255, 255, 255, 0.08);
+  border-color: rgba(71, 85, 105, 0.55);
+  background: #0f172a;
+  box-shadow: 0 22px 44px -30px rgba(2, 6, 23, 0.95);
+}
+
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .monaco-editor-background,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .margin,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .lines-content {
+  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg)) !important;
+}
+
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .margin,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .view-lines,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .view-line,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .view-line span,
+.markstream-svelte .code-block-container.is-plain-text .monaco-editor .line-numbers {
+  color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg)) !important;
+}
+
+.markstream-svelte .code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.markstream-svelte .code-block-header__meta {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.markstream-svelte .code-block-header__label {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    500 0.95rem/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.markstream-svelte .code-block-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.markstream-svelte .code-block-language-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  color: #2563eb;
+}
+
+.markstream-svelte.dark .code-block-language-icon,
+.dark .markstream-svelte .code-block-language-icon {
+  color: #93c5fd;
+}
+
+.markstream-svelte .code-block-language-icon svg,
+.markstream-svelte .code-block-language-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.markstream-svelte .code-block-language-icon__image {
+  object-fit: contain;
+}
+
+.markstream-svelte .code-block-body {
+  position: relative;
+  display: grid;
+  min-height: 96px;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg));
+}
+
+.markstream-svelte .code-block-body > .code-editor-container,
+.markstream-svelte .code-block-body > .code-pre-fallback {
+  grid-area: 1 / 1;
+}
+
+.code-block-body--expanded {
+  max-height: none;
+}
+
+.code-block-body--collapsed {
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.markstream-svelte .code-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border-radius: 0.375rem;
+  color: inherit;
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease, opacity 140ms ease;
+}
+
+.markstream-svelte .code-action-btn:hover {
+  background: var(--vscode-editor-selectionBackground, rgba(148, 163, 184, 0.18));
+}
+
+.markstream-svelte .code-action-btn__icon,
+.markstream-svelte .code-action-btn svg {
+  display: block;
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 auto;
+}
+
+.markstream-svelte .code-action-btn:active {
+  transform: scale(0.98);
+}
+
+.markstream-svelte .code-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.markstream-svelte .code-action-btn:disabled:hover {
+  background: transparent;
+}
+
+.markstream-svelte .code-editor-container {
+  min-height: 96px;
+}
+
+.markstream-svelte .code-editor-container.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.markstream-svelte .code-pre-fallback {
+  margin: 0;
+  padding: 1rem;
+  max-height: 500px;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg));
+  color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg));
+  font:
+    13px/1.55 var(--vscode-editor-font-family, "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  white-space: pre;
+}
+
+.markstream-svelte .code-pre-fallback code {
+  color: inherit;
+  font: inherit;
+  background: transparent;
+}
+
+.markstream-svelte .code-block-container.is-diff {
+  color: var(--markstream-diff-shell-fg);
+  border-color: var(--markstream-diff-shell-border);
+  background: var(--markstream-diff-shell-bg);
+  --vscode-editor-selectionBackground: var(--markstream-diff-action-hover);
+}
+
+.markstream-svelte .code-block-container.is-diff .code-block-header {
+  color: var(--markstream-diff-shell-fg);
+  border-bottom-color: var(--markstream-diff-header-border);
+  background: var(--markstream-diff-shell-bg);
+}
+
+.markstream-svelte .code-block-container.is-diff .code-action-btn {
+  color: var(--markstream-diff-shell-muted);
+}
+
+.markstream-svelte .code-block-container.is-diff .code-block-body {
+  background: var(--markstream-diff-editor-bg);
+  --vscode-editor-background: var(--markstream-diff-editor-bg);
+  --vscode-editor-foreground: var(--markstream-diff-editor-fg);
+  --vscode-diffEditor-unchangedRegionForeground: var(--markstream-diff-unchanged-fg);
+  --vscode-diffEditor-unchangedRegionBackground: var(--markstream-diff-unchanged-bg);
+  --vscode-focusBorder: var(--markstream-diff-focus);
+  --vscode-widget-shadow: var(--markstream-diff-widget-shadow);
+}
+
+.markstream-svelte .code-block-container.is-diff .code-editor-container {
+  min-height: 0;
+  background: var(--markstream-diff-editor-bg);
+}
+
+.markstream-svelte .code-block-container .stream-monaco-diff-root {
+  --stream-monaco-gutter-gap: var(--markstream-diff-gutter-gap) !important;
+  --stream-monaco-line-number: var(--markstream-diff-line-number) !important;
+  --stream-monaco-line-number-active: var(--markstream-diff-line-number-active) !important;
+  --stream-monaco-added-fg: var(--markstream-diff-added-fg) !important;
+  --stream-monaco-removed-fg: var(--markstream-diff-removed-fg) !important;
+  --stream-monaco-added-line: var(--markstream-diff-added-line) !important;
+  --stream-monaco-removed-line: var(--markstream-diff-removed-line) !important;
+  --stream-monaco-added-inline: var(--markstream-diff-added-inline) !important;
+  --stream-monaco-removed-inline: var(--markstream-diff-removed-inline) !important;
+  --stream-monaco-added-inline-border: var(--markstream-diff-added-inline-border) !important;
+  --stream-monaco-removed-inline-border: var(--markstream-diff-removed-inline-border) !important;
+  --stream-monaco-added-line-fill: var(--markstream-diff-added-line-fill) !important;
+  --stream-monaco-removed-line-fill: var(--markstream-diff-removed-line-fill) !important;
+  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
+  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
+}
+
+.markstream-svelte .code-block-container .stream-monaco-diff-root .monaco-diff-editor .diffOverview,
+.markstream-svelte .code-block-container .stream-monaco-diff-root .decorationsOverviewRuler {
+  display: none !important;
+}
+
+.markstream-svelte .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center:not(.stream-monaco-unchanged-bridge-source),
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge {
+  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
+  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
+  background: var(--stream-monaco-unchanged-bg) !important;
+  color: var(--stream-monaco-unchanged-fg) !important;
+}
+
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary,
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:hover,
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:focus-visible {
+  background: var(--stream-monaco-unchanged-bg) !important;
+  color: var(--markstream-diff-unchanged-fg) !important;
+}
+
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail,
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal,
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:hover,
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:focus-visible {
+  background: var(--stream-monaco-unchanged-bg) !important;
+  color: var(--markstream-diff-unchanged-fg) !important;
+}
+
+.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail {
+  border-right-color: var(--markstream-diff-unchanged-divider) !important;
+}
+
+.html-preview-frame__backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.html-preview-frame__backdrop--dark {
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.html-preview-frame {
+  width: 80vw;
+  max-width: 960px;
+  height: 70vh;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.html-preview-frame--dark {
+  background-color: #020617;
+  color: #e5e7eb;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.html-preview-frame__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.html-preview-frame--dark .html-preview-frame__header {
+  border-bottom-color: rgba(148, 163, 184, 0.35);
+}
+
+.html-preview-frame__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.html-preview-frame__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: #22c55e;
+}
+
+.html-preview-frame--dark .html-preview-frame__dot {
+  background-color: #4ade80;
+}
+
+.html-preview-frame__label {
+  white-space: nowrap;
+}
+
+.html-preview-frame__close {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.html-preview-frame__close--dark {
+  color: #e5e7eb;
+}
+
+.html-preview-frame__iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .html-preview-frame {
+    width: 100vw;
+    height: 80vh;
+    border-radius: 0;
+  }
+}
+
+.ms-tooltip {
+  position: fixed;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 120ms linear, transform 220ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.ms-tooltip[data-visible='true'] {
+  opacity: 1;
+}
+
+.ms-tooltip[data-dark='true'] {
+  background-color: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+.ms-tooltip[data-dark='false'],
+.ms-tooltip:not([data-dark='true']) {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+
+.markstream-svelte .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.markstream-svelte .d2-block-body {
+  position: relative;
+  padding: 0;
+}
+
+.markstream-svelte .d2-block-header {
+  display: flex;
+  grid-template-columns: none;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--diagram-border);
+  color: hsl(var(--ms-foreground));
+}
+
+.markstream-svelte .d2-header-title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+.markstream-svelte .d2-label {
+  color: hsl(var(--ms-foreground));
+  font:
+    500 var(--ms-text-label)/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+.markstream-svelte .d2-header-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: auto;
+  grid-column: auto;
+  gap: var(--ms-gap-header-actions);
+}
+
+.markstream-svelte .d2-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  background: transparent;
+}
+
+.markstream-svelte .d2-mode-btn {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  color: var(--code-action-fg);
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+}
+
+.markstream-svelte .d2-mode-btn:hover {
+  opacity: 0.9;
+}
+
+.markstream-svelte .d2-mode-btn.is-active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+  opacity: 1;
+}
+
+.markstream-svelte .d2-action-btn {
+  color: var(--code-action-fg);
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.15s, color 0.15s;
+}
+
+.markstream-svelte .d2-action-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+.markstream-svelte .d2-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.markstream-svelte .d2-source {
+  padding: var(--ms-inset-panel-body) var(--ms-inset-panel-x);
+  font-family: var(--vscode-editor-font-family, "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+}
+
+.markstream-svelte .d2-code {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+  box-shadow: none;
+  white-space: pre;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.markstream-svelte .d2-code code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+
+.markstream-svelte .d2-render {
+  max-height: var(--ms-size-code-max-height);
+  overflow: auto;
+}
+
+.markstream-svelte .d2-svg svg,
+.markstream-svelte .infographic-render svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+.markstream-svelte .d2-error {
+  color: #dc2626;
+  margin-top: 0.75rem;
+}
+
+.markstream-svelte .infographic-render {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  overflow: auto;
+  text-align: center;
+}
+
+.markstream-svelte .infographic-render > div {
+  transition: transform 120ms ease;
+}

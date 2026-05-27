@@ -80,7 +80,7 @@
 
 遇到“不渲染/样式不对”，按顺序排：
 
-1) **CSS 顺序/Reset**：先 reset，再 `markstream-vue/index.css`（Tailwind 通常放进 `@layer components`）。
+1) **CSS 顺序/Reset**：先 reset，再 `markstream-vue/index.css`（Tailwind 使用 `@import 'markstream-vue/index.css' layer(components);`）。
 2) **可选 peer 是否安装**（Mermaid/KaTeX/Monaco/Shiki）。
 3) **是否启用 loader**（仅在你手动关闭/覆盖时需要）：`enableMermaid()` / `enableKatex()`。
 4) **peer CSS 是否导入**（需要时）：`katex/dist/katex.min.css`（Mermaid 不需要额外 CSS）。
@@ -109,7 +109,7 @@
 - 表述： “没样式”, “Tailwind 抢样式”
 - 步骤：
   - reset 在前，`markstream-vue/index.css` 在后
-  - Tailwind：把库 CSS 放进 `@layer components`
+  - Tailwind：使用 `@import 'markstream-vue/index.css' layer(components);`
   - 单独节点组件：外层 `.markstream-vue`
 - 最小追问： “贴 `main.css`（Tailwind layers）和 CSS 导入位置。”
 - 文档：`docs/guide/tailwind.md`, `docs/guide/troubleshooting.md`

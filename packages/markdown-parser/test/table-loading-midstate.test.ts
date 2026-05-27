@@ -3,6 +3,21 @@ import { getMarkdown, parseMarkdownToStructure } from '../src'
 import { fixTableTokens } from '../src/plugins/fixTableTokens'
 
 describe('table loading mid-states', () => {
+  it.each([
+    '| ',
+    '| 左对齐 ',
+    '| 左对齐 |',
+    '| 左对齐 | 居中对齐 |',
+    '| 左对齐 | 居中对齐 | 右',
+    '| 左对齐 | 居中对齐 | 右对齐 |',
+  ])('does not treat a single-line header prefix as a loading table: %s', (markdown) => {
+    const md = getMarkdown('table-loading-incomplete-header-prefix')
+
+    const nodes = parseMarkdownToStructure(markdown, md, { final: false }) as any[]
+
+    expect(nodes.find(node => node.type === 'table')).toBeUndefined()
+  })
+
   it('recognizes spaced separator rows as loading tables', () => {
     const md = getMarkdown('table-loading-spaced-separator')
     const markdown = `# 表格
@@ -29,6 +44,34 @@ describe('table loading mid-states', () => {
     expect(table).toBeTruthy()
     expect(table.loading).toBe(true)
     expect(table.header.cells.map((cell: any) => cell.raw)).toEqual(['列1', '列2', '列3', '列4', '列5'])
+  })
+
+  describe('separator row character-by-character loading', () => {
+    const header = '| 左对齐 | 居中对齐 | 右对齐 |'
+    const separatorTail = '\n|:-------|：'
+    const cases = Array.from({ length: separatorTail.length }, (_, index) => header + separatorTail.slice(0, index + 1))
+
+    it.each(cases.map((markdown, index) => [index, markdown]))('keeps a table loading at streamed character %i', (_, markdown) => {
+      const md = getMarkdown('table-loading-char-by-char')
+
+      const nodes = parseMarkdownToStructure(markdown, md, { final: false }) as any[]
+      const table = nodes.find(node => node.type === 'table') as any
+
+      expect(table).toBeTruthy()
+      expect(table.loading).toBe(true)
+      expect(table.header.cells.map((cell: any) => cell.raw)).toEqual(['左对齐', '居中对齐', '右对齐'])
+    })
+  })
+
+  it('does not turn the fullwidth colon separator tail into a table in final mode', () => {
+    const md = getMarkdown('table-loading-fullwidth-colon-tail-final')
+    const markdown = `| 左对齐 | 居中对齐 | 右对齐 |
+|:-------|：`
+
+    const nodes = parseMarkdownToStructure(markdown, md, { final: true }) as any[]
+
+    expect(nodes.find(node => node.type === 'table')).toBeUndefined()
+    expect(nodes[0]?.type).toBe('paragraph')
   })
 
   it('fixes inline fallback tables with spaced alignment markers', () => {

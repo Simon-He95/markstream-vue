@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { MarkdownIt, ParsedNode } from 'stream-markdown-parser'
-import type { VisibilityHandle } from '../../composables/viewportPriority'
+import type { ParsedNode } from 'stream-markdown-parser'
 import type { CustomComponents } from '../../types'
+import type { CodeBlockPreviewPayload } from '../../types/component-props'
 import type { NodeRendererProps } from '../../types/node-renderer-props'
-import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure, resolveCustomHtmlTags } from 'stream-markdown-parser'
-import { computed, defineAsyncComponent, defineComponent, h, markRaw, nextTick, onBeforeUnmount, provide, reactive, ref, useAttrs, watch } from 'vue'
+import { computed, defineAsyncComponent, markRaw, nextTick, onBeforeUnmount, provide, reactive, ref, watch } from 'vue'
 import AdmonitionNode from '../../components/AdmonitionNode'
 import BlockquoteNode from '../../components/BlockquoteNode'
 import CheckboxNode from '../../components/CheckboxNode'
@@ -45,26 +44,30 @@ import {
   registerHeightEstimationRendererController,
 } from '../../internal/heightEstimationExperiment'
 import { clampInfographicPreviewHeight, clampMermaidPreviewHeight, estimateInfographicPreviewHeight, estimateMermaidPreviewHeight, parsePositiveNumber } from '../../utils/diagramHeight'
-import { getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText, stripCustomHtmlWrapper } from '../../utils/htmlRenderer'
-import { customComponentsRevision, getCustomNodeComponents } from '../../utils/nodeComponents'
+import { getCustomNodeAttrs, getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText, stripCustomHtmlWrapper } from '../../utils/htmlRenderer'
+import { isReservedNodeComponentKey, useCustomNodeComponents } from '../../utils/nodeComponents'
 import HtmlBlockNode from '../HtmlBlockNode/HtmlBlockNode.vue'
 import HtmlInlineNode from '../HtmlInlineNode/HtmlInlineNode.vue'
 import MarkdownCodeBlockNode from '../MarkdownCodeBlockNode'
+import { createMathBlockMinHeightCache, provideMathBlockMinHeightCache } from '../MathBlockNode/minHeightCache'
 import { MathBlockNodeAsync, MathInlineNodeAsync } from './asyncComponent'
+import { useBatchRenderingScheduler } from './composables/useBatchRenderingScheduler'
+import { useBatchRenderingState } from './composables/useBatchRenderingState'
+import { useFocusSyncScheduler } from './composables/useFocusSyncScheduler'
+import { useHeightMeasurements } from './composables/useHeightMeasurements'
+import { useLiveRangeState } from './composables/useLiveRangeState'
+import { useMarkdownParsing } from './composables/useMarkdownParsing'
+import { useNodeVisibilityState } from './composables/useNodeVisibilityState'
+import { useResolvedRendererOptions } from './composables/useResolvedRendererOptions'
+import { useSchedulerPlatform } from './composables/useSchedulerPlatform'
+import { useScrollListener } from './composables/useScrollListener'
+import { useScrollRestore } from './composables/useScrollRestore'
+import { useSmoothStreamingBridge } from './composables/useSmoothStreamingBridge'
+import { useViewportRoot } from './composables/useViewportRoot'
 import FallbackComponent from './FallbackComponent.vue'
+import { InfographicBlockNodeLoading } from './InfographicBlockNodeLoading'
+import { MermaidBlockNodeLoading } from './MermaidBlockNodeLoading'
 
-// 组件接收的 props
-// 增加用于统一设置所有 code_block 主题和 Monaco 选项的外部 API
-interface IdleDeadlineLike {
-  timeRemaining?: () => number
-}
-
-type RendererAttrs = Record<string, unknown> & {
-  'showTooltips'?: unknown
-  'show-tooltips'?: unknown
-}
-
-type RendererParseOptions = NonNullable<NodeRendererProps['parseOptions']>
 type RuntimeCodeBlockNode = ParsedNode & {
   type: 'code_block'
   language?: string
@@ -81,10 +84,14 @@ type RuntimeHtmlNode = ParsedNode & {
   content?: string
 }
 
+defineOptions({ name: 'NodeRenderer' })
+
 const props = withDefaults(defineProps<NodeRendererProps>(), {
   codeBlockStream: true,
   showTooltips: true,
-  typewriter: true,
+  typewriter: false,
+  smoothStreaming: 'auto',
+  fade: true,
   batchRendering: true,
   debugPerformance: false,
   initialRenderBatchSize: 40,
@@ -97,11 +104,17 @@ const props = withDefaults(defineProps<NodeRendererProps>(), {
   liveNodeBuffer: 60,
 })
 
-// 定义事件
-const emit = defineEmits(['copy', 'handleArtifactClick', 'click', 'mouseover', 'mouseout'])
+const emit = defineEmits<{
+  (e: 'copy', code: string): void
+  (e: 'handleArtifactClick', payload: CodeBlockPreviewPayload): void
+  (e: 'click', event: MouseEvent): void
+  (e: 'mouseover', event: MouseEvent): void
+  (e: 'mouseout', event: MouseEvent): void
+}>()
 const MAX_DEFERRED_NODE_COUNT = 900
 const MAX_VIEWPORT_OBSERVER_TARGETS = 640
 const VIEWPORT_PRIORITY_RECOVERY_COUNT = 200
+const CONTENT_STREAMING_TAIL_IDLE_MS = 1200
 
 const containerRef = ref<HTMLElement>()
 const paragraphProbeWrapperRef = ref<HTMLElement | null>(null)
@@ -116,36 +129,108 @@ const headingProbeWrapperRefs = reactive<Record<number, HTMLElement | null>>({
   6: null,
 })
 const viewportPriorityAutoDisabled = ref(false)
-const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
-const isClient = typeof window !== 'undefined'
-const renderAsFragment = computed(() => props.renderAsFragment === true)
-const debugPerformanceEnabled = computed(() => props.debugPerformance && isClient && typeof console !== 'undefined')
-const attrs = useAttrs() as RendererAttrs
 const textStreamState = new Map<string, string>()
 const streamRenderVersion = ref(0)
 const experimentContainerWidth = ref(0)
 const simpleTextProbeProfile = ref(createEmptySimpleTextProbeProfile())
-const resolvedShowTooltips = computed<boolean | undefined>(() => {
-  if (typeof props.showTooltips === 'boolean')
-    return props.showTooltips
-  const raw = attrs.showTooltips ?? attrs['show-tooltips']
-  if (raw === '' || raw === true || raw === 'true')
-    return true
-  if (raw === false || raw === 'false')
-    return false
-  return undefined
+const {
+  isClient,
+  renderAsFragment,
+  debugPerformanceEnabled,
+  resolvedShowTooltips,
+  resolvedHtmlPolicy,
+  inheritedSmoothStreaming,
+  ownsTypewriterCursor,
+} = useResolvedRendererOptions(props)
+const {
+  resolveViewportRoot,
+  resolveScrollContainer,
+  isReverseFlexScrollRoot,
+  getNormalizedScrollTop,
+  getOffsetTopWithinRoot,
+} = useViewportRoot(containerRef, {
+  isClient,
 })
 provide('markstreamShowTooltips', resolvedShowTooltips)
+provide('markstreamHtmlPolicy', resolvedHtmlPolicy)
 provide('markstreamTypewriter', computed(() => props.typewriter !== false))
+provide('markstreamFade', computed(() => props.fade !== false))
+provide('markstreamTypewriterCursor', computed(() => true))
 provide('markstreamTextStreamState', textStreamState)
 provide('markstreamStreamVersion', streamRenderVersion)
+provide('markstreamParseOptions', computed(() => props.parseOptions))
+provide('markstreamCustomMarkdownIt', computed(() => props.customMarkdownIt))
+
+const {
+  smoothStreamingEnabled,
+  renderContent,
+  effectiveFinal,
+} = useSmoothStreamingBridge(props, {
+  isClient,
+  inheritedSmoothStreaming,
+})
+provide('markstreamSmoothStreaming', smoothStreamingEnabled)
+const contentStreamingTailActive = ref(false)
+let previousContentStreamValue = ''
+let hasSeenContentStreamValue = false
+let contentStreamingTailIdleTimer: number | null = null
+
+function clearContentStreamingTailIdleTimer() {
+  if (!isClient || contentStreamingTailIdleTimer == null)
+    return
+  window.clearTimeout(contentStreamingTailIdleTimer)
+  contentStreamingTailIdleTimer = null
+}
+
+function markContentStreamingTailActive() {
+  contentStreamingTailActive.value = true
+  if (!isClient)
+    return
+
+  clearContentStreamingTailIdleTimer()
+  contentStreamingTailIdleTimer = window.setTimeout(() => {
+    contentStreamingTailIdleTimer = null
+    if (effectiveFinal.value === true || props.nodes?.length)
+      return
+    clearPendingHeightMeasurements()
+    contentStreamingTailActive.value = false
+    measureTrackedNodeHeights()
+  }, CONTENT_STREAMING_TAIL_IDLE_MS)
+}
+
+function clearContentStreamingTailActive() {
+  contentStreamingTailActive.value = false
+  clearContentStreamingTailIdleTimer()
+}
 
 watch(
-  [() => props.content, () => props.nodes],
-  () => {
-    streamRenderVersion.value += 1
+  [renderContent, () => props.nodes, effectiveFinal],
+  ([content, nodes, final]) => {
+    const nextContent = content ?? ''
+
+    if (nodes?.length || final === true) {
+      clearContentStreamingTailActive()
+      previousContentStreamValue = nextContent
+      hasSeenContentStreamValue = true
+      return
+    }
+
+    if (!hasSeenContentStreamValue) {
+      previousContentStreamValue = nextContent
+      hasSeenContentStreamValue = true
+      return
+    }
+
+    if (previousContentStreamValue && nextContent.length > previousContentStreamValue.length && nextContent.startsWith(previousContentStreamValue)) {
+      markContentStreamingTailActive()
+    }
+    else if (nextContent.length < previousContentStreamValue.length || !nextContent.startsWith(previousContentStreamValue)) {
+      clearContentStreamingTailActive()
+    }
+
+    previousContentStreamValue = nextContent
   },
-  { immediate: true },
+  { flush: 'sync', immediate: true },
 )
 
 function logPerf(label: string, data: Record<string, unknown>) {
@@ -153,119 +238,64 @@ function logPerf(label: string, data: Record<string, unknown>) {
     return
   console.info(`[markstream-vue][perf] ${label}`, data)
 }
-
-function hasOverflowScrollStyle(style: CSSStyleDeclaration | null | undefined) {
-  if (!style)
-    return false
-  const overflowY = (style.overflowY || '').toLowerCase()
-  const overflow = (style.overflow || '').toLowerCase()
-  return SCROLL_PARENT_OVERFLOW_RE.test(overflowY) || SCROLL_PARENT_OVERFLOW_RE.test(overflow)
-}
-
-function isActuallyScrollableElement(element: HTMLElement) {
-  const verticalOverflow = Math.ceil(element.scrollHeight) > Math.ceil(element.clientHeight) + 1
-  const horizontalOverflow = Math.ceil(element.scrollWidth) > Math.ceil(element.clientWidth) + 1
-  return verticalOverflow || horizontalOverflow
-}
-
-function resolveViewportRoot(node?: HTMLElement | null) {
-  if (typeof window === 'undefined')
-    return null
-  const base = node ?? containerRef.value
-  if (!base)
-    return null
-  const doc = base.ownerDocument || document
-  const rootScrollable = doc.scrollingElement || doc.documentElement
-  let current: HTMLElement | null = base
-  while (current) {
-    if (current === doc.body || current === rootScrollable)
-      break
-    const style = window.getComputedStyle(current)
-    if (hasOverflowScrollStyle(style) && isActuallyScrollableElement(current))
-      return current
-    current = current.parentElement
-  }
-  return null
-}
 const instanceMsgId = props.customId
   ? `renderer-${props.customId}`
   : `renderer-${Date.now()}-${Math.random().toString(36).slice(2)}`
-const defaultMd = getMarkdown(instanceMsgId)
-const customTagCache = new Map<string, MarkdownIt>()
-const customComponentsMap = computed<Partial<CustomComponents>>(() => {
-  void customComponentsRevision.value
-  return getCustomNodeComponents(props.customId)
-})
-const effectiveCustomHtmlTags = computed(() => mergeCustomHtmlTags(props.customHtmlTags, props.parseOptions?.customHtmlTags))
-const mdBase = computed(() => {
-  const { key, tags } = resolveCustomHtmlTags(effectiveCustomHtmlTags.value)
-  if (!key)
-    return defaultMd
-  const cached = customTagCache.get(key)
-  if (cached)
-    return cached
-  const md = getMarkdown(instanceMsgId, { customHtmlTags: tags })
-  customTagCache.set(key, md)
-  return md
-})
-const mdInstance = computed(() => {
-  const base = mdBase.value
-  return props.customMarkdownIt
-    ? props.customMarkdownIt(base)
-    : base
+const mathBlockMinHeightCache = createMathBlockMinHeightCache(instanceMsgId)
+const mathBlockCacheScope = computed(() => `${instanceMsgId}:${streamRenderVersion.value}`)
+provideMathBlockMinHeightCache(mathBlockMinHeightCache)
+const customComponentsMap = useCustomNodeComponents(() => props.customId)
+const {
+  effectiveCustomHtmlTagsSet,
+  mergedParseOptions,
+  parsedNodes,
+} = useMarkdownParsing(props, {
+  instanceMsgId,
+  renderContent,
+  effectiveFinal,
+  smoothStreamingEnabled,
+  debugPerformanceEnabled,
+  customComponentsMap,
+  logPerf,
 })
 
-const mergedParseOptions = computed(() => {
-  const base = (props.parseOptions ?? {}) as RendererParseOptions
-  const resolvedFinal = props.final ?? base.final
-  const merged = effectiveCustomHtmlTags.value
-  const hasFinal = resolvedFinal != null
-  const hasCustom = merged.length > 0
-
-  if (!hasFinal && !hasCustom)
-    return base
-
-  return {
-    ...base,
-    ...(hasFinal ? { final: resolvedFinal } : {}),
-    ...(hasCustom ? { customHtmlTags: merged } : {}),
-  } as RendererParseOptions
-})
-
-// Set of effective custom HTML tags (normalised to lowercase).
-// Used in `renderedItems` to coerce pre-parsed html_block/html_inline nodes
-// whose tag matches a registered custom component.
-const effectiveCustomHtmlTagsSet = computed<Set<string>>(() => {
-  const arr = mergedParseOptions.value.customHtmlTags ?? []
-  return new Set(arr.map(t => String(t).trim().toLowerCase()).filter(Boolean))
-})
-
-const parsedNodes = computed<ParsedNode[]>(() => {
-  // 解析 content 字符串为节点数组
-  // If the consumer passed an explicit `nodes` array, return a shallow
-  // copy so the computed value has a new identity whenever the caller
-  // replaces or mutates the array in-place. This ensures the watchers
-  // that rely on `parsedNodes` will run and update rendering even when
-  // the array length doesn't change.
-  if (props.nodes?.length)
-    return markRaw((props.nodes as unknown as ParsedNode[]).slice())
-  if (props.content) {
-    // Prefer an explicitly passed `markdown` prop, then a globally
-    // provided markdown via `setGlobalMarkdown`, otherwise fall back
-    // to the legacy `getMarkdown()` factory.
-    const parseStart = debugPerformanceEnabled.value ? performance.now() : 0
-    const parsed = parseMarkdownToStructure(props.content, mdInstance.value, mergedParseOptions.value)
-    if (debugPerformanceEnabled.value) {
-      logPerf('parse(sync)', {
-        ms: Math.round(performance.now() - parseStart),
-        nodes: parsed.length,
-        contentLength: props.content.length,
-      })
-    }
-    return markRaw(parsed)
-  }
-  return []
-})
+watch(
+  parsedNodes,
+  () => {
+    mathBlockMinHeightCache.clear()
+    streamRenderVersion.value += 1
+  },
+  { immediate: true },
+)
+const nestedRendererProps = computed<Partial<NodeRendererProps>>(() => ({
+  customId: props.customId,
+  customHtmlTags: mergedParseOptions.value.customHtmlTags,
+  parseOptions: props.parseOptions,
+  customMarkdownIt: props.customMarkdownIt,
+  htmlPolicy: resolvedHtmlPolicy.value,
+  viewportPriority: props.viewportPriority,
+  codeBlockStream: props.codeBlockStream,
+  codeBlockDarkTheme: props.codeBlockDarkTheme,
+  codeBlockLightTheme: props.codeBlockLightTheme,
+  codeBlockMonacoOptions: props.codeBlockMonacoOptions,
+  renderCodeBlocksAsPre: props.renderCodeBlocksAsPre,
+  codeBlockMinWidth: props.codeBlockMinWidth,
+  codeBlockMaxWidth: props.codeBlockMaxWidth,
+  codeBlockProps: props.codeBlockProps,
+  mermaidProps: props.mermaidProps,
+  d2Props: props.d2Props,
+  infographicProps: props.infographicProps,
+  showTooltips: resolvedShowTooltips.value,
+  themes: props.themes,
+  isDark: props.isDark,
+  typewriter: props.typewriter,
+  smoothStreamingOptions: props.smoothStreamingOptions,
+  parseCoalesceMs: props.parseCoalesceMs,
+  fade: props.fade,
+}))
+provide('markstreamNestedRendererProps', nestedRendererProps)
+const parsedNodesIdentity = computed(() => parsedNodes.value)
+const parsedNodeCount = computed(() => parsedNodes.value.length)
 const paragraphProbeNode = ref<ParsedNode | null>(null)
 const listItemProbeNode = ref<ParsedNode | null>(null)
 const listProbeNode = ref<ParsedNode | null>(null)
@@ -314,38 +344,28 @@ const registerNodeVisibility = provideViewportPriority(
   target => resolveViewportRoot(target ?? containerRef.value ?? null),
   viewportPriorityEnabled,
 )
-const requestFrame = isClient && typeof window.requestAnimationFrame === 'function'
-  ? window.requestAnimationFrame.bind(window)
-  : null
-const cancelFrame = isClient && typeof window.cancelAnimationFrame === 'function'
-  ? window.cancelAnimationFrame.bind(window)
-  : null
-const processEnv = typeof globalThis !== 'undefined' && 'process' in globalThis
-  ? (globalThis as { process?: { env?: { NODE_ENV?: string } } }).process?.env
-  : undefined
-const isTestEnv = processEnv?.NODE_ENV === 'test'
-const hasIdleCallback = isClient && typeof window.requestIdleCallback === 'function'
-const resolvedBatchSize = computed(() => {
-  const size = Math.trunc(props.renderBatchSize ?? 80)
-  return Number.isFinite(size) ? Math.max(0, size) : 0
+const {
+  requestFrame,
+  cancelFrame,
+  hasIdleCallback,
+  isTestEnv,
+} = useSchedulerPlatform({
+  isClient,
 })
-const resolvedInitialBatch = computed(() => {
-  const initial = Math.trunc(props.initialRenderBatchSize ?? resolvedBatchSize.value)
-  if (!Number.isFinite(initial))
-    return resolvedBatchSize.value
-  return Math.max(0, initial)
+const {
+  resolvedBatchSize,
+  resolvedInitialBatch,
+  batchingEnabled,
+  incrementalRenderingActive,
+  renderedCount,
+  previousRenderContext,
+  adaptiveBatchSize,
+  previousBatchConfig,
+} = useBatchRenderingState(props, {
+  isClient,
+  isTestEnv,
+  renderAsFragment,
 })
-const batchingEnabled = computed(() => !renderAsFragment.value && props.batchRendering !== false && resolvedBatchSize.value > 0 && isClient && !isTestEnv)
-const renderedCount = ref(0)
-const previousRenderContext = ref<{ key: typeof props.indexKey, total: number }>({
-  key: props.indexKey,
-  total: 0,
-})
-const adaptiveBatchSize = ref(Math.max(1, resolvedBatchSize.value || 1))
-const visibleNodeIndices = ref<Set<number>>(new Set())
-const nodeVisibilityHandles = new Map<number, VisibilityHandle>()
-const nodeVisibilityWatchStops = new Map<number, () => void>()
-const nodeVisibilityFallbackTimers = new Map<number, number>()
 const nodeSlotElements = new Map<number, HTMLElement | null>()
 const nodeContentResizeObservers = new Map<number, ResizeObserver>()
 const codeBlockRenderCache = new WeakMap<object, { signature: string, node: ParsedNode }>()
@@ -355,15 +375,49 @@ const sortedNodeSlots = computed(() => {
   void nodeSlotVersion.value
   return Array.from(nodeSlotElements.entries()).sort((a, b) => a[0] - b[0])
 })
-const heightTreeSize = ref(0)
-const heightSumTree = ref<number[]>([])
-const heightKnownTree = ref<number[]>([])
 const scrollRootElement = ref<HTMLElement | null>(null)
-const activeRestoreAnchor = ref<{ nodeIndex: number, offsetWithinNodePx: number } | null>(null)
-let restoreReconcileRaf: number | null = null
-let restoreReconcileTimers: number[] = []
-let detachScrollHandler: (() => void) | null = null
-let pendingFocusSync: { id: number | ReturnType<typeof setTimeout>, viaTimeout: boolean } | null = null
+const {
+  activeRestoreAnchor,
+  clearRestoreReconcile,
+  scheduleRestoreReconcile,
+  captureRestoreAnchor,
+  restoreAnchor,
+  getAnchorDrift,
+} = useScrollRestore({
+  isClient,
+  containerRef,
+  parsedNodeCount,
+
+  requestFrame,
+  cancelFrame,
+
+  resolveScrollContainer: () => scrollRootElement.value || resolveScrollContainer(),
+  getNormalizedScrollTop,
+  getOffsetTopWithinRoot,
+
+  estimateIndexForOffset,
+  estimateHeightRange,
+  getFallbackNodeHeight,
+  clamp,
+})
+const {
+  nodeHeights,
+  heightStats,
+  heightTreeSize,
+  heightSumTree,
+  heightKnownTree,
+  averageNodeHeight,
+  resetHeightMeasurements,
+  pruneHeightMeasurements,
+  rebuildHeightTrees,
+  recordNodeHeight,
+  fenwickRangeSum,
+} = useHeightMeasurements({
+  onHeightRecorded: () => {
+    if (activeRestoreAnchor.value)
+      scheduleRestoreReconcile()
+  },
+})
 const deferNodes = computed(() => {
   if (renderAsFragment.value)
     return false
@@ -382,19 +436,24 @@ const deferNodes = computed(() => {
     return false
   return viewportPriorityEnabled.value
 })
-const incrementalRenderingActive = computed(() => batchingEnabled.value && (props.maxLiveNodes ?? 0) <= 0)
-const previousBatchConfig = ref({
-  batchSize: resolvedBatchSize.value,
-  initial: resolvedInitialBatch.value,
-  delay: props.renderBatchDelay ?? 16,
-  enabled: incrementalRenderingActive.value,
-})
 const shouldObserveSlots = computed(() => !!registerNodeVisibility && (deferNodes.value || virtualizationEnabled.value))
-const liveNodeBufferResolved = computed(() => Math.max(0, props.liveNodeBuffer ?? 60))
-const focusIndex = ref(0)
-const liveRange = reactive({ start: 0, end: 0 })
+const {
+  liveNodeBufferResolved,
+  focusIndex,
+  liveRange,
+  updateLiveRange,
+} = useLiveRangeState(props, {
+  parsedNodeCount,
+  virtualizationEnabled,
+  maxLiveNodesResolved,
+  clamp,
+})
 const nodeContentElements = new Map<number, HTMLElement | null>()
+const nodeContentVersions = new Map<number, number>()
 const nodeContentDeferredMeasureTimers = new Map<number, number[]>()
+const finalHeightConvergenceTimers: number[] = []
+const pendingHeightMeasurements = new Map<number, { height: number, allowShrink: boolean, version: number, el: HTMLElement }>()
+let heightMeasurementRaf: number | null = null
 const desiredRenderedCount = computed(() => {
   if (!virtualizationEnabled.value)
     return parsedNodes.value.length
@@ -452,113 +511,53 @@ function getHeadingProbeNode(level: number) {
   return headingProbeNodes.value?.[level] ?? null
 }
 
-function resolveScrollContainer(node?: HTMLElement | null) {
-  const resolved = resolveViewportRoot(node ?? containerRef.value ?? null)
-  if (resolved)
-    return resolved
-  const host = node?.ownerDocument ?? containerRef.value?.ownerDocument ?? (typeof document !== 'undefined' ? document : null)
-  return host?.scrollingElement as HTMLElement || host?.documentElement || null
-}
+const {
+  cancelScheduledFocusSync,
+  scheduleFocusSync,
+} = useFocusSyncScheduler({
+  isClient,
+  containerRef,
+  virtualizationEnabled,
+  requestFrame,
+  cancelFrame,
+  syncFocusToScroll,
+})
 
-function isReverseFlexScrollRoot(root: HTMLElement) {
-  if (!isClient)
-    return false
-  try {
-    const style = window.getComputedStyle(root)
-    const display = (style.display || '').toLowerCase()
-    if (!display.includes('flex'))
-      return false
-    const dir = (style.flexDirection || '').toLowerCase()
-    return dir.endsWith('reverse')
-  }
-  catch {
-    return false
-  }
-}
+const {
+  visibleNodeIndices,
+  nodeVisibilityHandles,
+  nodeVisibilityWatchStops,
+  nodeVisibilityFallbackTimers,
+  clearVisibilityFallback,
+  markNodeVisible,
+  cleanupNodeVisibility,
+  destroyNodeVisibilityState,
+} = useNodeVisibilityState({
+  isClient,
+  shouldTrackVisibleNodeIndices: () => deferNodes.value,
+  shouldCleanupNodeVisibility: () => virtualizationEnabled.value,
+  onNodeMarkedVisible: (index) => {
+    if (virtualizationEnabled.value)
+      scheduleFocusSync()
+    else
+      focusIndex.value = clamp(index, 0, Math.max(0, parsedNodes.value.length - 1))
+  },
+  onNodeVisibilityCleaned: (index) => {
+    if (nodeSlotElements.delete(index))
+      bumpNodeSlotVersion()
+  },
+})
 
-function getNormalizedScrollTop(root: HTMLElement, doc: Document, isViewportRoot: boolean) {
-  if (isViewportRoot)
-    return (doc?.documentElement?.scrollTop ?? doc?.body?.scrollTop ?? 0)
-  const raw = root.scrollTop
-  if (!isReverseFlexScrollRoot(root))
-    return raw
-  const distanceFromBottom = raw < 0 ? -raw : raw
-  const max = Math.max(0, (root.scrollHeight ?? 0) - (root.clientHeight ?? 0))
-  return max - distanceFromBottom
-}
-
-function getOffsetTopWithinRoot(node: HTMLElement, root: HTMLElement) {
-  let current: HTMLElement | null = node
-  let total = 0
-  let guard = 0
-  while (current && current !== root && guard++ < 64) {
-    total += current.offsetTop || 0
-    current = current.offsetParent as HTMLElement | null
-  }
-  return total
-}
-
-function cleanupScrollListener() {
-  if (detachScrollHandler) {
-    detachScrollHandler()
-    detachScrollHandler = null
-  }
-  scrollRootElement.value = null
-}
-
-function setupScrollListener() {
-  if (!isClient || !virtualizationEnabled.value)
-    return
-  const root = resolveScrollContainer()
-  if (!root || scrollRootElement.value === root)
-    return
-  cleanupScrollListener()
-  const handler = () => scheduleFocusSync()
-  root.addEventListener('scroll', handler, { passive: true })
-  scrollRootElement.value = root
-  detachScrollHandler = () => {
-    root.removeEventListener('scroll', handler)
-  }
-}
-
-function cancelScheduledFocusSync() {
-  if (!pendingFocusSync)
-    return
-  const win = containerRef.value?.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : null)
-  if (pendingFocusSync.viaTimeout)
-    win ? win.clearTimeout(pendingFocusSync.id as number) : clearTimeout(pendingFocusSync.id as ReturnType<typeof setTimeout>)
-  else
-    cancelFrame?.(pendingFocusSync.id as number)
-  pendingFocusSync = null
-}
-
-function scheduleFocusSync(options: { immediate?: boolean } = {}) {
-  if (!virtualizationEnabled.value)
-    return
-  if (!isClient) {
-    syncFocusToScroll(true)
-    return
-  }
-  if (options.immediate) {
-    cancelScheduledFocusSync()
-    syncFocusToScroll(true)
-    return
-  }
-  if (pendingFocusSync)
-    return
-  const run = () => {
-    pendingFocusSync = null
-    syncFocusToScroll()
-  }
-  if (requestFrame) {
-    pendingFocusSync = { id: requestFrame(run), viaTimeout: false }
-  }
-  else {
-    const win = containerRef.value?.ownerDocument?.defaultView ?? (typeof window !== 'undefined' ? window : null)
-    const timeoutId = win ? win.setTimeout(run, 16) : setTimeout(run, 16)
-    pendingFocusSync = { id: timeoutId, viaTimeout: true }
-  }
-}
+const {
+  cleanupScrollListener,
+  setupScrollListener,
+} = useScrollListener({
+  isClient,
+  virtualizationEnabled,
+  scrollRootElement,
+  resolveScrollContainer,
+  scheduleFocusSync,
+})
 
 function syncFocusToScroll(force = false) {
   if (!virtualizationEnabled.value)
@@ -639,131 +638,10 @@ function syncFocusToScroll(force = false) {
     return
   focusIndex.value = clamp(midpoint, 0, Math.max(0, parsedNodes.value.length - 1))
 }
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max)
 }
-function updateLiveRange() {
-  const total = parsedNodes.value.length
-  if (!virtualizationEnabled.value || total === 0) {
-    liveRange.start = 0
-    liveRange.end = total
-    return
-  }
-  const windowSize = Math.min(maxLiveNodesResolved.value, total)
-  const buffer = liveNodeBufferResolved.value
-  const desiredStart = clamp(focusIndex.value - buffer, 0, Math.max(0, total - windowSize))
-  liveRange.start = desiredStart
-  liveRange.end = Math.min(total, desiredStart + windowSize)
-}
-
-const nodeHeights = reactive<Record<number, number>>({})
-const heightStats = reactive({ total: 0, count: 0 })
-
-function resetHeightMeasurements() {
-  for (const key of Object.keys(nodeHeights))
-    delete nodeHeights[Number(key)]
-  heightStats.total = 0
-  heightStats.count = 0
-  heightTreeSize.value = 0
-  heightSumTree.value = []
-  heightKnownTree.value = []
-}
-
-function pruneHeightMeasurements(size: number) {
-  if (size <= 0) {
-    resetHeightMeasurements()
-    return
-  }
-
-  let total = 0
-  let count = 0
-  for (const [rawIndex, rawHeight] of Object.entries(nodeHeights)) {
-    const index = Number(rawIndex)
-    const height = Number(rawHeight)
-    if (!Number.isFinite(index) || index < 0 || index >= size || !Number.isFinite(height) || height <= 0) {
-      delete nodeHeights[index]
-      continue
-    }
-    total += height
-    count++
-  }
-  heightStats.total = total
-  heightStats.count = count
-}
-
-function fenwickUpdate(tree: number[], index: number, delta: number) {
-  for (let i = index + 1; i < tree.length; i += i & -i)
-    tree[i] += delta
-}
-
-function fenwickQuery(tree: number[], index: number) {
-  let sum = 0
-  for (let i = index + 1; i > 0; i -= i & -i)
-    sum += tree[i]
-  return sum
-}
-
-function fenwickRangeSum(tree: number[], start: number, end: number) {
-  if (end <= start)
-    return 0
-  const endSum = fenwickQuery(tree, end - 1)
-  if (start <= 0)
-    return endSum
-  return endSum - fenwickQuery(tree, start - 1)
-}
-
-function rebuildHeightTrees(size: number) {
-  heightTreeSize.value = size
-  const sumTree = new Array(size + 1).fill(0)
-  const countTree = new Array(size + 1).fill(0)
-  for (const [rawIndex, rawHeight] of Object.entries(nodeHeights)) {
-    const index = Number(rawIndex)
-    const height = Number(rawHeight)
-    if (!Number.isFinite(index) || index < 0 || index >= size)
-      continue
-    if (!Number.isFinite(height) || height <= 0)
-      continue
-    fenwickUpdate(sumTree, index, height)
-    fenwickUpdate(countTree, index, 1)
-  }
-  heightSumTree.value = sumTree
-  heightKnownTree.value = countTree
-}
-
-function recordNodeHeight(index: number, height: number) {
-  if (!Number.isFinite(height) || height <= 0)
-    return
-  const previous = nodeHeights[index]
-  nodeHeights[index] = height
-  if (previous) {
-    heightStats.total += height - previous
-  }
-  else {
-    heightStats.total += height
-    heightStats.count++
-  }
-  if (heightTreeSize.value > index) {
-    const sumTree = heightSumTree.value
-    const countTree = heightKnownTree.value
-    if (sumTree.length && countTree.length) {
-      if (previous) {
-        const delta = height - previous
-        if (delta !== 0)
-          fenwickUpdate(sumTree, index, delta)
-      }
-      else {
-        fenwickUpdate(sumTree, index, height)
-        fenwickUpdate(countTree, index, 1)
-      }
-    }
-  }
-  if (activeRestoreAnchor.value)
-    scheduleRestoreReconcile()
-}
-
-const averageNodeHeight = computed(() => {
-  return heightStats.count > 0 ? Math.max(12, heightStats.total / heightStats.count) : 32
-})
 
 function getProbeRoot(wrapper: HTMLElement | null | undefined) {
   return wrapper?.firstElementChild as HTMLElement | null
@@ -912,113 +790,6 @@ function getFallbackNodeHeight(index: number) {
   return nodeHeights[index] ?? estimatedNodeHeights.value[index]?.height ?? averageNodeHeight.value
 }
 
-function getRelativeScrollTopWithinContainer() {
-  const root = scrollRootElement.value || resolveScrollContainer()
-  const container = containerRef.value
-  if (!root || !container)
-    return null
-  const doc = root.ownerDocument || container.ownerDocument || document
-  const isViewportRoot = root === doc.documentElement || root === doc.body || root === doc.scrollingElement
-  if (isViewportRoot) {
-    const containerRect = container.getBoundingClientRect()
-    return Math.max(0, -containerRect.top)
-  }
-  return Math.max(0, getNormalizedScrollTop(root, doc, false) - getOffsetTopWithinRoot(container, root))
-}
-
-function setRelativeScrollTopWithinContainer(target: number) {
-  const root = scrollRootElement.value || resolveScrollContainer()
-  const container = containerRef.value
-  if (!root || !container)
-    return
-  const next = Math.max(0, target)
-  const doc = root.ownerDocument || container.ownerDocument || document
-  const view = doc.defaultView || (typeof window !== 'undefined' ? window : null)
-  const isViewportRoot = root === doc.documentElement || root === doc.body || root === doc.scrollingElement
-  if (isViewportRoot) {
-    const current = getNormalizedScrollTop(root, doc, true)
-    const containerDocTop = current + container.getBoundingClientRect().top
-    view?.scrollTo?.(0, Math.max(0, containerDocTop + next))
-    return
-  }
-  root.scrollTop = getOffsetTopWithinRoot(container, root) + next
-}
-
-function resolveAnchorOffset(anchor: { nodeIndex: number, offsetWithinNodePx: number }) {
-  const boundedIndex = clamp(anchor.nodeIndex, 0, Math.max(0, parsedNodes.value.length - 1))
-  return estimateHeightRange(0, boundedIndex) + Math.max(0, anchor.offsetWithinNodePx)
-}
-
-function clearRestoreReconcile() {
-  if (restoreReconcileRaf != null) {
-    cancelFrame?.(restoreReconcileRaf)
-    restoreReconcileRaf = null
-  }
-  if (isClient) {
-    for (const timer of restoreReconcileTimers)
-      window.clearTimeout(timer)
-  }
-  restoreReconcileTimers = []
-}
-
-function applyRestoreAnchor(anchor: { nodeIndex: number, offsetWithinNodePx: number }) {
-  setRelativeScrollTopWithinContainer(resolveAnchorOffset(anchor))
-}
-
-function scheduleRestoreReconcile() {
-  if (!activeRestoreAnchor.value || !isClient)
-    return
-  if (restoreReconcileRaf != null)
-    return
-  restoreReconcileRaf = requestFrame
-    ? requestFrame(() => {
-        restoreReconcileRaf = null
-        if (activeRestoreAnchor.value)
-          applyRestoreAnchor(activeRestoreAnchor.value)
-      })
-    : null
-  if (restoreReconcileRaf == null && activeRestoreAnchor.value)
-    applyRestoreAnchor(activeRestoreAnchor.value)
-}
-
-function captureRestoreAnchor() {
-  const relativeScrollTop = getRelativeScrollTopWithinContainer()
-  const total = parsedNodes.value.length
-  if (relativeScrollTop == null || total <= 0)
-    return null
-  const nodeIndex = clamp(estimateIndexForOffset(relativeScrollTop + 1), 0, total - 1)
-  const nodeStart = estimateHeightRange(0, nodeIndex)
-  const nodeHeight = getFallbackNodeHeight(nodeIndex)
-  return {
-    nodeIndex,
-    offsetWithinNodePx: clamp(relativeScrollTop - nodeStart, 0, Math.max(0, nodeHeight - 1)),
-  }
-}
-
-function restoreAnchor(anchor: { nodeIndex: number, offsetWithinNodePx: number }) {
-  activeRestoreAnchor.value = {
-    nodeIndex: clamp(anchor.nodeIndex, 0, Math.max(0, parsedNodes.value.length - 1)),
-    offsetWithinNodePx: Math.max(0, anchor.offsetWithinNodePx),
-  }
-  clearRestoreReconcile()
-  applyRestoreAnchor(activeRestoreAnchor.value)
-  if (!isClient)
-    return
-  for (const delay of [0, 120, 280, 480]) {
-    restoreReconcileTimers.push(window.setTimeout(() => {
-      if (activeRestoreAnchor.value)
-        applyRestoreAnchor(activeRestoreAnchor.value)
-    }, delay))
-  }
-}
-
-function getAnchorDrift(anchor: { nodeIndex: number, offsetWithinNodePx: number }) {
-  const relativeScrollTop = getRelativeScrollTopWithinContainer()
-  if (relativeScrollTop == null)
-    return null
-  return relativeScrollTop - resolveAnchorOffset(anchor)
-}
-
 watch(
   () => parsedNodes.value.length,
   (length) => {
@@ -1149,8 +920,8 @@ function estimateIndexForOffset(offsetPx: number) {
     const prefix = (endExclusive: number) => {
       if (endExclusive <= 0)
         return 0
-      const sumKnown = fenwickQuery(sumTree, endExclusive - 1)
-      const countKnown = fenwickQuery(countTree, endExclusive - 1)
+      const sumKnown = fenwickRangeSum(sumTree, 0, endExclusive)
+      const countKnown = fenwickRangeSum(countTree, 0, endExclusive)
       return sumKnown + (endExclusive - countKnown) * avg
     }
     let low = 0
@@ -1212,64 +983,6 @@ function estimateIndexForOffsetFromEnd(offsetPx: number) {
 
 function bumpNodeSlotVersion() {
   nodeSlotVersion.value += 1
-}
-
-function setNodeVisibleState(index: number, visible: boolean) {
-  const current = visibleNodeIndices.value
-  const hasIndex = current.has(index)
-  if (visible) {
-    if (hasIndex)
-      return
-    const next = new Set(current)
-    next.add(index)
-    visibleNodeIndices.value = next
-    return
-  }
-  if (!hasIndex)
-    return
-  const next = new Set(current)
-  next.delete(index)
-  visibleNodeIndices.value = next
-}
-
-function resetNodeVisibleState() {
-  if (visibleNodeIndices.value.size === 0)
-    return
-  visibleNodeIndices.value = new Set()
-}
-
-function cleanupNodeVisibility(maxIndex: number) {
-  if (!nodeVisibilityHandles.size)
-    return
-  // When virtualization is disabled the DOM retains every slot, so keep
-  // observers intact; they will be cleaned up when the slot unmounts.
-  if (!virtualizationEnabled.value)
-    return
-  let slotsChanged = false
-  for (const [index, handle] of nodeVisibilityHandles) {
-    if (index >= maxIndex) {
-      handle.destroy()
-      nodeVisibilityHandles.delete(index)
-      if (deferNodes.value)
-        setNodeVisibleState(index, false)
-      clearVisibilityFallback(index)
-      if (nodeSlotElements.delete(index))
-        slotsChanged = true
-    }
-  }
-  if (slotsChanged)
-    bumpNodeSlotVersion()
-}
-
-function markNodeVisible(index: number, visible: boolean) {
-  if (deferNodes.value)
-    setNodeVisibleState(index, visible)
-  if (visible) {
-    if (virtualizationEnabled.value)
-      scheduleFocusSync()
-    else
-      focusIndex.value = clamp(index, 0, Math.max(0, parsedNodes.value.length - 1))
-  }
 }
 
 function shouldRenderNode(index: number) {
@@ -1388,7 +1101,116 @@ function setNodeSlotElement(index: number, el: HTMLElement | null) {
     scheduleFocusSync()
 }
 
+function flushPendingHeightMeasurements() {
+  heightMeasurementRaf = null
+
+  for (const [index, pending] of pendingHeightMeasurements) {
+    pendingHeightMeasurements.delete(index)
+    if (nodeContentElements.get(index) !== pending.el)
+      continue
+    if (nodeContentVersions.get(index) !== pending.version)
+      continue
+    recordNodeHeight(index, pending.height, { allowShrink: pending.allowShrink })
+  }
+}
+
+function clearPendingHeightMeasurements() {
+  if (heightMeasurementRaf != null) {
+    cancelFrame?.(heightMeasurementRaf)
+    heightMeasurementRaf = null
+  }
+  pendingHeightMeasurements.clear()
+}
+
+function bumpNodeContentVersion(index: number) {
+  const next = (nodeContentVersions.get(index) ?? 0) + 1
+  nodeContentVersions.set(index, next)
+  return next
+}
+
+function queueNodeHeightRecord(index: number, el: HTMLElement, height: number) {
+  if (!Number.isFinite(height) || height <= 0)
+    return
+  if (nodeContentElements.get(index) !== el)
+    return
+
+  const version = nodeContentVersions.get(index)
+  if (version == null)
+    return
+  const node = parsedNodes.value[index] as (ParsedNode & { loading?: boolean }) | undefined
+  const isContentStreamingTail = contentStreamingTailActive.value
+    && effectiveFinal.value !== true
+    && !props.nodes?.length
+    && index >= parsedNodes.value.length - 2
+  const allowShrink = !(node?.loading === true || isContentStreamingTail)
+  const previous = pendingHeightMeasurements.get(index)
+  const combinedAllowShrink = previous
+    ? previous.allowShrink && allowShrink
+    : allowShrink
+  const nextHeight = previous && !combinedAllowShrink
+    ? Math.max(previous.height, height)
+    : height
+
+  pendingHeightMeasurements.set(index, {
+    height: nextHeight,
+    allowShrink: combinedAllowShrink,
+    version,
+    el,
+  })
+
+  if (heightMeasurementRaf != null)
+    return
+
+  heightMeasurementRaf = requestFrame
+    ? requestFrame(flushPendingHeightMeasurements)
+    : null
+
+  if (heightMeasurementRaf == null)
+    flushPendingHeightMeasurements()
+}
+
+function measureNodeHeight(index: number, el: HTMLElement) {
+  queueNodeHeightRecord(index, el, el.offsetHeight)
+}
+
+function measureTrackedNodeHeights() {
+  for (const [index, el] of nodeContentElements) {
+    if (el)
+      measureNodeHeight(index, el)
+  }
+}
+
+function clearFinalHeightConvergenceTimers() {
+  if (!isClient)
+    return
+
+  while (finalHeightConvergenceTimers.length) {
+    const timer = finalHeightConvergenceTimers.pop()
+    if (timer != null)
+      window.clearTimeout(timer)
+  }
+}
+
+function scheduleFinalHeightConvergence() {
+  if (!isClient || !effectiveFinal.value || !nodeContentElements.size)
+    return
+
+  clearFinalHeightConvergenceTimers()
+  for (const delay of [80, 240, 640]) {
+    const timer = window.setTimeout(() => {
+      for (const [index, el] of nodeContentElements) {
+        if (el)
+          measureNodeHeight(index, el)
+      }
+    }, delay)
+
+    finalHeightConvergenceTimers.push(timer)
+  }
+}
+
 function setNodeContentRef(index: number, el: HTMLElement | null) {
+  pendingHeightMeasurements.delete(index)
+  bumpNodeContentVersion(index)
   const previousTimers = nodeContentDeferredMeasureTimers.get(index)
   if (previousTimers) {
     for (const id of previousTimers)
@@ -1402,11 +1224,12 @@ function setNodeContentRef(index: number, el: HTMLElement | null) {
   }
   if (!el || !shouldMeasureNodeHeights.value) {
     nodeContentElements.delete(index)
+    nodeContentVersions.delete(index)
     return
   }
   nodeContentElements.set(index, el)
   const measure = () => {
-    recordNodeHeight(index, el.offsetHeight)
+    measureNodeHeight(index, el)
   }
   queueMicrotask(measure)
   if (typeof ResizeObserver !== 'undefined') {
@@ -1416,13 +1239,19 @@ function setNodeContentRef(index: number, el: HTMLElement | null) {
     observer.observe(el)
     nodeContentResizeObservers.set(index, observer)
   }
-  if (parsedNodes.value[index]?.type === 'code_block' && typeof window !== 'undefined') {
-    nodeContentDeferredMeasureTimers.set(index, [
-      window.setTimeout(measure, 16),
-      window.setTimeout(measure, 80),
-      window.setTimeout(measure, 240),
-      window.setTimeout(measure, 800),
-    ])
+  if (typeof window !== 'undefined') {
+    const deferredMeasureDelays = parsedNodes.value[index]?.type === 'code_block'
+      ? [16, 80, 240, 800]
+      : effectiveFinal.value
+        ? [80]
+        : []
+
+    if (deferredMeasureDelays.length) {
+      nodeContentDeferredMeasureTimers.set(
+        index,
+        deferredMeasureDelays.map(delay => window.setTimeout(measure, delay)),
+      )
+    }
   }
 }
 
@@ -1439,46 +1268,23 @@ watch(
         window.clearTimeout(id)
     }
     nodeContentDeferredMeasureTimers.clear()
+    nodeContentVersions.clear()
+    clearFinalHeightConvergenceTimers()
+    clearPendingHeightMeasurements()
   },
   { immediate: true },
 )
 
-let batchRaf: number | null = null
-let batchTimeout: number | null = null
-let batchPending = false
-let pendingIncrement: number | null = null
-let batchIdle: number | null = null
+watch(
+  effectiveFinal,
+  (final) => {
+    if (final)
+      scheduleFinalHeightConvergence()
+  },
+)
+
 const VIEWPORT_FALLBACK_DELAY = 1800
 const VIEWPORT_FALLBACK_MARGIN_PX = 500
-
-function cancelBatchTimers() {
-  if (!isClient)
-    return
-  if (batchRaf != null) {
-    cancelFrame?.(batchRaf)
-    batchRaf = null
-  }
-  if (batchTimeout != null) {
-    window.clearTimeout(batchTimeout)
-    batchTimeout = null
-  }
-  if (batchIdle != null && typeof window.cancelIdleCallback === 'function') {
-    window.cancelIdleCallback(batchIdle)
-    batchIdle = null
-  }
-  batchPending = false
-  pendingIncrement = null
-}
-
-function clearVisibilityFallback(index: number) {
-  if (!isClient)
-    return
-  const timer = nodeVisibilityFallbackTimers.get(index)
-  if (timer != null) {
-    window.clearTimeout(timer)
-    nodeVisibilityFallbackTimers.delete(index)
-  }
-}
 
 function scheduleVisibilityFallback(index: number) {
   if (!isClient || !deferNodes.value)
@@ -1525,194 +1331,41 @@ function autoDisableViewportPriority(reason: 'too-many-targets') {
   if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV && typeof console !== 'undefined')
     console.warn('[markstream-vue] viewportPriority auto-disabled:', reason)
 
-  for (const handle of nodeVisibilityHandles.values())
-    handle.destroy()
-  nodeVisibilityHandles.clear()
-  if (isClient) {
-    for (const timer of nodeVisibilityFallbackTimers.values())
-      window.clearTimeout(timer)
-  }
-  nodeVisibilityFallbackTimers.clear()
-  resetNodeVisibleState()
+  destroyNodeVisibilityState()
 }
 
-function scheduleBatch(increment: number, opts: { immediate?: boolean } = {}) {
-  if (!incrementalRenderingActive.value)
-    return
-  const target = desiredRenderedCount.value
-  if (renderedCount.value >= target)
-    return
-
-  const amount = Math.max(1, increment)
-  const run = (deadline?: IdleDeadlineLike) => {
-    batchRaf = null
-    batchTimeout = null
-    batchIdle = null
-    batchPending = false
-    const applied = pendingIncrement != null ? pendingIncrement : amount
-    pendingIncrement = null
-    const budgetMs = Math.max(2, props.renderBatchBudgetMs ?? 6)
-
-    const applyAndMeasure = (size: number) => {
-      const start = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      renderedCount.value = Math.min(target, renderedCount.value + Math.max(1, size))
-      cleanupNodeVisibility(renderedCount.value)
-      const end = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      const elapsed = end - start
-      adjustAdaptiveBatchSize(elapsed)
-      return elapsed
-    }
-
-    let nextSize = applied
-    while (true) {
-      applyAndMeasure(nextSize)
-      if (renderedCount.value >= target)
-        break
-      if (!deadline)
-        break
-      const remaining = typeof deadline.timeRemaining === 'function'
-        ? deadline.timeRemaining()
-        : 0
-      if (remaining <= budgetMs * 0.5)
-        break
-      nextSize = Math.max(1, Math.round(adaptiveBatchSize.value))
-    }
-
-    if (renderedCount.value < target)
-      queueNextBatch()
-  }
-
-  if (!isClient || opts.immediate) {
-    run()
-    return
-  }
-
-  const delay = Math.max(0, props.renderBatchDelay ?? 16)
-  pendingIncrement = pendingIncrement != null ? Math.max(pendingIncrement, amount) : amount
-  if (batchPending)
-    return
-  batchPending = true
-
-  if (!isTestEnv && hasIdleCallback && window.requestIdleCallback) {
-    const timeout = Math.max(0, props.renderBatchIdleTimeoutMs ?? 120)
-    batchIdle = window.requestIdleCallback((deadline) => {
-      run(deadline)
-    }, { timeout })
-    return
-  }
-
-  if (!requestFrame || isTestEnv) {
-    batchTimeout = window.setTimeout(() => run(), delay)
-    return
-  }
-  batchRaf = requestFrame(() => {
-    if (delay === 0) {
-      run()
-      return
-    }
-    batchTimeout = window.setTimeout(() => run(), delay)
-  })
-}
-
-function queueNextBatch() {
-  if (!incrementalRenderingActive.value)
-    return
-  const dynamicSize = batchingEnabled.value
-    ? Math.max(1, Math.round(adaptiveBatchSize.value))
-    : Math.max(1, resolvedBatchSize.value)
-  scheduleBatch(dynamicSize)
-}
-
-function adjustAdaptiveBatchSize(elapsed: number) {
-  if (!incrementalRenderingActive.value)
-    return
-  const budget = Math.max(2, props.renderBatchBudgetMs ?? 6)
-  const maxSize = Math.max(1, resolvedBatchSize.value || 1)
-  const minSize = Math.max(1, Math.floor(maxSize / 4))
-  if (elapsed > budget * 1.2) {
-    adaptiveBatchSize.value = Math.max(minSize, Math.floor(adaptiveBatchSize.value * 0.7))
-  }
-  else if (elapsed < budget * 0.5 && adaptiveBatchSize.value < maxSize) {
-    adaptiveBatchSize.value = Math.min(maxSize, Math.ceil(adaptiveBatchSize.value * 1.2))
-  }
-}
-
-watch(
-  [
-    () => parsedNodes.value,
-    () => parsedNodes.value.length,
-    () => incrementalRenderingActive.value,
-    () => resolvedBatchSize.value,
-    () => resolvedInitialBatch.value,
-    () => props.renderBatchDelay,
-    () => props.indexKey,
-  ],
-  () => {
-    const nodes = parsedNodes.value
-    const total = nodes.length
-    const prevCtx = previousRenderContext.value
-    const datasetKey = props.indexKey
-    const datasetKeyChanged = datasetKey !== undefined && datasetKey !== prevCtx.key
-    const lengthChanged = total !== prevCtx.total
-    const datasetChanged = datasetKeyChanged || lengthChanged
-    previousRenderContext.value = { key: datasetKey, total }
-
-    const prevBatch = previousBatchConfig.value
-    const currentDelay = props.renderBatchDelay ?? 16
-    const batchConfigChanged
-      = prevBatch.batchSize !== resolvedBatchSize.value
-        || prevBatch.initial !== resolvedInitialBatch.value
-        || prevBatch.delay !== currentDelay
-        || prevBatch.enabled !== incrementalRenderingActive.value
-
-    previousBatchConfig.value = {
-      batchSize: resolvedBatchSize.value,
-      initial: resolvedInitialBatch.value,
-      delay: currentDelay,
-      enabled: incrementalRenderingActive.value,
-    }
-
-    if (datasetKeyChanged) {
-      resetHeightMeasurements()
-      if (total > 0)
-        rebuildHeightTrees(total)
-    }
-    if (datasetChanged || batchConfigChanged || !incrementalRenderingActive.value)
-      cancelBatchTimers()
-    if (datasetChanged || batchConfigChanged)
-      adaptiveBatchSize.value = Math.max(1, resolvedBatchSize.value || 1)
-    if (datasetChanged && virtualizationEnabled.value)
-      scheduleFocusSync({ immediate: true })
-
-    const targetCount = desiredRenderedCount.value
-
-    if (!total) {
-      renderedCount.value = 0
-      cleanupNodeVisibility(0)
-      return
-    }
-
-    if (!incrementalRenderingActive.value) {
-      renderedCount.value = targetCount
-      cleanupNodeVisibility(renderedCount.value)
-      return
-    }
-
-    const shouldResetRenderedCount = datasetKeyChanged || prevCtx.total === 0
-
-    if (shouldResetRenderedCount || batchConfigChanged)
-      renderedCount.value = Math.min(targetCount, resolvedInitialBatch.value)
-    else
-      renderedCount.value = Math.min(renderedCount.value, targetCount)
-
-    const baseInitial = Math.max(1, resolvedInitialBatch.value || resolvedBatchSize.value || total)
-    if (renderedCount.value < targetCount)
-      scheduleBatch(baseInitial, { immediate: !isClient })
-    else
-      cleanupNodeVisibility(renderedCount.value)
+const {
+  cleanupBatchScheduler,
+} = useBatchRenderingScheduler({
+  props,
+  isClient,
+  isTestEnv,
+  parsedNodesIdentity,
+  parsedNodeCount,
+  desiredRenderedCount,
+  batchingEnabled,
+  incrementalRenderingActive,
+  resolvedBatchSize,
+  resolvedInitialBatch,
+  renderedCount,
+  adaptiveBatchSize,
+  previousRenderContext,
+  previousBatchConfig,
+  requestFrame,
+  cancelFrame,
+  hasIdleCallback,
+  cleanupNodeVisibility,
+  onDatasetKeyChanged: (total) => {
+    clearPendingHeightMeasurements()
+    resetHeightMeasurements()
+    if (total > 0)
+      rebuildHeightTrees(total)
   },
-  { immediate: true },
-)
+  onDatasetChanged: () => {
+    if (virtualizationEnabled.value)
+      scheduleFocusSync({ immediate: true })
+  },
+})
 
 watch(
   () => virtualizationEnabled.value,
@@ -1812,12 +1465,7 @@ watch(
   () => deferNodes.value,
   (enabled) => {
     if (!enabled) {
-      for (const handle of nodeVisibilityHandles.values())
-        handle.destroy()
-      nodeVisibilityHandles.clear()
-      for (const index of Array.from(nodeVisibilityFallbackTimers.keys()))
-        clearVisibilityFallback(index)
-      resetNodeVisibleState()
+      destroyNodeVisibilityState()
       for (const [index, el] of nodeSlotElements) {
         if (el)
           markNodeVisible(index, true)
@@ -1890,18 +1538,6 @@ watch(
 )
 
 watch(
-  () => desiredRenderedCount.value,
-  (target, prev) => {
-    if (!incrementalRenderingActive.value)
-      return
-    if (typeof prev === 'number' && target <= prev)
-      return
-    if (target > renderedCount.value)
-      queueNextBatch()
-  },
-)
-
-watch(
   [() => props.customId],
   ([customId], _prev, onCleanup) => {
     if (!customId || isNestedListItemRenderer)
@@ -1920,10 +1556,9 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  cancelBatchTimers()
-  for (const handle of nodeVisibilityHandles.values())
-    handle.destroy()
-  nodeVisibilityHandles.clear()
+  cleanupBatchScheduler()
+  destroyNodeVisibilityState()
+  clearContentStreamingTailIdleTimer()
   for (const observer of nodeContentResizeObservers.values())
     observer.disconnect()
   nodeContentResizeObservers.clear()
@@ -1932,82 +1567,13 @@ onBeforeUnmount(() => {
       window.clearTimeout(id)
   }
   nodeContentDeferredMeasureTimers.clear()
-  for (const stopWatchingVisibility of nodeVisibilityWatchStops.values())
-    stopWatchingVisibility()
-  nodeVisibilityWatchStops.clear()
-  for (const index of Array.from(nodeVisibilityFallbackTimers.keys()))
-    clearVisibilityFallback(index)
+  nodeContentVersions.clear()
+  clearFinalHeightConvergenceTimers()
+  clearPendingHeightMeasurements()
   cleanupExperimentResizeObserver()
   clearRestoreReconcile()
   cleanupScrollListener()
   cancelScheduledFocusSync()
-})
-
-const MermaidBlockNodeLoading = defineComponent({
-  name: 'MermaidBlockNodeLoading',
-  props: {
-    node: { type: Object, required: true },
-    showHeader: { type: Boolean, default: true },
-    estimatedPreviewHeightPx: { type: Number, default: undefined },
-  },
-  setup(loadingProps) {
-    const height = computed(() => clampMermaidPreviewHeight(
-      parsePositiveNumber(loadingProps.estimatedPreviewHeightPx)
-      ?? estimateMermaidPreviewHeight(String((loadingProps.node as RuntimeCodeBlockNode).code ?? '')),
-    ))
-    return () => h('div', {
-      'class': 'mermaid-block-container rounded-lg border overflow-hidden',
-      'style': {
-        margin: 'var(--ms-flow-diagram-y) 0',
-        borderColor: 'var(--diagram-border)',
-      },
-      'data-markstream-mermaid': '1',
-      'data-markstream-mode': 'pending',
-    }, [
-      loadingProps.showHeader
-        ? h('div', {
-            class: 'mermaid-block-header flex justify-between items-center border-b px-[var(--ms-inset-panel-x)] py-[var(--ms-inset-panel-y)]',
-            style: {
-              background: 'var(--diagram-header-bg)',
-              borderColor: 'var(--diagram-border)',
-            },
-          }, [
-            h('div', { class: 'flex items-center gap-x-2 overflow-hidden' }, [
-              h('span', {
-                class: 'mermaid-label-text text-[length:var(--ms-text-label)] font-medium font-mono truncate',
-                style: { color: 'var(--code-action-fg)' },
-              }, 'Mermaid'),
-            ]),
-            h('div', {
-              'class': 'mermaid-header-actions flex items-center gap-[var(--ms-gap-header-actions)] opacity-0 pointer-events-none',
-              'aria-hidden': 'true',
-            }, Array.from({ length: 4 }, () => h('span', {
-              class: 'mermaid-action-btn inline-flex items-center justify-center p-[var(--ms-action-btn-padding)] rounded',
-            }, [
-              h('span', { class: 'action-icon block' }),
-            ]))),
-          ])
-        : null,
-      h('div', {
-        class: 'mermaid-preview-area relative overflow-hidden block',
-        style: {
-          height: `${height.value}px`,
-          minHeight: 'var(--ms-size-diagram-min-height)',
-          background: 'var(--diagram-bg)',
-        },
-      }, [
-        h('div', {
-          class: '_mermaid w-full text-center flex items-center justify-center min-h-full',
-          style: {
-            fontFamily: 'inherit',
-            contentVisibility: 'auto',
-            contain: 'content',
-            containIntrinsicSize: 'var(--ms-size-diagram-min-height) 240px',
-          },
-        }),
-      ]),
-    ])
-  },
 })
 
 const MermaidBlockNodeAsync = defineAsyncComponent({
@@ -2026,85 +1592,6 @@ const MermaidBlockNodeAsync = defineAsyncComponent({
   },
   loadingComponent: MermaidBlockNodeLoading,
   delay: 0,
-})
-
-const InfographicBlockNodeLoading = defineComponent({
-  name: 'InfographicBlockNodeLoading',
-  props: {
-    node: { type: Object, required: true },
-    showHeader: { type: Boolean, default: true },
-    estimatedPreviewHeightPx: { type: Number, default: undefined },
-  },
-  setup(loadingProps) {
-    const height = computed(() => clampInfographicPreviewHeight(
-      parsePositiveNumber(loadingProps.estimatedPreviewHeightPx)
-      ?? estimateInfographicPreviewHeight(String((loadingProps.node as RuntimeCodeBlockNode).code ?? '')),
-    ))
-    return () => h('div', {
-      'class': 'infographic-block-container rounded-lg border overflow-hidden',
-      'style': {
-        margin: 'var(--ms-flow-diagram-y) 0',
-        background: 'var(--diagram-bg)',
-        borderColor: 'var(--diagram-border)',
-        color: 'hsl(var(--ms-foreground))',
-      },
-      'data-markstream-infographic': '1',
-      'data-markstream-mode': 'pending',
-    }, [
-      loadingProps.showHeader
-        ? h('div', {
-            class: 'infographic-block-header flex justify-between items-center border-b',
-            style: {
-              padding: 'var(--ms-inset-panel-y) var(--ms-inset-panel-x)',
-              background: 'var(--diagram-header-bg)',
-              borderColor: 'var(--diagram-border)',
-              minHeight: 'calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding) + var(--ms-inset-panel-y) + var(--ms-inset-panel-y) + 1px)',
-            },
-          }, [
-            h('div', { class: 'flex items-center gap-x-2 overflow-hidden' }, [
-              h('span', {
-                class: 'icon-slot action-icon shrink-0',
-                style: {
-                  display: 'inline-flex',
-                  width: 'var(--ms-action-btn-icon)',
-                  height: 'var(--ms-action-btn-icon)',
-                },
-              }),
-              h('span', {
-                class: 'infographic-label font-medium font-mono truncate',
-                style: {
-                  fontSize: 'var(--ms-text-label)',
-                  color: 'hsl(var(--ms-muted-foreground))',
-                },
-              }, 'Infographic'),
-            ]),
-            h('div', {
-              'class': 'infographic-header-actions flex items-center opacity-0 pointer-events-none',
-              'style': { gap: 'var(--ms-gap-header-actions)' },
-              'aria-hidden': 'true',
-            }, Array.from({ length: 4 }, () => h('span', {
-              class: 'infographic-action-btn inline-flex items-center justify-center p-[var(--ms-action-btn-padding)] rounded',
-              style: {
-                width: 'calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding))',
-                height: 'calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding))',
-              },
-            }))),
-          ])
-        : null,
-      h('div', {
-        class: 'infographic-preview relative overflow-hidden block',
-        style: {
-          height: `${height.value}px`,
-          minHeight: 'var(--ms-size-diagram-min-height)',
-          background: 'var(--diagram-bg)',
-        },
-      }, [
-        h('div', { class: 'absolute inset-0' }, [
-          h('div', { class: 'w-full text-center flex items-center justify-center min-h-full' }),
-        ]),
-      ]),
-    ])
-  },
 })
 
 const InfographicBlockNodeAsync = defineAsyncComponent({
@@ -2201,9 +1688,8 @@ const infographicBindings = computed(() => ({
   ...(props.infographicProps || {}),
 }))
 const nonCodeBindings = computed(() => ({
-  // Forward `typewriter` flag to non-code node components so they can
-  // opt in/out of enter transitions or other typewriter-like behaviour.
   typewriter: props.typewriter,
+  fade: props.fade,
   // Forward customHtmlTags for non-whitelisted tag detection in child components
   customHtmlTags: mergedParseOptions.value.customHtmlTags,
 }))
@@ -2238,6 +1724,15 @@ function getCodeBlockRenderNode(node: ParsedNode) {
   const cloned = { ...codeBlockNode } as ParsedNode
   codeBlockRenderCache.set(codeBlockNode, { signature, node: cloned })
   return cloned
+}
+
+function isCustomTagComponent(node: ParsedNode, component: unknown) {
+  const type = String(node.type)
+  return !isReservedNodeComponentKey(type) && customComponentsMap.value[type] === component
+}
+
+function hasSlotChildren(node: ParsedNode) {
+  return Array.isArray((node as any).children) && (node as any).children.length > 0
 }
 
 const renderedItems = computed(() => {
@@ -2323,12 +1818,30 @@ const renderedItems = computed(() => {
         ),
       }
     }
+    if (node.type === 'math_block') {
+      bindings = {
+        ...bindings,
+        cacheScope: mathBlockCacheScope.value,
+      }
+    }
+
+    const rendersCustomNode = isCustomTagComponent(node, component)
+    const customAttrs = rendersCustomNode
+      ? getCustomNodeAttrs(node as any, resolvedHtmlPolicy.value)
+      : undefined
 
     return {
       ...item,
       node,
       component,
       bindings,
+      customBindings: {
+        ...(customAttrs ?? {}),
+        ...bindings,
+      },
+      rendersCustomNode,
+      hasSlotChildren: hasSlotChildren(node),
+      slotContent: String((node as any).content ?? ''),
       isCodeBlock: node.type === 'code_block',
       indexKey: `${indexPrefix.value}-${item.index}`,
     }
@@ -2439,26 +1952,258 @@ function handleFragmentMouseover(event: MouseEvent) {
 function handleFragmentMouseout(event: MouseEvent) {
   emit('mouseout', event)
 }
+
+const typewriterCursorRef = ref<HTMLElement | null>(null)
+const showTypewriterCursor = ref(false)
+let typewriterCursorTimeout: ReturnType<typeof setTimeout> | undefined
+let lastTypewriterContentLength = 0
+let lastTypewriterVisibleLength = 0
+const TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES = new Set(['code_block', 'admonition', 'table', 'math_block', 'html_block', 'image'])
+
+function shouldSkipTypewriterCursorForNode(node: unknown) {
+  if (!node || typeof node !== 'object')
+    return false
+  const type = (node as Record<string, unknown>).type
+  return typeof type === 'string' && TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES.has(type)
+}
+
+function shouldShowTypewriterCursorForCurrentNodes() {
+  const lastNode = parsedNodes.value[parsedNodes.value.length - 1]
+  return !shouldSkipTypewriterCursorForNode(lastNode)
+}
+
+function getNodeTextLength(node: unknown): number {
+  if (!node || typeof node !== 'object')
+    return 0
+
+  const record = node as Record<string, unknown>
+  const direct = record.raw ?? record.content ?? record.code
+  if (typeof direct === 'string')
+    return direct.length
+
+  const children = record.children
+  if (Array.isArray(children))
+    return children.reduce((total, child) => total + getNodeTextLength(child), 0)
+
+  const items = record.items
+  if (Array.isArray(items))
+    return items.reduce((total, item) => total + getNodeTextLength(item), 0)
+
+  return 0
+}
+
+function getTypewriterContentLength() {
+  if (props.nodes?.length)
+    return props.nodes.reduce((total, node) => total + getNodeTextLength(node), 0)
+  // Use raw content length, not renderContent (which may be the paced-out
+  // visible portion when smooth streaming is active).  The cursor should
+  // appear as long as the source content is growing, even if the visible
+  // stream hasn't caught up yet.
+  return (props.content ?? '').length
+}
+
+function getTypewriterVisibleLength() {
+  if (props.nodes?.length)
+    return props.nodes.reduce((total, node) => total + getNodeTextLength(node), 0)
+  return renderContent.value.length
+}
+
+function clearTypewriterCursorTimeout() {
+  if (!typewriterCursorTimeout)
+    return
+  clearTimeout(typewriterCursorTimeout)
+  typewriterCursorTimeout = undefined
+}
+
+function hideTypewriterCursorElement() {
+  if (typewriterCursorRef.value)
+    typewriterCursorRef.value.style.visibility = 'hidden'
+}
+
+function getLastTextNode(root: HTMLElement) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const text = node.textContent ?? ''
+      if (!text.trim())
+        return NodeFilter.FILTER_REJECT
+
+      const parent = node.parentElement
+      if (!parent)
+        return NodeFilter.FILTER_REJECT
+      if (parent.closest('.typewriter-cursor, .height-estimation-probes, [data-node-type="code_block"], [data-node-type="admonition"], [data-node-type="table"], [data-node-type="math_block"], [data-node-type="html_block"], [data-node-type="image"], script, style'))
+        return NodeFilter.FILTER_REJECT
+
+      return NodeFilter.FILTER_ACCEPT
+    },
+  })
+
+  let last: Text | null = null
+  let current = walker.nextNode()
+  while (current) {
+    last = current as Text
+    current = walker.nextNode()
+  }
+
+  return last
+}
+
+function updateTypewriterCursorPosition() {
+  if (!isClient || !showTypewriterCursor.value || !containerRef.value || !typewriterCursorRef.value)
+    return
+
+  const root = containerRef.value
+  const cursor = typewriterCursorRef.value
+  const lastText = getLastTextNode(root)
+  const rootRect = root.getBoundingClientRect()
+  cursor.style.visibility = 'hidden'
+  let left = 0
+  let top = 0
+  let height = 20
+  let measured = false
+
+  if (lastText?.textContent) {
+    const end = lastText.textContent.length
+    const range = document.createRange()
+    range.setStart(lastText, Math.max(0, end - 1))
+    range.setEnd(lastText, end)
+    const rects = typeof range.getClientRects === 'function'
+      ? range.getClientRects()
+      : undefined
+    const rect = rects?.[rects.length - 1] ?? lastText.parentElement?.getBoundingClientRect()
+
+    if (rect) {
+      left = rect.right - rootRect.left + root.scrollLeft
+      top = rect.top - rootRect.top + root.scrollTop
+      height = rect.height || height
+      measured = true
+    }
+    range.detach()
+  }
+
+  if (!measured)
+    return
+
+  cursor.style.transform = `translate(${Math.max(0, left)}px, ${Math.max(0, top)}px)`
+  cursor.style.height = `${height}px`
+  cursor.style.visibility = 'visible'
+}
+
+watch(
+  [renderContent, () => props.content, () => props.nodes, () => props.typewriter, effectiveFinal],
+  async () => {
+    if (!isClient || renderAsFragment.value || !ownsTypewriterCursor.value)
+      return
+
+    // When the stream is final (and effective — smooth streaming has caught up),
+    // hide the cursor immediately.
+    if (effectiveFinal.value) {
+      showTypewriterCursor.value = false
+      clearTypewriterCursorTimeout()
+      return
+    }
+
+    const nextLength = getTypewriterContentLength()
+    const nextVisibleLength = getTypewriterVisibleLength()
+    const cursorAllowed = shouldShowTypewriterCursorForCurrentNodes()
+    const sourceGrowing = nextLength > lastTypewriterContentLength
+    const visibleGrowing = nextVisibleLength > lastTypewriterVisibleLength
+    if (props.typewriter === false || !cursorAllowed || (!sourceGrowing && !visibleGrowing)) {
+      if (props.typewriter === false || !cursorAllowed)
+        showTypewriterCursor.value = false
+      lastTypewriterContentLength = nextLength
+      lastTypewriterVisibleLength = nextVisibleLength
+      return
+    }
+
+    lastTypewriterContentLength = nextLength
+    lastTypewriterVisibleLength = nextVisibleLength
+    showTypewriterCursor.value = true
+    hideTypewriterCursorElement()
+    clearTypewriterCursorTimeout()
+    await nextTick()
+    updateTypewriterCursorPosition()
+    typewriterCursorTimeout = setTimeout(() => {
+      showTypewriterCursor.value = false
+    }, 3000)
+  },
+  { flush: 'post', immediate: true },
+)
+
+watch(
+  showTypewriterCursor,
+  async (visible) => {
+    if (!visible)
+      return
+    await nextTick()
+    updateTypewriterCursorPosition()
+  },
+  { flush: 'post' },
+)
+
+onBeforeUnmount(() => {
+  clearTypewriterCursorTimeout()
+  mathBlockMinHeightCache.clear()
+})
 </script>
 
 <template>
   <template v-if="renderAsFragment">
-    <component
-      :is="item.component"
+    <template
       v-for="item in renderedItems"
       :key="item.index"
-      :node="item.node"
-      :loading="item.node.loading"
-      :index-key="item.indexKey"
-      v-bind="item.bindings"
-      :custom-id="props.customId"
-      :is-dark="props.isDark"
-      @click="handleContainerClick"
-      @mouseover="handleFragmentMouseover"
-      @mouseout="handleFragmentMouseout"
-      @copy="emit('copy', $event)"
-      @handle-artifact-click="emit('handleArtifactClick', $event)"
-    />
+    >
+      <component
+        :is="item.component"
+        v-if="item.rendersCustomNode"
+        v-bind="item.customBindings"
+        :node="item.node"
+        :loading="item.node.loading"
+        :index-key="item.indexKey"
+        :custom-id="props.customId"
+        :is-dark="props.isDark"
+        @click="handleContainerClick"
+        @mouseover="handleFragmentMouseover"
+        @mouseout="handleFragmentMouseout"
+        @copy="emit('copy', $event)"
+        @handle-artifact-click="emit('handleArtifactClick', $event)"
+      >
+        <NodeRenderer
+          v-if="item.hasSlotChildren"
+          v-bind="nestedRendererProps"
+          :nodes="(item.node as any).children"
+          :index-key="item.indexKey"
+          :batch-rendering="false"
+          :defer-nodes-until-visible="false"
+          :render-as-fragment="true"
+        />
+        <NodeRenderer
+          v-else-if="item.slotContent"
+          v-bind="nestedRendererProps"
+          :content="item.slotContent"
+          :final="!item.node.loading"
+          :index-key="`${item.indexKey}-content`"
+          :smooth-streaming="false"
+          :batch-rendering="false"
+          :defer-nodes-until-visible="false"
+          :render-as-fragment="true"
+        />
+      </component>
+      <component
+        :is="item.component"
+        v-else
+        :node="item.node"
+        :loading="item.node.loading"
+        :index-key="item.indexKey"
+        v-bind="item.bindings"
+        :custom-id="props.customId"
+        :is-dark="props.isDark"
+        @click="handleContainerClick"
+        @mouseover="handleFragmentMouseover"
+        @mouseout="handleFragmentMouseout"
+        @copy="emit('copy', $event)"
+        @handle-artifact-click="emit('handleArtifactClick', $event)"
+      />
+    </template>
   </template>
   <div
     v-else
@@ -2531,12 +2276,46 @@ function handleFragmentMouseout(event: MouseEvent) {
         >
           <!-- Skip wrapping code_block nodes in transitions to avoid touching Monaco editor internals -->
           <transition
-            v-if="!item.isCodeBlock && props.typewriter !== false"
-            name="typewriter"
+            v-if="!item.isCodeBlock && props.fade !== false"
+            name="fade"
             appear
           >
             <component
               :is="item.component"
+              v-if="item.rendersCustomNode"
+              v-bind="item.customBindings"
+              :node="item.node"
+              :loading="item.node.loading"
+              :index-key="item.indexKey"
+              :custom-id="props.customId"
+              :is-dark="props.isDark"
+              @copy="emit('copy', $event)"
+              @handle-artifact-click="emit('handleArtifactClick', $event)"
+            >
+              <NodeRenderer
+                v-if="item.hasSlotChildren"
+                v-bind="nestedRendererProps"
+                :nodes="(item.node as any).children"
+                :index-key="item.indexKey"
+                :batch-rendering="false"
+                :defer-nodes-until-visible="false"
+                :render-as-fragment="true"
+              />
+              <NodeRenderer
+                v-else-if="item.slotContent"
+                v-bind="nestedRendererProps"
+                :content="item.slotContent"
+                :final="!item.node.loading"
+                :index-key="`${item.indexKey}-content`"
+                :smooth-streaming="false"
+                :batch-rendering="false"
+                :defer-nodes-until-visible="false"
+                :render-as-fragment="true"
+              />
+            </component>
+            <component
+              :is="item.component"
+              v-else
               :node="item.node"
               :loading="item.node.loading"
               :index-key="item.indexKey"
@@ -2548,6 +2327,39 @@ function handleFragmentMouseout(event: MouseEvent) {
             />
           </transition>
 
+          <component
+            :is="item.component"
+            v-else-if="item.rendersCustomNode"
+            v-bind="item.customBindings"
+            :node="item.node"
+            :loading="item.node.loading"
+            :index-key="item.indexKey"
+            :custom-id="props.customId"
+            :is-dark="props.isDark"
+            @copy="emit('copy', $event)"
+            @handle-artifact-click="emit('handleArtifactClick', $event)"
+          >
+            <NodeRenderer
+              v-if="item.hasSlotChildren"
+              v-bind="nestedRendererProps"
+              :nodes="(item.node as any).children"
+              :index-key="item.indexKey"
+              :batch-rendering="false"
+              :defer-nodes-until-visible="false"
+              :render-as-fragment="true"
+            />
+            <NodeRenderer
+              v-else-if="item.slotContent"
+              v-bind="nestedRendererProps"
+              :content="item.slotContent"
+              :final="!item.node.loading"
+              :index-key="`${item.indexKey}-content`"
+              :smooth-streaming="false"
+              :batch-rendering="false"
+              :defer-nodes-until-visible="false"
+              :render-as-fragment="true"
+            />
+          </component>
           <component
             :is="item.component"
             v-else
@@ -2568,6 +2380,12 @@ function handleFragmentMouseout(event: MouseEvent) {
         />
       </div>
     </template>
+    <span
+      v-if="showTypewriterCursor"
+      ref="typewriterCursorRef"
+      class="typewriter-cursor"
+      aria-hidden="true"
+    />
     <div
       v-if="virtualizationEnabled"
       class="node-spacer"
@@ -2646,19 +2464,43 @@ function handleFragmentMouseout(event: MouseEvent) {
   font-style: italic;
   margin: var(--ms-flow-paragraph-y) 0;
 }
+
+.typewriter-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  border-right: 2px solid currentColor;
+  pointer-events: none;
+  visibility: hidden;
+  animation: typewriter-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes typewriter-cursor-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
 </style>
 
 <style>
-/* Global (unscoped) CSS for TransitionGroup enter animations */
-.markstream-vue .typewriter-enter-from {
+/* Global (unscoped) CSS for enter animations */
+.markstream-vue .fade-enter-from {
   opacity: 0;
 }
-.markstream-vue .typewriter-enter-active {
-  transition: opacity var(--typewriter-fade-duration, 900ms)
-    var(--typewriter-fade-ease, ease-out);
+.markstream-vue .fade-enter-active {
+  transition: opacity var(--fade-duration, 280ms)
+    var(--fade-ease, cubic-bezier(0.33, 0, 0.67, 1));
   will-change: opacity;
 }
-.markstream-vue .typewriter-enter-to {
+.markstream-vue .fade-enter-to {
   opacity: 1;
 }
 </style>

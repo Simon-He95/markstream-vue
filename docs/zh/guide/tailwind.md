@@ -4,7 +4,7 @@ description: 解决 markstream-vue 与 Tailwind、shadcn 以及 CSS layer 顺序
 
 # Tailwind 集成与样式顺序
 
-如果你的项目使用 Tailwind 或基于 Tailwind 的组件库（如 shadcn），可能会遇到样式覆盖问题。推荐将 `markstream-vue` 的 CSS 导入置于 `@layer components { ... }` 中以控制样式优先级。
+如果你的项目使用 Tailwind 或基于 Tailwind 的组件库（如 shadcn），可能会遇到样式覆盖问题。推荐使用 `@import 'markstream-vue/index.css' layer(components);` 将 CSS 导入置于 `components` 层中以控制样式优先级。
 
 另外，`markstream-vue` 的打包 CSS 会限定在内部 `.markstream-vue` 容器下以降低全局冲突；来自 `markstream-vue/index.css` 的 Tailwind 工具类只会在该容器内生效。
 
@@ -15,9 +15,7 @@ description: 解决 markstream-vue 与 Tailwind、shadcn 以及 CSS layer 顺序
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 更多替代方案：使用 `prefix` 配置以避免类名冲突，或在应用层覆盖样式。
@@ -89,9 +87,7 @@ export default defineConfig({
 ```css
 @import '@unocss/reset/tailwind.css';
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 3. 当类名与 Uno/Tailwind 冲突时，可以在配置中设置 prefix（如 Tailwind `prefix: 'tw-'`，Uno 通过 `shortcutsPrefix` 或自定义规则），或者将 `MarkdownRender` 包裹在 `custom-id` 上下文中再进行覆盖。

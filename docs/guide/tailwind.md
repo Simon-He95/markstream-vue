@@ -15,13 +15,11 @@ Example `styles/index.css`:
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 Alternatives:
-- Place the library CSS inside `@layer base` if you want it to be more foundational and harder to override.
+- Use `@import 'markstream-vue/index.css' layer(base);` if you want it to be more foundational and harder to override.
 - Import the library CSS after your component or application CSS if you prefer the library styles to win.
 
 Always re-run your dev server after changing the import order.
@@ -112,11 +110,9 @@ export default defineConfig({
 ```css
 @import '@unocss/reset/tailwind.css';
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 3. Use Uno prefixes (e.g., `uno` config `rules: [], shortcuts: [], theme: {}` + `shortcutsPrefix: 'u-'`) when class names collide with renderer classes. Tailwind users can also set `prefix: 'tw-'` in `tailwind.config.js`.
 
-Troubleshooting tip: enable the “Cascade Layers” view in devtools to check whether Uno/Tailwind utilities override renderer selectors. If utilities appear below the component layer, move the import into `@layer components` or adjust the preflight order.
+Troubleshooting tip: enable the “Cascade Layers” view in devtools to check whether Uno/Tailwind utilities override renderer selectors. If utilities appear below the component layer, use `@import '...' layer(components)` or adjust the preflight order.

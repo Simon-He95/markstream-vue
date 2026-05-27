@@ -9,8 +9,8 @@ export function parseCheckboxToken(token: MarkdownToken): CheckboxNode {
   }
 }
 
-export function parseCheckboxInputToken(token: any): CheckboxInputNode {
-  const tokenAny = token as unknown as { attrGet?: (name: string) => string | undefined }
+export function parseCheckboxInputToken(token: MarkdownToken): CheckboxInputNode {
+  const tokenAny = token as MarkdownToken & { attrGet?: (name: string) => string | undefined }
   const rawAttr = tokenAny.attrGet ? tokenAny.attrGet('checked') : undefined
   const checked = rawAttr === '' || rawAttr === 'true'
   return {

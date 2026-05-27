@@ -1,0 +1,23 @@
+<svg id="mermaid-sequence" xmlns="http://www.w3.org/2000/svg" class="sequence" viewBox="0 0 260 130" role="graphics-document document" aria-roledescription="sequence">
+  <defs>
+    <pattern id="actorPattern" width="6" height="6" patternUnits="userSpaceOnUse">
+      <rect width="6" height="6" fill="#f4f4f4" />
+      <path d="M 0 6 L 6 0" stroke="#d8d8d8" stroke-width="1" />
+    </pattern>
+    <mask id="messageMask">
+      <rect x="0" y="0" width="260" height="130" fill="white" />
+    </mask>
+  </defs>
+  <g class="actor">
+    <rect x="20" y="10" width="70" height="32" fill="url(#actorPattern)" />
+    <text x="55" y="31"><tspan>Client</tspan></text>
+  </g>
+  <g class="actor">
+    <rect x="170" y="10" width="70" height="32" fill="url(#actorPattern)" />
+    <text x="205" y="31"><tspan>Server</tspan></text>
+  </g>
+  <line x1="55" y1="42" x2="55" y2="118" stroke="#999" />
+  <line x1="205" y1="42" x2="205" y2="118" stroke="#999" />
+  <path class="messageLine0" d="M 55 76 L 205 76" stroke="#333" fill="none" mask="url(#messageMask)" />
+  <text x="130" y="70"><tspan>request</tspan></text>
+</svg>

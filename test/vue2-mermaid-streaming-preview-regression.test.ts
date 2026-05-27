@@ -37,7 +37,7 @@ describe('markstream-vue2 mermaid streaming preview regression', () => {
     const fakeMermaid = {
       initialize: vi.fn(),
       render: vi.fn(async () => ({
-        svg: '<svg data-rendered="gantt" viewBox="0 0 10 10"><g /></svg>',
+        svg: '<svg data-rendered="gantt" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>',
       })),
     }
 
@@ -80,7 +80,7 @@ describe('markstream-vue2 mermaid streaming preview regression', () => {
     const fakeMermaid = {
       initialize: vi.fn(),
       render: vi.fn(async (_id: string, code: string) => ({
-        svg: `<svg data-rendered="${code.includes('Active task') ? 'unsafe' : 'prefix'}" viewBox="0 0 10 10"><g /></svg>`,
+        svg: `<svg data-rendered="${code.includes('Active task') ? 'unsafe' : 'prefix'}" viewBox="0 0 10 10"><rect width="1" height="1" /></svg>`,
       })),
     }
 

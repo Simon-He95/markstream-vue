@@ -11,7 +11,9 @@
       "markstream-vue": ["src/exports.ts"],
       // Ensure TypeScript can resolve the local workspace package without a build step in CI
       "stream-markdown-parser": ["packages/markdown-parser/src/index.ts"],
-      "stream-markdown-parser/*": ["packages/markdown-parser/src/*"]
+      "stream-markdown-parser/*": ["packages/markdown-parser/src/*"],
+      "markstream-core": ["packages/markstream-core/src/index.ts"],
+      "markstream-core/*": ["packages/markstream-core/src/*"]
     },
     "resolveJsonModule": true,
     "types": ["vite/client", "vue"],

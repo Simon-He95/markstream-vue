@@ -2,10 +2,9 @@
  * @vitest-environment jsdom
  */
 
+import React, { act, useEffect, useRef } from 'react'
+import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it } from 'vitest'
-/* eslint-disable antfu/no-import-node-modules-by-path */
-import React, { act, useEffect, useRef } from '../packages/markstream-react/node_modules/react'
-import { createRoot } from '../packages/markstream-react/node_modules/react-dom/client'
 import { NodeRenderer } from '../packages/markstream-react/src/components/NodeRenderer'
 import { removeCustomComponents, setCustomComponents } from '../packages/markstream-react/src/customComponents'
 

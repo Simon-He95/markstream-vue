@@ -193,7 +193,7 @@ function applyRouteSeo(route: RouteLocationNormalizedLoaded) {
   upsertMeta('meta[property="og:description"]', { property: 'og:description', content: seo.description })
   upsertMeta('meta[property="og:url"]', { property: 'og:url', content: canonicalUrl })
   upsertMeta('meta[property="og:image"]', { property: 'og:image', content: PLAYGROUND_OG_IMAGE_URL })
-  upsertMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: 'markstream-vue playground with live streaming markdown demos' })
+  upsertMeta('meta[property="og:image:alt"]', { property: 'og:image:alt', content: 'markstream-vue logo and playground demos' })
   upsertMeta('meta[name="twitter:card"]', { name: 'twitter:card', content: 'summary_large_image' })
   upsertMeta('meta[name="twitter:title"]', { name: 'twitter:title', content: seo.title })
   upsertMeta('meta[name="twitter:description"]', { name: 'twitter:description', content: seo.description })

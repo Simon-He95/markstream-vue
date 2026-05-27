@@ -40,7 +40,12 @@ export { ReferenceNodeComponent as ReferenceNode } from './components/ReferenceN
 export type {
   AngularRenderableNode,
   AngularRenderContext,
+  CodeBlockPreviewPayload,
+  NodeRendererCodeBlockProps,
+  NodeRendererD2Props,
   NodeRendererEvents,
+  NodeRendererInfographicProps,
+  NodeRendererMermaidProps,
   NodeRendererProps,
 } from './components/shared/node-helpers'
 export {
@@ -48,6 +53,8 @@ export {
   resolveParsedNodes,
 } from './components/shared/node-helpers'
 export { SafeAttrsDirective } from './components/shared/safe-attrs.directive'
+export { MARKSTREAM_SMOOTH_STREAMING_SCOPE } from './components/shared/smooth-streaming-scope'
+export type { SmoothStreamingScope } from './components/shared/smooth-streaming-scope'
 export { StrikethroughNodeComponent as StrikethroughNode } from './components/StrikethroughNode/StrikethroughNode.component'
 export { StrongNodeComponent as StrongNode } from './components/StrongNode/StrongNode.component'
 export { SubscriptNodeComponent as SubscriptNode } from './components/SubscriptNode/SubscriptNode.component'
@@ -118,6 +125,8 @@ export type {
   RenderableMarkdownNode,
 } from './renderMarkdownHtml'
 export { sanitizeHtmlContent } from './sanitizeHtmlContent'
+export { SmoothMarkdownStreamService } from './services/smooth-markdown-stream.service'
+export type { SmoothMarkdownStreamOptions } from './services/smooth-markdown-stream.service'
 export type {
   CodeBlockDiffAppearance,
   CodeBlockDiffHideUnchangedRegions,

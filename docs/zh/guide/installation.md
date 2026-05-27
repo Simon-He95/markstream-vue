@@ -66,9 +66,7 @@ pnpm add markstream-vue stream-markdown stream-monaco mermaid @terrastruct/d2 ka
 @import 'modern-css-reset';
 @tailwind base;
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 如果你使用数学公式，还要额外引入 KaTeX 的 CSS：

@@ -1,5 +1,6 @@
 dist
 dist-tw
+/benchmark/
 node_modules
 .nuxt
 .output
@@ -8,5 +9,6 @@ node_modules
 .DS_Store
 .tmp
 .next
+.svelte-kit
 # vite press
 cache

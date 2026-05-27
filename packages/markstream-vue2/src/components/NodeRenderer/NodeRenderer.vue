@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { BaseNode, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
+import type { SmoothMarkdownStreamOptions } from '../../composables/useSmoothMarkdownStream'
 import type { VisibilityHandle } from '../../composables/viewportPriority'
-import type { D2BlockNodeProps, InfographicBlockNodeProps, MermaidBlockNodeProps } from '../../types/component-props'
+import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme, CodeBlockNodeProps, CodeBlockPreviewPayload, D2BlockNodeProps, InfographicBlockNodeProps, MermaidBlockNodeProps } from '../../types/component-props'
 import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure, resolveCustomHtmlTags } from 'stream-markdown-parser'
 import { h as createVNode } from 'vue'
-import { computed, getCurrentInstance, markRaw, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, watch } from 'vue-demi'
+import { computed, getCurrentInstance, inject, markRaw, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, watch } from 'vue-demi'
 import AdmonitionNode from '../../components/AdmonitionNode'
 import BlockquoteNode from '../../components/BlockquoteNode'
 import CheckboxNode from '../../components/CheckboxNode'
@@ -34,6 +35,7 @@ import TableNode from '../../components/TableNode'
 import TextNode from '../../components/TextNode'
 import ThematicBreakNode from '../../components/ThematicBreakNode'
 import VmrContainerNode from '../../components/VmrContainerNode'
+import { useSmoothMarkdownStream } from '../../composables/useSmoothMarkdownStream'
 import { provideViewportPriority } from '../../composables/viewportPriority'
 import { clampInfographicPreviewHeight, clampMermaidPreviewHeight, estimateInfographicPreviewHeight, estimateMermaidPreviewHeight, parsePositiveNumber } from '../../utils/diagramHeight'
 import { getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText, stripCustomHtmlWrapper } from '../../utils/htmlRenderer'
@@ -70,6 +72,7 @@ export interface NodeRendererProps {
    * and are emitted as custom nodes (e.g. ['thinking']). Forwarded to `getMarkdown()`.
    */
   customHtmlTags?: readonly string[]
+  htmlPolicy?: HtmlPolicy
   /** Enable priority rendering for visible viewport area */
   viewportPriority?: boolean
   /**
@@ -79,10 +82,10 @@ export interface NodeRendererProps {
    */
   codeBlockStream?: boolean
   // 全局传递到每个 CodeBlockNode 的主题（monaco theme 对象）
-  codeBlockDarkTheme?: any
-  codeBlockLightTheme?: any
+  codeBlockDarkTheme?: CodeBlockMonacoTheme
+  codeBlockLightTheme?: CodeBlockMonacoTheme
   // 传递给 CodeBlockNode 的 monacoOptions（比如 fontSize, MAX_HEIGHT 等）
-  codeBlockMonacoOptions?: Record<string, any>
+  codeBlockMonacoOptions?: CodeBlockMonacoOptions
   /** If true, render all `code_block` nodes as plain <pre><code> blocks instead of the full CodeBlockNode */
   renderCodeBlocksAsPre?: boolean
   /** Minimum width forwarded to CodeBlockNode (px or CSS unit) */
@@ -90,7 +93,7 @@ export interface NodeRendererProps {
   /** Maximum width forwarded to CodeBlockNode (px or CSS unit) */
   codeBlockMaxWidth?: string | number
   /** Arbitrary props to forward to every CodeBlockNode */
-  codeBlockProps?: Record<string, any>
+  codeBlockProps?: Partial<Omit<CodeBlockNodeProps, 'node'>>
   /** Props forwarded to MermaidBlockNode for mermaid fences */
   mermaidProps?: Partial<Omit<MermaidBlockNodeProps, 'node' | 'loading' | 'isDark'>>
   /** Props forwarded to D2BlockNode for d2/d2lang fences */
@@ -99,12 +102,24 @@ export interface NodeRendererProps {
   infographicProps?: Partial<Omit<InfographicBlockNodeProps, 'node' | 'loading' | 'isDark'>>
   /** Global tooltip toggle for link/code-block renderers (default: true) */
   showTooltips?: boolean
-  themes?: string[]
+  themes?: CodeBlockMonacoTheme[]
   isDark?: boolean
   customId?: string
   indexKey?: number | string
-  /** Enable/disable the non-code-node enter transition (typewriter). Default: true */
+  /** Enable/disable the typewriter cursor (blinking cursor at stream end). Default: false */
   typewriter?: boolean
+  /** Enable/disable the non-code-node enter transition (fade animation). Default: true */
+  fade?: boolean
+  /**
+   * Enable built-in smooth pacing for streaming `content` updates.
+   * - true: force-enable smooth streaming
+   * - false: force-disable smooth streaming
+   * - 'auto': enable when typewriter/incremental mode is active
+   * Applies to content mode only, not nodes mode.
+   */
+  smoothStreaming?: boolean | 'auto'
+  /** Options forwarded to the built-in smooth streaming controller. Read once when the renderer is created. */
+  smoothStreamingOptions?: SmoothMarkdownStreamOptions
   /** Enable incremental/batched rendering of nodes to avoid large single flush costs. Default: true */
   batchRendering?: boolean
   /** How many nodes to render immediately before batching kicks in. Default: 40 */
@@ -128,7 +143,9 @@ export interface NodeRendererProps {
 const props = withDefaults(defineProps<NodeRendererProps>(), {
   codeBlockStream: true,
   showTooltips: true,
-  typewriter: true,
+  typewriter: false,
+  fade: true,
+  smoothStreaming: 'auto',
   batchRendering: true,
   debugPerformance: false,
   initialRenderBatchSize: 40,
@@ -141,8 +158,13 @@ const props = withDefaults(defineProps<NodeRendererProps>(), {
   liveNodeBuffer: 60,
 })
 
-// 定义事件
-const emit = defineEmits(['copy', 'handleArtifactClick', 'click', 'mouseover', 'mouseout'])
+const emit = defineEmits<{
+  (e: 'copy', code: string): void
+  (e: 'handleArtifactClick', payload: CodeBlockPreviewPayload): void
+  (e: 'click', event: MouseEvent): void
+  (e: 'mouseover', event: MouseEvent): void
+  (e: 'mouseout', event: MouseEvent): void
+}>()
 const MAX_DEFERRED_NODE_COUNT = 900
 const MAX_VIEWPORT_OBSERVER_TARGETS = 640
 const VIEWPORT_PRIORITY_RECOVERY_COUNT = 200
@@ -156,6 +178,7 @@ const debugPerformanceEnabled = computed(() => props.debugPerformance && isClien
 const attrs = computed<Record<string, unknown>>(() => ((instance?.proxy as any)?.$attrs ?? {}) as Record<string, unknown>)
 const textStreamState = new Map<string, string>()
 const streamRenderVersion = ref(0)
+const smoothStream = useSmoothMarkdownStream(props.smoothStreamingOptions)
 const resolvedShowTooltips = computed<boolean | undefined>(() => {
   if (typeof props.showTooltips === 'boolean')
     return props.showTooltips
@@ -166,14 +189,117 @@ const resolvedShowTooltips = computed<boolean | undefined>(() => {
     return false
   return undefined
 })
+const inheritedHtmlPolicy = inject<{ value?: HtmlPolicy } | undefined>('markstreamHtmlPolicy', undefined)
+const inheritedSmoothStreaming = inject<{ value?: boolean } | undefined>('markstreamSmoothStreaming', undefined)
+const resolvedHtmlPolicy = computed<HtmlPolicy>(() => props.htmlPolicy ?? inheritedHtmlPolicy?.value ?? 'safe')
 
 provide('markstreamShowTooltips', resolvedShowTooltips)
-provide('markstreamTypewriter', computed(() => props.typewriter !== false))
+provide('markstreamHtmlPolicy', resolvedHtmlPolicy)
+provide('markstreamTypewriter', computed(() => props.typewriter === true))
+provide('markstreamFade', computed(() => props.fade !== false))
 provide('markstreamTextStreamState', textStreamState)
 provide('markstreamStreamVersion', streamRenderVersion)
 
+const smoothStreamingEligible = computed(() => {
+  if (props.smoothStreaming === false)
+    return false
+  if (props.nodes?.length)
+    return false
+  if (props.smoothStreaming !== true && inheritedSmoothStreaming?.value)
+    return false
+  if (props.smoothStreaming === true)
+    return true
+  return props.typewriter === true || (props.maxLiveNodes ?? 0) <= 0
+})
+
+const hasMountedForSmoothStreaming = ref(!isClient || props.smoothStreaming === true)
+
+onMounted(() => {
+  hasMountedForSmoothStreaming.value = true
+})
+
+const smoothStreamingEnabled = computed(() => (
+  hasMountedForSmoothStreaming.value
+  && smoothStreamingEligible.value
+))
+
+provide('markstreamSmoothStreaming', smoothStreamingEnabled)
+
+const renderContent = computed(() => (
+  smoothStreamingEnabled.value
+    ? smoothStream.visible.value
+    : (props.content ?? '')
+))
+const rawContent = computed(() => props.content ?? '')
+const smoothSourceSynced = computed(() => (
+  Boolean(props.nodes?.length) || smoothStream.source.value === rawContent.value
+))
+
+const requestedFinal = computed<boolean | undefined>(() => {
+  const base = (props.parseOptions ?? {}) as ParseOptions
+  return props.final ?? base.final
+})
+
+const effectiveFinal = computed<boolean | undefined>(() => {
+  const finalRequested = requestedFinal.value
+
+  if (smoothStreamingEnabled.value && finalRequested != null) {
+    return Boolean(
+      finalRequested
+      && smoothSourceSynced.value
+      && smoothStream.caughtUp.value,
+    )
+  }
+
+  return finalRequested
+})
+
+const renderVersionSource = computed(() => {
+  if (props.nodes?.length)
+    return props.nodes
+  return renderContent.value
+})
+
 watch(
-  [() => props.content, () => props.nodes],
+  [() => props.content, () => props.nodes, smoothStreamingEnabled, requestedFinal],
+  ([content, nodes, enabled, finalRequested]) => {
+    if (nodes?.length) {
+      smoothStream.reset('')
+      return
+    }
+
+    const nextContent = content ?? ''
+
+    if (!enabled) {
+      smoothStream.reset(nextContent)
+      if (finalRequested)
+        smoothStream.finish({ flush: true })
+      return
+    }
+
+    const source = smoothStream.source.value
+
+    if (!nextContent) {
+      smoothStream.reset('')
+    }
+    else if (nextContent === source) {
+      // no-op
+    }
+    else if (nextContent.startsWith(source)) {
+      smoothStream.enqueue(nextContent.slice(source.length))
+    }
+    else {
+      smoothStream.reset(nextContent)
+    }
+
+    if (finalRequested)
+      smoothStream.finish()
+  },
+  { immediate: true },
+)
+
+watch(
+  renderVersionSource,
   () => {
     streamRenderVersion.value += 1
   },
@@ -253,7 +379,8 @@ function cloneParsedNodeList(nodes: ParsedNode[]) {
 
 const mergedParseOptions = computed(() => {
   const base = props.parseOptions ?? {}
-  const resolvedFinal = props.final ?? (base as any).final
+  const resolvedFinal = effectiveFinal.value
+
   const merged = effectiveCustomHtmlTags.value
   const hasFinal = resolvedFinal != null
   const hasCustom = merged.length > 0
@@ -287,17 +414,18 @@ const parsedNodes = computed<ParsedNode[]>(() => {
   // the array length doesn't change.
   if (props.nodes?.length)
     return markRaw(cloneParsedNodeList(props.nodes as unknown as ParsedNode[]))
-  if (props.content) {
+  const contentToParse = renderContent.value
+  if (contentToParse) {
     // Prefer an explicitly passed `markdown` prop, then a globally
     // provided markdown via `setGlobalMarkdown`, otherwise fall back
     // to the legacy `getMarkdown()` factory.
     const parseStart = debugPerformanceEnabled.value ? performance.now() : 0
-    const parsed = parseMarkdownToStructure(props.content, mdInstance.value, mergedParseOptions.value)
+    const parsed = parseMarkdownToStructure(contentToParse, mdInstance.value, mergedParseOptions.value)
     if (debugPerformanceEnabled.value) {
       logPerf('parse(sync)', {
         ms: Math.round(performance.now() - parseStart),
         nodes: parsed.length,
-        contentLength: props.content.length,
+        contentLength: contentToParse.length,
       })
     }
     return markRaw(cloneParsedNodeList(parsed))
@@ -1496,6 +1624,7 @@ onBeforeUnmount(() => {
     clearVisibilityFallback(index)
   cleanupScrollListener()
   cancelScheduledFocusSync()
+  clearTypewriterCursorTimeout()
 })
 
 // 异步按需加载 CodeBlock 组件；失败时退回为 InlineCodeNode（内联代码渲染）
@@ -1727,10 +1856,13 @@ const infographicBindings = computed(() => ({
 }))
 const nonCodeBindings = computed(() => ({
   // Forward `typewriter` flag to non-code node components so they can
-  // opt in/out of enter transitions or other typewriter-like behaviour.
+  // opt in/out of typewriter cursor behavior.
   typewriter: props.typewriter,
+  // Forward `fade` flag to non-code node components for enter animations.
+  fade: props.fade,
   // Forward customHtmlTags for non-whitelisted tag detection in child components
   customHtmlTags: mergedParseOptions.value.customHtmlTags,
+  htmlPolicy: resolvedHtmlPolicy.value,
 }))
 const linkBindings = computed(() => ({
   ...nonCodeBindings.value,
@@ -2060,6 +2192,161 @@ function handleContainerMouseout(event: MouseEvent) {
     return
   emit('mouseout', event)
 }
+
+const hasExplicitNodes = computed(() => Array.isArray(props.nodes) && props.nodes.length > 0)
+
+// ── Typewriter cursor ──
+const typewriterCursorRef = ref<HTMLElement | null>(null)
+const showTypewriterCursor = ref(false)
+let typewriterCursorTimeout: ReturnType<typeof setTimeout> | undefined
+let lastTypewriterContentLength = 0
+const TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES = new Set(['code_block', 'admonition', 'table', 'math_block', 'html_block', 'image'])
+
+function shouldSkipTypewriterCursorForNode(node: unknown) {
+  if (!node || typeof node !== 'object')
+    return false
+  const type = (node as Record<string, unknown>).type
+  return typeof type === 'string' && TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES.has(type)
+}
+
+function shouldShowTypewriterCursorForCurrentNodes() {
+  const lastNode = parsedNodes.value[parsedNodes.value.length - 1]
+  return !shouldSkipTypewriterCursorForNode(lastNode)
+}
+
+function getNodeTextLength(node: unknown): number {
+  if (!node || typeof node !== 'object')
+    return 0
+  const record = node as Record<string, unknown>
+  const direct = record.raw ?? record.content ?? record.code
+  if (typeof direct === 'string')
+    return direct.length
+  const children = record.children
+  if (Array.isArray(children))
+    return children.reduce((total: number, child: unknown) => total + getNodeTextLength(child), 0)
+  const items = record.items
+  if (Array.isArray(items))
+    return items.reduce((total: number, item: unknown) => total + getNodeTextLength(item), 0)
+  return 0
+}
+
+function getTypewriterContentLength() {
+  if (props.nodes?.length)
+    return props.nodes.reduce((total: number, node: unknown) => total + getNodeTextLength(node), 0)
+  // Use raw content length, not renderContent (which may be the paced-out
+  // visible portion when smooth streaming is active).  The cursor should
+  // appear as long as the source content is growing, even if the visible
+  // stream hasn't caught up yet.
+  return rawContent.value.length
+}
+
+function clearTypewriterCursorTimeout() {
+  if (!typewriterCursorTimeout)
+    return
+  clearTimeout(typewriterCursorTimeout)
+  typewriterCursorTimeout = undefined
+}
+
+function getLastTextNode(root: HTMLElement) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const text = node.textContent ?? ''
+      if (!text.trim())
+        return NodeFilter.FILTER_REJECT
+      const parent = node.parentElement
+      if (!parent)
+        return NodeFilter.FILTER_REJECT
+      if (parent.closest('.typewriter-cursor, .height-estimation-probes, [data-node-type="code_block"], [data-node-type="admonition"], [data-node-type="table"], [data-node-type="math_block"], [data-node-type="html_block"], [data-node-type="image"], script, style'))
+        return NodeFilter.FILTER_REJECT
+      return NodeFilter.FILTER_ACCEPT
+    },
+  })
+  let last: Text | null = null
+  let current = walker.nextNode()
+  while (current) {
+    last = current as Text
+    current = walker.nextNode()
+  }
+  return last
+}
+
+function updateTypewriterCursorPosition() {
+  if (typeof window === 'undefined' || !showTypewriterCursor.value || !containerRef.value || !typewriterCursorRef.value)
+    return
+  const root = containerRef.value
+  const cursor = typewriterCursorRef.value
+  const lastText = getLastTextNode(root)
+  const rootRect = root.getBoundingClientRect()
+  let left = 0
+  let top = 0
+  let height = 20
+
+  if (lastText?.textContent) {
+    const range = document.createRange()
+    const end = lastText.textContent.length
+    range.setStart(lastText, Math.max(0, end - 1))
+    range.setEnd(lastText, end)
+    const rects = typeof range.getClientRects === 'function'
+      ? range.getClientRects()
+      : undefined
+    const rect = rects?.[rects.length - 1] ?? lastText.parentElement?.getBoundingClientRect()
+    if (rect) {
+      left = rect.right - rootRect.left + root.scrollLeft
+      top = rect.top - rootRect.top + root.scrollTop
+      height = rect.height || height
+    }
+    range.detach()
+  }
+
+  cursor.style.transform = `translate(${Math.max(0, left)}px, ${Math.max(0, top)}px)`
+  cursor.style.height = `${height}px`
+}
+
+watch(
+  [renderContent, rawContent, () => props.nodes, () => props.typewriter, effectiveFinal],
+  async () => {
+    if (typeof window === 'undefined' || hasExplicitNodes.value)
+      return
+
+    // When the stream is final (and effective — smooth streaming has caught up),
+    // hide the cursor immediately.
+    if (effectiveFinal.value) {
+      showTypewriterCursor.value = false
+      clearTypewriterCursorTimeout()
+      return
+    }
+
+    const nextLength = getTypewriterContentLength()
+    const cursorAllowed = shouldShowTypewriterCursorForCurrentNodes()
+    if (props.typewriter === false || !cursorAllowed || nextLength <= lastTypewriterContentLength) {
+      if (props.typewriter === false || !cursorAllowed)
+        showTypewriterCursor.value = false
+      lastTypewriterContentLength = nextLength
+      return
+    }
+
+    lastTypewriterContentLength = nextLength
+    showTypewriterCursor.value = true
+    clearTypewriterCursorTimeout()
+    await nextTick()
+    updateTypewriterCursorPosition()
+    typewriterCursorTimeout = setTimeout(() => {
+      showTypewriterCursor.value = false
+    }, 3000)
+  },
+  { flush: 'post', immediate: true },
+)
+
+watch(
+  showTypewriterCursor,
+  async (visible) => {
+    if (!visible)
+      return
+    await nextTick()
+    updateTypewriterCursorPosition()
+  },
+  { flush: 'post' },
+)
 </script>
 
 <template>
@@ -2082,8 +2369,8 @@ function handleContainerMouseout(event: MouseEvent) {
       >
         <div class="node-content">
           <transition
-            v-if="!item.isCodeBlock && props.typewriter !== false"
-            name="typewriter"
+            v-if="!item.isCodeBlock && props.fade !== false"
+            name="fade"
             appear
           >
             <component
@@ -2120,6 +2407,7 @@ function handleContainerMouseout(event: MouseEvent) {
       :custom-id="props.customId"
       :index-key="props.indexKey"
       :typewriter="props.typewriter"
+      :fade="props.fade"
       :show-tooltips="props.showTooltips"
       :code-block-stream="props.codeBlockStream"
       :code-block-dark-theme="props.codeBlockDarkTheme"
@@ -2131,7 +2419,8 @@ function handleContainerMouseout(event: MouseEvent) {
       :code-block-props="props.codeBlockProps"
       :themes="props.themes"
       :is-dark="props.isDark"
-      :custom-html-tags="mergedParseOptions.value.customHtmlTags"
+      :custom-html-tags="mergedParseOptions.customHtmlTags"
+      :html-policy="resolvedHtmlPolicy"
       @copy="emit('copy', $event)"
       @handle-artifact-click="emit('handleArtifactClick', $event)"
     />
@@ -2157,8 +2446,8 @@ function handleContainerMouseout(event: MouseEvent) {
         >
           <!-- Skip wrapping code_block nodes in transitions to avoid touching Monaco editor internals -->
           <transition
-            v-if="!item.isCodeBlock && props.typewriter !== false"
-            name="typewriter"
+            v-if="!item.isCodeBlock && props.fade !== false"
+            name="fade"
             appear
           >
             <component
@@ -2200,6 +2489,7 @@ function handleContainerMouseout(event: MouseEvent) {
         aria-hidden="true"
       />
     </template>
+    <span v-if="showTypewriterCursor" ref="typewriterCursorRef" class="typewriter-cursor" aria-hidden="true" />
   </div>
 </template>
 
@@ -2262,16 +2552,57 @@ function handleContainerMouseout(event: MouseEvent) {
   font-style: italic;
   margin: 1rem 0;
 }
+
+.typewriter-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  border-right: 2px solid currentColor;
+  pointer-events: none;
+  animation: typewriter-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes typewriter-cursor-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor {
+    animation: none !important;
+  }
+}
 </style>
 
 <style>
 /* Global (unscoped) CSS for TransitionGroup enter animations */
+.markstream-vue2 .fade-enter-from {
+  opacity: 0;
+}
+.markstream-vue2 .fade-enter-active {
+  transition: opacity var(--fade-duration, var(--typewriter-fade-duration, 280ms))
+    var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1)));
+  will-change: opacity;
+}
+.markstream-vue2 .fade-enter-to {
+  opacity: 1;
+}
+
 .markstream-vue2 .typewriter-enter-from {
   opacity: 0;
 }
 .markstream-vue2 .typewriter-enter-active {
-  transition: opacity var(--typewriter-fade-duration, 900ms)
-    var(--typewriter-fade-ease, ease-out);
+  transition: opacity var(--typewriter-fade-duration, 280ms)
+    var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1));
   will-change: opacity;
 }
 .markstream-vue2 .typewriter-enter-to {

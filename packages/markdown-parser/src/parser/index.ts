@@ -1,9 +1,10 @@
-import type { MarkdownIt, Token } from 'markdown-it-ts'
-import type { MarkdownToken, ParsedNode, ParseOptions } from '../types'
+import type { MarkdownIt, Token } from '../markdown-it-types'
+import type { HtmlBlockNode, InternalParseOptions, MarkdownToken, ParsedNode, ParseOptions } from '../types'
 import { normalizeCustomHtmlTags } from '../customHtmlTags'
 import { NON_STRUCTURING_HTML_TAGS, STANDARD_HTML_TAGS, VOID_HTML_TAGS } from '../htmlTags'
 import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes, parseTagAttrs } from '../htmlTagUtils'
 import { parseInlineTokens } from './inline-parsers'
+import { createLinkifyDemotionContextTracker } from './linkifyHeuristics'
 import { parseCommonBlockToken } from './node-parsers/block-token-parser'
 import { parseBlockquote } from './node-parsers/blockquote-parser'
 import { containerTokenHandlers } from './node-parsers/container-token-handlers'
@@ -12,6 +13,62 @@ import { parseHtmlBlock } from './node-parsers/html-block-parser'
 import { parseList } from './node-parsers/list-parser'
 import { parseParagraph } from './node-parsers/paragraph-parser'
 
+type ParsedNodeWithFields = ParsedNode & {
+  children?: ParsedNode[]
+  content?: unknown
+  tag?: unknown
+}
+
+const streamParseEnvCache = new WeakMap<object, Map<string, Record<string, unknown>>>()
+
+interface ParseTimingMetrics {
+  tokenCloneMs?: number
+  processTokensMs?: number
+  parseMarkdownToStructureTotalMs?: number
+}
+
+type TimedParseOptions = ParseOptions & {
+  __timing?: ParseTimingMetrics
+}
+
+function getNodeFields(node: ParsedNode) {
+  return node as ParsedNodeWithFields
+}
+
+function getParserNow() {
+  return typeof performance !== 'undefined'
+    ? performance.now()
+    : Date.now()
+}
+
+function addTiming(metrics: ParseTimingMetrics | undefined, key: keyof ParseTimingMetrics, value: number) {
+  if (!metrics)
+    return
+
+  metrics[key] = (metrics[key] ?? 0) + value
+}
+
+function getParseTiming(options: ParseOptions) {
+  return (options as TimedParseOptions).__timing
+}
+
+function finishTimedParse<T extends ParsedNode[]>(result: T, timing: ParseTimingMetrics | undefined, startedAt: number) {
+  if (timing)
+    addTiming(timing, 'parseMarkdownToStructureTotalMs', getParserNow() - startedAt)
+
+  return result
+}
+
+function processTokensWithTiming(tokens: MarkdownToken[], options: ParseOptions | undefined, timing: ParseTimingMetrics | undefined) {
+  if (!timing)
+    return processTokens(tokens, options)
+
+  const startedAt = getParserNow()
+  const result = processTokens(tokens, options)
+  addTiming(timing, 'processTokensMs', getParserNow() - startedAt)
+  return result
+}
+
 function getCustomHtmlTagSet(options?: ParseOptions) {
   const custom = options?.customHtmlTags
   if (!Array.isArray(custom) || custom.length === 0)
@@ -19,6 +76,255 @@ function getCustomHtmlTagSet(options?: ParseOptions) {
 
   const normalized = normalizeCustomHtmlTags(custom)
   return normalized.length ? new Set(normalized) : null
+}
+
+function getStableStreamEnv(md: MarkdownIt, env: Record<string, unknown>) {
+  const mdKey = md as unknown as object
+  let byMode = streamParseEnvCache.get(mdKey)
+  if (!byMode) {
+    byMode = new Map()
+    streamParseEnvCache.set(mdKey, byMode)
+  }
+
+  const modeKey = env.__markstreamFinal === true ? 'final' : 'streaming'
+  let stableEnv = byMode.get(modeKey)
+  if (!stableEnv) {
+    stableEnv = {}
+    byMode.set(modeKey, stableEnv)
+  }
+
+  for (const key of Object.keys(stableEnv)) {
+    if (!Object.prototype.hasOwnProperty.call(env, key))
+      delete stableEnv[key]
+  }
+  Object.assign(stableEnv, env)
+  return stableEnv
+}
+
+function isPlainObject(value: unknown) {
+  if (!value || typeof value !== 'object')
+    return false
+
+  const proto = Object.getPrototypeOf(value)
+  return proto === Object.prototype || proto === null
+}
+
+function copyCloneableOwnDataProperties(source: object, target: Record<PropertyKey, unknown>, seen: WeakMap<object, unknown>) {
+  for (const key of Reflect.ownKeys(source)) {
+    const descriptor = Object.getOwnPropertyDescriptor(source, key)
+    if (!descriptor || !('value' in descriptor))
+      continue
+
+    const targetDescriptor = Object.getOwnPropertyDescriptor(target, key)
+    if (targetDescriptor && (!('value' in targetDescriptor) || targetDescriptor.writable === false))
+      continue
+
+    target[key] = safeCloneTokenField(descriptor.value, seen)
+  }
+}
+
+function safeCloneTokenField<T>(value: T, seen = new WeakMap<object, unknown>()): T {
+  if (!value || typeof value !== 'object')
+    return value
+
+  const object = value as object
+  const existing = seen.get(object)
+  if (existing)
+    return existing as T
+
+  if (Array.isArray(value)) {
+    const cloned: unknown[] = []
+    seen.set(object, cloned)
+    for (const item of value)
+      cloned.push(safeCloneTokenField(item, seen))
+    return cloned as T
+  }
+
+  if (value instanceof Map) {
+    const cloned = new Map()
+    seen.set(object, cloned)
+    for (const [key, item] of value)
+      cloned.set(safeCloneTokenField(key, seen), safeCloneTokenField(item, seen))
+    return cloned as T
+  }
+
+  if (value instanceof Set) {
+    const cloned = new Set()
+    seen.set(object, cloned)
+    for (const item of value)
+      cloned.add(safeCloneTokenField(item, seen))
+    return cloned as T
+  }
+
+  if (value instanceof Date) {
+    const cloned = new Date(value.getTime())
+    seen.set(object, cloned)
+    return cloned as T
+  }
+
+  if (value instanceof RegExp) {
+    const cloned = new RegExp(value.source, value.flags)
+    cloned.lastIndex = value.lastIndex
+    seen.set(object, cloned)
+    return cloned as T
+  }
+
+  if (typeof URL !== 'undefined' && value instanceof URL) {
+    const cloned = new URL(value.href)
+    seen.set(object, cloned)
+    copyCloneableOwnDataProperties(object, cloned as unknown as Record<PropertyKey, unknown>, seen)
+    return cloned as T
+  }
+
+  if (typeof URLSearchParams !== 'undefined' && value instanceof URLSearchParams) {
+    const cloned = new URLSearchParams(value.toString())
+    seen.set(object, cloned)
+    copyCloneableOwnDataProperties(object, cloned as unknown as Record<PropertyKey, unknown>, seen)
+    return cloned as T
+  }
+
+  if (value instanceof Error) {
+    let cloned: Error
+    const ErrorCtor = value.constructor as new (message?: string) => Error
+    try {
+      cloned = new ErrorCtor(value.message)
+    }
+    catch {
+      cloned = new Error(value.message)
+    }
+    Object.setPrototypeOf(cloned, Object.getPrototypeOf(value))
+    seen.set(object, cloned)
+    copyCloneableOwnDataProperties(object, cloned as unknown as Record<PropertyKey, unknown>, seen)
+    return cloned as T
+  }
+
+  if (typeof Promise !== 'undefined' && value instanceof Promise) {
+    seen.set(object, value)
+    return value
+  }
+
+  if (typeof Node !== 'undefined' && value instanceof Node) {
+    seen.set(object, value)
+    return value
+  }
+
+  if (!isPlainObject(value)) {
+    const cloned = Object.create(Object.getPrototypeOf(value)) as Record<PropertyKey, unknown>
+    seen.set(object, cloned)
+    copyCloneableOwnDataProperties(object, cloned, seen)
+    return cloned as T
+  }
+
+  const cloned: Record<string, unknown> = {}
+  seen.set(object, cloned)
+
+  const record = value as Record<string, unknown>
+  for (const key of Object.keys(record))
+    cloned[key] = safeCloneTokenField(record[key], seen)
+
+  return cloned as T
+}
+
+function cloneMarkdownToken(token: Token, cloneObjectFields = true): Token {
+  if (!cloneObjectFields) {
+    const cloned = Object.assign(Object.create(Object.getPrototypeOf(token)), token) as Token
+    if (Array.isArray(token.attrs))
+      cloned.attrs = token.attrs.map(attr => [...attr] as [string, string])
+    if (Array.isArray(token.map))
+      cloned.map = [...token.map] as [number, number]
+    if (Array.isArray(token.children))
+      cloned.children = token.children.map(child => cloneMarkdownToken(child, cloneObjectFields))
+    return cloned
+  }
+
+  const cloned = Object.create(Object.getPrototypeOf(token)) as Token
+  const seen = new WeakMap<object, unknown>()
+
+  for (const key of Reflect.ownKeys(token as unknown as object)) {
+    const descriptor = Object.getOwnPropertyDescriptor(token, key)
+    if (!descriptor)
+      continue
+
+    if (!('value' in descriptor)) {
+      Object.defineProperty(cloned, key, descriptor)
+      continue
+    }
+
+    const value = descriptor.value
+    let clonedValue = value
+
+    if (key === 'attrs' && Array.isArray(value)) {
+      clonedValue = value.map(attr => [...attr] as [string, string])
+    }
+    else if (key === 'map' && Array.isArray(value)) {
+      clonedValue = [...value] as [number, number]
+    }
+    else if (key === 'children' && Array.isArray(value)) {
+      clonedValue = value.map(child => cloneMarkdownToken(child, cloneObjectFields))
+    }
+    else if (cloneObjectFields && value && typeof value === 'object') {
+      clonedValue = safeCloneTokenField(value, seen)
+    }
+
+    Object.defineProperty(cloned, key, {
+      ...descriptor,
+      value: clonedValue,
+    })
+  }
+
+  return cloned
+}
+
+function cloneMarkdownTokens(tokens: Token[], cloneObjectFields = true) {
+  return tokens.map(token => cloneMarkdownToken(token, cloneObjectFields))
+}
+
+function shouldUseTopLevelStreamParse(md: MarkdownIt, options: ParseOptions) {
+  const internalOptions = options as InternalParseOptions
+  const stream = md.stream
+  const streamParse = options.streamParse ?? 'auto'
+  return internalOptions.__disableStreamParse !== true
+    && (streamParse === true || (streamParse === 'auto' && options.final !== true))
+    && stream?.enabled === true
+    && typeof stream.parse === 'function'
+}
+
+function shouldResetTopLevelStreamCacheForFinalAutoParse(md: MarkdownIt, options: ParseOptions) {
+  const internalOptions = options as InternalParseOptions
+  const streamParse = options.streamParse ?? 'auto'
+  const stream = md.stream
+
+  return options.final === true
+    && streamParse === 'auto'
+    && internalOptions.__disableStreamParse !== true
+    && stream?.enabled === true
+    && typeof stream.reset === 'function'
+}
+
+function shouldCloneTopLevelStreamTokenObjectFields(options: ParseOptions) {
+  return typeof options.preTransformTokens === 'function'
+    || typeof options.postTransformTokens === 'function'
+}
+
+function parseTopLevelTokens(
+  md: MarkdownIt,
+  source: string,
+  env: Record<string, unknown>,
+  options: ParseOptions,
+) {
+  if (!shouldUseTopLevelStreamParse(md, options))
+    return md.parse(source, env)
+
+  const tokens = md.stream!.parse!(source, getStableStreamEnv(md, env))
+  const cloneObjectFields = shouldCloneTopLevelStreamTokenObjectFields(options)
+  const timing = getParseTiming(options)
+  if (!timing)
+    return cloneMarkdownTokens(tokens, cloneObjectFields)
+
+  const startedAt = getParserNow()
+  const cloned = cloneMarkdownTokens(tokens, cloneObjectFields)
+  addTiming(timing, 'tokenCloneMs', getParserNow() - startedAt)
+  return cloned
 }
 
 export function buildAllowedHtmlTagSet(options?: ParseOptions) {
@@ -34,15 +340,15 @@ export function buildAllowedHtmlTagSet(options?: ParseOptions) {
 }
 
 function stringifyInlineNodeRaw(node: ParsedNode) {
-  const raw = (node as any)?.raw
+  const raw = node.raw
   if (typeof raw === 'string')
     return raw
 
-  const content = (node as any)?.content
+  const content = getNodeFields(node).content
   if (typeof content === 'string')
     return content
 
-  if ((node as any)?.type === 'hardbreak')
+  if (node.type === 'hardbreak')
     return '<br>'
 
   return ''
@@ -60,7 +366,8 @@ function maybePromoteCustomNodeFromParagraph(node: ParsedNode, options?: ParseOp
   if (node.type !== 'paragraph')
     return null
 
-  const children = Array.isArray((node as any).children) ? ((node as any).children as ParsedNode[]) : []
+  const nodeChildren = getNodeFields(node).children
+  const children: ParsedNode[] = Array.isArray(nodeChildren) ? nodeChildren : []
   if (children.length === 0)
     return null
 
@@ -75,7 +382,7 @@ function maybePromoteCustomNodeFromParagraph(node: ParsedNode, options?: ParseOp
       continue
 
     const prefixChildren = children.slice(0, i)
-    const childContent = String((child as any)?.content ?? '')
+    const childContent = String(getNodeFields(child).content ?? '')
     if (!childContent.trim())
       continue
     const prefixHasHardbreak = prefixChildren.some(prefixChild => prefixChild?.type === 'hardbreak')
@@ -129,11 +436,11 @@ function parseStandaloneHtmlDocument(markdown: string): ParsedNode[] | null {
 }
 
 function getMergeableNodeRaw(node: ParsedNode) {
-  const raw = (node as any)?.raw
+  const raw = node.raw
   if (typeof raw === 'string')
     return raw
 
-  const content = (node as any)?.content
+  const content = getNodeFields(node).content
   if (typeof content === 'string')
     return content
 
@@ -144,7 +451,7 @@ function isCloseOnlyHtmlBlockForTag(node: ParsedNode, tag: string) {
   if (node.type !== 'html_block' || !tag)
     return false
 
-  const raw = String((node as any)?.raw ?? (node as any)?.content ?? '')
+  const raw = String(node.raw ?? node.content ?? '')
   return new RegExp(String.raw`^\s*<\s*\/\s*${escapeTagForRegExp(tag)}\s*>\s*$`, 'i').test(raw)
 }
 
@@ -305,19 +612,19 @@ function extendHtmlBlockCloseToLineEnding(source: string, startIndex: number) {
   return startIndex
 }
 
-function isDetailsOpenHtmlBlock(node: ParsedNode) {
+function isDetailsOpenHtmlBlock(node: ParsedNode): node is HtmlBlockNode {
   if (node.type !== 'html_block')
     return false
-  if (String((node as any).tag ?? '').toLowerCase() !== 'details')
+  if (String(node.tag ?? '').toLowerCase() !== 'details')
     return false
-  const raw = String((node as any).raw ?? (node as any).content ?? '')
+  const raw = String(node.raw ?? node.content ?? '')
   return /^\s*<details\b/i.test(raw)
 }
 
-function isDetailsCloseHtmlBlock(node: ParsedNode) {
+function isDetailsCloseHtmlBlock(node: ParsedNode): node is HtmlBlockNode {
   if (node.type !== 'html_block')
     return false
-  const raw = String((node as any).raw ?? (node as any).content ?? '')
+  const raw = String(node.raw ?? node.content ?? '')
   return /^\s*<\/details\b/i.test(raw)
 }
 
@@ -332,9 +639,10 @@ function findLastClosingTagStart(raw: string, tag: string) {
   return last
 }
 
-function buildDetailsChildParseOptions(options: ParseOptions, final: boolean): ParseOptions {
+function buildDetailsChildParseOptions(options: ParseOptions, final: boolean): InternalParseOptions {
   return {
     final,
+    __disableStreamParse: true,
     requireClosingStrong: options.requireClosingStrong,
     customHtmlTags: options.customHtmlTags,
     validateLink: options.validateLink,
@@ -373,7 +681,8 @@ function shouldStructureGenericHtmlBlockChildren(
   if (children.some((child) => {
     if (child?.type !== 'html_block')
       return false
-    return Array.isArray((child as any)?.children) && (child as any).children.length > 0
+    const childFields = getNodeFields(child)
+    return Array.isArray(childFields.children) && childFields.children.length > 0
   })) {
     return true
   }
@@ -398,11 +707,12 @@ function structureGenericHtmlBlockChildren(
     if (node?.type !== 'html_block')
       return node
 
-    const tag = String((node as any)?.tag ?? '').toLowerCase()
-    if (!tag || tag === 'details' || NON_STRUCTURING_HTML_TAGS.has(tag) || Array.isArray((node as any)?.children))
+    const fields = getNodeFields(node)
+    const tag = String(fields.tag ?? '').toLowerCase()
+    if (!tag || tag === 'details' || NON_STRUCTURING_HTML_TAGS.has(tag) || Array.isArray(fields.children))
       return node
 
-    const raw = String((node as any)?.raw ?? (node as any)?.content ?? '')
+    const raw = String(node.raw ?? fields.content ?? '')
     if (!raw)
       return node
 
@@ -438,7 +748,24 @@ function parseDetailsFragmentChildren(
   if (!fragment.trim())
     return []
 
-  return parseMarkdownToStructure(fragment, md, options)
+  const internalOptions: InternalParseOptions = {
+    ...(options as InternalParseOptions),
+    __disableStreamParse: true,
+  }
+
+  return parseMarkdownToStructure(fragment, md, internalOptions)
+}
+
+function parseSummaryChildren(
+  fragment: string,
+  md: MarkdownIt,
+  options: ParseOptions,
+) {
+  const children = parseDetailsFragmentChildren(fragment, md, options)
+  const onlyChild = children[0] as ParsedNode & { children?: ParsedNode[] } | undefined
+  if (children.length === 1 && onlyChild?.type === 'paragraph' && Array.isArray(onlyChild.children))
+    return onlyChild.children
+  return children
 }
 
 function buildStructuredSummaryNode(
@@ -452,7 +779,7 @@ function buildStructuredSummaryNode(
 
   if (openEnd !== -1 && closeStart !== -1 && closeStart >= openEnd + 1) {
     const summaryInner = summaryRaw.slice(openEnd + 1, closeStart)
-    const children = parseDetailsFragmentChildren(summaryInner, md, options)
+    const children = parseSummaryChildren(summaryInner, md, options)
     if (children.length > 0)
       summaryNode.children = children
   }
@@ -514,7 +841,7 @@ function combineStructuredDetailsHtmlBlocks(
       continue
     }
 
-    const openRaw = String((node as any).raw ?? getMergeableNodeRaw(node) ?? '')
+    const openRaw = String(node.raw ?? getMergeableNodeRaw(node) ?? '')
     const openStart = nodePos !== -1 ? nodePos : source.indexOf(openRaw, Math.max(0, cursor - openRaw.length))
     if (openStart === -1) {
       merged.push(node)
@@ -567,7 +894,7 @@ function combineStructuredDetailsHtmlBlocks(
 
     const closeRaw = closeIndex === -1
       ? '</details>'
-      : String((nodes[closeIndex] as any)?.raw ?? getMergeableNodeRaw(nodes[closeIndex]) ?? '</details>')
+      : String(nodes[closeIndex].raw ?? getMergeableNodeRaw(nodes[closeIndex]) ?? '</details>')
     const explicitClose = selfContained || (closeIndex !== -1 && exact?.closed === true)
     const trimmedCloseRaw = closeRaw.replace(/[\t\r\n ]+$/, '')
     const closeStart = explicitClose
@@ -584,7 +911,7 @@ function combineStructuredDetailsHtmlBlocks(
     const middleTokens = md.parse(middleSource, { __markstreamFinal: final }) as unknown as MarkdownToken[]
     const renderedMiddle = md.renderer.render(
       middleTokens as unknown as Token[],
-      (md as any).options,
+      md.options,
       { __markstreamFinal: final },
     )
     const closeMarkupEnd = closeStart + trimmedCloseRaw.length
@@ -603,7 +930,7 @@ function combineStructuredDetailsHtmlBlocks(
       : openRaw
 
     merged.push({
-      ...(node as any),
+      ...node,
       tag: 'details',
       attrs: parseTagAttrs(openRaw.slice(0, openTagEndIndex + 1)),
       raw: mergedRaw,
@@ -630,7 +957,7 @@ function mergeSplitTopLevelHtmlBlocks(nodes: ParsedNode[], final: boolean, sourc
   let sourceHtmlCursor = 0
 
   for (let i = 0; i < merged.length; i++) {
-    const node = merged[i] as any
+    const node = merged[i]
     const nodeRaw = getMergeableNodeRaw(node)
     const nodePos = nodeRaw ? source.indexOf(nodeRaw, sourceHtmlCursor) : -1
     if (node?.type !== 'html_block') {
@@ -639,7 +966,7 @@ function mergeSplitTopLevelHtmlBlocks(nodes: ParsedNode[], final: boolean, sourc
       continue
     }
 
-    const tag = String(node?.tag ?? '').toLowerCase()
+    const tag = String(node.tag ?? '').toLowerCase()
     if (!tag)
       continue
     if (tag === 'details') {
@@ -657,11 +984,11 @@ function mergeSplitTopLevelHtmlBlocks(nodes: ParsedNode[], final: boolean, sourc
       continue
     sourceHtmlCursor = exact.end
 
-    const currentContent = String(node?.content ?? nodeRaw)
-    const currentRaw = String(node?.raw ?? currentContent)
+    const currentContent = String(node.content ?? nodeRaw)
+    const currentRaw = String(node.raw ?? currentContent)
     const nextContent = buildHtmlBlockContent(exact.raw, tag, exact.closed)
     const desiredLoading = !final && !exact.closed
-    const needsExpansion = currentContent !== nextContent || currentRaw !== exact.raw || Boolean(node?.loading) !== desiredLoading
+    const needsExpansion = currentContent !== nextContent || currentRaw !== exact.raw || Boolean(node.loading) !== desiredLoading
     const exactOpenEnd = findTagCloseIndexOutsideQuotes(exact.raw)
     const exactOpenTag = exactOpenEnd === -1 ? '' : exact.raw.slice(0, exactOpenEnd + 1)
     const exactAttrs = exactOpenTag ? parseTagAttrs(exactOpenTag) : []
@@ -1822,10 +2149,16 @@ export function parseMarkdownToStructure(
   md: MarkdownIt,
   options: ParseOptions = {},
 ): ParsedNode[] {
+  const timing = getParseTiming(options)
+  const parseStartedAt = timing ? getParserNow() : 0
   const isFinal = !!options.final
   // Ensure markdown is a string — guard against null/undefined inputs from callers
   // todo: 下面的特殊 math 其实应该更精确匹配到() 或者 $$ $$ 或者 \[ \] 内部的内容
   let safeMarkdown = (markdown ?? '').toString().replace(/([^\\])\r(ight|ho)/g, '$1\\r$2').replace(/([^\\])\n(abla|eq|ot|exists)/g, '$1\\n$2')
+
+  if (shouldResetTopLevelStreamCacheForFinalAutoParse(md, options))
+    md.stream!.reset!()
+
   if (!isFinal) {
     if (safeMarkdown.endsWith('- *')) {
       // 放置markdown 解析 - * 会被处理成多个 ul >li 嵌套列表
@@ -1948,20 +2281,20 @@ export function parseMarkdownToStructure(
     // instrumentation, but preserve the full-document html_block shape.
     const preHook = options.preTransformTokens
     const postHook = options.postTransformTokens
-    if (typeof preHook === 'function' || typeof postHook === 'function') {
-      const rawTokens = md.parse(safeMarkdown, { __markstreamFinal: isFinal }) as unknown as MarkdownToken[]
+    if (shouldUseTopLevelStreamParse(md, options) || typeof preHook === 'function' || typeof postHook === 'function') {
+      const rawTokens = parseTopLevelTokens(md, safeMarkdown, { __markstreamFinal: isFinal }, options) as unknown as MarkdownToken[]
       const hookedTokens = typeof preHook === 'function' ? (preHook(rawTokens) || rawTokens) : rawTokens
       if (typeof postHook === 'function')
         postHook(hookedTokens)
     }
-    return standaloneHtmlDocument
+    return finishTimedParse(standaloneHtmlDocument, timing, parseStartedAt)
   }
 
   // Get tokens from markdown-it
-  const tokens = md.parse(safeMarkdown, { __markstreamFinal: isFinal })
+  const tokens = parseTopLevelTokens(md, safeMarkdown, { __markstreamFinal: isFinal }, options)
   // Defensive: ensure tokens is an array
   if (!tokens || !Array.isArray(tokens))
-    return []
+    return finishTimedParse([], timing, parseStartedAt)
   // Allow consumers to transform tokens before processing
   const pre = options.preTransformTokens
   const post = options.postTransformTokens
@@ -1979,15 +2312,15 @@ export function parseMarkdownToStructure(
   // bypass the tokenizer's link rule, e.g. synthetic links from fixLinkTokens).
   const mdAny = md as { options?: { validateLink?: (url: string) => boolean }, validateLink?: (url: string) => boolean }
   const validateLink = options.validateLink ?? mdAny.options?.validateLink ?? (typeof mdAny.validateLink === 'function' ? mdAny.validateLink : undefined)
-  const internalOptions = {
+  const internalOptions: InternalParseOptions = {
     ...options,
     validateLink,
     __markdownIt: md,
     __sourceMarkdown: safeMarkdown,
     __customHtmlSourceCursor: 0,
     __customHtmlBlockCursor: 0,
-  } as any
-  let result = processTokens(transformedTokens, internalOptions)
+  }
+  let result = processTokensWithTiming(transformedTokens, internalOptions, timing)
 
   // Backwards compatible token-level post hook: if provided and returns
   // a modified token array, re-process tokens and override node-level result.
@@ -1999,7 +2332,7 @@ export function parseMarkdownToStructure(
       const first = (postResult as unknown[])[0] as unknown
       const firstType = (first as Record<string, unknown>)?.type
       if (first && typeof firstType === 'string') {
-        result = processTokens(postResult as unknown as MarkdownToken[])
+        result = processTokensWithTiming(postResult as unknown as MarkdownToken[], undefined, timing)
       }
       else {
         // Otherwise assume it returned ParsedNode[] and use it as-is
@@ -2041,7 +2374,7 @@ export function parseMarkdownToStructure(
   if (options.debug) {
     console.log('Parsed Markdown Tree Structure:', result)
   }
-  return result
+  return finishTimedParse(result, timing, parseStartedAt)
 }
 
 // Process markdown-it tokens into our structured format
@@ -2051,6 +2384,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
     return []
 
   const result: ParsedNode[] = []
+  const linkifyContext = createLinkifyDemotionContextTracker(options)
   let i = 0
   // Note: table token normalization is applied during markdown-it parsing
   // via the `applyFixTableTokens` plugin (core.ruler.after('block')).
@@ -2058,9 +2392,10 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
   // their respective plugins. That keeps parsing-time fixes centralized
   // and avoids ad-hoc post-processing here.
   while (i < tokens.length) {
-    const handled = parseCommonBlockToken(tokens, i, options, containerTokenHandlers)
+    const handled = parseCommonBlockToken(tokens, i, linkifyContext.options(), containerTokenHandlers)
     if (handled) {
       result.push(handled[0])
+      linkifyContext.remember(handled[0].raw)
       i = handled[1]
       continue
     }
@@ -2069,27 +2404,31 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
     switch (token.type) {
       case 'paragraph_open':
       {
-        const paragraphNode = parseParagraph(tokens, i, options) as ParsedNode
+        const paragraphRaw = String(tokens[i + 1]?.content ?? '')
+        const paragraphNode = parseParagraph(tokens, i, linkifyContext.options(paragraphRaw)) as ParsedNode
         const promoted = maybePromoteCustomNodeFromParagraph(paragraphNode, options)
         if (promoted)
           result.push(...promoted)
         else
           result.push(paragraphNode)
+        linkifyContext.remember(paragraphNode.raw)
         i += 3 // Skip paragraph_open, inline, paragraph_close
         break
       }
 
       case 'bullet_list_open':
       case 'ordered_list_open': {
-        const [listNode, newIndex] = parseList(tokens, i, options)
+        const [listNode, newIndex] = parseList(tokens, i, linkifyContext.options())
         result.push(listNode)
+        linkifyContext.remember(listNode.raw)
         i = newIndex
         break
       }
 
       case 'blockquote_open': {
-        const [blockquoteNode, newIndex] = parseBlockquote(tokens, i, options)
+        const [blockquoteNode, newIndex] = parseBlockquote(tokens, i, linkifyContext.options())
         result.push(blockquoteNode)
+        linkifyContext.remember(blockquoteNode.raw)
         i = newIndex
         break
       }
@@ -2102,6 +2441,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
           id,
           raw: String(token.content ?? ''),
         } as ParsedNode)
+        linkifyContext.remember(String(token.content ?? ''))
 
         i++
         break
@@ -2109,6 +2449,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
 
       case 'hardbreak':
         result.push(parseHardBreak())
+        linkifyContext.reset()
         i++
         break
 
@@ -2124,6 +2465,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
             ? [{ type: 'text', content, raw: content } as ParsedNode]
             : [],
         } as ParsedNode)
+        linkifyContext.remember(content)
         i++
         break
       }
@@ -2140,7 +2482,8 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
         //   historical behavior and emit them as top-level blocks (not wrapped in
         //   a paragraph), since they represent block-like HTML structures.
         {
-          const parsed = parseInlineTokens(token.children || [], String(token.content ?? ''), undefined, options as any)
+          const raw = String(token.content ?? '')
+          const parsed = parseInlineTokens(token.children || [], raw, undefined, linkifyContext.options(raw))
           if (parsed.length === 0) {
             // no-op (matches previous behavior)
           }
@@ -2150,7 +2493,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
           else {
             const paragraphNode = {
               type: 'paragraph',
-              raw: String(token.content ?? ''),
+              raw,
               children: parsed,
             } as ParsedNode
             const promoted = maybePromoteCustomNodeFromParagraph(paragraphNode, options)
@@ -2159,6 +2502,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
             else
               result.push(paragraphNode)
           }
+          linkifyContext.remember(raw)
         }
         i += 1
         break

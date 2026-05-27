@@ -1,4 +1,5 @@
 import type { MathOptions } from './config'
+import type { MarkdownIt as MarkdownItInstance } from './markdown-it-types'
 import MarkdownIt from 'markdown-it-ts'
 import { getDefaultMathOptions } from './config'
 import { applyContainers } from './plugins/containers'
@@ -28,14 +29,25 @@ export interface FactoryOptions extends Record<string, unknown> {
   enableFixIndentedCodeBlock?: boolean
 }
 
-export function factory(opts: FactoryOptions = {}) {
+export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
+  const markdownItOptions = opts.markdownItOptions ?? {}
+  const experimental = typeof markdownItOptions.experimental === 'object' && markdownItOptions.experimental !== null
+    ? markdownItOptions.experimental as Record<string, unknown>
+    : {}
+  const stream = Object.prototype.hasOwnProperty.call(markdownItOptions, 'stream')
+    ? Boolean(markdownItOptions.stream)
+    : true
+
   const md = new MarkdownIt({
     html: true,
     linkify: true,
     typographer: true,
-    stream: true,
-    ...(opts.markdownItOptions ?? {}),
-  })
+    ...markdownItOptions,
+    experimental: {
+      stream,
+      ...experimental,
+    },
+  }) as unknown as MarkdownItInstance
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }
@@ -46,7 +58,7 @@ export function factory(opts: FactoryOptions = {}) {
   // Fix indented code blocks that should be paragraphs (streaming scenario)
   if (opts.enableFixIndentedCodeBlock !== false)
     applyFixIndentedCodeBlock(md)
-  // Retain the core-stage fix as a fallback for any cases the inline
+  // Retain the core-stage fix as a fallback for cases the inline
   // tokenizer does not handle.
   applyFixLinkTokens(md)
   // Also apply strong-token normalization at the same stage.

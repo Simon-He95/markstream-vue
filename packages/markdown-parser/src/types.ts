@@ -1,4 +1,4 @@
-import type { Token } from 'markdown-it-ts'
+import type { MarkdownIt, Token } from './markdown-it-types'
 
 export interface BaseNode {
   type: string
@@ -101,7 +101,7 @@ export type CustomComponentAttrs
  * A generic node shape for custom HTML-like components.
  * When a tag name is included in `customHtmlTags`, the parser emits a node
  * whose `type` equals that tag name and carries the raw HTML `content`
- * plus any extracted `attrs` from user transforms.
+ * plus extracted `attrs` from user transforms.
  */
 export interface CustomComponentNode extends BaseNode {
   /** The custom tag name (same as `tag`) */
@@ -294,14 +294,25 @@ export interface ReferenceNode extends BaseNode {
   id: string
 }
 
+export type MarkdownTokenMeta = Record<string, unknown>
+
+type MarkdownTokenBase = Omit<Token, 'children' | 'meta'> & {
+  children?: MarkdownToken[] | null
+  loading?: boolean
+  mark?: string
+  meta?: MarkdownTokenMeta | null
+  raw?: string
+}
+
 // Define markdown-it token type
 export interface MarkdownTokenLite {
   type: string
   tag?: string
   content?: string
   info?: string
+  mark?: string
   markup?: string
-  meta?: unknown
+  meta?: MarkdownTokenMeta | null
   map?: [number, number] | number[] | null
   block?: boolean
   hidden?: boolean
@@ -313,7 +324,7 @@ export interface MarkdownTokenLite {
   raw?: string
 }
 
-export type MarkdownToken = (Token & { loading?: boolean, raw?: string }) | MarkdownTokenLite
+export type MarkdownToken = MarkdownTokenBase | MarkdownTokenLite
 
 export type ParsedNode
   = | TextNode
@@ -394,6 +405,12 @@ export type TransformTokensHook = (tokens: MarkdownToken[]) => MarkdownToken[]
 export interface ParseOptions {
   preTransformTokens?: TransformTokensHook
   postTransformTokens?: TransformTokensHook
+  /**
+   * Defaults to 'auto': use markdown-it-ts' stream parser for non-final
+   * top-level document parses when available. Final parses and fragment parses
+   * use the regular parser unless streamParse is explicitly true.
+   */
+  streamParse?: boolean | 'auto'
   // When true, require a closing `**` to parse strong; otherwise allow mid-state strong
   requireClosingStrong?: boolean
   /**
@@ -419,6 +436,19 @@ export interface ParseOptions {
   validateLink?: (url: string) => boolean
   // When true, log the parsed tree structure for debugging
   debug?: boolean
+}
+
+export interface InternalParseOptions extends ParseOptions {
+  __customHtmlBlockCursor?: number
+  __disableStreamParse?: boolean
+  __insideStrong?: boolean
+  __linkifyDemotionContext?: {
+    filename?: boolean
+    explicitFilename?: boolean
+    marketTicker?: boolean
+  }
+  __markdownIt?: MarkdownIt
+  __sourceMarkdown?: string
 }
 
 export type PostTransformNodesHook = (nodes: ParsedNode[]) => ParsedNode[]

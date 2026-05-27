@@ -2,10 +2,9 @@
  * @vitest-environment jsdom
  */
 
+import React, { act } from 'react'
+import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it } from 'vitest'
-/* eslint-disable antfu/no-import-node-modules-by-path */
-import React, { act } from '../packages/markstream-react/node_modules/react'
-import { createRoot } from '../packages/markstream-react/node_modules/react-dom/client'
 import { NodeRenderer } from '../packages/markstream-react/src/components/NodeRenderer'
 import { removeCustomComponents, setCustomComponents } from '../packages/markstream-react/src/customComponents'
 
@@ -27,6 +26,7 @@ function ThinkingNode(props: any) {
         deferNodesUntilVisible={false}
         batchRendering={false}
         maxLiveNodes={0}
+        smoothStreaming={false}
       />
     </section>
   )
@@ -61,6 +61,7 @@ describe('markstream-react custom thinking streaming fade', () => {
         customHtmlTags: ['thinking'],
         deferNodesUntilVisible: false,
         viewportPriority: false,
+        smoothStreaming: false,
       })
 
     await act(async () => {

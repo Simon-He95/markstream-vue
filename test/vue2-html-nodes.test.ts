@@ -161,6 +161,55 @@ describe('vue 2 - HtmlBlockNode Custom Components Integration', () => {
     expect(wrapper.html()).not.toContain('alert(1)')
   })
 
+  it('should block active html tags by default and allow them only with trusted policy', async () => {
+    const safeWrapper = mount(HtmlBlockNode, {
+      props: {
+        node: {
+          content: '<div>Safe</div><iframe src="https://example.com"></iframe><form><input name="q"></form>',
+          loading: false,
+        },
+        customId: testId,
+      },
+    })
+
+    await flushAll()
+    expect(safeWrapper.find('div').exists()).toBe(true)
+    expect(safeWrapper.find('iframe').exists()).toBe(false)
+    expect(safeWrapper.find('form').exists()).toBe(false)
+    expect(safeWrapper.find('input').exists()).toBe(false)
+
+    const trustedWrapper = mount(HtmlBlockNode, {
+      props: {
+        node: {
+          content: '<iframe src="https://example.com"></iframe>',
+          loading: false,
+        },
+        customId: testId,
+        htmlPolicy: 'trusted',
+      },
+    })
+
+    await flushAll()
+    expect(trustedWrapper.find('iframe').exists()).toBe(true)
+  })
+
+  it('should escape html when htmlPolicy is escape', async () => {
+    const wrapper = mount(HtmlBlockNode, {
+      props: {
+        node: {
+          content: '<div>Escaped</div>',
+          loading: false,
+        },
+        customId: testId,
+        htmlPolicy: 'escape',
+      },
+    })
+
+    await flushAll()
+    expect(wrapper.html()).toContain('&lt;div&gt;Escaped&lt;/div&gt;')
+    expect(wrapper.text()).toContain('<div>Escaped</div>')
+  })
+
   it('should pass props correctly to custom components', () => {
     const wrapper = mount(HtmlBlockNode, {
       props: {
@@ -256,7 +305,7 @@ describe('vue 2 - HtmlBlockNode Custom Components Integration', () => {
 
     const root = wrapper.find('.html-block-node')
     expect(root.element.tagName).toBe('SPAN')
-    expect(root.attributes('style')).toContain('font-size: 12px;')
+    expect(root.attributes('style')).toBeUndefined()
     expect(wrapper.findAll('ul')).toHaveLength(1)
     expect(wrapper.findAll('li')).toHaveLength(2)
     expect((wrapper.text().match(/alpha/g) || []).length).toBe(1)

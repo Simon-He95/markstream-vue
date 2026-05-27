@@ -1,0 +1,31 @@
+{
+  "name": "playground-svelte",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --port 4176",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@antv/infographic": "^0.2.19",
+    "@terrastruct/d2": ">=0.1.33",
+    "katex": "^0.16.46",
+    "markstream-svelte": "workspace:*",
+    "mermaid": ">=11.15.0",
+    "stream-markdown": "latest",
+    "stream-markdown-parser": "workspace:*",
+    "stream-monaco": "latest",
+    "svelte": "^5.55.7"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.4",
+    "monaco-editor": "^0.52.2",
+    "svelte-check": "^4.4.8",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.3",
+    "vite-plugin-monaco-editor-esm": "^2.0.2"
+  }
+}

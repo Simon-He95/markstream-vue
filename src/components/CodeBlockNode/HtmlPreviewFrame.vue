@@ -5,9 +5,44 @@ import { useSafeI18n } from '../../composables/useSafeI18n'
 const props = defineProps<{
   code: string
   isDark?: boolean
+  htmlPreviewAllowScripts?: boolean
+  htmlPreviewSandbox?: string
   onClose?: () => void
   title?: string
 }>()
+
+const isDevEnv = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV)
+let lastWarnedDangerousSandbox: string | null = null
+
+function normalizeSandboxTokens(value: string) {
+  return new Set(
+    value
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean),
+  )
+}
+
+function warnDangerousHtmlPreviewSandbox(value: string) {
+  if (!isDevEnv || typeof console === 'undefined' || lastWarnedDangerousSandbox === value)
+    return
+  const tokens = normalizeSandboxTokens(value)
+  if (tokens.has('allow-scripts') && tokens.has('allow-same-origin')) {
+    lastWarnedDangerousSandbox = value
+    console.warn('[markstream-vue] htmlPreviewSandbox contains both allow-scripts and allow-same-origin. Use this only for fully trusted content served from an isolated origin.')
+  }
+}
+
+function resolveHtmlPreviewSandboxValue(htmlPreviewSandbox: unknown, htmlPreviewAllowScripts?: boolean) {
+  if (typeof htmlPreviewSandbox === 'string') {
+    warnDangerousHtmlPreviewSandbox(htmlPreviewSandbox)
+    return htmlPreviewSandbox
+  }
+  if (htmlPreviewSandbox !== undefined)
+    return ''
+  return htmlPreviewAllowScripts === true ? 'allow-scripts' : ''
+}
 
 const { t } = useSafeI18n()
 
@@ -43,6 +78,10 @@ const srcdoc = computed(() => {
     ${base}
   </body>
 </html>`
+})
+
+const sandboxValue = computed(() => {
+  return resolveHtmlPreviewSandboxValue(props.htmlPreviewSandbox, props.htmlPreviewAllowScripts)
 })
 
 function handleKeydown(e: KeyboardEvent) {
@@ -81,7 +120,8 @@ onUnmounted(() => {
           </div>
           <iframe
             class="html-preview-frame__iframe"
-            sandbox="allow-scripts allow-same-origin"
+            :sandbox="sandboxValue"
+            referrerpolicy="no-referrer"
             :srcdoc="srcdoc"
           />
         </div>

@@ -28,18 +28,19 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@10.33.4 --activate
 
       - name: Set node ${{ matrix.node_version }}
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
           cache: pnpm
-
-      - run: corepack enable
 
       - name: Setup
         run: npm i -g @antfu/ni
@@ -55,14 +56,22 @@ jobs:
         run: nr typecheck
 
       - name: Run tests
-        run: nr test -- --run
+        run: pnpm run build:parser && pnpm run build:core && nr test -- --run
 
       - name: Run SSR check
         run: nr check:ssr
 
       - name: Build (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
-        run: pnpm build
+        run: pnpm run build:parser && pnpm build
+
+      - name: Minimal install smoke (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: MARKSTREAM_SMOKE_SKIP_BUILD=1 pnpm test:smoke:minimal
+
+      - name: Packed smoke with optional peers (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: MARKSTREAM_SMOKE_SKIP_BUILD=1 pnpm test:smoke:pack:optional
 
       - name: Check package size budget (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'

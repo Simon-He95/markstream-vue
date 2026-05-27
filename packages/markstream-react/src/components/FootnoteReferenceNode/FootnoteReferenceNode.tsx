@@ -3,7 +3,8 @@ import React, { useCallback, useMemo } from 'react'
 
 export function FootnoteReferenceNode(props: NodeComponentProps<{ type: 'footnote_reference', id: string }>) {
   const { node } = props
-  const href = useMemo(() => `#footnote-${node.id}`, [node.id])
+  const href = useMemo(() => `#fnref--${node.id}`, [node.id])
+  const linkAttrs = useMemo(() => ({ href }) as React.HTMLAttributes<HTMLSpanElement> & { href: string }, [href])
   const handleScroll = useCallback((event: React.MouseEvent) => {
     event.preventDefault()
     if (typeof document === 'undefined')
@@ -15,11 +16,11 @@ export function FootnoteReferenceNode(props: NodeComponentProps<{ type: 'footnot
 
   return (
     <sup id={`fnref-${node.id}`} className="footnote-reference" onClick={handleScroll}>
-      <a href={href} title={`View footnote ${node.id}`} className="footnote-link cursor-pointer">
+      <span {...linkAttrs} title={`查看脚注 ${node.id}`} className="footnote-link cursor-pointer">
         [
         {node.id}
         ]
-      </a>
+      </span>
     </sup>
   )
 }

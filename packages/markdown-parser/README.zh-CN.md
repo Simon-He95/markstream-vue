@@ -46,6 +46,8 @@ yarn add stream-markdown-parser
 - `registerMarkdownPlugin(plugin)` / `clearRegisteredMarkdownPlugins()` — 全局注册/清除插件，在所有 `getMarkdown()` 调用中生效（适合特性开关或测试环境）。
 - `parseMarkdownToStructure(markdown, md, parseOptions)` — 将 Markdown 转换为可供 `markstream-vue` 等渲染器使用的 AST。
 - `processTokens(tokens)` / `parseInlineTokens(children, content?, preToken?, options?)` — 更底层的 token → 节点工具，方便自定义管线。
+- `sanitizeImageSrc(value)` — 使用与 Markstream 图片渲染器一致的严格图片 URL 策略。
+- `sanitizeMermaidSvg(svg)` / `toSafeMermaidSvgMarkup(svg)` / `toSafeSvgElement(svg)` / `isBrokenMermaidSvg(svg)` — 使用 `DOMParser` 清理或校验 Mermaid SVG；在没有 `DOMParser` 的纯 Node 环境中，这些清理 helper 分别返回 `null` / `''` / `null`。
 - `applyMath`、`applyContainers`、`normalizeStandaloneBackslashT`、`findMatchingClose` 等 — 用于构建自定义解析、lint 或内容清洗流程。
 
 ## 使用
@@ -218,6 +220,17 @@ interface GetMarkdownOptions {
 - `md` (MarkdownItCore): 由 `getMarkdown()` 创建的 markdown-it-ts 实例
 - `options` (ParseOptions, 可选): 带有钩子的解析选项
 
+> 注意：默认 `streamParse: 'auto'` 会在 `md.stream.enabled === true` 时为非 final
+> 顶层解析使用 markdown-it-ts 的 stream parser，并在该 `md` 实例上保留最近一次
+> source 与 token cache。final 一次性解析默认走普通 parser；需要强制 stream 时传
+> `{ streamParse: true }`。如果复用同一个 `md` 解析互不相关的一次性文档，请传
+> `{ final: true }` 或 `{ streamParse: false }`。不希望保留 stream cache 的调用方可以显式关闭：
+
+```ts
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+const optOutNodes = parseMarkdownToStructure(source, md, { streamParse: false })
+```
+
 **返回值：** `ParsedNode[]` - 解析后的节点数组
 
 #### `processTokens(tokens)`
@@ -259,6 +272,9 @@ interface ParseOptions {
   validateLink?: (url: string) => boolean
   // true 表示输入已结束（end-of-stream）
   final?: boolean
+  // 'auto' 为非 final 顶层文档使用 stream parser；
+  // final 解析需强制 stream 时设 true，不希望保留 stream cache 时设 false
+  streamParse?: boolean | 'auto'
   // 解析 strong 时要求闭合 `**`（默认 false）
   requireClosingStrong?: boolean
 }

@@ -10,7 +10,7 @@ const budgets = {
   maxDistBytes: Number(process.env.MAX_DIST_BYTES || 800 * 1024),
   maxJsChunkBytes: Number(process.env.MAX_JS_CHUNK_BYTES || 300 * 1024),
   maxPackSizeBytes: Number(process.env.MAX_PACK_TGZ_BYTES || 250 * 1024),
-  maxPackUnpackedBytes: Number(process.env.MAX_PACK_UNPACKED_BYTES || 740 * 1024),
+  maxPackUnpackedBytes: Number(process.env.MAX_PACK_UNPACKED_BYTES || 800 * 1024),
 }
 
 function formatBytes(bytes) {

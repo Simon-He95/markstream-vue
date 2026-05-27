@@ -1,7 +1,7 @@
 {
   "name": "markstream-vue2",
   "type": "module",
-  "version": "0.0.41",
+  "version": "0.0.45",
   "description": "Vue 2 Markdown renderer optimized for large documents with progressive Mermaid rendering, streaming diff code blocks, and fast real-time preview. Perfect for documentation sites, AI chat interfaces, and content management systems.",
   "author": "Simon He",
   "license": "MIT",
@@ -79,12 +79,13 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build -c vite.config.ts --mode npm && vite build -c vite.config.tailwind.ts --mode npm && node ./scripts/copy-tailwind-css.mjs && node ../../scripts/generate-px-css.mjs && pnpm run build:dts && pnpm run validate:dist",
+    "build": "pnpm --dir ../markstream-core build && vite build -c vite.config.ts --mode npm && vite build -c vite.config.tailwind.ts --mode npm && node ./scripts/copy-tailwind-css.mjs && node ../../scripts/generate-px-css.mjs && pnpm run build:dts && pnpm run validate:dist",
     "build:analyze": "ANALYZE=true pnpm build",
     "build:dts": "rollup -c ./scripts/rollup.dts.config.mjs && node ./scripts/clean-dts.cjs",
     "validate:dist": "node ./scripts/validate-dist-entries.mjs",
     "size:check": "MAX_PACK_UNPACKED_BYTES=800000 node ../../scripts/check-package-size.mjs",
-    "release": "bumpp --commit --no-tag --no-push && pnpm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
+    "check:core-published": "node ../../scripts/check-core-published.mjs --package-json package.json --core-package-json ../markstream-core/package.json",
+    "release": "pnpm run check:core-published && bumpp --commit --no-tag --no-push && pnpm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
   },
   "peerDependencies": {
     "@antv/infographic": "^0.2.3",
@@ -93,7 +94,7 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "stream-markdown": ">=0.0.15",
-    "stream-monaco": ">=0.0.40",
+    "stream-monaco": ">=0.0.41",
     "vue": ">=2.6.14 <3",
     "vue-i18n": ">=9"
   },
@@ -125,6 +126,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.6",
+    "markstream-core": "workspace:*",
     "stream-markdown-parser": "workspace:*",
     "vue-demi": "^0.14.10"
   },

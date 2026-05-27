@@ -10,7 +10,7 @@ interface FootnoteReferenceNode {
 const props = defineProps<{
   node: FootnoteReferenceNode
 }>()
-const href = `#footnote-${props.node.id}`
+const href = `#fnref--${props.node.id}`
 function handleScroll() {
   if (typeof document === 'undefined') {
     // SSR: nothing to do
@@ -43,7 +43,7 @@ function handleScroll() {
 }
 
 .footnote-link {
-  color: #0366d6;
+  color: var(--link-color, #0366d6);
   text-decoration: none;
 }
 

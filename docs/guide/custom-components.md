@@ -6,14 +6,14 @@ description: Add trusted custom tags such as thinking and map them to advanced m
 
 Use this page when Markdown needs to contain trusted, component-like tags such as `thinking`, `answer-box`, or other domain-specific blocks.
 
-The recommended path is:
+The recommended app-level path is:
 
-1. register the tag with `custom-html-tags`
-2. map the resulting node type with `setCustomComponents`
-3. keep the mapping scoped with `custom-id`
+1. install `VueRendererMarkdown` with an app-scoped `components` map
+2. render with `MarkdownRender`
+3. keep global `setCustomComponents` only for compatibility or one-off client apps
 
-Use tag-like names in `custom-html-tags`, for example `thinking`, `answer-box`, or `my_component`.
-Namespaced forms like `foo:bar` are ignored. Built-in override keys such as `code_block` stay reserved for node renderer overrides, so trusted custom tags should still be declared explicitly via `custom-html-tags`.
+Use tag-like names for custom components, for example `thinking`, `answer-box`, or `my_component`.
+Namespaced forms like `foo:bar` are ignored. Built-in override keys such as `code_block` stay reserved for node renderer overrides and are not treated as custom tags. Non-reserved component keys registered through either `VueRendererMarkdown` or `setCustomComponents` are included in the renderer's custom-tag set.
 
 Reach for parser hooks only after this flow stops being enough.
 
@@ -21,15 +21,20 @@ If these tags live inside a docs site or VitePress theme, pair this page with [D
 
 ## 1. The simplest custom-tag setup
 
-```ts twoslash
-import type { Component } from 'vue'
-import { setCustomComponents } from 'markstream-vue'
+```ts
+import MarkdownRender, { VueRendererMarkdown } from 'markstream-vue'
+import { createApp } from 'vue'
+import App from './App.vue'
+import ThinkingNode from './ThinkingNode.vue'
 
-declare const ThinkingNode: Component
-
-setCustomComponents('chat', {
-  thinking: ThinkingNode,
-})
+createApp(App)
+  .use(VueRendererMarkdown, {
+    components: {
+      thinking: ThinkingNode,
+    },
+  })
+  .component('MarkdownRender', MarkdownRender)
+  .mount('#app')
 ```
 
 ```vue twoslash
@@ -41,14 +46,30 @@ const markdown = '<thinking>Step by step</thinking>'
 
 <template>
   <MarkdownRender
-    custom-id="chat"
-    :custom-html-tags="['thinking']"
     :content="markdown"
   />
 </template>
 ```
 
-Once the tag is allowlisted, the parser emits a custom node whose `type` is the tag name itself.
+When non-reserved tag components are registered through `VueRendererMarkdown` or `setCustomComponents`, their keys are included in the renderer's custom-tag set. The parser emits a custom node whose `type` is the tag name itself.
+
+For older integrations, the scoped global API still works:
+
+```ts twoslash
+import type { Component } from 'vue'
+import { setCustomComponents } from 'markstream-vue'
+
+declare const ThinkingNode: Component
+
+setCustomComponents('chat', { thinking: ThinkingNode })
+```
+
+```vue
+<MarkdownRender
+  custom-id="chat"
+  :content="markdown"
+/>
+```
 
 ## 2. A practical Vue component for nested content
 
@@ -105,6 +126,8 @@ For a trusted custom tag, the emitted node typically includes:
 
 The exact `attrs` shape can vary, so treat it as raw attribute data that your component normalizes for its own needs.
 
+Renderer node reuse compares common custom object fields such as `attrs`, `data`, `props`, and `payload` structurally. If a parser hook attaches other object fields to custom nodes, replace those objects when their contents change.
+
 ## 4. Repeated and nested custom tags
 
 This flow is designed to support:
@@ -134,6 +157,8 @@ Move to [Advanced Parser Hooks](/guide/advanced) when:
 - the source format is not well represented by a tag-like wrapper
 
 ## 6. Scope and cleanup still matter
+
+For SSR, Nuxt, multi-tenant servers, and test runners, prefer `app.use(VueRendererMarkdown, { components })`. That map is stored on the Vue app instance and does not leak between SSR requests.
 
 Even for custom tags, prefer scoped mappings:
 

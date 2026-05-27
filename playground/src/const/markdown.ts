@@ -55,8 +55,8 @@ https://github.com/Simon-He95/markstream-vue
 2. http://example.com/path?query=test  
 3. 纯文本URL：https://markdown-guide.readthedocs.io
 
-![Vue Markdown Icon](/vue-markdown-icon.svg "Vue Markdown Icon")
-*Figure: Vue Markdown Icon (served from /vue-markdown-icon.svg)*
+![Markstream logo](/vue-markdown-icon.svg "Markstream logo")
+*Figure: Markstream logo (served from /vue-markdown-icon.svg)*
 
 这是 ~~已删除的文本~~，这是一个表情 :smile:。
 

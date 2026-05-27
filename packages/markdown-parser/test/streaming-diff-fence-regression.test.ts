@@ -53,7 +53,7 @@ describe('parseFenceToken - streaming unified diff stability', () => {
     ].join('\n'))
   })
 
-  it('withholds an unfinished replacement hunk until the added side is available', () => {
+  it('streams an unfinished removed line before the added side is available', () => {
     const node = parseStreamingDiff([
       '{',
       '  "name": "markstream-vue",',
@@ -63,6 +63,7 @@ describe('parseFenceToken - streaming unified diff stability', () => {
     expect(node.originalCode).toBe([
       '{',
       '  "name": "markstream-vue",',
+      '  "version": "0.0.49",',
     ].join('\n'))
     expect(node.updatedCode).toBe([
       '{',
@@ -91,7 +92,7 @@ describe('parseFenceToken - streaming unified diff stability', () => {
     ].join('\n'))
   })
 
-  it('withholds a trailing incomplete added line instead of leaking a mismatched preview', () => {
+  it('streams a trailing incomplete added line before newline', () => {
     const node = parseStreamingDiff([
       '{',
       '  "name": "markstream-vue",',
@@ -102,11 +103,45 @@ describe('parseFenceToken - streaming unified diff stability', () => {
     expect(node.originalCode).toBe([
       '{',
       '  "name": "markstream-vue",',
+      '  "version": "0.0.49",',
     ].join('\n'))
     expect(node.updatedCode).toBe([
       '{',
       '  "name": "markstream-vue",',
+      '  "version": "0.0.54-b',
     ].join('\n'))
+  })
+
+  it('streams incomplete added lines into updatedCode before newline', () => {
+    const node = parseStreamingDiff('+ con')
+
+    expect(node.originalCode).toBe('')
+    expect(node.updatedCode).toBe('  con')
+  })
+
+  it('streams incomplete removed lines into originalCode before newline', () => {
+    const node = parseStreamingDiff('- oldVal')
+
+    expect(node.originalCode).toBe('  oldVal')
+    expect(node.updatedCode).toBe('')
+  })
+
+  it('does not render partial diff metadata as code while streaming', () => {
+    const node = parseStreamingDiff('diff --gi')
+
+    expect(node.originalCode).toBe('')
+    expect(node.updatedCode).toBe('')
+  })
+
+  it('streams an added tail after a context line', () => {
+    const node = parseStreamingDiff([
+      ' const a = 1',
+      '+ const b',
+    ].join('\n'))
+
+    expect(node.originalCode).toContain('const a = 1')
+    expect(node.updatedCode).toContain('const a = 1')
+    expect(node.updatedCode).toContain('const b')
   })
 
   it('flushes the trailing hunk once the fence is closed', () => {

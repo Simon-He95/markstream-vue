@@ -1,12 +1,8 @@
 @import '../../../themes/index.css';
+@import 'markstream-vue/index.css' layer(components);
 
 @tailwind components;
 @tailwind utilities;
-
-
-@layer components {
-  @import 'markstream-vue/index.css';
-}
 
 html,
 body,

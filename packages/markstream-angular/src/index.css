@@ -89,9 +89,10 @@ markstream-angular {
   width: 100%;
 }
 
+.markstream-angular .fade-node,
 .markstream-angular .typewriter-node {
   opacity: 0;
-  animation: typewriter-fade var(--typewriter-fade-duration, 900ms) var(--typewriter-fade-ease, ease-out) both;
+  animation: node-enter-fade var(--fade-duration, var(--typewriter-fade-duration, 280ms)) var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))) both;
   will-change: opacity;
 }
 
@@ -110,8 +111,8 @@ markstream-angular {
 }
 
 .markstream-angular .markstream-angular-text__stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--typewriter-fade-duration, 900ms));
-  animation-timing-function: var(--stream-update-fade-ease, var(--typewriter-fade-ease, ease-out));
+  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
+  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
   animation-fill-mode: both;
   will-change: opacity;
 }
@@ -245,6 +246,16 @@ markstream-angular {
 
   .markstream-angular .markstream-angular-text__stream-delta {
     animation: none !important;
+  }
+
+  .markstream-angular .fade-node,
+  .markstream-angular .typewriter-node,
+  .markstream-angular .typewriter-cursor {
+    animation: none !important;
+  }
+
+  .markstream-angular .typewriter-cursor {
+    opacity: 1;
   }
 }
 
@@ -973,6 +984,35 @@ body > div[id^="dmermaid-"] {
   to {
     opacity: 1;
   }
+}
+
+@keyframes node-enter-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.markstream-angular .typewriter-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  border-right: 2px solid currentColor;
+  pointer-events: none;
+  animation: markstream-angular-typewriter-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes markstream-angular-typewriter-cursor-blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
 }
 
 .markstream-angular .code-block-container {

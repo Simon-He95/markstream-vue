@@ -1,11 +1,14 @@
 import type {
+  InternalParseOptions,
   MarkdownToken,
   ParseOptions,
   TableCellNode,
   TableNode,
   TableRowNode,
 } from '../../types'
+import type { LinkifyDemotionContext } from '../linkifyHeuristics'
 import { parseInlineTokens } from '../inline-parsers'
+import { inferLinkifyDemotionContext } from '../linkifyHeuristics'
 
 // Extract alignment from attrs (e.g. ['style','text-align:left'])
 function extractAlign(attrs: MarkdownToken['attrs']): 'left' | 'right' | 'center' | undefined {
@@ -21,11 +24,48 @@ function extractAlign(attrs: MarkdownToken['attrs']): 'left' | 'right' | 'center
     if (key === 'style') {
       const m = /text-align\s*:\s*(left|right|center)/i.exec(value)
       if (m)
-        return m[1].toLowerCase() as any
+        return m[1].toLowerCase() as TableCellNode['align']
     }
   }
   return 'left'
 }
+
+function hasTableCellContext(context?: LinkifyDemotionContext) {
+  return context?.filename === true || context?.explicitFilename === true || context?.marketTicker === true
+}
+
+function mergeTableCellContext(
+  left?: LinkifyDemotionContext,
+  right?: LinkifyDemotionContext,
+) {
+  const merged = {
+    filename: left?.filename || right?.filename,
+    explicitFilename: left?.explicitFilename || right?.explicitFilename,
+    marketTicker: left?.marketTicker || right?.marketTicker,
+  }
+  return hasTableCellContext(merged) ? merged : undefined
+}
+
+function parseOptionsForTableCell(
+  options: ParseOptions | undefined,
+  headerRaw?: string,
+  rowContext?: LinkifyDemotionContext,
+) {
+  const cellContext = mergeTableCellContext(inferLinkifyDemotionContext(headerRaw), rowContext)
+  if (!hasTableCellContext(cellContext))
+    return options
+
+  const inheritedContext = (options as InternalParseOptions | undefined)?.__linkifyDemotionContext
+  return {
+    ...options,
+    __linkifyDemotionContext: {
+      filename: inheritedContext?.filename || cellContext?.filename,
+      explicitFilename: inheritedContext?.explicitFilename || cellContext?.explicitFilename,
+      marketTicker: inheritedContext?.marketTicker || cellContext?.marketTicker,
+    },
+  } as InternalParseOptions
+}
+
 export function parseTable(
   tokens: MarkdownToken[],
   index: number,
@@ -53,6 +93,7 @@ export function parseTable(
     else if (tokens[j].type === 'tr_open') {
       const cells: TableCellNode[] = []
       let k = j + 1
+      let rowContext: LinkifyDemotionContext | undefined
 
       while (k < tokens.length && tokens[k].type !== 'tr_close') {
         if (tokens[k].type === 'th_open' || tokens[k].type === 'td_open') {
@@ -60,14 +101,20 @@ export function parseTable(
           const contentToken = tokens[k + 1]
           const content = String(contentToken.content ?? '')
           const align = extractAlign(tokens[k].attrs)
+          const cellIndex = cells.length
+          const isBodyCell = !isHeaderCell && !isHeader
+          const headerRaw = isBodyCell ? headerRow?.cells[cellIndex]?.raw : undefined
 
           cells.push({
             type: 'table_cell',
             header: isHeaderCell || isHeader,
-            children: parseInlineTokens(contentToken.children || [], content, undefined, options as any),
+            children: parseInlineTokens(contentToken.children || [], content, undefined, parseOptionsForTableCell(options, headerRaw, isBodyCell ? rowContext : undefined)),
             raw: content,
             align,
           })
+
+          if (isBodyCell)
+            rowContext = mergeTableCellContext(rowContext, inferLinkifyDemotionContext(content))
 
           k += 3 // Skip th_open/td_open, inline, th_close/td_close
         }
@@ -105,11 +152,13 @@ export function parseTable(
     }
   }
 
+  const tokenLoading = tokens[index].loading === true
+
   const tableNode: TableNode = {
     type: 'table',
     header: headerRow,
     rows,
-    loading: tokens[index].loading ?? false,
+    loading: tokenLoading && !options?.final && rows.length === 0,
     raw: [headerRow, ...rows].map(row => row.raw).join('\n'),
   }
 

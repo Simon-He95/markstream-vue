@@ -1,4 +1,5 @@
 import type { AfterViewInit, ElementRef, OnChanges, OnDestroy } from '@angular/core'
+import type { CodeBlockMonacoTheme } from '../../types/monaco'
 import type { AngularRenderableNode, AngularRenderContext } from '../shared/node-helpers'
 import { CommonModule } from '@angular/common'
 import {
@@ -25,7 +26,7 @@ interface MonacoHelpers {
   safeClean?: () => void
   getEditorView?: () => any
   getDiffEditorView?: () => any
-  setTheme?: (theme?: string) => Promise<unknown> | unknown
+  setTheme?: (theme?: CodeBlockMonacoTheme) => Promise<unknown> | unknown
 }
 
 @Component({
@@ -188,6 +189,8 @@ interface MonacoHelpers {
       <markstream-angular-html-preview-frame
         *ngIf="inlinePreviewOpen && isPreviewable"
         [code]="resolvedCode"
+        [htmlPreviewAllowScripts]="mergedProps.htmlPreviewAllowScripts === true"
+        [htmlPreviewSandbox]="mergedProps.htmlPreviewSandbox"
         [isDark]="resolvedIsDark"
         [title]="previewTitle"
         [onClose]="closeInlinePreview"

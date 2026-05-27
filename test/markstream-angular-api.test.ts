@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { resolveParsedNodes } from '../packages/markstream-angular/src/components/shared/node-helpers'
 import {
@@ -80,6 +82,18 @@ describe('markstream-angular api parity helpers', () => {
     expect((nodes[0] as any)?.type).toBe('thinking')
     expect((nodes[0] as any)?.loading).toBe(true)
     expect(String((nodes[0] as any)?.content || '')).toContain('全面的回答')
+  })
+
+  it('keeps footnote ids and anchors in sync', () => {
+    const footnoteSource = readFileSync(resolve(process.cwd(), 'packages/markstream-angular/src/components/FootnoteNode/FootnoteNode.component.ts'), 'utf8')
+    const referenceSource = readFileSync(resolve(process.cwd(), 'packages/markstream-angular/src/components/FootnoteReferenceNode/FootnoteReferenceNode.component.ts'), 'utf8')
+    const anchorSource = readFileSync(resolve(process.cwd(), 'packages/markstream-angular/src/components/FootnoteAnchorNode/FootnoteAnchorNode.component.ts'), 'utf8')
+
+    expect(footnoteSource).toMatch(/return `fnref--\$\{getString\(\(this\.node as any\)\?\.id\)\}`/)
+    expect(referenceSource).toContain('[attr.id]="referenceId"')
+    expect(referenceSource).toMatch(/return `#fnref--\$\{this\.id\}`/)
+    expect(referenceSource).toMatch(/return `fnref-\$\{this\.id\}`/)
+    expect(anchorSource).toMatch(/return `#fnref-\$\{this\.id\}`/)
   })
 
   it('keeps streaming thinking content grouped across mixed markdown prefixes', () => {

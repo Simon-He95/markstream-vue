@@ -85,6 +85,7 @@ export class DynamicNodeHostComponent implements OnChanges, OnDestroy {
     setValue('isDark', this.context?.isDark)
     setValue('indexKey', this.indexKey)
     setValue('typewriter', this.context?.typewriter)
+    setValue('fade', this.context?.fade)
     setValue('showTooltips', this.context?.showTooltips)
     setValue('codeBlockStream', this.context?.codeBlockStream)
     setValue('renderCodeBlocksAsPre', this.context?.renderCodeBlocksAsPre)

@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => ({
     ? {
         alias: {
           'markstream-react': path.resolve(__dirname, '../packages/markstream-react/src'),
+          'markstream-core': path.resolve(__dirname, '../packages/markstream-core/src/index.ts'),
+          'markstream-core/': `${path.resolve(__dirname, '../packages/markstream-core/src')}/`,
         },
       }
     : undefined,

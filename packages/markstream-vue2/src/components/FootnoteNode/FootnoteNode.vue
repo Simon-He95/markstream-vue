@@ -32,7 +32,7 @@ const nestedRenderer = computed(() => {
 <template>
   <div
     :id="`fnref--${node.id}`"
-    class="flex mt-2 mb-2 text-sm leading-relaxed border-t border-[#eaecef] pt-2"
+    class="footnote-node flex text-sm leading-relaxed border-t border-[var(--footnote-border,#eaecef)] pt-2"
   >
     <!-- <span class="font-semibold mr-2 text-[#0366d6]">[{{ node.id }}]</span> -->
     <div class="flex-1">
@@ -49,6 +49,11 @@ const nestedRenderer = computed(() => {
 </template>
 
 <style>
+.footnote-node {
+  margin-top: var(--ms-flow-footnote-y, 0.5em);
+  margin-bottom: var(--ms-flow-footnote-y, 0.5em);
+}
+
 /* 脚注中嵌套 NodeRenderer 关闭 content-visibility 占位，防止空白内容 */
 .markstream-vue2 [class*="footnote-"] .markdown-renderer,
 .markstream-vue2 .flex-1 .markdown-renderer {

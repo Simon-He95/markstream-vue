@@ -1,19 +1,21 @@
 import type { NodeComponentProps } from '../../types/node-component'
 import clsx from 'clsx'
+import { resolveStreamingTextUpdate } from 'markstream-core'
 import React, { useEffect, useRef, useState } from 'react'
-import { resolveStreamingTextUpdate } from '../../utils/streamingTextState'
+import { useStreamStateRef } from '../../context/streamState'
 
 export function TextNode(props: NodeComponentProps<{ type: 'text', content: string, center?: boolean }>) {
-  const { node, children, ctx, indexKey, typewriter } = props
+  const { node, children, ctx, indexKey, fade } = props
   const content = String(node.content ?? '')
-  const typewriterEnabled = typewriter ?? ctx?.typewriter ?? true
+  const fadeEnabled = fade ?? ctx?.fade ?? true
   const streamStateKey = indexKey == null || indexKey === ''
     ? ''
     : String(indexKey)
   const [settledContent, setSettledContent] = useState(content)
   const [streamedDelta, setStreamedDelta] = useState('')
   const [streamFadeVersion, setStreamFadeVersion] = useState(0)
-  const lastStreamRenderVersionRef = useRef(ctx?.streamRenderVersion)
+  const streamStateRef = useStreamStateRef()
+  const lastStreamRenderVersionRef = useRef<number | undefined>(undefined)
   const renderedContentRef = useRef({
     settledContent: content,
     streamedDelta: '',
@@ -34,7 +36,10 @@ export function TextNode(props: NodeComponentProps<{ type: 'text', content: stri
   }
 
   useEffect(() => {
-    const streamRenderVersion = ctx?.streamRenderVersion
+    // Read the latest stream version from the ref-based context (stable
+    // across renders) so this effect only re-runs when the node's own
+    // content changes, not on every streaming chunk.
+    const streamRenderVersion = streamStateRef?.getStreamRenderVersion() ?? ctx?.streamRenderVersion
     const streamRenderVersionChanged = streamRenderVersion !== lastStreamRenderVersionRef.current
 
     if (children != null) {
@@ -43,7 +48,7 @@ export function TextNode(props: NodeComponentProps<{ type: 'text', content: stri
       return
     }
 
-    const textStreamState = ctx?.textStreamState
+    const textStreamState = streamStateRef?.textStreamState ?? ctx?.textStreamState
     const currentState = renderedContentRef.current
     const persistedContent = streamStateKey
       ? textStreamState?.get(streamStateKey)
@@ -52,7 +57,7 @@ export function TextNode(props: NodeComponentProps<{ type: 'text', content: stri
       nextContent: content,
       persistedContent,
       currentState,
-      typewriterEnabled,
+      typewriterEnabled: fadeEnabled,
       streamRenderVersionChanged,
     })
 
@@ -62,7 +67,15 @@ export function TextNode(props: NodeComponentProps<{ type: 'text', content: stri
     if (streamStateKey)
       textStreamState?.set(streamStateKey, content)
     lastStreamRenderVersionRef.current = streamRenderVersion
-  }, [children, content, ctx?.textStreamState, ctx?.streamRenderVersion, streamStateKey, typewriterEnabled])
+  }, [children, content, streamStateRef, ctx?.textStreamState, ctx?.streamRenderVersion, streamStateKey, fadeEnabled])
+
+  // Immediately settle when fade animations are disabled
+  useEffect(() => {
+    if (fadeEnabled)
+      return
+    const full = getRenderedContent()
+    setRenderedContent(full, '')
+  }, [fadeEnabled])
 
   const handleStreamedDeltaAnimationEnd = () => {
     if (!renderedContentRef.current.streamedDelta)

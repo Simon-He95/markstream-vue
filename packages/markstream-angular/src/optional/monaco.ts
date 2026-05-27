@@ -1,7 +1,26 @@
 let monacoModule: any = null
 let importAttempted = false
-let pendingImport: Promise<any | null> | null = null
+let pendingImport: Promise<MonacoRuntimeModule | null> | null = null
 let workersPreloaded = false
+
+export interface MonacoRuntimeHelpers {
+  createEditor?: (container: HTMLElement, code: string, language: string) => Promise<unknown> | unknown
+  createDiffEditor?: (container: HTMLElement, original: string, modified: string, language: string) => Promise<unknown> | unknown
+  updateCode?: (code: string, language?: string) => Promise<unknown> | unknown
+  updateDiff?: (original: string, modified: string, language?: string) => Promise<unknown> | unknown
+  cleanupEditor?: () => unknown
+  safeClean?: () => unknown
+  setTheme?: (theme?: string | Record<string, unknown>) => Promise<unknown> | unknown
+  getEditorView?: () => unknown
+  getDiffEditorView?: () => unknown
+  refreshDiffPresentation?: () => unknown
+}
+
+export interface MonacoRuntimeModule {
+  useMonaco: (options?: Record<string, unknown>) => MonacoRuntimeHelpers
+  preloadMonacoWorkers?: () => Promise<unknown> | unknown
+  getOrCreateHighlighter?: (...args: unknown[]) => Promise<unknown> | unknown
+}
 
 async function preloadWorkers(mod: any) {
   if (workersPreloaded)
@@ -37,7 +56,7 @@ async function warmupShikiTokenizer(mod: any) {
   }
 }
 
-export async function getUseMonaco() {
+export async function getUseMonaco(): Promise<MonacoRuntimeModule | null> {
   if (monacoModule)
     return monacoModule
   if (pendingImport)

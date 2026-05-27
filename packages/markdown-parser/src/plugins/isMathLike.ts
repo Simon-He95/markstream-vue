@@ -39,6 +39,7 @@ const OPS_RE = /(?:^|[^+])\+(?!\+)|[=\-*/^<>]|\\times|\\pm|\\cdot|\\le|\\ge|\\ne
 // still math; so only ignore hyphens between multi-letter words.
 const HYPHENATED_MULTIWORD_RE = /\b[A-Z]{2,}-[A-Z]{2,}\b/i
 const FUNC_CALL_RE = /[A-Z]+\s*\([^)]+\)/i
+const PAREN_VARIABLE_TUPLE_RE = /^\(\s*[a-z](?:\s*,\s*[a-z])+\s*\)$/i
 const WORDS_RE = /\b(?:sin|cos|tan|log|ln|exp|sqrt|frac|sum|lim|int|prod)\b/
 // Heuristic to detect common date/time patterns like 2025/9/30 21:37:24 and
 // avoid classifying them as math merely because they contain '/' or ':'
@@ -94,6 +95,7 @@ export function isMathLike(s: string) {
   const ops = OPS_RE.test(norm) && !HYPHENATED_MULTIWORD_RE.test(norm)
   // function-like patterns: f(x), sin(x)
   const funcCall = FUNC_CALL_RE.test(norm)
+  const variableTuple = PAREN_VARIABLE_TUPLE_RE.test(stripped)
   // common math words
   const words = WORDS_RE.test(norm)
   // 纯单个英文字母也渲染成数学公式（常见变量/元素符号）
@@ -105,5 +107,5 @@ export function isMathLike(s: string) {
   // - 下标/上标通常是数字（可选花括号），避免匹配 get_time 之类的普通下划线单词
   const chemicalLike = /^(?:[A-Z][a-z]?(?:_\{?\d+\}?|\^\{?\d+\}?)?)+$/.test(stripped)
 
-  return texCmd || texCmdWithBraces || texBraceStart || texSpecific || superSub || ops || funcCall || words || pureWord || chemicalLike
+  return texCmd || texCmdWithBraces || texBraceStart || texSpecific || superSub || ops || funcCall || variableTuple || words || pureWord || chemicalLike
 }

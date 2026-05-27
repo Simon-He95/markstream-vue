@@ -1,9 +1,10 @@
-import type { AdmonitionNode, MarkdownToken, ParsedNode, ParseOptions, VmrContainerNode } from '../../types'
+import type { AdmonitionNode, InternalParseOptions, MarkdownToken, ParagraphNode, ParsedNode, ParseOptions, VmrContainerNode } from '../../types'
 import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes } from '../../htmlTagUtils'
 import { normalizeCustomTag } from '../customHtmlTags'
 import { buildAllowedHtmlTagSet } from '../index'
 import { parseInlineTokens } from '../inline-parsers'
 import { parseFenceToken } from '../inline-parsers/fence-parser'
+import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseBlockquote } from './blockquote-parser'
 import { parseCodeBlock } from './code-block-parser'
 import { parseDefinitionList } from './definition-list-parser'
@@ -46,7 +47,7 @@ function getHtmlTagSets(customTags?: readonly string[]) {
     return entry
   }
   const entry = {
-    allowedTagSet: buildAllowedHtmlTagSet({ customHtmlTags: customTags as any }),
+    allowedTagSet: buildAllowedHtmlTagSet({ customHtmlTags: customTags }),
     customTagSet: new Set(normalized),
   }
   HTML_TAG_SET_CACHE.set(customTags, entry)
@@ -56,7 +57,7 @@ function getHtmlTagSets(customTags?: readonly string[]) {
 function parseVmrContainer(
   tokens: MarkdownToken[],
   index: number,
-  options?: ParseOptions,
+  options?: InternalParseOptions,
 ): [VmrContainerNode, number] {
   const openToken = tokens[index]
 
@@ -90,6 +91,7 @@ function parseVmrContainer(
   }
 
   const children: ParsedNode[] = []
+  const linkifyContext = createLinkifyDemotionContextTracker(options, true)
   let j = index + 1
 
   // Parse children until we find the closing token
@@ -99,11 +101,13 @@ function parseVmrContainer(
       const contentToken = tokens[j + 1]
       if (contentToken) {
         const childrenArr = (contentToken.children as MarkdownToken[]) || []
-        children.push({
+        const paragraphNode = {
           type: 'paragraph',
-          children: parseInlineTokens(childrenArr || [], undefined, undefined, options as any),
+          children: parseInlineTokens(childrenArr || [], undefined, undefined, linkifyContext.options()),
           raw: String(contentToken.content ?? ''),
-        })
+        } as ParsedNode
+        children.push(paragraphNode)
+        linkifyContext.remember(paragraphNode.raw)
       }
       j += 3 // Skip paragraph_open, inline, paragraph_close
     }
@@ -112,21 +116,24 @@ function parseVmrContainer(
       || tokens[j].type === 'ordered_list_open'
     ) {
       // Handle list tokens
-      const [listNode, newIndex] = parseList(tokens, j, options)
+      const [listNode, newIndex] = parseList(tokens, j, linkifyContext.options())
       children.push(listNode)
+      linkifyContext.remember(listNode.raw)
       j = newIndex
     }
     else if (tokens[j].type === 'blockquote_open') {
       // Handle blockquote tokens
-      const [blockquoteNode, newIndex] = parseBlockquote(tokens, j, options)
+      const [blockquoteNode, newIndex] = parseBlockquote(tokens, j, linkifyContext.options())
       children.push(blockquoteNode)
+      linkifyContext.remember(blockquoteNode.raw)
       j = newIndex
     }
     else {
       // Handle other basic block tokens (heading, code_block, fence, etc.)
-      const handled = parseBasicBlockToken(tokens, j, options)
+      const handled = parseBasicBlockToken(tokens, j, linkifyContext.options())
       if (handled) {
         children.push(handled[0])
+        linkifyContext.remember(handled[0].raw)
         j = handled[1]
       }
       else {
@@ -332,7 +339,7 @@ function lineToIndex(source: string, line: number) {
 export function parseBasicBlockToken(
   tokens: MarkdownToken[],
   index: number,
-  options?: ParseOptions,
+  options?: InternalParseOptions,
 ): [ParsedNode, number] | null {
   const token = tokens[index]
   switch (token.type) {
@@ -353,14 +360,15 @@ export function parseBasicBlockToken(
       const htmlBlockNode = parseHtmlBlock(token)
       const tagSets = htmlBlockNode.tag ? getHtmlTagSets(options?.customHtmlTags) : null
       if (htmlBlockNode.tag && htmlBlockNode.loading && tagSets && !tagSets.allowedTagSet.has(htmlBlockNode.tag)) {
-        const raw = String((token as any)?.content ?? '')
+        const raw = String(token.content ?? '')
         const content = raw.replace(/\n+$/, '')
+        const paragraphNode: ParagraphNode = {
+          type: 'paragraph',
+          children: content ? [{ type: 'text', content, raw: content }] : [],
+          raw: content,
+        }
         return [
-          {
-            type: 'paragraph',
-            children: content ? [{ type: 'text', content, raw: content }] : [],
-            raw: content,
-          } as any,
+          paragraphNode,
           index + 1,
         ]
       }
@@ -374,8 +382,8 @@ export function parseBasicBlockToken(
         // If markdown-it provides a source map for this token, prefer anchoring the
         // re-extraction to that line range. This avoids accidentally matching an
         // earlier occurrence of the same custom tag that was tokenized as inline.
-        const mappedLineStart = Array.isArray((token as any).map)
-          ? lineToIndex(source, Number((token as any).map?.[0] ?? 0))
+        const mappedLineStart = Array.isArray(token.map)
+          ? lineToIndex(source, Number(token.map?.[0] ?? 0))
           : 0
         const searchStart = Math.max(clampNonNegative(cursor), clampNonNegative(mappedLineStart))
 

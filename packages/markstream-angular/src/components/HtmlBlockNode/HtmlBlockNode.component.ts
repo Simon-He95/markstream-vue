@@ -1,7 +1,7 @@
 import type { ElementRef } from '@angular/core'
 import type { AngularRenderableNode, AngularRenderContext } from '../shared/node-helpers'
 import { ChangeDetectionStrategy, Component, Input, ViewChild } from '@angular/core'
-import { NON_STRUCTURING_HTML_TAGS } from 'stream-markdown-parser'
+import { isHtmlTagBlocked, NON_STRUCTURING_HTML_TAGS } from 'stream-markdown-parser'
 import { renderMarkdownNodeToHtml } from '../../renderMarkdownHtml'
 import { sanitizeHtmlContent } from '../../sanitizeHtmlContent'
 import { getString } from '../shared/node-helpers'
@@ -49,14 +49,21 @@ export class HtmlBlockNodeComponent {
       return
     }
 
-    if (tag && children.length > 0 && !NON_STRUCTURING_HTML_TAGS.has(tag)) {
+    const htmlPolicy = this.context?.htmlPolicy ?? 'safe'
+    if (htmlPolicy === 'escape') {
+      container.textContent = content
+      return
+    }
+
+    if (tag && children.length > 0 && !NON_STRUCTURING_HTML_TAGS.has(tag) && !isHtmlTagBlocked(tag, htmlPolicy)) {
       container.innerHTML = renderMarkdownNodeToHtml(this.node, {
         allowHtml: this.context?.allowHtml,
         customHtmlTags: this.context?.customHtmlTags,
+        htmlPolicy,
       })
       return
     }
 
-    container.innerHTML = sanitizeHtmlContent(content)
+    container.innerHTML = sanitizeHtmlContent(content, htmlPolicy)
   }
 }

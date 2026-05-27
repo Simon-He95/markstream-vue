@@ -1,7 +1,6 @@
-/* eslint-disable antfu/no-import-node-modules-by-path */
+import React, { act } from 'react'
+import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import React, { act } from '../packages/markstream-react/node_modules/react'
-import { createRoot } from '../packages/markstream-react/node_modules/react-dom/client'
 
 async function flushReact() {
   await act(async () => {
@@ -54,7 +53,7 @@ describe('markstream-react diagram parity', () => {
       initialize: vi.fn(),
       parse: vi.fn(async () => true),
       render: vi.fn(async () => ({
-        svg: '<svg viewBox="0 0 100 200"><g /></svg>',
+        svg: '<svg viewBox="0 0 100 200"><rect width="1" height="1" /></svg>',
         bindFunctions: vi.fn(),
       })),
     }

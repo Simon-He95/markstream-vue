@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { sanitizeImageSrc } from 'stream-markdown-parser'
 import { computed, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 
@@ -26,19 +27,26 @@ const emit = defineEmits<{ (e: 'load', src: string): void, (e: 'error', src: str
 
 const imageLoaded = ref(false)
 const hasError = ref(false)
-const fallbackTried = ref(false)
-const displaySrc = computed(() => hasError.value && props.fallbackSrc ? props.fallbackSrc : props.node.src)
+const activeSrc = ref('')
+const imageStage = ref<'primary' | 'fallback' | 'failed'>('primary')
+const safeNodeSrc = computed(() => sanitizeImageSrc(props.node.src))
+const safeFallbackSrc = computed(() => sanitizeImageSrc(props.fallbackSrc))
+const displaySrc = computed(() => activeSrc.value)
+const showImage = computed(() => !props.node.loading && imageStage.value !== 'failed' && activeSrc.value.length > 0)
+const showError = computed(() => !props.node.loading && imageStage.value === 'failed')
 
 function handleImageError() {
-  if (props.fallbackSrc && !fallbackTried.value) {
-    fallbackTried.value = true
-    hasError.value = true
-    // leave imageLoaded false so placeholder/spinner can show while fallback loads
+  if (imageStage.value === 'primary' && safeFallbackSrc.value && safeFallbackSrc.value !== activeSrc.value) {
+    imageStage.value = 'fallback'
+    activeSrc.value = safeFallbackSrc.value
+    imageLoaded.value = false
+    hasError.value = false
+    return
   }
-  else {
-    hasError.value = true
-    emit('error', props.node.src)
-  }
+
+  imageStage.value = 'failed'
+  hasError.value = true
+  emit('error', activeSrc.value)
 }
 
 function handleImageLoad() {
@@ -57,16 +65,42 @@ function handleClick(e: Event) {
 
 const { t } = useSafeI18n()
 
-watch(displaySrc, () => {
-  imageLoaded.value = false
-  hasError.value = false
-})
+watch(
+  [safeNodeSrc, safeFallbackSrc, () => props.node.loading],
+  () => {
+    imageLoaded.value = false
+    hasError.value = false
+
+    if (props.node.loading) {
+      activeSrc.value = safeNodeSrc.value
+      imageStage.value = 'primary'
+      return
+    }
+
+    if (safeNodeSrc.value) {
+      activeSrc.value = safeNodeSrc.value
+      imageStage.value = 'primary'
+      return
+    }
+
+    if (safeFallbackSrc.value) {
+      activeSrc.value = safeFallbackSrc.value
+      imageStage.value = 'fallback'
+      return
+    }
+
+    activeSrc.value = ''
+    imageStage.value = 'failed'
+    hasError.value = true
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
   <transition name="img-switch" mode="out-in">
     <img
-      v-if="!node.loading && !hasError"
+      v-if="showImage"
       key="image"
       :src="displaySrc"
       :alt="String(props.node.alt ?? props.node.title ?? '')"
@@ -87,7 +121,7 @@ watch(displaySrc, () => {
     >
 
     <span
-      v-else-if="!hasError"
+      v-else-if="node.loading && !hasError"
       key="placeholder"
       class="placeholder-layer placeholder-layer--inline inline-flex items-center justify-center gap-2"
     >
@@ -102,7 +136,7 @@ watch(displaySrc, () => {
       </template>
     </span>
 
-    <span v-else-if="!node.loading && !props.fallbackSrc" key="error" class="image-node__error image-node__error--inline px-4 py-2 bg-gray-100 flex items-center justify-center rounded-lg gap-2 text-red-500">
+    <span v-else-if="showError" key="error" class="image-node__error image-node__error--inline px-4 py-2 bg-gray-100 flex items-center justify-center rounded-lg gap-2 text-red-500">
       <slot name="error" :node="props.node" :display-src="displaySrc" :image-loaded="imageLoaded" :has-error="hasError" :fallback-src="props.fallbackSrc" :lazy="props.lazy">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><!-- Icon from TDesign Icons by TDesign - https://github.com/Tencent/tdesign-icons/blob/main/LICENSE --><path fill="currentColor" d="M2 2h20v10h-2V4H4v9.586l5-5L14.414 14L13 15.414l-4-4l-5 5V20h8v2H2zm13.547 5a1 1 0 1 0 0 2a1 1 0 0 0 0-2m-3 1a3 3 0 1 1 6 0a3 3 0 0 1-6 0m3.625 6.757L19 17.586l2.828-2.829l1.415 1.415L20.414 19l2.829 2.828l-1.415 1.415L19 20.414l-2.828 2.829l-1.415-1.415L17.586 19l-2.829-2.828z" /></svg>
         <span class="text-sm whitespace-nowrap">{{ t('image.loadError') }}</span>

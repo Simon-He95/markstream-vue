@@ -11,7 +11,7 @@ export function parseParagraph(
 
   return {
     type: 'paragraph',
-    children: parseInlineTokens(paragraphContentToken.children || [], paragraphContent, undefined, options as any),
+    children: parseInlineTokens(paragraphContentToken.children || [], paragraphContent, undefined, options),
     raw: paragraphContent,
   }
 }

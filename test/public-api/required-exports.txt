@@ -1,0 +1,136 @@
+# Required public exports.
+# required-exports.txt protects stable/core exports.
+# public-api.snapshot.txt tracks the full currently visible export surface,
+# including legacy and experimental exports. Snapshot drift only fails when
+# PUBLIC_API_STRICT=true.
+# This file lists exports that must always be present even if snapshot update is requested.
+# One export name per line. Lines starting with # are comments. Blank lines ignored.
+#
+# Components (user-facing Vue components)
+AdmonitionNode
+BlockquoteNode
+CheckboxNode
+CodeBlockNode
+D2BlockNode
+DefinitionListNode
+EmojiNode
+EmphasisNode
+FootnoteAnchorNode
+FootnoteNode
+FootnoteReferenceNode
+HardBreakNode
+HeadingNode
+HighlightNode
+HtmlBlockNode
+HtmlInlineNode
+ImageNode
+InfographicBlockNode
+InlineCodeNode
+InsertNode
+LinkNode
+ListItemNode
+ListNode
+MarkdownCodeBlockNode
+MarkdownRender
+MathBlockNode
+MathInlineNode
+MermaidBlockNode
+ParagraphNode
+PreCodeNode
+ReferenceNode
+StrikethroughNode
+StrongNode
+SubscriptNode
+SuperscriptNode
+TableNode
+TextNode
+ThematicBreakNode
+Tooltip
+VmrContainerNode
+VueRendererMarkdown
+
+# Configuration & control functions
+clearGlobalCustomComponents
+clearRegisteredMarkdownPlugins
+disableD2
+disableKatex
+disableMermaid
+enableD2
+enableKatex
+enableMermaid
+getCustomNodeComponents
+getMarkdown
+isD2Enabled
+isKatexEnabled
+isMermaidEnabled
+removeCustomComponents
+setCustomComponents
+setD2Loader
+setDefaultI18nMap
+setDefaultMathOptions
+setKatexLoader
+setMermaidLoader
+useSmoothMarkdownStream
+registerMarkdownPlugin
+
+# Icon theming
+getRegisteredThemes
+registerIconTheme
+setIconTheme
+setLanguageIconResolver
+
+# Parsing
+parseMarkdownToStructure
+
+# Worker CDN constructors (public subpath exports)
+createKaTeXWorkerFromCDN
+createMermaidWorkerFromCDN
+
+# Safe RAF (public subpath export)
+safeRaf
+safeCancelRaf
+
+# Key public types that appear in component props and function signatures
+CodeBlockNodeProps
+CodeBlockPreviewPayload
+CodeBlockThemeProp
+CodeBlockMonacoLanguage
+CodeBlockMonacoOptions
+CodeBlockMonacoTheme
+CodeBlockMonacoThemeObject
+CodeBlockDiffAppearance
+CodeBlockDiffHideUnchangedRegions
+CodeBlockDiffHideUnchangedRegionsOptions
+CodeBlockDiffHunkActionContext
+CodeBlockDiffHunkActionKind
+CodeBlockDiffHunkSide
+CodeBlockDiffLineStyle
+CodeBlockDiffUnchangedRegionStyle
+CustomComponentAttrs
+CustomComponentNode
+CustomComponents
+D2BlockNodeProps
+D2Loader
+HtmlPolicy
+IconTheme
+ImageNodeProps
+InfographicBlockNodeProps
+KatexLoader
+LinkNodeProps
+MarkdownCodeBlockPreviewPayload
+MarkstreamVuePluginOptions
+MathBlockNodeProps
+MathInlineNodeProps
+MathOptions
+MermaidBlockEvent
+MermaidBlockNodeProps
+MermaidLoader
+NodeRendererProps
+PreCodeNodeProps
+SmoothMarkdownStreamController
+SmoothMarkdownStreamOptions
+MarkdownIt
+MarkdownPluginRegistration
+
+# Default export
+default

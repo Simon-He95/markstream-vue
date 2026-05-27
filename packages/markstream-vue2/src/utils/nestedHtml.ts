@@ -1,11 +1,15 @@
-import type { BaseNode, CustomComponentAttrs, ParsedNode } from 'stream-markdown-parser'
+import type { BaseNode, CustomComponentAttrs, HtmlPolicy, ParsedNode } from 'stream-markdown-parser'
 import {
   DANGEROUS_HTML_ATTRS,
   getMarkdown,
+  isHtmlTagBlocked,
   isUnsafeHtmlUrl,
   NON_STRUCTURING_HTML_TAGS,
   normalizeCustomHtmlTagName,
   normalizeCustomHtmlTags,
+  sanitizeHtmlContent,
+  sanitizeImageSrc,
+  shouldOpenLinkInNewTab,
   URL_HTML_ATTRS,
 } from 'stream-markdown-parser'
 
@@ -17,6 +21,7 @@ export interface NestedMarkdownHtmlOptions {
   cacheKey?: string
   customHtmlTags?: readonly string[]
   allowHtml?: boolean
+  htmlPolicy?: HtmlPolicy
   customNodeTag?: string
   customNodeClass?: NestedClassValue | ((node: NestedRenderableNode) => NestedClassValue)
 }
@@ -29,7 +34,7 @@ export interface NestedMarkdownHtmlInput {
 
 interface RenderContext {
   markdown: ReturnType<typeof getMarkdown>
-  options: Required<Pick<NestedMarkdownHtmlOptions, 'allowHtml' | 'customNodeTag'>> & Pick<NestedMarkdownHtmlOptions, 'customNodeClass'>
+  options: Required<Pick<NestedMarkdownHtmlOptions, 'allowHtml' | 'customNodeTag' | 'htmlPolicy'>> & Pick<NestedMarkdownHtmlOptions, 'customNodeClass'>
 }
 
 const DEFAULT_CACHE_KEY = 'markstream-vue2-nested-html'
@@ -47,6 +52,7 @@ const KNOWN_NODE_TYPES = new Set([
   'emphasis',
   'footnote',
   'footnote_reference',
+  'footnote_anchor',
   'hardbreak',
   'heading',
   'highlight',
@@ -113,6 +119,7 @@ function createRenderContext(options: NestedMarkdownHtmlOptions): RenderContext 
     markdown,
     options: {
       allowHtml: options.allowHtml !== false,
+      htmlPolicy: options.htmlPolicy ?? 'safe',
       customNodeTag: normalizeCustomHtmlTagName(options.customNodeTag) || DEFAULT_CUSTOM_NODE_TAG,
       customNodeClass: options.customNodeClass,
     },
@@ -201,6 +208,8 @@ function renderNodeToHtml(node: NestedRenderableNode | null | undefined, ctx: Re
       return renderFootnoteNode(node, ctx)
     case 'footnote_reference':
       return renderFootnoteReferenceNode(node)
+    case 'footnote_anchor':
+      return renderFootnoteAnchorNode(node)
     case 'admonition':
       return renderAdmonitionNode(node, ctx)
     case 'checkbox':
@@ -229,12 +238,16 @@ function renderLinkNode(node: NestedRenderableNode, ctx: RenderContext): string 
     ? renderNodesToHtml(getNodeList(node.children), ctx)
     : escapeHtml(getString(node.text || href))
   const titleAttr = title ? ` title="${escapeAttr(title)}"` : ''
-  const hrefAttr = href ? ` href="${escapeAttr(href)}"` : ''
-  return `<a${hrefAttr}${titleAttr} target="_blank" rel="noreferrer noopener">${content}</a>`
+  const safeHref = href && !isUnsafeHtmlUrl(href) ? href : ''
+  const hrefAttr = safeHref ? ` href="${escapeAttr(safeHref)}"` : ''
+  const externalAttrs = shouldOpenLinkInNewTab(safeHref) ? ' target="_blank" rel="noreferrer noopener"' : ''
+  return `<a${hrefAttr}${titleAttr}${externalAttrs}>${content}</a>`
 }
 
 function renderImageNode(node: NestedRenderableNode): string {
-  const src = getString(node.src)
+  const src = sanitizeImageSrc(node.src)
+  if (!src)
+    return ''
   const alt = getString(node.alt)
   const title = getString(node.title)
   const titleAttr = title ? ` title="${escapeAttr(title)}"` : ''
@@ -290,13 +303,18 @@ function renderDefinitionItemNode(node: NestedRenderableNode, ctx: RenderContext
 
 function renderFootnoteNode(node: NestedRenderableNode, ctx: RenderContext): string {
   const id = escapeAttr(getString(node.id))
-  return `<div id="fnref--${id}" class="markstream-nested-footnote">${renderNodesToHtml(getNodeList(node.children), ctx)}</div>`
+  return `<div id="fnref--${id}" class="footnote-node markstream-nested-footnote"><div class="footnote-node__content">${renderNodesToHtml(getNodeList(node.children), ctx)}</div></div>`
 }
 
 function renderFootnoteReferenceNode(node: NestedRenderableNode): string {
   const id = escapeHtml(getString(node.id))
   const href = escapeAttr(getString(node.id))
-  return `<sup class="markstream-nested-footnote-ref"><a href="#fnref--${href}">[${id}]</a></sup>`
+  return `<sup id="fnref-${href}" class="footnote-reference markstream-nested-footnote-ref"><span href="#fnref--${href}" title="查看脚注 ${href}" class="footnote-link cursor-pointer">[${id}]</span></sup>`
+}
+
+function renderFootnoteAnchorNode(node: NestedRenderableNode): string {
+  const id = escapeAttr(getString(node.id))
+  return `<a class="footnote-anchor" href="#fnref-${id}" title="返回引用 ${id}" aria-label="返回引用 ${id}">↩︎</a>`
 }
 
 function renderAdmonitionNode(node: NestedRenderableNode, ctx: RenderContext): string {
@@ -312,13 +330,15 @@ function renderHtmlNode(node: NestedRenderableNode, ctx: RenderContext): string 
   const children = getNodeList(node.children)
   if (!ctx.options.allowHtml)
     return escapeHtml(rawContent)
+  if (ctx.options.htmlPolicy === 'escape')
+    return escapeHtml(rawContent)
   if (node.loading && !node.autoClosed)
     return escapeHtml(rawContent)
-  if (tag && children.length > 0 && !NON_STRUCTURING_HTML_TAGS.has(tag)) {
+  if (tag && children.length > 0 && !NON_STRUCTURING_HTML_TAGS.has(tag) && !isHtmlTagBlocked(tag, ctx.options.htmlPolicy)) {
     const attrs = serializeAttrs(node.attrs as CustomComponentAttrs | undefined)
     return `<${tag}${attrs}>${renderNodesToHtml(children, ctx)}</${tag}>`
   }
-  return rawContent
+  return sanitizeHtmlContent(rawContent, ctx.options.htmlPolicy)
 }
 
 function renderCustomOrFallbackNode(node: NestedRenderableNode, ctx: RenderContext): string {
@@ -385,7 +405,7 @@ function serializeAttrs(attrs?: CustomComponentAttrs | null, extraClass = ''): s
       continue
     if (DANGEROUS_HTML_ATTRS.has(lowerName))
       continue
-    if (value !== true && URL_HTML_ATTRS.has(lowerName) && value && isUnsafeHtmlUrl(String(value)))
+    if (value !== true && URL_HTML_ATTRS.has(lowerName) && value && isUnsafeHtmlUrl(String(value), { attrName: lowerName }))
       continue
     if (lowerName === 'class') {
       mergedClasses.push(String(value))

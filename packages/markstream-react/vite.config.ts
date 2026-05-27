@@ -100,6 +100,7 @@ export default defineConfig(({ mode }) => {
           'stream-monaco',
           'stream-markdown',
           'stream-markdown-parser',
+          'markstream-core',
           '@antv/infographic',
           '@terrastruct/d2',
           '@floating-ui/dom',

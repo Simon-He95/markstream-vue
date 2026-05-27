@@ -1,7 +1,17 @@
-let infographicPromise: Promise<any> | null = null
+let infographicPromise: Promise<InfographicConstructor | null> | null = null
 let infographicInstance: any = null
 
-export async function getInfographic() {
+export interface InfographicInstance {
+  render: (source: string) => unknown
+  destroy?: () => unknown
+  on?: (event: string, handler: (payload: unknown) => void) => unknown
+}
+
+export interface InfographicConstructor {
+  new (options: { container: HTMLElement, width?: string | number, height?: string | number }): InfographicInstance
+}
+
+export async function getInfographic(): Promise<InfographicConstructor | null> {
   if (infographicInstance)
     return infographicInstance
   if (infographicPromise)
@@ -24,7 +34,7 @@ export async function getInfographic() {
       }
 
       infographicInstance = resolved
-      return resolved
+      return resolved as InfographicConstructor
     })
     .catch((error) => {
       console.warn('[markstream-angular] Failed to load @antv/infographic', error)

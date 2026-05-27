@@ -1,4 +1,20 @@
-export type MermaidLoader = () => Promise<any> | any
+export interface MermaidModule {
+  render: (id: string, source: string) => Promise<MermaidRenderResult> | MermaidRenderResult
+  parse?: (source: string) => Promise<unknown> | unknown
+  initialize?: (config?: Record<string, unknown>) => unknown
+  mermaidAPI?: {
+    render?: MermaidModule['render']
+    parse?: MermaidModule['parse']
+    initialize?: MermaidModule['initialize']
+  }
+}
+
+export type MermaidRenderResult = string | {
+  svg?: string
+  bindFunctions?: (element: Element) => unknown
+}
+
+export type MermaidLoader = () => Promise<unknown> | unknown
 
 const defaultMermaidLoader: MermaidLoader = () => import('mermaid')
 
@@ -62,14 +78,14 @@ function normalizeMermaidModule(mod: any) {
         // otherwise try mermaidAPI.initialize
         return api.initialize ? api.initialize(opts) : undefined
       },
-    }
+    } as MermaidModule
   }
 
   if ((mod as any).mermaid && typeof (mod as any).mermaid.render === 'function')
-    return (mod as any).mermaid
+    return (mod as any).mermaid as MermaidModule
 
   // fallback: use candidate as-is; it may still work or we'll surface a runtime error later
-  return candidate
+  return candidate as MermaidModule
 }
 
 function patchInitialize(target: any) {
@@ -97,7 +113,7 @@ function patchInitialize(target: any) {
   }
 }
 
-export async function getMermaid() {
+export async function getMermaid(): Promise<MermaidModule | null> {
   if (cachedMermaid)
     return cachedMermaid
 

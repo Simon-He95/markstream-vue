@@ -148,6 +148,62 @@ describe('markstream-angular html renderer', () => {
     expect(html).not.toContain('alert(1)')
   })
 
+  it('blocks active html tags by default and supports trusted or escape htmlPolicy', () => {
+    const safeHtml = sanitizeHtmlFragment('<div>Safe</div><iframe src="https://example.com"></iframe><form><input name="q"></form>')
+
+    expect(safeHtml).toContain('<div>Safe</div>')
+    expect(safeHtml).not.toContain('<iframe')
+    expect(safeHtml).not.toContain('<form')
+    expect(safeHtml).not.toContain('<input')
+
+    const trustedHtml = sanitizeHtmlFragment('<iframe src="https://example.com"></iframe>', 'trusted')
+    expect(trustedHtml).toContain('<iframe src="https://example.com">')
+
+    const escapedHtml = sanitizeHtmlFragment('<div>Escaped</div>', 'escape')
+    expect(escapedHtml).toBe('&lt;div&gt;Escaped&lt;/div&gt;')
+  })
+
+  it('applies htmlPolicy in static angular rendering helpers', () => {
+    const escapedHtml = renderMarkdownToHtml({
+      content: '<div>x</div>',
+      final: true,
+      htmlPolicy: 'escape',
+    })
+    const trustedHtml = renderMarkdownToHtml({
+      content: '<iframe src="https://example.com"></iframe>',
+      final: true,
+      htmlPolicy: 'trusted',
+    })
+
+    expect(escapedHtml).toContain('&lt;div&gt;x&lt;/div&gt;')
+    expect(trustedHtml).toContain('<iframe src="https://example.com"></iframe>')
+  })
+
+  it('escapes unknown tags and strips safe-policy style/srcset hazards', () => {
+    const safeHtml = sanitizeHtmlFragment('<unknown-tag style="position:fixed">Hello</unknown-tag><img src="cover.jpg" srcset="javascript:alert(1) 1x, cover-2x.jpg 2x"><span style="color:red">World</span>')
+
+    expect(safeHtml).toContain('&lt;unknown-tag style="position:fixed"&gt;Hello&lt;/unknown-tag&gt;')
+    expect(safeHtml).toContain('<img src="cover.jpg">')
+    expect(safeHtml).toContain('<span>World</span>')
+    expect(safeHtml).not.toContain('srcset=')
+    expect(safeHtml).not.toContain('<span style=')
+  })
+
+  it('omits unsafe link hrefs in static html rendering', () => {
+    const html = renderMarkdownNodeToHtml({
+      type: 'link',
+      href: 'javascript:alert(1)',
+      title: null,
+      text: 'Unsafe',
+      children: [],
+    } as any)
+
+    expect(html).toContain('<a')
+    expect(html).toContain('Unsafe')
+    expect(html).not.toContain('href=')
+    expect(html).not.toContain('javascript:')
+  })
+
   it('renders structured html wrappers while leaving blocked tags on the sanitized fallback path', () => {
     const structuredHtml = renderMarkdownNodeToHtml(
       {
@@ -178,8 +234,9 @@ describe('markstream-angular html renderer', () => {
       } as any,
     )
 
-    expect(structuredHtml).toContain('<span style="font-size: 12px;">')
+    expect(structuredHtml).toContain('<span>')
     expect(structuredHtml).toContain('<ul><li>alpha</li><li>beta</li></ul>')
+    expect(structuredHtml).not.toContain('style=')
 
     const blockedHtml = renderMarkdownNodeToHtml(
       {
@@ -241,11 +298,13 @@ describe('markstream-angular html renderer', () => {
       {
         type: 'html_block',
         tag: 'a',
-        raw: '<a href="javascript:alert(1)" onclick="alert(1)" data-safe="ok"></a>',
-        content: '<a href="javascript:alert(1)" onclick="alert(1)" data-safe="ok"></a>',
+        raw: '<a href="javascript:alert(1)" onclick="alert(1)" target="_blank" rel="opener nofollow" data-safe="ok"></a>',
+        content: '<a href="javascript:alert(1)" onclick="alert(1)" target="_blank" rel="opener nofollow" data-safe="ok"></a>',
         attrs: [
           ['href', 'javascript:alert(1)'],
           ['onclick', 'alert(1)'],
+          ['target', '_blank'],
+          ['rel', 'opener nofollow'],
           ['data-safe', 'ok'],
         ],
         children: [
@@ -261,6 +320,9 @@ describe('markstream-angular html renderer', () => {
     expect(html).toContain('<a data-safe="ok">')
     expect(html).toContain('<p>safe child</p>')
     expect(html).not.toContain('onclick=')
+    expect(html).not.toContain('target=')
+    expect(html).not.toContain('rel=')
+    expect(html).not.toContain('rel="opener')
     expect(html).not.toContain('javascript:')
   })
 })

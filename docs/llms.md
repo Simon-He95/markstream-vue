@@ -80,7 +80,7 @@ From `stream-markdown-parser` (`packages/markdown-parser/src/index.ts`):
 
 When “it doesn’t render” or “looks wrong”, check these in order:
 
-1) **CSS order/reset**: reset first, then `markstream-vue/index.css` (Tailwind usually inside `@layer components`).
+1) **CSS order/reset**: reset first, then `markstream-vue/index.css` (Tailwind: use `@import 'markstream-vue/index.css' layer(components);`).
 2) **Optional peer installed** (Mermaid/KaTeX/Monaco/Shiki).
 3) **Loader enabled** if you disabled or override it: `enableMermaid()` / `enableKatex()`.
 4) **Peer CSS imported** where required: `katex/dist/katex.min.css` (Mermaid does not require extra CSS).
@@ -109,7 +109,7 @@ Use these as “answer skeletons”: quick steps + minimal repro questions + whe
 - Signals: “unstyled”, “Tailwind overrides”, “looks wrong”
 - Steps:
   - Ensure reset loads before `markstream-vue/index.css`
-  - Tailwind: import library CSS inside `@layer components`
+  - Tailwind: use `@import 'markstream-vue/index.css' layer(components);`
   - If using standalone node components, wrap `.markstream-vue`
 - Ask: “Paste `main.css` (Tailwind layers) + where you import `markstream-vue/index.css`.”
 - Docs: `docs/guide/tailwind.md`, `docs/guide/troubleshooting.md`

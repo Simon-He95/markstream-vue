@@ -31,9 +31,32 @@ You can jump in at any stage:
 
 Both helpers are framework-agnostic and can run in Node or the browser. For large documents you can reuse the `md` instance between parses to avoid re-initializing plugins.
 
+> Warning: `parseMarkdownToStructure` defaults to `streamParse: 'auto'`: compatible `md` instances use `md.stream.parse` for non-final top-level parses and retain the latest source/token cache. Final one-shot parses use the regular parser unless you pass `{ streamParse: true }`; pass `{ streamParse: false }` to opt out. If you reuse one `md` instance for unrelated one-shot documents, pass `{ final: true }` or `{ streamParse: false }`.
+
+```ts
+const oneShotNodes = parseMarkdownToStructure(source, md, { final: true })
+```
+
 ## Custom components & scoping
 
-Use `setCustomComponents(customId?, mapping)` to override any node renderer. Pair it with the `custom-id` prop on `MarkdownRender` so replacements stay scoped.
+For SSR, prefer app-scoped registration through `VueRendererMarkdown`:
+
+```ts
+import { VueRendererMarkdown } from 'markstream-vue'
+import { createApp } from 'vue'
+import App from './App.vue'
+import ThinkingNode from './ThinkingNode.vue'
+
+createApp(App).use(VueRendererMarkdown, {
+  components: {
+    thinking: ThinkingNode,
+  },
+})
+```
+
+This map is stored on the Vue app instance, so concurrent SSR requests do not share custom components.
+
+Use `setCustomComponents(customId?, mapping)` to override any node renderer in older integrations. Pair it with the `custom-id` prop on `MarkdownRender` so replacements stay scoped.
 
 ```ts twoslash
 import type { Component } from 'vue'
@@ -107,13 +130,15 @@ Hooks remain useful if you want to reshape the emitted `thinking` node (strip wr
 Besides the core renderer and parser helpers, the package exposes:
 
 - `CodeBlockNode`, `MarkdownCodeBlockNode`, `MermaidBlockNode`, `MathBlockNode`, `ImageNode`, etc. — see [Components](/guide/components) for their props and CSS requirements.
+- `useSmoothMarkdownStream(options?)` — adapts bursty source chunks into a stable `visible` Markdown stream with `final`/`pendingChars` state.
+- `sanitizeImageSrc(value)` — applies the built-in strict image URL policy when custom image components need the same behavior.
 - `VueRendererMarkdown` (global component plugin) and shared type exports (component prop interfaces, parser types).
 
 For parser types and hooks, see [/guide/parser-api](/guide/parser-api) (or the `stream-markdown-parser` README on npm).
 
 ## Styling + troubleshooting reminders
 
-- Always include a reset before `markstream-vue/index.css` and wrap it with `@layer components` when using Tailwind or UnoCSS. See the [Tailwind guide](/guide/tailwind) and the [CSS checklist](/guide/troubleshooting#css-looks-wrong-start-here).
+- Always include a reset before `markstream-vue/index.css` and use `@import '...' layer(components)` when using Tailwind or UnoCSS. See the [Tailwind guide](/guide/tailwind) and the [CSS checklist](/guide/troubleshooting#css-looks-wrong-start-here).
 - Code/graph peers: KaTeX needs its own CSS import; Mermaid does not. Missing KaTeX styles often manifest as invisible formulas.
 - Use `custom-id` to scope overrides and avoid global selector conflicts.
 

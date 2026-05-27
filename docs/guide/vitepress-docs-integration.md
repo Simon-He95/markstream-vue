@@ -100,9 +100,7 @@ If your docs theme uses custom CSS, import `markstream-vue/index.css` in the the
 ```css
 /* docs/.vitepress/theme/style.css */
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 
 [data-custom-id='docs'] .prose {
   max-width: 72ch;
@@ -112,7 +110,7 @@ If your docs theme uses custom CSS, import `markstream-vue/index.css` in the the
 Practical rules:
 
 - if your site has a reset, load it before this import
-- if you use Tailwind or UnoCSS, keep the import inside `@layer components`
+- if you use Tailwind or UnoCSS, use `@import '...' layer(components)`
 - if you use KaTeX, also import `katex/dist/katex.min.css`
 
 Go deeper: [Tailwind Integration & Style Ordering](/guide/tailwind)

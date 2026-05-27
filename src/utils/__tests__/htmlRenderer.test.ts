@@ -78,12 +78,24 @@ describe('htmlRenderer', () => {
       const attrs = {
         'class': 'test-class',
         'id': 'test-id',
-        'style': 'color: red;',
         'data-type': 'custom',
         'aria-label': 'Test',
       }
       const result = sanitizeAttrs(attrs)
       expect(result).toEqual(attrs)
+    })
+
+    it('should remove style by default but preserve safe srcset candidates', () => {
+      const result = sanitizeAttrs({
+        'style': 'color: red;',
+        'srcset': 'cover-1x.jpg 1x, cover-2x.jpg 2x',
+        'data-type': 'custom',
+      })
+
+      expect(result).toEqual({
+        'srcset': 'cover-1x.jpg 1x, cover-2x.jpg 2x',
+        'data-type': 'custom',
+      })
     })
 
     it('should handle empty attributes', () => {
@@ -270,6 +282,27 @@ describe('htmlRenderer', () => {
       const nodes = parseHtmlToVNodes('', {})
       expect(nodes).toEqual([])
     })
+
+    it('should preserve custom components while keeping unknown tags as literal text in safe mode', () => {
+      const nodes = parseHtmlToVNodes('<mycomp data-type="test">ok</mycomp><unknown-tag>keep</unknown-tag>', {
+        mycomp: MockComponentA,
+      })
+
+      expect(nodes).not.toBeNull()
+      const stringNodes = (nodes || []).filter((node): node is string => typeof node === 'string')
+      expect(stringNodes).toEqual(['<unknown-tag>', 'keep', '</unknown-tag>'])
+      expect((nodes || []).some((node: any) => typeof node === 'object' && typeof node?.type !== 'string')).toBe(true)
+    })
+
+    it('should keep self-closing unknown tags literal in safe mode', () => {
+      const nodes = parseHtmlToVNodes('<mycomp data-type="test">ok</mycomp><unknown-tag />', {
+        mycomp: MockComponentA,
+      })
+
+      expect(nodes).not.toBeNull()
+      const stringNodes = (nodes || []).filter((node): node is string => typeof node === 'string')
+      expect(stringNodes).toContain('<unknown-tag />')
+    })
   })
 
   describe('hasCustomComponents', () => {
@@ -401,8 +434,10 @@ describe('htmlRenderer', () => {
         'onclick',
         'onerror',
         'onload',
+        'onanimationstart',
         'onmouseover',
         'onmouseout',
+        'onpointerover',
         'ontouchstart',
         'onwheel',
         'onscroll',
@@ -423,7 +458,7 @@ describe('htmlRenderer', () => {
     })
 
     it('should allow safe data URLs for media', () => {
-      const result = sanitizeAttrs({ src: 'data:image/png;base64,iVBORw0KGgo=' })
+      const result = sanitizeAttrs({ src: 'data:image/png;base64,iVBORw0KGgo=' }, 'safe', 'img')
       expect(result.src).toBe('data:image/png;base64,iVBORw0KGgo=')
     })
 
@@ -469,6 +504,29 @@ describe('htmlRenderer', () => {
       expect(nodes).not.toBeNull()
       const hasScript = (nodes || []).some((n: any) => typeof n === 'object' && n && n.type === 'script')
       expect(hasScript).toBe(false)
+    })
+
+    it('should drop safe-policy blocked tags from VNode output', () => {
+      const html = '<iframe src="https://example.com"></iframe><div>ok</div>'
+      const nodes = parseHtmlToVNodes(html, {})
+      expect(nodes).not.toBeNull()
+      expect((nodes || []).some((n: any) => typeof n === 'object' && n?.type === 'iframe')).toBe(false)
+      expect((nodes || []).some((n: any) => typeof n === 'object' && n?.type === 'div')).toBe(true)
+    })
+
+    it('should preserve broader tags for trusted VNode output', () => {
+      const html = '<iframe src="https://example.com"></iframe><div>ok</div>'
+      const nodes = parseHtmlToVNodes(html, {}, 'trusted')
+      expect(nodes).not.toBeNull()
+      expect((nodes || []).some((n: any) => typeof n === 'object' && n?.type === 'iframe')).toBe(true)
+    })
+
+    it('should not render unknown tags as live VNodes in safe mode', () => {
+      const html = '<unknown-tag>ok</unknown-tag><div>safe</div>'
+      const nodes = parseHtmlToVNodes(html, {})
+      expect(nodes).not.toBeNull()
+      expect((nodes || []).some((n: any) => typeof n === 'object' && n?.type === 'unknown-tag')).toBe(false)
+      expect((nodes || []).some((n: any) => typeof n === 'object' && n?.type === 'div')).toBe(true)
     })
   })
 })

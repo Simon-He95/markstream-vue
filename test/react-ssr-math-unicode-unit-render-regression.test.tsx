@@ -5,7 +5,7 @@
 import { createRequire } from 'node:module'
 import { describe, expect, it } from 'vitest'
 
-const packageRequire = createRequire(new URL('../packages/markstream-react/package.json', import.meta.url))
+const packageRequire = createRequire(new URL('../package.json', import.meta.url))
 const React = packageRequire('react') as typeof import('react')
 const { renderToStaticMarkup } = packageRequire('react-dom/server') as typeof import('react-dom/server')
 

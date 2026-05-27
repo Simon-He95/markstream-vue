@@ -7,7 +7,7 @@ import { defineConfig } from 'vitepress'
 
 const docsSiteUrl = 'https://markstream-vue-docs.simonhe.me'
 const docsOgImageUrl = `${docsSiteUrl}/og-image.svg`
-const docsDefaultDescription = 'Streaming-friendly Markdown renderer for Vue 3, Vue 2, React, and Angular'
+const docsDefaultDescription = 'Streaming-friendly Markdown renderer for Vue 3, Vue 2, React, Angular, and Svelte'
 const githubRepoUrl = 'https://github.com/Simon-He95/markstream-vue'
 const docsRootDir = fileURLToPath(new URL('..', import.meta.url))
 const workspaceRootDir = fileURLToPath(new URL('../..', import.meta.url))
@@ -20,6 +20,7 @@ const markdownParserSrcDir = path.dirname(markdownParserSrc)
 const playgroundItems = [
   { text: 'Vue 3', link: 'https://markstream-vue.simonhe.me/' },
   { text: 'React', link: 'https://markstream-react.pages.dev/' },
+  { text: 'Svelte', link: 'https://markstream-svelte.pages.dev/' },
   { text: 'Nuxt', link: 'https://markstream-nuxt.pages.dev/' },
   { text: 'Vue 2', link: 'https://markstream-vue2.pages.dev/' },
   { text: 'Angular', link: 'https://markstream-angular.pages.dev/' },
@@ -54,10 +55,12 @@ const englishGuideSidebar = [
       { text: 'Usage & Streaming', link: '/guide/usage' },
       { text: 'Docs Site & VitePress', link: '/guide/vitepress-docs-integration' },
       { text: 'AI Chat & Streaming', link: '/guide/ai-chat-streaming' },
+      { text: 'Security', link: '/guide/security' },
       { text: 'Troubleshooting by Symptom', link: '/guide/troubleshooting-path' },
       { text: 'Props & Options', link: '/guide/props' },
       { text: 'Features Overview', link: '/guide/features' },
       { text: 'Examples', link: '/guide/examples' },
+      { text: 'Showcase', link: '/guide/showcase' },
       { text: 'Playground', link: '/guide/playground' },
     ],
   },
@@ -67,6 +70,7 @@ const englishGuideSidebar = [
       { text: 'Renderer & Node Components', link: '/guide/components' },
       { text: 'Override Built-in Components', link: '/guide/component-overrides' },
       { text: 'Custom Tags & Advanced Components', link: '/guide/custom-components' },
+      { text: 'YAML Front Matter', link: '/guide/frontmatter-cookbook' },
       { text: 'Advanced Parser Hooks', link: '/guide/advanced' },
       { text: 'Parser Overview', link: '/guide/parser' },
       { text: 'Parser API', link: '/guide/parser-api' },
@@ -106,6 +110,7 @@ const englishGuideSidebar = [
       { text: 'React Components', link: '/guide/react-components' },
       { text: 'Migrate from react-markdown', link: '/guide/react-markdown-migration' },
       { text: 'Migration Cookbook', link: '/guide/react-markdown-migration-cookbook' },
+      { text: 'Svelte Quick Start', link: '/guide/svelte' },
       { text: 'Angular Quick Start', link: '/guide/angular-quick-start' },
       { text: 'Angular Installation', link: '/guide/angular-installation' },
       { text: 'AI / Skills workflows', link: '/guide/ai-workflows' },
@@ -117,6 +122,9 @@ const englishGuideSidebar = [
     items: [
       { text: 'API Overview', link: '/guide/api' },
       { text: 'Performance', link: '/guide/performance' },
+      { text: '1.0 Benchmark Report', link: '/guide/benchmark-1-0' },
+      { text: '1.0 Release Readiness', link: '/guide/release-1-0' },
+      { text: 'Migrating to 1.0', link: '/guide/migration-1-0' },
       { text: 'Why use it?', link: '/guide/why' },
       { text: 'Compared', link: '/guide/compared' },
       { text: 'Monaco Internals', link: '/guide/monaco-internals' },
@@ -136,10 +144,12 @@ const chineseGuideSidebar = [
       { text: '使用与流式渲染', link: '/zh/guide/usage' },
       { text: '文档站与 VitePress 集成', link: '/zh/guide/vitepress-docs-integration' },
       { text: 'AI 聊天与流式输出', link: '/zh/guide/ai-chat-streaming' },
+      { text: '安全', link: '/zh/guide/security' },
       { text: '按症状排查', link: '/zh/guide/troubleshooting-path' },
       { text: 'Props 与选项', link: '/zh/guide/props' },
       { text: '功能特性', link: '/zh/guide/features' },
       { text: '示例', link: '/zh/guide/examples' },
+      { text: 'Showcase', link: '/zh/guide/showcase' },
       { text: 'Playground', link: '/zh/guide/playground' },
     ],
   },
@@ -149,6 +159,7 @@ const chineseGuideSidebar = [
       { text: '渲染器与节点组件', link: '/zh/guide/components' },
       { text: '覆盖内置组件', link: '/zh/guide/component-overrides' },
       { text: '自定义标签与高级组件', link: '/zh/guide/custom-components' },
+      { text: 'YAML Front Matter', link: '/zh/guide/frontmatter-cookbook' },
       { text: '高级解析', link: '/zh/guide/advanced' },
       { text: '解析器概览', link: '/zh/guide/parser' },
       { text: '解析器 API', link: '/zh/guide/parser-api' },
@@ -188,6 +199,7 @@ const chineseGuideSidebar = [
       { text: 'React 组件', link: '/zh/guide/react-components' },
       { text: '从 react-markdown 迁移', link: '/zh/guide/react-markdown-migration' },
       { text: '迁移 Cookbook', link: '/zh/guide/react-markdown-migration-cookbook' },
+      { text: 'Svelte 快速开始', link: '/zh/guide/svelte' },
       { text: 'Angular 快速开始', link: '/zh/guide/angular-quick-start' },
       { text: 'Angular 安装', link: '/zh/guide/angular-installation' },
       { text: 'AI / Skills 工作流', link: '/zh/guide/ai-workflows' },
@@ -200,6 +212,9 @@ const chineseGuideSidebar = [
       { text: 'API 总览', link: '/zh/guide/api' },
       { text: '搜索', link: '/zh/guide/search' },
       { text: '性能', link: '/zh/guide/performance' },
+      { text: '1.0 Benchmark 报告', link: '/zh/guide/benchmark-1-0' },
+      { text: '1.0 发布就绪', link: '/zh/guide/release-1-0' },
+      { text: '迁移到 1.0', link: '/zh/guide/migration-1-0' },
       { text: '为什么使用？', link: '/zh/guide/why' },
       { text: '对比', link: '/zh/guide/compared' },
       { text: 'Monaco 内部', link: '/zh/guide/monaco-internals' },
@@ -210,13 +225,13 @@ const chineseGuideSidebar = [
 ]
 
 const siteHead = [
-  ['link', { rel: 'icon', href: '/logo.svg', type: 'image/svg+xml' }],
+  ['link', { rel: 'icon', href: '/app-icon.svg', type: 'image/svg+xml' }],
   ['meta', { name: 'theme-color', content: '#111827' }],
   ['meta', { name: 'robots', content: 'index,follow' }],
   ['meta', { property: 'og:type', content: 'website' }],
   ['meta', { property: 'og:site_name', content: 'markstream-vue' }],
   ['meta', { property: 'og:image', content: docsOgImageUrl }],
-  ['meta', { property: 'og:image:alt', content: 'markstream-vue documentation and playground previews' }],
+  ['meta', { property: 'og:image:alt', content: 'markstream-vue logo and documentation overview' }],
   ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
   ['meta', { name: 'twitter:image', content: docsOgImageUrl }],
 ]
@@ -579,7 +594,11 @@ export default defineConfig({
     },
   },
   themeConfig: {
-    logo: '/logo.svg',
+    logo: {
+      light: '/logo.svg',
+      dark: '/logo-dark.svg',
+      alt: 'markstream-vue',
+    },
     search: {
       provider: 'local',
     },

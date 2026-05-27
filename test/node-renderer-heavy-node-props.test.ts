@@ -85,6 +85,37 @@ const EstimatedPreviewProbe = defineComponent({
   },
 })
 
+const AnswerBox = defineComponent({
+  name: 'AnswerBox',
+  setup(_, { slots }) {
+    return () => h('section', { class: 'answer-box' }, slots.default?.())
+  },
+})
+
+const Mention = defineComponent({
+  name: 'Mention',
+  setup(_, { slots }) {
+    return () => h('span', { class: 'mention' }, slots.default?.())
+  },
+})
+
+const InlinePropsProbe = defineComponent({
+  name: 'InlinePropsProbe',
+  props: {
+    node: { type: Object, required: true },
+    loading: Boolean,
+    isDark: Boolean,
+  },
+  setup(props, { slots }) {
+    return () => h('span', {
+      'class': 'inline-props-probe',
+      'data-type': String((props.node as any)?.type ?? ''),
+      'data-loading': String(props.loading),
+      'data-is-dark': String(props.isDark),
+    }, slots.default?.())
+  },
+})
+
 afterEach(() => {
   removeCustomComponents(customId)
 })
@@ -215,6 +246,129 @@ describe('nodeRenderer heavy-node prop forwarding', () => {
     expect(exact.attributes('data-stream')).toBe('false')
     expect(generic.attributes('data-language')).toBe('ts')
     expect(generic.attributes('data-show-header')).toBe('false')
+  })
+
+  it('inherits renderer props inside custom tag default slots', async () => {
+    setCustomComponents(customId, {
+      'answer-box': AnswerBox,
+    })
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        customId,
+        content: [
+          '<answer-box>',
+          '```ts',
+          'console.log(1)',
+          '```',
+          '</answer-box>',
+          '',
+          'Inline <answer-box>[Vue](https://vuejs.org)</answer-box>',
+        ].join('\n'),
+        customHtmlTags: ['answer-box'],
+        final: true,
+        renderCodeBlocksAsPre: true,
+        showTooltips: false,
+      },
+    })
+
+    await flushAll()
+
+    const boxes = wrapper.findAll('.answer-box')
+    expect(boxes).toHaveLength(2)
+    expect(boxes[0].find('pre[data-markstream-pre="1"]').exists()).toBe(true)
+    expect(boxes[0].find('[data-markstream-code-block="1"]').exists()).toBe(false)
+    expect(boxes[0].find('code').text()).toBe('console.log(1)')
+
+    const link = boxes[1].get('a[href="https://vuejs.org"]')
+    expect(link.attributes('title')).toBe('https://vuejs.org')
+  })
+
+  it('renders custom tag slots inside inline container children', async () => {
+    setCustomComponents(customId, {
+      mention: Mention,
+    })
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        customId,
+        content: [
+          '**<mention>Simon</mention>**',
+          '',
+          '*<mention>Ada</mention>*',
+          '',
+          '# Hi <mention>Lin</mention>',
+        ].join('\n'),
+        final: true,
+        batchRendering: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    await flushAll()
+
+    expect(wrapper.get('strong .mention').text()).toBe('Simon')
+    expect(wrapper.get('em .mention').text()).toBe('Ada')
+    expect(wrapper.get('h1 .mention').text()).toBe('Lin')
+  })
+
+  it('forwards loading and isDark to inline custom tag components', async () => {
+    setCustomComponents(customId, {
+      mention: InlinePropsProbe,
+    })
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        customId,
+        isDark: true,
+        batchRendering: false,
+        deferNodesUntilVisible: false,
+        nodes: [
+          {
+            type: 'paragraph',
+            raw: '',
+            children: [
+              {
+                type: 'mention',
+                tag: 'mention',
+                content: 'Direct',
+                raw: '<mention>Direct</mention>',
+                loading: true,
+              },
+              {
+                type: 'text',
+                content: ' ',
+                raw: ' ',
+              },
+              {
+                type: 'strong',
+                raw: '**<mention>Strong</mention>**',
+                children: [
+                  {
+                    type: 'mention',
+                    tag: 'mention',
+                    content: 'Strong',
+                    raw: '<mention>Strong</mention>',
+                    loading: true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    })
+
+    await flushAll()
+
+    const probes = wrapper.findAll('.inline-props-probe')
+    expect(probes).toHaveLength(2)
+    expect(probes[0].attributes('data-loading')).toBe('true')
+    expect(probes[0].attributes('data-is-dark')).toBe('true')
+    expect(probes[0].text()).toBe('Direct')
+    expect(probes[1].attributes('data-loading')).toBe('true')
+    expect(probes[1].attributes('data-is-dark')).toBe('true')
+    expect(probes[1].text()).toBe('Strong')
   })
 
   it('lets d2lang exact overrides beat d2 fallback while keeping d2 props', async () => {

@@ -2,9 +2,44 @@ import React, { useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 
+const isDevEnv = typeof import.meta !== 'undefined' && Boolean(import.meta.env?.DEV)
+let lastWarnedDangerousSandbox: string | null = null
+
+function normalizeSandboxTokens(value: string) {
+  return new Set(
+    value
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean),
+  )
+}
+
+function warnDangerousHtmlPreviewSandbox(value: string) {
+  if (!isDevEnv || typeof console === 'undefined' || lastWarnedDangerousSandbox === value)
+    return
+  const tokens = normalizeSandboxTokens(value)
+  if (tokens.has('allow-scripts') && tokens.has('allow-same-origin')) {
+    lastWarnedDangerousSandbox = value
+    console.warn('[markstream-react] htmlPreviewSandbox contains both allow-scripts and allow-same-origin. Use this only for fully trusted content served from an isolated origin.')
+  }
+}
+
+function resolveHtmlPreviewSandboxValue(htmlPreviewSandbox: unknown, htmlPreviewAllowScripts?: boolean) {
+  if (typeof htmlPreviewSandbox === 'string') {
+    warnDangerousHtmlPreviewSandbox(htmlPreviewSandbox)
+    return htmlPreviewSandbox
+  }
+  if (htmlPreviewSandbox !== undefined)
+    return ''
+  return htmlPreviewAllowScripts === true ? 'allow-scripts' : ''
+}
+
 export interface HtmlPreviewFrameProps {
   code: string
   isDark?: boolean
+  htmlPreviewAllowScripts?: boolean
+  htmlPreviewSandbox?: string
   onClose?: () => void
   title?: string
 }
@@ -42,6 +77,10 @@ export function HtmlPreviewFrame(props: HtmlPreviewFrameProps) {
 </html>`
   }, [props.code, props.isDark])
 
+  const sandboxValue = useMemo(() => {
+    return resolveHtmlPreviewSandboxValue(props.htmlPreviewSandbox, props.htmlPreviewAllowScripts)
+  }, [props.htmlPreviewAllowScripts, props.htmlPreviewSandbox])
+
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' || event.key === 'Esc')
@@ -76,7 +115,8 @@ export function HtmlPreviewFrame(props: HtmlPreviewFrameProps) {
         </div>
         <iframe
           className="html-preview-frame__iframe"
-          sandbox="allow-scripts allow-same-origin"
+          sandbox={sandboxValue}
+          referrerPolicy="no-referrer"
           src="about:blank"
           srcDoc={srcdoc}
           title={props.title || 'Preview'}

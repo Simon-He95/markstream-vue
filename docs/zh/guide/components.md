@@ -98,7 +98,7 @@ setIconTheme('material')
 
 - **适用**：Vite/Nuxt/VitePress 中渲染整篇 Markdown。
 - **关键 props**：`content` / `nodes`、`custom-id`、`final`、`parse-options`、`custom-html-tags`
-- **CSS 顺序**：先引入 reset，再在 `@layer components` 中导入 `markstream-vue/index.css`。
+- **CSS 顺序**：先引入 reset，再使用 `@import 'markstream-vue/index.css' layer(components);`。
 
 ### CSS 作用域
 
@@ -178,9 +178,7 @@ setCustomComponents('docs', {
 @import 'modern-css-reset';
 @tailwind base;
 
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 
 [data-custom-id='docs'] .prose {
   max-width: 720px;

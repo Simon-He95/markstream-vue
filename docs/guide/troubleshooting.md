@@ -22,7 +22,7 @@ Open a new issue (quick link): https://github.com/Simon-He95/markstream-vue/issu
 
   Quick fixes:
 
-  - Import `markstream-vue/index.css` inside a `@layer components { ... }` block (see the Tailwind page). This controls style ordering.
+  - Import `markstream-vue/index.css` using `@import 'markstream-vue/index.css' layer(components);` (see the Tailwind page). This controls style ordering.
   - Consider setting a `prefix` in Tailwind config (e.g., `tw-`) to avoid collisions with component library class names.
   - Use scoped selectors or `:deep` to target only the elements you need to override.
 
@@ -69,12 +69,10 @@ Most rendering bugs are caused by style ordering, missing resets, or utility fra
 @import 'markstream-vue/index.css';
 ```
 
-2. **Use CSS layers** — When Tailwind or UnoCSS runs in `@layer components` or `utilities`, wrap the library CSS import so the cascade is predictable:
+2. **Use CSS layers** — When Tailwind or UnoCSS runs in `@layer components` or `utilities`, use `@import '...' layer(components)` so the cascade is predictable:
 
 ```css
-@layer components {
-  @import 'markstream-vue/index.css';
-}
+@import 'markstream-vue/index.css' layer(components);
 ```
 
 For UnoCSS, inject the CSS inside `preflights`:

@@ -23,6 +23,14 @@ export default defineConfig(({ mode }) => ({
             find: /^stream-markdown-parser\//,
             replacement: `${path.resolve(__dirname, '../markdown-parser/src')}/`,
           },
+          {
+            find: /^markstream-core$/,
+            replacement: path.resolve(__dirname, '../markstream-core/src/index.ts'),
+          },
+          {
+            find: /^markstream-core\//,
+            replacement: `${path.resolve(__dirname, '../markstream-core/src')}/`,
+          },
         ],
       },
   build: {
@@ -45,6 +53,7 @@ export default defineConfig(({ mode }) => ({
         'mermaid',
         'stream-monaco',
         'stream-markdown-parser',
+        'markstream-core',
       ],
       output: {
         assetFileNames(assetInfo) {

@@ -1,9 +1,10 @@
+import type { TableCellNode, TableRowNode } from 'stream-markdown-parser'
 import type { NodeComponentProps } from '../../types/node-component'
 import clsx from 'clsx'
 import React from 'react'
 import { renderInline } from '../../renderers/renderChildren'
 
-export function TableNode(props: NodeComponentProps<{ type: 'table', header?: any, rows?: any[], loading?: boolean }>) {
+export function TableNode(props: NodeComponentProps<{ type: 'table', header?: TableRowNode, rows?: TableRowNode[], loading?: boolean }>) {
   const { node, ctx, renderNode, indexKey } = props
   const headerCells = Array.isArray(node?.header?.cells) ? node.header.cells : []
   const isLoading = Boolean(node?.loading)
@@ -117,14 +118,14 @@ export function TableNode(props: NodeComponentProps<{ type: 'table', header?: an
       >
         {columnWidths.length > 0 && (
           <colgroup>
-            {headerCells.map((_: any, idx: number) => (
+            {headerCells.map((_, idx: number) => (
               <col key={`col-${idx}`} style={columnWidths[idx] > 0 ? { width: `${columnWidths[idx]}px` } : undefined} />
             ))}
           </colgroup>
         )}
         <thead className="border-[var(--table-border,#cbd5e1)]">
           <tr className="border-b">
-            {headerCells.map((cell: any, idx: number) => (
+            {headerCells.map((cell: TableCellNode, idx: number) => (
               <th
                 key={`header-${idx}`}
                 className={clsx('font-semibold p-[calc(4/7*1em)]', getAlignClass(cell.align))}
@@ -144,7 +145,7 @@ export function TableNode(props: NodeComponentProps<{ type: 'table', header?: an
           </tr>
         </thead>
         <tbody>
-          {bodyRows.map((row: any, rowIdx: number) => (
+          {bodyRows.map((row: TableRowNode, rowIdx: number) => (
             <tr
               key={`row-${rowIdx}`}
               className={clsx(
@@ -152,7 +153,7 @@ export function TableNode(props: NodeComponentProps<{ type: 'table', header?: an
                 rowIdx < bodyRows.length - 1 && 'border-b',
               )}
             >
-              {row.cells?.map((cell: any, cellIdx: number) => (
+              {row.cells?.map((cell: TableCellNode, cellIdx: number) => (
                 <td
                   key={`cell-${rowIdx}-${cellIdx}`}
                   className={clsx('p-[calc(4/7*1em)]', getAlignClass(cell.align))}

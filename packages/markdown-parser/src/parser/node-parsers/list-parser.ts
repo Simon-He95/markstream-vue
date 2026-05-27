@@ -6,6 +6,7 @@ import type {
   ParseOptions,
 } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { withInlineSourceStart } from '../inline-source'
 import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseCommonBlockToken } from './block-token-parser'
 import { parseBlockquote } from './blockquote-parser'
@@ -126,7 +127,12 @@ export function parseList(
           trimInlineTokenTail(contentToken)
           itemChildren.push({
             type: 'paragraph',
-            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), preToken, linkifyContext.options()),
+            children: parseInlineTokens(
+              contentToken.children || [],
+              String(contentToken.content ?? ''),
+              preToken,
+              withInlineSourceStart(contentToken, linkifyContext.options()),
+            ),
             raw: String(contentToken.content ?? ''),
           })
           linkifyContext.remember(String(contentToken.content ?? ''))

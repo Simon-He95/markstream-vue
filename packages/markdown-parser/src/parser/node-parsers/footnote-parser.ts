@@ -1,5 +1,6 @@
 import type { FootnoteNode, MarkdownToken, ParsedNode, ParseOptions } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { withInlineSourceStart } from '../inline-source'
 import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 
 export function parseFootnote(
@@ -23,7 +24,12 @@ export function parseFootnote(
       }
       const paragraphNode = {
         type: 'paragraph',
-        children: parseInlineTokens(children, String(contentToken.content ?? ''), undefined, linkifyContext.options()),
+        children: parseInlineTokens(
+          children,
+          String(contentToken.content ?? ''),
+          undefined,
+          withInlineSourceStart(contentToken, linkifyContext.options()),
+        ),
         raw: String(contentToken.content ?? ''),
       } as ParsedNode
       footnoteChildren.push(paragraphNode)

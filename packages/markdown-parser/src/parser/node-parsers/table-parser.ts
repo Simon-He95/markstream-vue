@@ -8,6 +8,7 @@ import type {
 } from '../../types'
 import type { LinkifyDemotionContext } from '../linkifyHeuristics'
 import { parseInlineTokens } from '../inline-parsers'
+import { lineToIndex, withInlineSourceStart, withInlineSourceStartAt } from '../inline-source'
 import { inferLinkifyDemotionContext } from '../linkifyHeuristics'
 
 // Extract alignment from attrs (e.g. ['style','text-align:left'])
@@ -66,6 +67,52 @@ function parseOptionsForTableCell(
   } as InternalParseOptions
 }
 
+function splitTableCellOffsets(line: string) {
+  const cells: Array<{ start: number, end: number }> = []
+  let start = line.startsWith('|') ? 1 : 0
+  let escaped = false
+
+  for (let i = start; i < line.length; i++) {
+    const char = line[i]
+    if (escaped) {
+      escaped = false
+      continue
+    }
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+    if (char === '|') {
+      cells.push({ start, end: i })
+      start = i + 1
+    }
+  }
+
+  if (start <= line.length)
+    cells.push({ start, end: line.length })
+
+  return cells
+}
+
+function resolveTableCellSourceStart(
+  options: ParseOptions | undefined,
+  tableToken: MarkdownToken,
+  rowLineOffset: number,
+  cellIndex: number,
+) {
+  const source = String((options as InternalParseOptions | undefined)?.__sourceMarkdown ?? '')
+  if (!source || !Array.isArray(tableToken.map))
+    return -1
+
+  const rowLine = Number(tableToken.map?.[0] ?? 0) + rowLineOffset
+  const lineStart = lineToIndex(source, rowLine)
+  const lineEnd = source.indexOf('\n', lineStart)
+  const line = source.slice(lineStart, lineEnd === -1 ? source.length : lineEnd)
+  const cells = splitTableCellOffsets(line)
+  const cell = cells[cellIndex]
+  return cell ? lineStart + cell.start : -1
+}
+
 export function parseTable(
   tokens: MarkdownToken[],
   index: number,
@@ -94,6 +141,7 @@ export function parseTable(
       const cells: TableCellNode[] = []
       let k = j + 1
       let rowContext: LinkifyDemotionContext | undefined
+      const rowLineOffset = isHeader ? 0 : 2 + rows.length
 
       while (k < tokens.length && tokens[k].type !== 'tr_close') {
         if (tokens[k].type === 'th_open' || tokens[k].type === 'td_open') {
@@ -104,11 +152,20 @@ export function parseTable(
           const cellIndex = cells.length
           const isBodyCell = !isHeaderCell && !isHeader
           const headerRaw = isBodyCell ? headerRow?.cells[cellIndex]?.raw : undefined
+          const cellOptions = parseOptionsForTableCell(options, headerRaw, isBodyCell ? rowContext : undefined)
+          const cellSourceStart = resolveTableCellSourceStart(options, tokens[index], rowLineOffset, cellIndex)
 
           cells.push({
             type: 'table_cell',
             header: isHeaderCell || isHeader,
-            children: parseInlineTokens(contentToken.children || [], content, undefined, parseOptionsForTableCell(options, headerRaw, isBodyCell ? rowContext : undefined)),
+            children: parseInlineTokens(
+              contentToken.children || [],
+              content,
+              undefined,
+              cellSourceStart === -1
+                ? withInlineSourceStart(contentToken, cellOptions, tokens[index])
+                : withInlineSourceStartAt(cellOptions, cellSourceStart),
+            ),
             raw: content,
             align,
           })

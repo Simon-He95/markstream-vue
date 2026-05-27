@@ -99,10 +99,93 @@ function stringifyTokens(tokens: MarkdownToken[]) {
   return tokens.map(tokenToRaw).join('')
 }
 
+function findClosingBacktickRun(raw: string, start: number, runLength: number) {
+  const marker = '`'.repeat(runLength)
+  return raw.indexOf(marker, start + runLength)
+}
+
+function findInlineLinkDestinationEnd(raw: string, openParen: number) {
+  let depth = 0
+  let quote: string | null = null
+  for (let idx = openParen; idx < raw.length; idx++) {
+    const char = raw[idx]
+    if (char === '\\') {
+      idx++
+      continue
+    }
+    if (quote) {
+      if (char === quote)
+        quote = null
+      continue
+    }
+    if (char === '"' || char === '\'') {
+      quote = char
+      continue
+    }
+    if (char === '(') {
+      depth++
+      continue
+    }
+    if (char === ')') {
+      depth--
+      if (depth === 0)
+        return idx + 1
+    }
+  }
+  return -1
+}
+
+function collectInlineSkipRanges(raw: string) {
+  const ranges: Array<[number, number]> = []
+  let index = 0
+  while (index < raw.length) {
+    const char = raw[index]
+
+    if (char === '\\') {
+      ranges.push([index, Math.min(raw.length, index + 2)])
+      index += 2
+      continue
+    }
+
+    if (char === '`') {
+      let runLength = 1
+      while (raw[index + runLength] === '`')
+        runLength++
+      const close = findClosingBacktickRun(raw, index, runLength)
+      const end = close === -1 ? index + runLength : close + runLength
+      ranges.push([index, end])
+      index = end
+      continue
+    }
+
+    if (char === ']' && raw[index + 1] === '(') {
+      const linkEnd = findInlineLinkDestinationEnd(raw, index + 1)
+      if (linkEnd !== -1) {
+        ranges.push([index + 1, linkEnd])
+        index = linkEnd
+        continue
+      }
+    }
+
+    index++
+  }
+
+  return ranges
+}
+
+function isInsideRange(index: number, ranges: Array<[number, number]>) {
+  return ranges.some(([start, end]) => index >= start && index < end)
+}
+
 function findInlineHtmlTokenOffset(raw: string | undefined, tokens: MarkdownToken[], targetIndex: number) {
   if (!raw)
     return -1
 
+  const target = String(tokens[targetIndex]?.content ?? '')
+  if (!target)
+    return -1
+
+  const skipRanges = collectInlineSkipRanges(raw)
   let offset = 0
   for (let idx = 0; idx < targetIndex; idx++) {
     const token = tokens[idx]
@@ -113,6 +196,19 @@ function findInlineHtmlTokenOffset(raw: string | undefined, tokens: MarkdownToke
       const literal = `${markup}${content}${markup}`
       const found = raw.indexOf(literal, offset)
       offset = found === -1 ? offset + literal.length : found + literal.length
+      continue
+    }
+
+    if (token?.type === 'link') {
+      const rawLink = String((token as any).raw ?? '')
+      const foundRawLink = rawLink ? raw.indexOf(rawLink, offset) : -1
+      if (foundRawLink !== -1) {
+        const linkDestinationStart = raw.indexOf('](', foundRawLink)
+        const linkEnd = linkDestinationStart === -1
+          ? -1
+          : findInlineLinkDestinationEnd(raw, linkDestinationStart + 1)
+        offset = linkEnd === -1 ? foundRawLink + rawLink.length : linkEnd
+      }
       continue
     }
 
@@ -131,8 +227,64 @@ function findInlineHtmlTokenOffset(raw: string | undefined, tokens: MarkdownToke
     offset += content.length
   }
 
-  const target = String(tokens[targetIndex]?.content ?? '')
-  return target ? raw.indexOf(target, offset) : -1
+  let found = raw.indexOf(target, offset)
+  while (found !== -1) {
+    if (!isInsideRange(found, skipRanges))
+      return found
+    found = raw.indexOf(target, found + target.length)
+  }
+  return -1
+}
+
+function findNthUnskippedOccurrence(text: string, target: string, ordinal: number) {
+  if (!text || !target || ordinal < 1)
+    return -1
+
+  const skipRanges = collectInlineSkipRanges(text)
+  let count = 0
+  let found = text.indexOf(target)
+  while (found !== -1) {
+    if (!isInsideRange(found, skipRanges)) {
+      count++
+      if (count === ordinal)
+        return found
+    }
+    found = text.indexOf(target, found + target.length)
+  }
+  return -1
+}
+
+function findInlineHtmlTokenSourceStart(
+  source: string,
+  inlineSourceStart: number,
+  raw: string | undefined,
+  tokens: MarkdownToken[],
+  targetIndex: number,
+  target: string,
+) {
+  if (!source || !Number.isFinite(inlineSourceStart) || inlineSourceStart < 0)
+    return -1
+
+  const rawOffset = findInlineHtmlTokenOffset(raw, tokens, targetIndex)
+  if (rawOffset === -1)
+    return -1
+
+  const rawText = String(raw ?? '')
+  const ordinal = (() => {
+    let count = 0
+    let found = rawText.indexOf(target)
+    const skipRanges = collectInlineSkipRanges(rawText)
+    while (found !== -1 && found <= rawOffset) {
+      if (!isInsideRange(found, skipRanges))
+        count++
+      found = rawText.indexOf(target, found + target.length)
+    }
+    return count
+  })()
+
+  const sourceTail = source.slice(inlineSourceStart)
+  const sourceOffset = findNthUnskippedOccurrence(sourceTail, target, ordinal)
+  return sourceOffset === -1 ? -1 : inlineSourceStart + sourceOffset
 }
 
 function normalizeStandardHtmlChildren(children: ParsedNode[]) {
@@ -232,22 +384,33 @@ function collectHtmlFragment(tokens: MarkdownToken[], startIndex: number, tag: s
   }
 }
 
-function findCustomHtmlFragmentFromSource(
+function stripTrailingPartialClosingTag(inner: string, tag: string) {
+  if (!inner || !tag)
+    return inner
+  const lastOpen = inner.lastIndexOf('<')
+  if (lastOpen !== -1) {
+    const trailing = inner.slice(lastOpen).trimStart().toLowerCase()
+    const closingTag = `</${tag.toLowerCase()}>`
+    if (trailing.length > 1 && closingTag.startsWith(trailing))
+      return inner.slice(0, lastOpen).replace(/[\t ]+$/g, '')
+  }
+  const re = new RegExp(String.raw`[\t ]*<\s*\/\s*${escapeTagForRegExp(tag)}[^>]*$`, 'i')
+  return inner.replace(re, '')
+}
+
+function readCustomHtmlFragmentAt(
   source: string,
   tag: string,
-  startIndex: number,
+  openStart: number,
+  expectedOpenTag: string,
 ): { raw: string, inner: string, end: number } | null {
   if (!source || !tag)
     return null
 
   const lowerTag = escapeTagForRegExp(tag.toLowerCase())
-  const openRe = new RegExp(String.raw`<\s*${lowerTag}(?=\s|>|/)`, 'gi')
-  openRe.lastIndex = Math.max(0, startIndex || 0)
-  const openMatch = openRe.exec(source)
-  if (!openMatch || openMatch.index == null)
+  if (openStart < 0 || !source.startsWith(expectedOpenTag, openStart))
     return null
 
-  const openStart = openMatch.index
   const openEndRel = findTagCloseIndexOutsideQuotes(source.slice(openStart))
   if (openEndRel === -1)
     return null
@@ -264,13 +427,23 @@ function findCustomHtmlFragmentFromSource(
 
   while (index < source.length) {
     const lt = source.indexOf('<', index)
-    if (lt === -1)
-      return { raw: source.slice(openStart), inner: source.slice(openEnd + 1), end: source.length }
+    if (lt === -1) {
+      return {
+        raw: source.slice(openStart),
+        inner: stripTrailingPartialClosingTag(source.slice(openEnd + 1), tag),
+        end: source.length,
+      }
+    }
 
     if (isCloseAt(lt)) {
       const closeEndRel = findTagCloseIndexOutsideQuotes(source.slice(lt))
-      if (closeEndRel === -1)
-        return { raw: source.slice(openStart), inner: source.slice(openEnd + 1, lt), end: source.length }
+      if (closeEndRel === -1) {
+        return {
+          raw: source.slice(openStart),
+          inner: stripTrailingPartialClosingTag(source.slice(openEnd + 1, lt), tag),
+          end: source.length,
+        }
+      }
       const closeEnd = lt + closeEndRel
       depth--
       if (depth === 0) {
@@ -298,7 +471,11 @@ function findCustomHtmlFragmentFromSource(
     index = lt + 1
   }
 
-  return { raw: source.slice(openStart), inner: source.slice(openEnd + 1), end: source.length }
+  return {
+    raw: source.slice(openStart),
+    inner: stripTrailingPartialClosingTag(source.slice(openEnd + 1), tag),
+    end: source.length,
+  }
 }
 
 // Parse inline HTML and return an appropriate ParsedNode depending on tag.
@@ -463,18 +640,15 @@ export function parseHtmlInlineCodeToken(
     const source = String((options as any)?.__sourceMarkdown ?? '')
     const cursor = Number((options as any)?.__customHtmlSourceCursor ?? 0)
     const inlineSourceStart = Number((options as any)?.__inlineSourceStart ?? Number.NaN)
-    const inlineTokenOffset = findInlineHtmlTokenOffset(raw, tokens, i)
-    const anchoredStart = Number.isFinite(inlineSourceStart) && inlineTokenOffset !== -1
-      ? inlineSourceStart + inlineTokenOffset
-      : cursor
-    const sourceFragment = findCustomHtmlFragmentFromSource(source, tag, Math.max(cursor, anchoredStart))
+    const openStart = findInlineHtmlTokenSourceStart(source, inlineSourceStart, raw, tokens, i, code)
+    const sourceFragment = readCustomHtmlFragmentAt(source, tag, openStart, code)
     if (sourceFragment)
-      (options as any).__customHtmlSourceCursor = sourceFragment.end
+      (options as any).__customHtmlSourceCursor = Math.max(cursor, sourceFragment.end)
 
     const _content = sourceFragment
       ? sourceFragment.inner
       : fragment.innerTokens.length
-        ? stringifyTokens(fragment.innerTokens)
+        ? stripTrailingPartialClosingTag(stringifyTokens(fragment.innerTokens), tag)
         : ''
     const rawHtml = sourceFragment?.raw ?? content
 

@@ -1,5 +1,6 @@
 import type { HeadingNode, MarkdownToken, ParseOptions } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { withInlineSourceStart } from '../inline-source'
 
 export function parseHeading(
   tokens: MarkdownToken[],
@@ -25,7 +26,12 @@ export function parseHeading(
     level: headingLevel,
     text: headingContent,
     ...(attrsRecord ? { attrs: attrsRecord } : {}),
-    children: parseInlineTokens(headingContentToken.children || [], headingContent, undefined, options),
+    children: parseInlineTokens(
+      headingContentToken.children || [],
+      headingContent,
+      undefined,
+      withInlineSourceStart(headingContentToken, options, token),
+    ),
     raw: headingContent,
   }
 }

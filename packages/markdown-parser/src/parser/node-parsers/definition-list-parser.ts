@@ -6,6 +6,7 @@ import type {
   ParseOptions,
 } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { withInlineSourceStart } from '../inline-source'
 import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 
 export function parseDefinitionList(
@@ -23,7 +24,7 @@ export function parseDefinitionList(
     if (tokens[j].type === 'dt_open') {
       // Process term
       const termToken = tokens[j + 1]
-      termNodes = parseInlineTokens(termToken.children || [], undefined, undefined, linkifyContext.options())
+      termNodes = parseInlineTokens(termToken.children || [], String(termToken.content ?? ''), undefined, withInlineSourceStart(termToken, linkifyContext.options()))
       linkifyContext.remember(termNodes.map(term => term.raw).join(''))
       j += 3 // Skip dt_open, inline, dt_close
     }
@@ -37,7 +38,12 @@ export function parseDefinitionList(
           const contentToken = tokens[k + 1]
           definitionNodes.push({
             type: 'paragraph',
-            children: parseInlineTokens(contentToken.children || [], String(contentToken.content ?? ''), undefined, linkifyContext.options()),
+            children: parseInlineTokens(
+              contentToken.children || [],
+              String(contentToken.content ?? ''),
+              undefined,
+              withInlineSourceStart(contentToken, linkifyContext.options()),
+            ),
             raw: String(contentToken.content ?? ''),
           })
           linkifyContext.remember(String(contentToken.content ?? ''))

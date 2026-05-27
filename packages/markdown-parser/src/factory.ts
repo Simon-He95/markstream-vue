@@ -38,7 +38,7 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
     ? Boolean(markdownItOptions.stream)
     : true
 
-  const md = new MarkdownIt({
+  const parserOptions = {
     html: true,
     linkify: true,
     typographer: true,
@@ -47,7 +47,9 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
       stream,
       ...experimental,
     },
-  } as any) as unknown as MarkdownItInstance
+  }
+
+  const md = new MarkdownIt(parserOptions) as unknown as MarkdownItInstance
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }

@@ -1,5 +1,6 @@
 import type { AdmonitionNode, MarkdownToken, ParsedNode, ParseOptions, TextNode } from '../../types'
 import { parseInlineTokens } from '../inline-parsers'
+import { withInlineSourceStart } from '../inline-source'
 import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseBasicBlockToken } from './block-token-parser'
 import { parseBlockquote } from './blockquote-parser'
@@ -94,7 +95,12 @@ export function parseContainer(
         const _children = i !== -1 ? childrenArr.slice(0, i) : childrenArr
         const paragraphNode = {
           type: 'paragraph',
-          children: parseInlineTokens(_children || [], undefined, undefined, linkifyContext.options()),
+          children: parseInlineTokens(
+            _children || [],
+            String(contentToken.content ?? ''),
+            undefined,
+            withInlineSourceStart(contentToken, linkifyContext.options()),
+          ),
           raw: String(contentToken.content ?? '').replace(/\n:+$/, '').replace(/\n\s*:::\s*$/, ''),
         } as ParsedNode
         children.push(paragraphNode)

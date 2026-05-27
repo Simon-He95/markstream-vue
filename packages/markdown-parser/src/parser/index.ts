@@ -4,6 +4,7 @@ import { normalizeCustomHtmlTags } from '../customHtmlTags'
 import { NON_STRUCTURING_HTML_TAGS, STANDARD_HTML_TAGS, VOID_HTML_TAGS } from '../htmlTags'
 import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes, parseTagAttrs } from '../htmlTagUtils'
 import { parseInlineTokens } from './inline-parsers'
+import { withInlineSourceStart } from './inline-source'
 import { createLinkifyDemotionContextTracker } from './linkifyHeuristics'
 import { parseCommonBlockToken } from './node-parsers/block-token-parser'
 import { parseBlockquote } from './node-parsers/blockquote-parser'
@@ -2483,7 +2484,7 @@ export function processTokens(tokens: MarkdownToken[], options?: ParseOptions): 
         //   a paragraph), since they represent block-like HTML structures.
         {
           const raw = String(token.content ?? '')
-          const parsed = parseInlineTokens(token.children || [], raw, undefined, linkifyContext.options(raw))
+          const parsed = parseInlineTokens(token.children || [], raw, undefined, withInlineSourceStart(token, linkifyContext.options(raw)))
           if (parsed.length === 0) {
             // no-op (matches previous behavior)
           }

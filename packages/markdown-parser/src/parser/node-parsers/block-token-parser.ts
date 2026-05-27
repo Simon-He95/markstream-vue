@@ -4,6 +4,7 @@ import { normalizeCustomTag } from '../customHtmlTags'
 import { buildAllowedHtmlTagSet } from '../index'
 import { parseInlineTokens } from '../inline-parsers'
 import { parseFenceToken } from '../inline-parsers/fence-parser'
+import { withInlineSourceStart } from '../inline-source'
 import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseBlockquote } from './blockquote-parser'
 import { parseCodeBlock } from './code-block-parser'
@@ -103,7 +104,12 @@ function parseVmrContainer(
         const childrenArr = (contentToken.children as MarkdownToken[]) || []
         const paragraphNode = {
           type: 'paragraph',
-          children: parseInlineTokens(childrenArr || [], undefined, undefined, linkifyContext.options()),
+          children: parseInlineTokens(
+            childrenArr || [],
+            String(contentToken.content ?? ''),
+            undefined,
+            withInlineSourceStart(contentToken, linkifyContext.options()),
+          ),
           raw: String(contentToken.content ?? ''),
         } as ParsedNode
         children.push(paragraphNode)
@@ -180,6 +186,13 @@ function stripWrapperNewlines(s: string) {
 function stripTrailingPartialClosingTag(inner: string, tag: string) {
   if (!inner || !tag)
     return inner
+  const lastOpen = inner.lastIndexOf('<')
+  if (lastOpen !== -1) {
+    const trailing = inner.slice(lastOpen).trimStart().toLowerCase()
+    const closingTag = `</${tag.toLowerCase()}>`
+    if (trailing.length > 1 && closingTag.startsWith(trailing))
+      return inner.slice(0, lastOpen).replace(/[\t ]+$/g, '')
+  }
   const re = new RegExp(String.raw`[\t ]*<\s*\/\s*${tag}[^>]*$`, 'i')
   return inner.replace(re, '')
 }

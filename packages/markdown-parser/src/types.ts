@@ -442,6 +442,7 @@ export interface InternalParseOptions extends ParseOptions {
   __customHtmlBlockCursor?: number
   __customHtmlSourceCursor?: number
   __disableStreamParse?: boolean
+  __inlineSourceStart?: number
   __insideStrong?: boolean
   __linkifyDemotionContext?: {
     filename?: boolean

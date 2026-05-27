@@ -99,6 +99,42 @@ function stringifyTokens(tokens: MarkdownToken[]) {
   return tokens.map(tokenToRaw).join('')
 }
 
+function findInlineHtmlTokenOffset(raw: string | undefined, tokens: MarkdownToken[], targetIndex: number) {
+  if (!raw)
+    return -1
+
+  let offset = 0
+  for (let idx = 0; idx < targetIndex; idx++) {
+    const token = tokens[idx]
+    const content = String(token?.content ?? '')
+
+    if (token?.type === 'code_inline') {
+      const markup = String(token.markup || '`')
+      const literal = `${markup}${content}${markup}`
+      const found = raw.indexOf(literal, offset)
+      offset = found === -1 ? offset + literal.length : found + literal.length
+      continue
+    }
+
+    if (token?.type === 'html_inline') {
+      const found = raw.indexOf(content, offset)
+      offset = found === -1 ? offset + content.length : found + content.length
+      continue
+    }
+
+    if (token?.type === 'softbreak' || token?.type === 'hardbreak') {
+      const found = raw.indexOf('\n', offset)
+      offset = found === -1 ? offset + 1 : found + 1
+      continue
+    }
+
+    offset += content.length
+  }
+
+  const target = String(tokens[targetIndex]?.content ?? '')
+  return target ? raw.indexOf(target, offset) : -1
+}
+
 function normalizeStandardHtmlChildren(children: ParsedNode[]) {
   const normalized: ParsedNode[] = []
 
@@ -426,7 +462,12 @@ export function parseHtmlInlineCodeToken(
   if (customTagSet?.has(tag)) {
     const source = String((options as any)?.__sourceMarkdown ?? '')
     const cursor = Number((options as any)?.__customHtmlSourceCursor ?? 0)
-    const sourceFragment = findCustomHtmlFragmentFromSource(source, tag, cursor)
+    const inlineSourceStart = Number((options as any)?.__inlineSourceStart ?? Number.NaN)
+    const inlineTokenOffset = findInlineHtmlTokenOffset(raw, tokens, i)
+    const anchoredStart = Number.isFinite(inlineSourceStart) && inlineTokenOffset !== -1
+      ? inlineSourceStart + inlineTokenOffset
+      : cursor
+    const sourceFragment = findCustomHtmlFragmentFromSource(source, tag, Math.max(cursor, anchoredStart))
     if (sourceFragment)
       (options as any).__customHtmlSourceCursor = sourceFragment.end
 

@@ -100,4 +100,32 @@ Text "quoted" <my-tag>{"inline":"value"}</my-tag>`
     expect(String(customNodes[1]?.content ?? '')).toContain('"inline"')
     expect(JSON.stringify(nodes)).toMatch(/[“”]/)
   })
+
+  it('does not pick a custom-looking tag inside code span before a real custom tag', () => {
+    const markdown = '`<my-tag>{"foo":"bad"}</my-tag>` <my-tag>{"foo":"real"}</my-tag>'
+    const md = getMarkdown('issue-466-code-span-anchor', { customHtmlTags: ['my-tag'] })
+    const nodes = parseMarkdownToStructure(markdown, md, {
+      final: true,
+      customHtmlTags: ['my-tag'],
+    }) as any[]
+
+    const node = findCustomNode(nodes, 'my-tag')
+    expect(node).toBeTruthy()
+    expect(String(node?.content ?? '')).toContain('"real"')
+    expect(String(node?.content ?? '')).not.toContain('"bad"')
+  })
+
+  it('does not pick a custom-looking tag inside fenced code before a real custom tag', () => {
+    const markdown = '```html\n<my-tag>{"foo":"bad"}</my-tag>\n```\n\n<my-tag>{"foo":"real"}</my-tag>'
+    const md = getMarkdown('issue-466-fence-anchor', { customHtmlTags: ['my-tag'] })
+    const nodes = parseMarkdownToStructure(markdown, md, {
+      final: true,
+      customHtmlTags: ['my-tag'],
+    }) as any[]
+
+    const node = findCustomNode(nodes, 'my-tag')
+    expect(node).toBeTruthy()
+    expect(String(node?.content ?? '')).toContain('"real"')
+    expect(String(node?.content ?? '')).not.toContain('"bad"')
+  })
 })

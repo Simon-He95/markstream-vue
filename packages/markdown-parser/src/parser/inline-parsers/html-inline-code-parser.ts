@@ -1,6 +1,7 @@
 import type { InlineCodeNode, MarkdownToken, ParsedNode } from '../../types'
 import { VOID_HTML_TAGS } from '../../htmlTags'
-import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes, parseTagAttrs } from '../../htmlTagUtils'
+import { parseTagAttrs } from '../../htmlTagUtils'
+import { readCustomHtmlFragmentAt, stripTrailingPartialClosingTag } from '../custom-html-source'
 import { normalizeCustomTag } from '../customHtmlTags'
 import { buildAllowedHtmlTagSet } from '../index'
 
@@ -381,100 +382,6 @@ function collectHtmlFragment(tokens: MarkdownToken[], startIndex: number, tag: s
     html: stringifyTokens(fragmentTokens),
     innerTokens,
     nextIndex,
-  }
-}
-
-function stripTrailingPartialClosingTag(inner: string, tag: string) {
-  if (!inner || !tag)
-    return inner
-  const lastOpen = inner.lastIndexOf('<')
-  if (lastOpen !== -1) {
-    const trailing = inner.slice(lastOpen).trimStart().toLowerCase()
-    const closingTag = `</${tag.toLowerCase()}>`
-    if (trailing.length > 1 && closingTag.startsWith(trailing))
-      return inner.slice(0, lastOpen).replace(/[\t ]+$/g, '')
-  }
-  const re = new RegExp(String.raw`[\t ]*<\s*\/\s*${escapeTagForRegExp(tag)}[^>]*$`, 'i')
-  return inner.replace(re, '')
-}
-
-function readCustomHtmlFragmentAt(
-  source: string,
-  tag: string,
-  openStart: number,
-  expectedOpenTag: string,
-): { raw: string, inner: string, end: number } | null {
-  if (!source || !tag)
-    return null
-
-  const lowerTag = escapeTagForRegExp(tag.toLowerCase())
-  if (openStart < 0 || !source.startsWith(expectedOpenTag, openStart))
-    return null
-
-  const openEndRel = findTagCloseIndexOutsideQuotes(source.slice(openStart))
-  if (openEndRel === -1)
-    return null
-
-  const openEnd = openStart + openEndRel
-  const openTag = source.slice(openStart, openEnd + 1)
-  if (/\/\s*>$/.test(openTag))
-    return { raw: openTag, inner: '', end: openEnd + 1 }
-
-  let depth = 1
-  let index = openEnd + 1
-  const isOpenAt = (pos: number) => new RegExp(String.raw`^<\s*${lowerTag}(?=\s|>|/)`, 'i').test(source.slice(pos))
-  const isCloseAt = (pos: number) => new RegExp(String.raw`^<\s*\/\s*${lowerTag}(?=\s|>)`, 'i').test(source.slice(pos))
-
-  while (index < source.length) {
-    const lt = source.indexOf('<', index)
-    if (lt === -1) {
-      return {
-        raw: source.slice(openStart),
-        inner: stripTrailingPartialClosingTag(source.slice(openEnd + 1), tag),
-        end: source.length,
-      }
-    }
-
-    if (isCloseAt(lt)) {
-      const closeEndRel = findTagCloseIndexOutsideQuotes(source.slice(lt))
-      if (closeEndRel === -1) {
-        return {
-          raw: source.slice(openStart),
-          inner: stripTrailingPartialClosingTag(source.slice(openEnd + 1, lt), tag),
-          end: source.length,
-        }
-      }
-      const closeEnd = lt + closeEndRel
-      depth--
-      if (depth === 0) {
-        return {
-          raw: source.slice(openStart, closeEnd + 1),
-          inner: source.slice(openEnd + 1, lt),
-          end: closeEnd + 1,
-        }
-      }
-      index = closeEnd + 1
-      continue
-    }
-
-    if (isOpenAt(lt)) {
-      const nestedOpenEndRel = findTagCloseIndexOutsideQuotes(source.slice(lt))
-      if (nestedOpenEndRel === -1)
-        return null
-      const nestedOpenEnd = lt + nestedOpenEndRel
-      if (!/\/\s*>$/.test(source.slice(lt, nestedOpenEnd + 1)))
-        depth++
-      index = nestedOpenEnd + 1
-      continue
-    }
-
-    index = lt + 1
-  }
-
-  return {
-    raw: source.slice(openStart),
-    inner: stripTrailingPartialClosingTag(source.slice(openEnd + 1), tag),
-    end: source.length,
   }
 }
 

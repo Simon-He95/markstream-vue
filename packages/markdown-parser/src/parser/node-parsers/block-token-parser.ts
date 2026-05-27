@@ -1,10 +1,11 @@
 import type { AdmonitionNode, InternalParseOptions, MarkdownToken, ParagraphNode, ParsedNode, ParseOptions, VmrContainerNode } from '../../types'
-import { escapeTagForRegExp, findTagCloseIndexOutsideQuotes } from '../../htmlTagUtils'
+import { findTagCloseIndexOutsideQuotes } from '../../htmlTagUtils'
+import { findMatchingCustomCloseTagRange, findNextCustomHtmlBlockFromSource, stripTrailingPartialClosingTag } from '../custom-html-source'
 import { normalizeCustomTag } from '../customHtmlTags'
 import { buildAllowedHtmlTagSet } from '../index'
 import { parseInlineTokens } from '../inline-parsers'
 import { parseFenceToken } from '../inline-parsers/fence-parser'
-import { withInlineSourceStart } from '../inline-source'
+import { lineToIndex, withInlineSourceStart } from '../inline-source'
 import { createLinkifyDemotionContextTracker } from '../linkifyHeuristics'
 import { parseBlockquote } from './blockquote-parser'
 import { parseCodeBlock } from './code-block-parser'
@@ -183,170 +184,8 @@ function stripWrapperNewlines(s: string) {
   return s.replace(/^\r?\n/, '').replace(/\r?\n$/, '')
 }
 
-function stripTrailingPartialClosingTag(inner: string, tag: string) {
-  if (!inner || !tag)
-    return inner
-  const lastOpen = inner.lastIndexOf('<')
-  if (lastOpen !== -1) {
-    const trailing = inner.slice(lastOpen).trimStart().toLowerCase()
-    const closingTag = `</${tag.toLowerCase()}>`
-    if (trailing.length > 1 && closingTag.startsWith(trailing))
-      return inner.slice(0, lastOpen).replace(/[\t ]+$/g, '')
-  }
-  const re = new RegExp(String.raw`[\t ]*<\s*\/\s*${tag}[^>]*$`, 'i')
-  return inner.replace(re, '')
-}
-
-function findMatchingCloseTagRange(
-  rawHtml: string,
-  tag: string,
-  startIndex: number,
-) {
-  if (!rawHtml || !tag)
-    return null
-
-  const lowerTag = tag.toLowerCase()
-  const openTagRe = new RegExp(String.raw`^<\s*${escapeTagForRegExp(lowerTag)}(?=\s|>|/)`, 'i')
-  const closeTagRe = new RegExp(String.raw`^<\s*\/\s*${escapeTagForRegExp(lowerTag)}(?=\s|>)`, 'i')
-
-  let depth = 0
-  let index = Math.max(0, startIndex)
-
-  while (index < rawHtml.length) {
-    const lt = rawHtml.indexOf('<', index)
-    if (lt === -1)
-      break
-
-    const slice = rawHtml.slice(lt)
-    if (closeTagRe.test(slice)) {
-      const endRel = findTagCloseIndexOutsideQuotes(slice)
-      if (endRel === -1)
-        return null
-      if (depth === 0) {
-        return {
-          start: lt,
-          end: lt + endRel + 1,
-        }
-      }
-      depth--
-      index = lt + endRel + 1
-      continue
-    }
-
-    if (openTagRe.test(slice)) {
-      const endRel = findTagCloseIndexOutsideQuotes(slice)
-      if (endRel === -1)
-        return null
-      const raw = slice.slice(0, endRel + 1)
-      if (!/\/\s*>$/.test(raw))
-        depth++
-      index = lt + endRel + 1
-      continue
-    }
-
-    index = lt + 1
-  }
-
-  return null
-}
-
-function findNextCustomHtmlBlockFromSource(
-  source: string,
-  tag: string,
-  startIndex: number,
-): { raw: string, end: number } | null {
-  if (!source || !tag)
-    return null
-
-  const lowerTag = tag.toLowerCase()
-  const openRe = new RegExp(String.raw`<\s*${lowerTag}(?=\s|>|/)`, 'gi')
-  openRe.lastIndex = Math.max(0, startIndex || 0)
-  const openMatch = openRe.exec(source)
-  if (!openMatch || openMatch.index == null)
-    return null
-
-  const openStart = openMatch.index
-  const openSlice = source.slice(openStart)
-  const openEndRel = findTagCloseIndexOutsideQuotes(openSlice)
-  if (openEndRel === -1)
-    return null
-  const openEnd = openStart + openEndRel
-
-  // Self-closing custom tags: treat as a complete block
-  if (/\/\s*>\s*$/.test(openSlice.slice(0, openEndRel + 1))) {
-    const end = openEnd + 1
-    return { raw: source.slice(openStart, end), end }
-  }
-
-  let depth = 1
-  let i = openEnd + 1
-
-  const isOpenAt = (pos: number) => {
-    const s = source.slice(pos)
-    return new RegExp(String.raw`^<\s*${lowerTag}(?=\s|>|/)`, 'i').test(s)
-  }
-  const isCloseAt = (pos: number) => {
-    const s = source.slice(pos)
-    return new RegExp(String.raw`^<\s*\/\s*${lowerTag}(?=\s|>)`, 'i').test(s)
-  }
-
-  while (i < source.length) {
-    const lt = source.indexOf('<', i)
-    if (lt === -1) {
-      // No more tags in the remaining source; treat as unclosed streaming block.
-      return { raw: source.slice(openStart), end: source.length }
-    }
-
-    if (isCloseAt(lt)) {
-      const gt = source.indexOf('>', lt)
-      if (gt === -1)
-        return null
-      depth--
-      if (depth === 0) {
-        const end = gt + 1
-        return { raw: source.slice(openStart, end), end }
-      }
-      i = gt + 1
-      continue
-    }
-
-    if (isOpenAt(lt)) {
-      const rel = findTagCloseIndexOutsideQuotes(source.slice(lt))
-      if (rel === -1)
-        return null
-      depth++
-      i = lt + rel + 1
-      continue
-    }
-
-    i = lt + 1
-  }
-
-  // If the closing tag hasn't arrived yet (streaming), return a partial block
-  // from the opening tag to end-of-source. This preserves original lines like
-  // `---` so inner markdown can render progressively.
-  return { raw: source.slice(openStart), end: source.length }
-}
-
 function clampNonNegative(n: number) {
   return Number.isFinite(n) && n > 0 ? n : 0
-}
-
-function lineToIndex(source: string, line: number) {
-  // markdown-it token.map uses 0-based line numbers.
-  const targetLine = clampNonNegative(line)
-  if (!source || targetLine <= 0)
-    return 0
-
-  let currentLine = 0
-  for (let i = 0; i < source.length; i++) {
-    if (source[i] === '\n') {
-      currentLine++
-      if (currentLine === targetLine)
-        return i + 1
-    }
-  }
-  return source.length
 }
 
 export function parseBasicBlockToken(
@@ -413,7 +252,7 @@ export function parseBasicBlockToken(
         const selfClosing = openEnd !== -1 && /\/\s*>\s*$/.test(openTag)
         const closeRange = openEnd === -1
           ? null
-          : findMatchingCloseTagRange(rawHtml, tag, openEnd + 1)
+          : findMatchingCustomCloseTagRange(rawHtml, tag, openEnd + 1)
         const closeIndex = closeRange?.start ?? -1
 
         let inner = ''

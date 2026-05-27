@@ -440,6 +440,7 @@ export interface ParseOptions {
 
 export interface InternalParseOptions extends ParseOptions {
   __customHtmlBlockCursor?: number
+  __customHtmlSourceCursor?: number
   __disableStreamParse?: boolean
   __insideStrong?: boolean
   __linkifyDemotionContext?: {

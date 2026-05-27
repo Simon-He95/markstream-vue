@@ -5,7 +5,7 @@ export interface LinkifyDemotionContext {
     marketTicker?: boolean;
 }
 export declare function createLinkifyDemotionContextTracker(options?: ParseOptions, sticky?: boolean): {
-    options(raw?: string): ParseOptions | undefined;
+    options(raw?: string): ParseOptions;
     remember(raw?: string): void;
     reset(): void;
 };

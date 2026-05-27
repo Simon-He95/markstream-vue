@@ -23,3 +23,4 @@ interface HtmlUrlContext {
 export declare function isUnsafeHtmlUrl(value: string, context?: HtmlUrlContext): boolean;
 export declare function shouldOpenLinkInNewTab(href: string | null | undefined): boolean;
 export declare function sanitizeImageSrc(value: unknown): string;
+export {};

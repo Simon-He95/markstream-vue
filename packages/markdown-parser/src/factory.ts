@@ -47,7 +47,7 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
       stream,
       ...experimental,
     },
-  }) as unknown as MarkdownItInstance
+  } as any) as unknown as MarkdownItInstance
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }

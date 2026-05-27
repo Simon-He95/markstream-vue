@@ -1,5 +1,5 @@
-import type { MarkdownIt } from '../markdown-it-types';
 import type { MathOptions } from '../config';
+import type { MarkdownIt } from '../markdown-it-types';
 export declare const KATEX_COMMANDS: string[];
 export declare const ESCAPED_KATEX_COMMANDS: string;
 export declare const ESCAPED_MKATWX_COMMANDS: RegExp;

@@ -1,3 +1,4 @@
+import type { MarkdownIt as MarkdownItInstance } from './markdown-it-types';
 export interface FactoryOptions extends Record<string, unknown> {
     markdownItOptions?: Record<string, unknown>;
     enableMath?: boolean;
@@ -17,4 +18,4 @@ export interface FactoryOptions extends Record<string, unknown> {
      */
     enableFixIndentedCodeBlock?: boolean;
 }
-export declare function factory(opts?: FactoryOptions): import("markdown-it-ts").MarkdownIt;
+export declare function factory(opts?: FactoryOptions): MarkdownItInstance;

@@ -4,20 +4,30 @@ function clampNonNegative(n: number) {
   return Number.isFinite(n) && n > 0 ? n : 0
 }
 
+let cachedSource = ''
+let cachedLineStarts: number[] | null = null
+
+function getLineStarts(source: string) {
+  if (source === cachedSource && cachedLineStarts)
+    return cachedLineStarts
+
+  const starts = [0]
+  for (let i = 0; i < source.length; i++) {
+    if (source[i] === '\n')
+      starts.push(i + 1)
+  }
+
+  cachedSource = source
+  cachedLineStarts = starts
+  return starts
+}
+
 export function lineToIndex(source: string, line: number) {
   const targetLine = clampNonNegative(line)
   if (!source || targetLine <= 0)
     return 0
 
-  let currentLine = 0
-  for (let i = 0; i < source.length; i++) {
-    if (source[i] === '\n') {
-      currentLine++
-      if (currentLine === targetLine)
-        return i + 1
-    }
-  }
-  return source.length
+  return getLineStarts(source)[targetLine] ?? source.length
 }
 
 export function withInlineSourceStartAt(options: ParseOptions | undefined, inlineSourceStart: number): ParseOptions | undefined {

@@ -1509,6 +1509,124 @@ describe('codeBlockNode editor creation locking', () => {
 
     wrapper.unmount()
   })
+
+  it('keeps inline diff fallback visible until Monaco renders deleted rows', async () => {
+    const helpers = getStreamMonacoHelpers()
+    const rectSpy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const hidden = this.style.display === 'none'
+      return {
+        x: 0,
+        y: 0,
+        top: 0,
+        right: hidden ? 0 : 640,
+        bottom: hidden ? 0 : 18,
+        left: 0,
+        width: hidden ? 0 : 640,
+        height: hidden ? 0 : 18,
+        toJSON: () => ({}),
+      }
+    })
+    const sideEditor = {
+      getModel: () => ({ getLineCount: () => 5 }),
+      getOption: () => 18,
+      getVisibleRanges: () => [{ startLineNumber: 1, endLineNumber: 5 }],
+      updateOptions: vi.fn(),
+      layout: vi.fn(),
+      onDidContentSizeChange: vi.fn(() => ({ dispose: vi.fn() })),
+      onDidLayoutChange: vi.fn(() => ({ dispose: vi.fn() })),
+    }
+    helpers.getDiffEditorView.mockReturnValue({
+      getOriginalEditor: () => sideEditor,
+      getModifiedEditor: () => sideEditor,
+      getLineChanges: () => [{
+        originalStartLineNumber: 3,
+        originalEndLineNumber: 3,
+        modifiedStartLineNumber: 3,
+        modifiedEndLineNumber: 3,
+      }],
+      onDidUpdateDiff: () => ({ dispose: vi.fn() }),
+      getModel: () => ({ getLineCount: () => 5 }),
+      getOption: sideEditor.getOption,
+      updateOptions: vi.fn(),
+      layout: vi.fn(),
+    })
+    let editorHost: HTMLElement | null = null
+    helpers.createDiffEditor.mockImplementation((el: HTMLElement) => {
+      editorHost = el
+      el.innerHTML = `
+        <div class="monaco-diff-editor">
+          <div class="editor modified">
+            <div class="view-lines">
+              <div class="view-line">"version": "0.0.54-beta.1",</div>
+            </div>
+            <div class="view-zones"></div>
+          </div>
+        </div>
+      `
+    })
+
+    let wrapper: ReturnType<typeof mount> | null = null
+    try {
+      wrapper = mount(CodeBlockNode, {
+        props: {
+          node: {
+            type: 'code_block',
+            language: 'diff',
+            code: '@@ -3 +3 @@',
+            diff: true,
+            originalCode: '{\n  "name": "markstream-vue",\n  "version": "0.0.49",\n}',
+            updatedCode: '{\n  "name": "markstream-vue",\n  "version": "0.0.54-beta.1",\n}',
+            raw: '```diff\n{\n  "name": "markstream-vue",\n-  "version": "0.0.49",\n+  "version": "0.0.54-beta.1",\n}\n```',
+          },
+          loading: false,
+          stream: true,
+          showHeader: false,
+          monacoOptions: {
+            renderSideBySide: false,
+          },
+        },
+      })
+
+      await waitForCreateDiffEditorCalls(1, helpers)
+
+      await vi.waitFor(() => {
+        expect(wrapper.find('.code-editor-container').classes()).toContain('is-hidden')
+        expect(wrapper.find('.markstream-pre__diff-line--removed').text()).toContain('0.0.49')
+      })
+
+      editorHost?.querySelector('.editor.modified .view-zones')?.insertAdjacentHTML('beforeend', `
+        <div>
+          <div class="view-lines line-delete">
+            <div class="view-line char-delete">"version": "0.0.49",</div>
+          </div>
+        </div>
+      `)
+
+      await vi.waitFor(() => {
+        expect(wrapper.find('.code-editor-container').classes()).not.toContain('is-hidden')
+      })
+
+      const nativeDeletedLine = editorHost?.querySelector('.editor.modified .view-lines.line-delete') as HTMLElement | null
+      nativeDeletedLine!.style.display = 'none'
+      await flushPendingMicrotasks()
+
+      await vi.waitFor(() => {
+        expect(wrapper.find('.code-editor-container').classes()).toContain('is-hidden')
+        expect(wrapper.find('.markstream-pre__diff-line--removed').text()).toContain('0.0.49')
+      })
+
+      nativeDeletedLine!.style.display = ''
+      await flushPendingMicrotasks()
+
+      await vi.waitFor(() => {
+        expect(wrapper.find('.code-editor-container').classes()).not.toContain('is-hidden')
+      })
+    }
+    finally {
+      wrapper?.unmount()
+      rectSpy.mockRestore()
+    }
+  })
 })
 
 describe('codeBlockNode language normalization', () => {

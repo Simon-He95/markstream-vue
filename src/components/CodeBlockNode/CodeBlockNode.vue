@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CodeBlockMonacoTheme, CodeBlockNodeProps, CodeBlockPreviewPayload } from '../../types/component-props'
-import type { MonacoDiffEditorViewLike, MonacoDisposableLike, MonacoEditorViewLike, MonacoNamespaceLike, MonacoRuntimeOptions } from './monaco'
+import type { MonacoDiffEditorViewLike, MonacoDiffLineChangeLike, MonacoDisposableLike, MonacoEditorViewLike, MonacoNamespaceLike, MonacoRuntimeOptions } from './monaco'
 // Avoid static import of `stream-monaco` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
 import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onUnmounted, ref, useAttrs, watch } from 'vue'
@@ -250,6 +250,7 @@ function clearLifecyclePending() {
 
 onBeforeUnmount(() => {
   isUnmounted = true
+  cancelInlineDiffDeletePresentationCheck()
   clearLifecyclePending()
   viewportHandle.value?.destroy()
   viewportHandle.value = null
@@ -479,9 +480,15 @@ const currentEditorKind = ref<'diff' | 'single'>(desiredEditorKind.value)
 const usePreCodeRender = ref(false)
 const editorDisplayReady = ref(false)
 const editorCreationFailed = ref(false)
+const inlineDiffDeletePresentationReady = ref(true)
+const inlineDiffDeletePresentationExpected = ref(false)
 const diffFallbackExitActive = ref(false)
 const diffFallbackFadingOut = ref(false)
 let diffFallbackExitTimer: number | null = null
+let inlineDiffDeletePresentationCheckRafId: number | null = null
+let inlineDiffDeletePresentationCheckToken = 0
+let inlineDiffDeletePresentationObserver: MutationObserver | null = null
+let inlineDiffDeletePresentationObservedRoot: HTMLElement | null = null
 const preFallbackWrap = computed(() => {
   if (isDiff.value) {
     const diffWordWrap = resolvedMonacoOptions.value?.diffWordWrap
@@ -531,7 +538,7 @@ const showPreWhileMonacoLoads = computed(() => {
   // Keep the pre fallback over it until the diff surface is visually ready,
   // otherwise users see a third "plain editor" state between fallback and final.
   if (isDiff.value)
-    return !editorDisplayReady.value
+    return !editorDisplayReady.value || !inlineDiffDeletePresentationReady.value
 
   // When an outer virtualizer owns scroll/item height, keep the fallback even
   // for warm/preloaded runtime mounts so restore never waits on an empty editor host.
@@ -1118,6 +1125,164 @@ function waitForAnimationFrame() {
   return new Promise<void>((resolve) => {
     safeRaf(() => resolve())
   })
+}
+
+function cancelInlineDiffDeletePresentationCheck() {
+  inlineDiffDeletePresentationCheckToken++
+  if (inlineDiffDeletePresentationCheckRafId != null) {
+    safeCancelRaf(inlineDiffDeletePresentationCheckRafId)
+    inlineDiffDeletePresentationCheckRafId = null
+  }
+  disconnectInlineDiffDeletePresentationObserver()
+}
+
+function disconnectInlineDiffDeletePresentationObserver() {
+  inlineDiffDeletePresentationObserver?.disconnect()
+  inlineDiffDeletePresentationObserver = null
+  inlineDiffDeletePresentationObservedRoot = null
+}
+
+function getCurrentDiffLineChanges() {
+  try {
+    const changes = getDiffEditorView()?.getLineChanges?.()
+    return Array.isArray(changes) ? changes : null
+  }
+  catch {
+    return null
+  }
+}
+
+function hasRemovedLines(change: MonacoDiffLineChangeLike) {
+  return countChangedLineRange(
+    change.originalStartLineNumber,
+    change.originalEndLineNumber,
+  ) > 0
+}
+
+function expectsVisibleInlineDeletedRows() {
+  if (!isDiff.value || !preFallbackDiffInline.value)
+    return false
+
+  const changes = getCurrentDiffLineChanges()
+  if (!changes?.length) {
+    return estimateDiffStats(
+      String(props.node.originalCode ?? ''),
+      String(props.node.updatedCode ?? ''),
+    ).removed > 0
+  }
+
+  return changes.some(hasRemovedLines)
+}
+
+function isVisibleInlineDeleteNode(node: Element) {
+  if (typeof window === 'undefined' || !(node instanceof HTMLElement))
+    return false
+
+  const text = (node.textContent || '').trim()
+  if (!text)
+    return false
+
+  const style = window.getComputedStyle(node)
+  const hiddenByPreFallback = !!node.closest('.code-editor-container.is-hidden')
+  if (style.display === 'none' || (style.visibility === 'hidden' && !hiddenByPreFallback))
+    return false
+  if (Number.parseFloat(style.opacity || '1') <= 0.01)
+    return false
+
+  const rect = node.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
+function hasVisibleInlineDeletedRows(root: HTMLElement | null | undefined) {
+  if (!root)
+    return false
+
+  const selectors = [
+    '.editor.modified .view-zones .view-lines.line-delete',
+    '.editor.modified .inline-deleted-text',
+    '.editor.modified .stream-monaco-fallback-inline-delete-zone',
+    '.editor.modified .stream-monaco-fallback-inline-delete-line',
+  ]
+
+  return Array.from(root.querySelectorAll(selectors.join(','))).some(isVisibleInlineDeleteNode)
+}
+
+function syncInlineDiffDeletePresentationReady() {
+  const expected = expectsVisibleInlineDeletedRows()
+  inlineDiffDeletePresentationExpected.value = expected
+  if (!expected) {
+    inlineDiffDeletePresentationReady.value = true
+    return true
+  }
+
+  const visible = hasVisibleInlineDeletedRows(codeEditor.value as HTMLElement | null)
+  inlineDiffDeletePresentationReady.value = visible
+  return visible
+}
+
+function ensureInlineDiffDeletePresentationObserver(root: HTMLElement | null | undefined) {
+  if (!root || typeof MutationObserver === 'undefined')
+    return
+  if (inlineDiffDeletePresentationObserver && inlineDiffDeletePresentationObservedRoot === root)
+    return
+
+  disconnectInlineDiffDeletePresentationObserver()
+  inlineDiffDeletePresentationObservedRoot = root
+  inlineDiffDeletePresentationObserver = new MutationObserver(() => {
+    if (isUnmounted)
+      return
+
+    syncInlineDiffDeletePresentationReady()
+    if (!inlineDiffDeletePresentationExpected.value)
+      disconnectInlineDiffDeletePresentationObserver()
+  })
+  inlineDiffDeletePresentationObserver.observe(root, {
+    attributes: true,
+    attributeFilter: ['class', 'style'],
+    childList: true,
+    subtree: true,
+  })
+}
+
+function scheduleInlineDiffDeletePresentationCheck(frameBudget = 600) {
+  if (!isDiff.value || !preFallbackDiffInline.value) {
+    inlineDiffDeletePresentationReady.value = true
+    cancelInlineDiffDeletePresentationCheck()
+    return
+  }
+
+  const token = ++inlineDiffDeletePresentationCheckToken
+  if (inlineDiffDeletePresentationCheckRafId != null)
+    safeCancelRaf(inlineDiffDeletePresentationCheckRafId)
+
+  ensureInlineDiffDeletePresentationObserver(codeEditor.value as HTMLElement | null)
+
+  let remaining = frameBudget
+  const check = () => {
+    inlineDiffDeletePresentationCheckRafId = null
+    if (isUnmounted || token !== inlineDiffDeletePresentationCheckToken)
+      return
+
+    try {
+      refreshDiffPresentationSafely()
+      syncInlineFoldProxies()
+    }
+    catch {}
+
+    syncInlineDiffDeletePresentationReady()
+    if (!inlineDiffDeletePresentationExpected.value) {
+      disconnectInlineDiffDeletePresentationObserver()
+      return
+    }
+
+    remaining--
+    if (remaining <= 0)
+      return
+
+    inlineDiffDeletePresentationCheckRafId = safeRaf(check)
+  }
+
+  inlineDiffDeletePresentationCheckRafId = safeRaf(check)
 }
 
 function measureLineHeightFromDom(): number | null {
@@ -2400,6 +2565,7 @@ async function waitForDiffEditorVisualReady() {
         refreshDiffPresentationSafely()
         syncInlineFoldProxies()
         refreshDiffStats()
+        scheduleInlineDiffDeletePresentationCheck()
         scheduleEditorHeightSync()
       }
       catch {}
@@ -2423,6 +2589,7 @@ async function waitForDiffEditorVisualReady() {
     refreshDiffPresentationSafely()
     syncInlineFoldProxies()
     refreshDiffStats()
+    scheduleInlineDiffDeletePresentationCheck()
     scheduleEditorHeightSync()
   }
   catch {}
@@ -2500,7 +2667,10 @@ watch(
   () => [props.node.originalCode, props.node.updatedCode, isDiff.value] as const,
   () => {
     syncEstimatedDiffStats()
-    safeRaf(() => refreshDiffStats())
+    safeRaf(() => {
+      refreshDiffStats()
+      scheduleInlineDiffDeletePresentationCheck()
+    })
   },
   { immediate: true },
 )
@@ -2564,6 +2734,7 @@ watch(
         monacoLanguage.value,
       )
       layoutEditorToHost(true)
+      scheduleInlineDiffDeletePresentationCheck()
     }
     catch (error) {
       warnCodeBlockDev('Failed to update Monaco diff editor', error)
@@ -2576,6 +2747,7 @@ watch(
       refreshDiffPresentationSafely()
       syncInlineFoldProxies()
       refreshDiffStats()
+      scheduleInlineDiffDeletePresentationCheck()
       scheduleEditorHeightSync()
     }
 
@@ -2874,6 +3046,8 @@ async function runEditorCreation(el: HTMLElement) {
   editorCreationFailed.value = false
   editorRuntimeCreated.value = false
   editorDisplayReady.value = false
+  inlineDiffDeletePresentationReady.value = true
+  cancelInlineDiffDeletePresentationCheck()
   diffFallbackExitActive.value = false
   diffFallbackFadingOut.value = false
   clearDiffFallbackExitTimer()
@@ -3453,6 +3627,7 @@ watch(
               layoutEditorToHost(true)
               syncInlineFoldProxies()
               refreshDiffStats()
+              scheduleInlineDiffDeletePresentationCheck()
               scheduleEditorHeightSync()
             }
             else {

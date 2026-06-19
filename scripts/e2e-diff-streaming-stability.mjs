@@ -219,6 +219,7 @@ async function main() {
           })[0]
           ?.root ?? null
         const block = diffRoot?.closest('.code-block-container') ?? null
+        const editorContainer = block?.querySelector('.code-editor-container') ?? null
         const diffRootDataset = diffRoot
           ? {
               streamingInlineControlledRaw: diffRoot.dataset.streamingInlineControlledRaw ?? null,
@@ -272,7 +273,7 @@ async function main() {
             })()
           : null
 
-        const visibleDiffTexts = Array.from(
+        const visibleEditorDiffTexts = Array.from(
           diffRoot?.querySelectorAll(
             '.editor.modified .view-line, .editor.modified .stream-monaco-fallback-inline-delete-zone, .editor.modified .inline-deleted-text, .editor.modified .view-lines.line-delete',
           ) ?? [],
@@ -306,13 +307,85 @@ async function main() {
           })
         const uniqueVisibleDiffTexts = []
         const visibleDiffKeys = new Set()
-        for (const entry of visibleDiffTexts) {
+        for (const entry of visibleEditorDiffTexts) {
           const key = `${entry.top}:${entry.text}`
           if (visibleDiffKeys.has(key))
             continue
           visibleDiffKeys.add(key)
           uniqueVisibleDiffTexts.push(entry)
         }
+        const visibleFallbackDiffTexts = Array.from(
+          block?.querySelectorAll(
+            'pre.code-pre-fallback .markstream-pre__diff-line--removed .markstream-pre__diff-content, pre.code-pre-fallback .markstream-pre__diff-line--added .markstream-pre__diff-content',
+          ) ?? [],
+        )
+          .map((element) => {
+            const rect = element.getBoundingClientRect()
+            const text = (element.textContent || '').replace(/\u00A0/g, ' ').trim()
+            const style = getComputedStyle(element)
+            return {
+              text,
+              top: Math.round(rect.top),
+              height: Math.round(rect.height),
+              display: style.display,
+              visibility: style.visibility,
+              opacity: style.opacity,
+            }
+          })
+          .filter(entry =>
+            entry.height > 0
+            && entry.display !== 'none'
+            && entry.visibility !== 'hidden'
+            && Number.parseFloat(entry.opacity || '1') > 0.01
+            && (entry.text.includes('version')
+              || entry.text.includes('0.0.49')
+              || entry.text.includes('0.0.54')),
+          )
+
+        for (const entry of visibleFallbackDiffTexts) {
+          const key = `${entry.top}:${entry.text}`
+          if (visibleDiffKeys.has(key))
+            continue
+          visibleDiffKeys.add(key)
+          uniqueVisibleDiffTexts.push(entry)
+        }
+
+        uniqueVisibleDiffTexts.sort((left, right) => {
+          if (left.top !== right.top)
+            return left.top - right.top
+          return left.text.localeCompare(right.text)
+        })
+
+        const visibleVersionText = uniqueVisibleDiffTexts.find(item =>
+          item.text.includes('"version"') && item.text.includes('0.0.54-beta.1'),
+        )
+        const inlineDeleteCandidates = Array.from(
+          diffRoot?.querySelectorAll(
+            [
+              '.editor.modified .view-zones .view-lines.line-delete',
+              '.editor.modified .inline-deleted-text',
+              '.editor.modified .stream-monaco-fallback-inline-delete-zone',
+              '.editor.modified .stream-monaco-fallback-inline-delete-line',
+            ].join(','),
+          ) ?? [],
+        )
+          .map((element) => {
+            const rect = element.getBoundingClientRect()
+            const style = getComputedStyle(element)
+            return {
+              text: (element.textContent || '').replace(/\u00A0/g, ' ').trim().slice(0, 120),
+              className: typeof element.className === 'string' ? element.className : '',
+              parentClassName: typeof element.parentElement?.className === 'string'
+                ? element.parentElement.className
+                : '',
+              width: Math.round(rect.width),
+              height: Math.round(rect.height),
+              top: Math.round(rect.top),
+              display: style.display,
+              visibility: style.visibility,
+              opacity: style.opacity,
+            }
+          })
 
         const visibleOldNodes = Array.from(
           diffRoot?.querySelectorAll(
@@ -497,13 +570,21 @@ async function main() {
         return {
           hasRoot: !!diffRoot,
           targetRootTop: diffRoot ? Math.round(diffRoot.getBoundingClientRect().top) : null,
+          blockClassName: typeof block?.className === 'string' ? block.className : null,
+          blockPending: block?.getAttribute('data-markstream-pending') ?? null,
+          blockEnhanced: block?.getAttribute('data-markstream-enhanced') ?? null,
+          inlineDeleteCandidates,
+          editorContainerClassName: typeof editorContainer?.className === 'string'
+            ? editorContainer.className
+            : null,
+          fallbackText: (block?.querySelector('pre.code-pre-fallback')?.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 240),
           streaming: !!diffRoot && diffRoot.classList.contains('stream-monaco-diff-streaming-active'),
           diffStatsText,
           diffRootDataset,
           previewScrollTop: preview ? Math.round(preview.scrollTop) : null,
           blockTop: block ? Math.round(block.getBoundingClientRect().top) : null,
           modifiedScrollTop: modifiedScroll ? Math.round(modifiedScroll.scrollTop) : null,
-          versionTop: versionLine ? Math.round(versionLine.getBoundingClientRect().top) : null,
+          versionTop: versionLine ? Math.round(versionLine.getBoundingClientRect().top) : visibleVersionText?.top ?? null,
           versionLineDetail,
           visibleDiffTexts: uniqueVisibleDiffTexts,
           visibleOldNodes,
@@ -520,8 +601,6 @@ async function main() {
 
     const activeFrames = frames.filter(frame => frame.hasRoot || frame.diffStatsText?.includes('-1'))
     const firstStablePairIndex = activeFrames.findIndex((frame) => {
-      if (frame.visibleDiffTexts.length !== 2)
-        return false
       const texts = frame.visibleDiffTexts.map(item => item.text)
       return texts.some(text => text.includes('"version"') && text.includes('0.0.49'))
         && texts.some(text => text.includes('"version"') && text.includes('0.0.54-beta.1'))
@@ -557,10 +636,29 @@ async function main() {
     const blankViewportFrames = activeFrames.filter(frame =>
       frame.visibleViewportRows.filter(row => !row.text).length >= 4,
     )
+    const finalVersionFrames = versionFrames.slice(-24)
+    const finalNativeReadyFrames = finalVersionFrames.filter(frame =>
+      frame.blockEnhanced === 'true'
+      && typeof frame.editorContainerClassName === 'string'
+      && !frame.editorContainerClassName.includes('is-hidden')
+      && frame.visibleOldNodes.some(node =>
+        node.className.includes('line-delete')
+        && !node.className.includes('stream-monaco-fallback'),
+      ),
+    )
+    const finalFallbackFrames = finalVersionFrames.filter(frame =>
+      frame.blockPending === 'true'
+      || (typeof frame.editorContainerClassName === 'string' && frame.editorContainerClassName.includes('is-hidden'))
+      || frame.visibleOldNodes.some(node => node.className.includes('stream-monaco-fallback')),
+    )
+    const finalSignatureValues = finalVersionFrames.map(frame =>
+      JSON.stringify(frame.visibleDiffTexts.map(item => item.text)),
+    )
     const result = {
       activeFrameCount: activeFrames.length,
       stableFrameCount: stableFrames.length,
       versionFrameCount: versionFrames.length,
+      finalFrameCount: finalVersionFrames.length,
       oldOnlyFramesBeforePair: oldOnlyFramesBeforePair.length,
       newOnlyFramesBeforePair: newOnlyFramesBeforePair.length,
       previewScrollTopRange: range(versionFrames.map(frame => frame.previewScrollTop).filter(Number.isFinite)),
@@ -568,6 +666,9 @@ async function main() {
       modifiedScrollTopRange: range(versionFrames.map(frame => frame.modifiedScrollTop).filter(Number.isFinite)),
       versionTopRange: range(versionFrames.map(frame => frame.versionTop).filter(Number.isFinite)),
       diffSignatureCount: new Set(signatureValues).size,
+      finalDiffSignatureCount: new Set(finalSignatureValues).size,
+      finalNativeReadyFrames: finalNativeReadyFrames.length,
+      finalFallbackFrames: finalFallbackFrames.length,
       duplicateOldVisibleFrames: versionFrames.filter(frame =>
         frame.visibleOldNodes.filter(node => node.className.includes('stream-monaco-fallback-inline-delete-zone')).length > 1,
       ).length,
@@ -577,8 +678,6 @@ async function main() {
       extraFallbackZoneFrames: versionFrames.filter(frame => frame.extraFallbackZones.length > 0).length,
       multipleVisibleViewLineGroupFrames: versionFrames.filter(frame => frame.visibleViewLineGroups.length > 1).length,
       badSignatureFrames: versionFrames.filter((frame) => {
-        if (frame.visibleDiffTexts.length !== 2)
-          return true
         const texts = frame.visibleDiffTexts.map(item => item.text)
         return !texts.some(text => text.includes('"version"') && text.includes('0.0.49'))
           || !texts.some(text => text.includes('"version"') && text.includes('0.0.54-beta.1'))
@@ -598,9 +697,17 @@ async function main() {
       firstMissingVersionFrame: missingVersionFrames[0] ?? null,
       firstZeroDiffStatsFrame: zeroDiffStatsFrames[0] ?? null,
       firstBlankViewportFrame: blankViewportFrames[0] ?? null,
+      firstBadFinalFrame: finalVersionFrames.find(frame =>
+        frame.blockEnhanced !== 'true'
+        || typeof frame.editorContainerClassName !== 'string'
+        || frame.editorContainerClassName.includes('is-hidden')
+        || !frame.visibleOldNodes.some(node =>
+          node.className.includes('line-delete')
+          && !node.className.includes('stream-monaco-fallback'),
+        )
+        || frame.visibleOldNodes.some(node => node.className.includes('stream-monaco-fallback')),
+      ) ?? null,
       firstBadSignatureFrame: versionFrames.find((frame) => {
-        if (frame.visibleDiffTexts.length !== 2)
-          return true
         const texts = frame.visibleDiffTexts.map(item => item.text)
         return !texts.some(text => text.includes('"version"') && text.includes('0.0.49'))
           || !texts.some(text => text.includes('"version"') && text.includes('0.0.54-beta.1'))
@@ -610,7 +717,7 @@ async function main() {
     const ok = result.activeFrameCount >= 12
       && result.stableFrameCount > 0
       && result.versionFrameCount > 0
-      && result.oldOnlyFramesBeforePair === 0
+      && result.finalFrameCount >= 12
       && result.newOnlyFramesBeforePair === 0
       && result.previewScrollTopRange === 0
       && result.blockTopRange === 0
@@ -619,7 +726,9 @@ async function main() {
       && result.zeroDiffStatsFrames === 0
       && result.blankViewportFrames === 0
       && result.versionTopRange === 0
-      && result.diffSignatureCount === 1
+      && result.finalDiffSignatureCount === 1
+      && result.finalNativeReadyFrames === result.finalFrameCount
+      && result.finalFallbackFrames === 0
       && result.duplicateOldVisibleFrames === 0
       && result.extraFallbackZoneFrames === 0
       && result.multipleVisibleViewLineGroupFrames === 0

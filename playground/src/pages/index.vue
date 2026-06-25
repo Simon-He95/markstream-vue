@@ -6,18 +6,16 @@ import type { StreamTransportMode } from '../composables/useStreamSimulator'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
 import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
-import MarkdownRender from '../../../src/components/NodeRenderer'
-import { setCustomComponents } from '../../../src/utils/nodeComponents'
+import MarkdownRender, { setCustomComponents, setKaTeXWorker, setMermaidWorker } from 'markstream-vue'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
-import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
 import MermaidWorker from '../../../src/workers/mermaidParser.worker?worker&inline'
-import { setMermaidWorker } from '../../../src/workers/mermaidWorkerClient'
 import ThinkingNode from '../components/ThinkingNode.vue'
 import { CUSTOM_STREAM_PRESET_ID, findMatchingStreamPreset, getStreamPreset, STREAM_PRESETS } from '../composables/streamPresets'
 import { clampStreamControl, normalizeStreamRange, useStreamSimulator } from '../composables/useStreamSimulator'
+import { usePlaygroundI18n } from '../composables'
 import { streamContent } from '../const/markdown'
 import 'katex/dist/katex.min.css'
-import '../../../src/index.css'
+import 'markstream-vue/index.css'
 // import MarkdownCodeBlockNode from '../../../src/components/MarkdownCodeBlockNode'
 
 const _d2Demo = `
@@ -101,7 +99,9 @@ const selectedStreamPresetId = computed<StreamPresetId>({
     streamBurstiness.value = preset.burstiness
   },
 })
-const streamPresetDescription = computed(() => activeStreamPreset.value?.description ?? 'Custom min/max window with your own burst profile.')
+const streamPresetDescription = computed(() => {
+  return getPresetDescription(activeStreamPreset.value)
+})
 const streamChunkRangeLabel = computed(() => `${normalizedChunkSizeRange.value.min}-${normalizedChunkSizeRange.value.max}`)
 const streamDelayRangeLabel = computed(() => `${normalizedChunkDelayRange.value.min}-${normalizedChunkDelayRange.value.max}ms`)
 const isBenchmarkMode = typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('benchmark') === '1'
@@ -192,6 +192,8 @@ watchEffect(() => {
 })
 
 setCustomComponents('playground-demo', { thinking: ThinkingNode })
+
+const { isZh, t, getPresetLabel, getPresetDescription } = usePlaygroundI18n()
 
 // 主题切换
 const isDark = useDark()
@@ -582,16 +584,16 @@ onBeforeUnmount(() => {
       >
         <div class="settings-sidebar__header">
           <Icon icon="carbon:settings-adjust" class="settings-sidebar__header-icon" />
-          <span class="settings-sidebar__title">Controls</span>
+          <span class="settings-sidebar__title">{{ t('controls') }}</span>
         </div>
 
         <!-- Brand Theme -->
         <div class="setting-group">
-          <label class="setting-label">Brand Theme</label>
+          <label class="setting-label">{{ t('brandTheme') }}</label>
           <div class="setting-select-wrap">
             <select v-model="activeBrandTheme" class="setting-select">
               <option value="">
-                Default
+                {{ t('default') }}
               </option>
               <option v-for="t in brandThemes.filter(Boolean)" :key="t" :value="t">
                 {{ t.charAt(0).toUpperCase() + t.slice(1).replace(/-/g, ' ') }}
@@ -603,7 +605,7 @@ onBeforeUnmount(() => {
 
         <!-- Code Theme -->
         <div class="setting-group">
-          <label class="setting-label">Code Theme</label>
+          <label class="setting-label">{{ t('codeTheme') }}</label>
           <div class="setting-select-wrap">
             <select v-model="selectedTheme" class="setting-select" aria-label="Code block theme" @click.stop @change.stop>
               <option v-for="t in themes" :key="t" :value="t">
@@ -616,17 +618,17 @@ onBeforeUnmount(() => {
 
         <!-- HTML Policy -->
         <div class="setting-group">
-          <label class="setting-label">HTML Policy</label>
+          <label class="setting-label">{{ t('htmlPolicy') }}</label>
           <div class="setting-select-wrap">
             <select v-model="htmlPolicy" class="setting-select" aria-label="HTML policy">
               <option value="trusted">
-                Trusted
+                {{ t('trusted') }}
               </option>
               <option value="safe">
-                Safe
+                {{ t('safe') }}
               </option>
               <option value="escape">
-                Escape
+                {{ t('escape') }}
               </option>
             </select>
             <Icon icon="carbon:chevron-down" class="setting-select-icon" />
@@ -635,14 +637,14 @@ onBeforeUnmount(() => {
 
         <!-- Stream Profile -->
         <div class="setting-group">
-          <label class="setting-label">Stream Profile</label>
+          <label class="setting-label">{{ t('streamProfile') }}</label>
           <div class="setting-select-wrap">
             <select v-model="selectedStreamPresetId" class="setting-select">
               <option v-for="preset in STREAM_PRESETS" :key="preset.id" :value="preset.id">
-                {{ preset.label }}
+                {{ getPresetLabel(preset) }}
               </option>
               <option :value="CUSTOM_STREAM_PRESET_ID">
-                Custom
+                {{ t('custom') }}
               </option>
             </select>
             <Icon icon="carbon:chevron-down" class="setting-select-icon" />
@@ -654,14 +656,14 @@ onBeforeUnmount(() => {
 
         <!-- Transport -->
         <div class="setting-group">
-          <label class="setting-label">Transport</label>
+          <label class="setting-label">{{ t('transport') }}</label>
           <div class="setting-select-wrap">
             <select v-model="streamTransportMode" class="setting-select">
               <option value="readable-stream">
-                ReadableStream
+                {{ t('readableStreamOption') }}
               </option>
               <option value="scheduler">
-                Scheduler
+                {{ t('schedulerOption') }}
               </option>
             </select>
             <Icon icon="carbon:chevron-down" class="setting-select-icon" />
@@ -670,14 +672,14 @@ onBeforeUnmount(() => {
 
         <!-- Slice Mode -->
         <div class="setting-group">
-          <label class="setting-label">Slice Mode</label>
+          <label class="setting-label">{{ t('sliceMode') }}</label>
           <div class="setting-select-wrap">
             <select v-model="streamSliceMode" class="setting-select">
               <option value="pure-random">
-                Pure Random
+                {{ t('pureRandom') }}
               </option>
               <option value="boundary-aware">
-                Boundary Aware
+                {{ t('boundaryAware') }}
               </option>
             </select>
             <Icon icon="carbon:chevron-down" class="setting-select-icon" />
@@ -688,35 +690,35 @@ onBeforeUnmount(() => {
 
         <!-- Sliders -->
         <div class="setting-group">
-          <label class="setting-label">Chunk Delay</label>
+          <label class="setting-label">{{ t('chunkDelay') }}</label>
           <div class="setting-slider-row">
-            <span class="setting-slider-label">Min</span>
+            <span class="setting-slider-label">{{ t('min') }}</span>
             <input v-model.number="streamChunkDelayMin" type="range" min="8" max="240" step="4" class="setting-slider">
             <span class="setting-slider-value">{{ normalizedChunkDelayRange.min }}ms</span>
           </div>
           <div class="setting-slider-row">
-            <span class="setting-slider-label">Max</span>
+            <span class="setting-slider-label">{{ t('max') }}</span>
             <input v-model.number="streamChunkDelayMax" type="range" min="8" max="240" step="4" class="setting-slider">
             <span class="setting-slider-value">{{ normalizedChunkDelayRange.max }}ms</span>
           </div>
         </div>
 
         <div class="setting-group">
-          <label class="setting-label">Chunk Size</label>
+          <label class="setting-label">{{ t('chunkSize') }}</label>
           <div class="setting-slider-row">
-            <span class="setting-slider-label">Min</span>
+            <span class="setting-slider-label">{{ t('min') }}</span>
             <input v-model.number="streamChunkSizeMin" type="range" min="1" max="24" step="1" class="setting-slider">
             <span class="setting-slider-value">{{ normalizedChunkSizeRange.min }}</span>
           </div>
           <div class="setting-slider-row">
-            <span class="setting-slider-label">Max</span>
+            <span class="setting-slider-label">{{ t('max') }}</span>
             <input v-model.number="streamChunkSizeMax" type="range" min="1" max="24" step="1" class="setting-slider">
             <span class="setting-slider-value">{{ normalizedChunkSizeRange.max }}</span>
           </div>
         </div>
 
         <div class="setting-group">
-          <label class="setting-label">Burstiness</label>
+          <label class="setting-label">{{ t('burstiness') }}</label>
           <div class="setting-slider-row">
             <input v-model.number="streamBurstiness" type="range" min="0" max="100" step="1" class="setting-slider">
             <span class="setting-slider-value">{{ normalizedBurstiness }}%</span>
@@ -724,14 +726,30 @@ onBeforeUnmount(() => {
         </div>
 
         <p class="setting-hint">
-          Window: {{ streamChunkRangeLabel }} chars / {{ streamDelayRangeLabel }}
+          {{ t('window') }}: {{ streamChunkRangeLabel }} {{ t('chars') }} / {{ streamDelayRangeLabel }}
         </p>
 
         <div class="settings-divider" />
 
+        <!-- Language Switcher -->
+        <div class="setting-row-inline" style="margin-bottom: 12px;">
+          <label class="setting-label">{{ t('language') }}</label>
+          <button
+            class="theme-toggle"
+            :class="{ 'theme-toggle--dark': isZh }"
+            @click.stop="isZh = !isZh"
+          >
+            <div class="theme-toggle__thumb">
+              <span style="font-size: 9px; font-weight: bold; color: #3b82f6; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                {{ isZh ? '中' : 'EN' }}
+              </span>
+            </div>
+          </button>
+        </div>
+
         <!-- Dark Mode -->
         <div class="setting-row-inline">
-          <label class="setting-label">Dark Mode</label>
+          <label class="setting-label">{{ t('darkMode') }}</label>
           <button
             class="theme-toggle"
             :class="{ 'theme-toggle--dark': isDark }"
@@ -755,7 +773,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="setting-row-inline">
-          <label class="setting-label">Smooth Stream</label>
+          <label class="setting-label">{{ t('smoothStream') }}</label>
           <button
             class="theme-toggle"
             :class="{ 'theme-toggle--dark': smoothStreaming }"
@@ -807,13 +825,13 @@ onBeforeUnmount(() => {
                 markstream-vue
               </h1>
               <p class="chat-header__subtitle">
-                Streaming Markdown Renderer
+                {{ t('subtitle') }}
               </p>
               <div class="chat-header__meta">
                 <span class="chat-header__meta-pill" :class="{ 'chat-header__meta-pill--active': isStreaming }">
-                  {{ isStreaming ? (isPaused ? 'Paused' : 'Streaming') : 'Ready' }}
+                  {{ isStreaming ? (isPaused ? t('paused') : t('streaming')) : t('ready') }}
                 </span>
-                <span class="chat-header__meta-pill">{{ selectedTheme || 'Auto Theme' }}</span>
+                <span class="chat-header__meta-pill">{{ selectedTheme || t('autoTheme') }}</span>
               </div>
             </div>
           </div>
@@ -826,7 +844,7 @@ onBeforeUnmount(() => {
               class="nav-btn nav-btn--github"
             >
               <Icon icon="carbon:logo-github" class="nav-btn__icon" />
-              <span class="nav-btn__text">Star</span>
+              <span class="nav-btn__text">{{ t('star') }}</span>
             </a>
 
             <a
@@ -836,27 +854,27 @@ onBeforeUnmount(() => {
               class="nav-btn nav-btn--docs"
             >
               <Icon icon="carbon:book" class="nav-btn__icon" />
-              <span class="nav-btn__text">Docs</span>
+              <span class="nav-btn__text">{{ t('docs') }}</span>
             </a>
 
             <button class="nav-btn nav-btn--themes" @click="goToThemeGallery">
               <Icon icon="carbon:color-palette" class="nav-btn__icon" />
-              <span class="nav-btn__text">Themes</span>
+              <span class="nav-btn__text">{{ t('themes') }}</span>
             </button>
 
             <button class="nav-btn nav-btn--virtual" @click="goToVirtualScrollLab">
               <Icon icon="carbon:list" class="nav-btn__icon" />
-              <span class="nav-btn__text">Virtual scroll lab</span>
+              <span class="nav-btn__text">{{ t('virtualScrollLab') }}</span>
             </button>
 
             <button class="nav-btn nav-btn--virtual" @click="goToVirtualTimelineZero">
               <Icon icon="carbon:flow" class="nav-btn__icon" />
-              <span class="nav-btn__text">Virtual timeline</span>
+              <span class="nav-btn__text">{{ t('virtualTimeline') }}</span>
             </button>
 
             <button class="nav-btn nav-btn--virtual" @click="goToVirtualScrollerMarkstream">
               <Icon icon="carbon:data-vis-1" class="nav-btn__icon" />
-              <span class="nav-btn__text">Vue scroller</span>
+              <span class="nav-btn__text">{{ t('vueScroller') }}</span>
             </button>
 
             <button
@@ -865,7 +883,7 @@ onBeforeUnmount(() => {
               @click="() => { stopStreamSimulation(); startStreamSimulation() }"
             >
               <Icon icon="carbon:restart" class="nav-btn__icon" />
-              <span class="nav-btn__text">Retry</span>
+              <span class="nav-btn__text">{{ t('retry') }}</span>
             </button>
 
             <button
@@ -874,24 +892,24 @@ onBeforeUnmount(() => {
               @click="toggleStreamPause"
             >
               <Icon :icon="isPaused ? 'carbon:play-filled-alt' : 'carbon:pause-filled'" class="nav-btn__icon" />
-              <span class="nav-btn__text">{{ isPaused ? 'Resume' : 'Pause' }}</span>
+              <span class="nav-btn__text">{{ isPaused ? t('resume') : t('pause') }}</span>
             </button>
 
             <button class="nav-btn nav-btn--test" @click="goToTest">
               <Icon icon="carbon:rocket" class="nav-btn__icon" />
-              <span class="nav-btn__text">Test</span>
+              <span class="nav-btn__text">{{ t('test') }}</span>
             </button>
 
             <button class="nav-btn nav-btn--cdn" @click="goToCdnPeers">
               <Icon icon="carbon:cloud" class="nav-btn__icon" />
-              <span class="nav-btn__text">CDN</span>
+              <span class="nav-btn__text">{{ t('cdn') }}</span>
             </button>
           </nav>
         </header>
 
         <section class="chat-overview">
           <div class="chat-overview__intro">
-            <span class="chat-overview__eyebrow">Live Playground</span>
+            <span class="chat-overview__eyebrow">{{ t('livePlayground') }}</span>
             <p class="chat-overview__summary">
               {{ streamPresetDescription }}
             </p>
@@ -899,19 +917,19 @@ onBeforeUnmount(() => {
 
           <div class="chat-overview__stats">
             <div class="chat-overview__stat">
-              <span class="chat-overview__stat-label">Chunk</span>
+              <span class="chat-overview__stat-label">{{ t('chunk') }}</span>
               <strong class="chat-overview__stat-value">{{ streamChunkRangeLabel }}</strong>
             </div>
             <div class="chat-overview__stat">
-              <span class="chat-overview__stat-label">Delay</span>
+              <span class="chat-overview__stat-label">{{ t('delay') }}</span>
               <strong class="chat-overview__stat-value">{{ streamDelayRangeLabel }}</strong>
             </div>
             <div class="chat-overview__stat">
-              <span class="chat-overview__stat-label">Transport</span>
-              <strong class="chat-overview__stat-value">{{ streamTransportMode === 'readable-stream' ? 'Reader' : 'Scheduler' }}</strong>
+              <span class="chat-overview__stat-label">{{ t('transport') }}</span>
+              <strong class="chat-overview__stat-value">{{ streamTransportMode === 'readable-stream' ? t('reader') : t('scheduler') }}</strong>
             </div>
             <div class="chat-overview__stat">
-              <span class="chat-overview__stat-label">Burst</span>
+              <span class="chat-overview__stat-label">{{ t('burst') }}</span>
               <strong class="chat-overview__stat-value">{{ normalizedBurstiness }}%</strong>
             </div>
           </div>

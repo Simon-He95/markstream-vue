@@ -61,7 +61,7 @@ export const STREAM_PRESETS: StreamPreset[] = [
     id: 'proxy-buffered',
     label: 'Proxy Buffered',
     description: 'Silent gaps followed by buffered batches from an intermediate proxy.',
-    descriptionZh: '前面更安静，后面成批吐内容，模拟代理层缓冲后再转发。',
+    descriptionZh: '静默等待后由中间代理整批输出，模拟代理层缓冲后再转发。',
     chunkDelayMin: 36,
     chunkDelayMax: 160,
     chunkSizeMin: 6,

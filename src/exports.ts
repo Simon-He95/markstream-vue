@@ -56,6 +56,7 @@ import { setDefaultI18nMap } from './composables/useSafeI18n'
 import { useSmoothMarkdownStream } from './composables/useSmoothMarkdownStream'
 import { setIconTheme } from './icon-themes'
 import { setLanguageIconResolver } from './utils/languageIcon'
+import { MARKSTREAM_LANGUAGE_ICON_RESOLVER_KEY } from './utils/languageIconResolver'
 import { clearGlobalCustomComponents, createCustomComponentsRef, getCustomNodeComponents, MARKSTREAM_CUSTOM_COMPONENTS_KEY, removeCustomComponents, setCustomComponents } from './utils/nodeComponents'
 
 function definePublicAsyncComponent<TProps extends object>(
@@ -170,6 +171,11 @@ export interface MarkstreamVuePluginOptions {
    * App-scoped custom components.
    */
   components?: Partial<MarkstreamCustomComponents>
+
+  /**
+   * App-scoped code language icon resolver. Prefer this in SSR/multi-tenant apps.
+   */
+  languageIconResolver?: LanguageIconResolver
 
   /**
    * @deprecated Prefer setLanguageIconResolver() before app.mount().
@@ -330,6 +336,9 @@ export const VueRendererMarkdown: Plugin<[options?: MarkstreamVuePluginOptions]>
       setDefaultMathOptions(options.mathOptions)
     if (options && 'infographicLoader' in options)
       setInfographicLoader(options.infographicLoader ?? null)
+
+    if (options?.languageIconResolver)
+      app.provide(MARKSTREAM_LANGUAGE_ICON_RESOLVER_KEY, options.languageIconResolver)
 
     if (options?.components)
       app.provide(MARKSTREAM_CUSTOM_COMPONENTS_KEY, createCustomComponentsRef(options.components))

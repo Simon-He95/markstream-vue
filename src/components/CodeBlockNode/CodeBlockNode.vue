@@ -8,7 +8,8 @@ import { useSafeI18n } from '../../composables/useSafeI18n'
 // Tooltip is provided as a singleton via composable to avoid many DOM nodes
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useViewportPriority } from '../../composables/viewportPriority'
-import { getLanguageIcon, languageIconsRevision, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../../utils'
+import { languageIconsRevision, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../../utils'
+import { MARKSTREAM_LANGUAGE_ICON_RESOLVER_KEY, resolveLanguageIcon } from '../../utils/languageIconResolver'
 import { resolveLifecycleIndexKey } from '../../utils/lifecycleIndexKey'
 import { MARKSTREAM_NODE_LIFECYCLE_KEY } from '../../utils/nodeLifecycle'
 import { safeCancelRaf, safeRaf } from '../../utils/safeRaf'
@@ -53,6 +54,7 @@ const emits = defineEmits<{
 
 const attrs = useAttrs()
 const lifecycle = inject(MARKSTREAM_NODE_LIFECYCLE_KEY, null)
+const languageIconResolver = inject(MARKSTREAM_LANGUAGE_ICON_RESOLVER_KEY, null)
 const hostScrollManaged = inject<{ value: boolean } | null>('markstreamHostScrollManaged', null)
 const lifecycleIndexKey = computed(() => {
   return resolveLifecycleIndexKey(props, attrs)
@@ -2699,7 +2701,7 @@ const headerCaption = computed(() => {
 // Computed property for language icon
 const languageIcon = computed(() => {
   void languageIconsRevision.value
-  return getLanguageIcon(codeLanguage.value || '')
+  return resolveLanguageIcon(codeLanguage.value || '', languageIconResolver)
 })
 
 // Compute inline style for container to respect optional min/max width

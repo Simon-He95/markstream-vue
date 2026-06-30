@@ -113,6 +113,7 @@ const pluginIconTheme = 'material'
 const infographicLoader: InfographicLoader = async () => ({})
 const pluginOptions: MarkstreamVuePluginOptions = {
   components: customComponents,
+  languageIconResolver: pluginLanguageIconResolver,
   getLanguageIcon: pluginLanguageIconResolver,
   iconTheme: pluginIconTheme,
   infographicLoader,

@@ -197,6 +197,208 @@ describe('typewriter cursor position', () => {
     wrapper.unmount()
   })
 
+  it('renders simple cursor mode without Range measurement', async () => {
+    const queuedFrames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {
+      queuedFrames.push(cb)
+      return queuedFrames.length
+    }) as typeof requestAnimationFrame)
+    vi.stubGlobal('cancelAnimationFrame', (() => {}) as typeof cancelAnimationFrame)
+    const createRangeSpy = vi.spyOn(document, 'createRange').mockImplementation(() => {
+      throw new Error('simple cursor mode should not create DOM Range')
+    })
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: '',
+        typewriter: 'simple',
+        smoothStreaming: false,
+        batchRendering: false,
+        viewportPriority: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    await flushAll()
+
+    await wrapper.setProps({ content: 'hello' })
+    await flushAll()
+
+    const cursorHost = wrapper.get('[data-typewriter-simple-cursor="true"]')
+    expect(cursorHost.classes()).toContain('text-node')
+    expect(cursorHost.text()).toBe('hello')
+    expect(wrapper.find('.typewriter-cursor').exists()).toBe(false)
+    expect(createRangeSpy).not.toHaveBeenCalled()
+    expect(queuedFrames).toHaveLength(0)
+
+    wrapper.unmount()
+  })
+
+  it('keeps simple cursor mode measurement-free while smooth auto commits advance', async () => {
+    const queuedFrames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {
+      queuedFrames.push(cb)
+      return queuedFrames.length
+    }) as typeof requestAnimationFrame)
+    vi.stubGlobal('cancelAnimationFrame', (() => {}) as typeof cancelAnimationFrame)
+    const createRangeSpy = vi.spyOn(document, 'createRange').mockImplementation(() => {
+      throw new Error('simple cursor mode should not create DOM Range')
+    })
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: '',
+        typewriter: 'simple',
+        smoothStreaming: 'auto',
+        smoothStreamingOptions: {
+          startDelayMs: 0,
+          minCharsPerSecond: 1000,
+          maxCharsPerSecond: 1000,
+          maxCommitFps: 60,
+          maxCharsPerCommit: 4,
+        },
+        batchRendering: false,
+        viewportPriority: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    await flushAll()
+    queuedFrames.length = 0
+
+    await wrapper.setProps({ content: 'abcdefghijklmnopqrst' })
+    await flushAll()
+
+    const baseline = performance.now()
+    await runNextFrame(queuedFrames, baseline + 50)
+    await runNextFrame(queuedFrames, baseline + 66)
+
+    const cursorHost = wrapper.get('[data-typewriter-simple-cursor="true"]')
+    expect(cursorHost.classes()).toContain('text-node')
+    expect(cursorHost.text().length).toBeGreaterThan(0)
+    expect(wrapper.find('.typewriter-cursor').exists()).toBe(false)
+    expect(createRangeSpy).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('keeps simple cursor on the stable text host after streamed delta settles', async () => {
+    const createRangeSpy = vi.spyOn(document, 'createRange').mockImplementation(() => {
+      throw new Error('simple cursor mode should not create DOM Range')
+    })
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: 'hello',
+        typewriter: 'simple',
+        smoothStreaming: false,
+        batchRendering: false,
+        viewportPriority: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    await flushAll()
+    await wrapper.setProps({ content: 'hello world' })
+    await flushAll()
+
+    expect(wrapper.get('[data-typewriter-simple-cursor="true"]').classes()).toContain('text-node')
+    expect(wrapper.get('.text-node-stream-delta').text()).toBe('world')
+
+    await wrapper.get('.text-node-stream-delta').trigger('animationend')
+    await flushAll()
+
+    const cursorHost = wrapper.get('[data-typewriter-simple-cursor="true"]')
+    expect(cursorHost.classes()).toContain('text-node')
+    expect(cursorHost.text()).toBe('hello world')
+    expect(createRangeSpy).not.toHaveBeenCalled()
+
+    wrapper.unmount()
+  })
+
+  it('resyncs the visible cursor when switching from simple to precise without content growth', async () => {
+    const queuedFrames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {
+      queuedFrames.push(cb)
+      return queuedFrames.length
+    }) as typeof requestAnimationFrame)
+    vi.stubGlobal('cancelAnimationFrame', (() => {}) as typeof cancelAnimationFrame)
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: '',
+        typewriter: 'simple',
+        smoothStreaming: false,
+        batchRendering: false,
+        viewportPriority: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    await flushAll()
+    await wrapper.setProps({ content: 'hello' })
+    await flushAll()
+    expect(wrapper.find('[data-typewriter-simple-cursor="true"]').exists()).toBe(true)
+    expect(queuedFrames).toHaveLength(0)
+
+    await wrapper.setProps({ typewriter: 'precise' })
+    await flushAll()
+
+    expect(wrapper.find('[data-typewriter-simple-cursor="true"]').exists()).toBe(false)
+    expect(wrapper.find('.typewriter-cursor').exists()).toBe(true)
+    expect(queuedFrames).toHaveLength(1)
+
+    wrapper.unmount()
+  })
+
+  it('retargets simple cursor when incremental rendering mounts the next slot', async () => {
+    const originalNodeEnv = process.env.NODE_ENV
+    const queuedFrames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {
+      queuedFrames.push(cb)
+      return queuedFrames.length
+    }) as typeof requestAnimationFrame)
+    vi.stubGlobal('cancelAnimationFrame', (() => {}) as typeof cancelAnimationFrame)
+    process.env.NODE_ENV = 'development'
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: '',
+        typewriter: 'simple',
+        smoothStreaming: false,
+        batchRendering: true,
+        maxLiveNodes: 0,
+        initialRenderBatchSize: 1,
+        renderBatchSize: 1,
+        renderBatchDelay: 20,
+        viewportPriority: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    try {
+      await flushAll()
+      queuedFrames.length = 0
+
+      await wrapper.setProps({ content: 'first\n\nsecond' })
+      await flushAll()
+
+      expect(wrapper.get('[data-typewriter-simple-cursor="true"]').text()).toBe('first')
+      expect(wrapper.find('.node-slot[data-node-index="1"] .node-placeholder').exists()).toBe(true)
+
+      await runNextFrame(queuedFrames, performance.now() + 16)
+      await new Promise(resolve => setTimeout(resolve, 25))
+      await flushAll()
+
+      expect(wrapper.find('.node-slot[data-node-index="1"] .node-content').exists()).toBe(true)
+      expect(wrapper.get('[data-typewriter-simple-cursor="true"]').text()).toBe('second')
+    }
+    finally {
+      wrapper.unmount()
+      process.env.NODE_ENV = originalNodeEnv
+    }
+  })
+
   it('coalesces cursor positioning into one RAF and measures latest content', async () => {
     const queuedFrames: FrameRequestCallback[] = []
     vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {

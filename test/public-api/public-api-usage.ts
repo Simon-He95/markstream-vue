@@ -105,6 +105,12 @@ const props: NodeRendererProps = {
   },
 }
 
+const simpleTypewriterProps: NodeRendererProps = {
+  content: 'Streaming text',
+  typewriter: 'simple',
+}
+void simpleTypewriterProps
+
 const options: SmoothMarkdownStreamOptions = {}
 const customComponents: CustomComponents = {}
 const pluginLanguageIconResolver: LanguageIconResolver = lang => `custom-${lang}`

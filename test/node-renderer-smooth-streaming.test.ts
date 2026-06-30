@@ -124,6 +124,37 @@ describe('node renderer smooth streaming', () => {
     wrapper.unmount()
   })
 
+  it('smoothStreaming="auto" treats simple typewriter mode as enabled', async () => {
+    const queuedFrames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {
+      queuedFrames.push(cb)
+      return queuedFrames.length
+    }) as typeof requestAnimationFrame)
+    vi.stubGlobal('cancelAnimationFrame', (() => {}) as typeof cancelAnimationFrame)
+
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: '',
+        typewriter: 'simple',
+        smoothStreaming: 'auto',
+        batchRendering: false,
+        viewportPriority: false,
+        deferNodesUntilVisible: false,
+      },
+    })
+
+    await nextTick()
+    queuedFrames.length = 0
+
+    await wrapper.setProps({ content: 'Simple smooth streaming markdown renderer.' })
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('Simple smooth')
+    expect(queuedFrames.length).toBeGreaterThan(0)
+
+    wrapper.unmount()
+  })
+
   it('smoothStreaming="auto" does not enable without typewriter or maxLiveNodes<=0', async () => {
     const wrapper = mount(NodeRenderer, {
       props: {

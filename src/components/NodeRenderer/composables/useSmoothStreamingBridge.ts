@@ -19,6 +19,10 @@ export interface SmoothStreamingBridge {
   effectiveFinal: ComputedRef<boolean | undefined>
 }
 
+function isTypewriterEnabled(typewriter: NodeRendererProps['typewriter']) {
+  return typewriter === true || typewriter === 'simple' || typewriter === 'precise'
+}
+
 export function useSmoothStreamingBridge(
   props: Readonly<NodeRendererProps>,
   options: SmoothStreamingBridgeOptions,
@@ -40,7 +44,7 @@ export function useSmoothStreamingBridge(
       return true
 
     // auto mode: enable only for typewriter or incremental mode.
-    return props.typewriter === true || (props.maxLiveNodes ?? 0) <= 0
+    return isTypewriterEnabled(props.typewriter) || (props.maxLiveNodes ?? 0) <= 0
   })
 
   // Prevent pacing initial static content on first client render.

@@ -346,8 +346,13 @@ export interface NodeRendererProps {
   /** Scope key used by `setCustomComponents()` and `data-custom-id` style overrides. */
   customId?: string
   indexKey?: number | string
-  /** Show a blinking typewriter cursor while streamed content grows. Applies to `content` mode; ignored when non-empty `nodes` are provided. Default: false */
-  typewriter?: boolean
+  /**
+   * Show a blinking typewriter cursor while streamed content grows.
+   * - `true` / `'precise'`: position the cursor at the last rendered text using DOM Range measurements.
+   * - `'simple'`: render a lightweight inline cursor without DOM Range measurements.
+   * Applies to `content` mode; ignored when non-empty `nodes` are provided. Default: false
+   */
+  typewriter?: boolean | 'simple' | 'precise'
   /**
    * Enable built-in smooth pacing for streaming `content` updates.
    * - `true`: force-enable smooth streaming (content mode only)

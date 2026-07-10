@@ -29,6 +29,7 @@ const ESCAPED_PUNCTUATION_RE = /\\([\\()[\]`$|*_\-!])/g
 const ESCAPABLE_PUNCTUATION = new Set(['\\', '(', ')', '[', ']', '`', '$', '|', '*', '_', '-', '!'])
 const WHITESPACE_RE = /\s/u
 const ASCII_PUNCTUATION_RE = /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/
+const ASCII_OPENING_PUNCTUATION_RE = /^[([{]$/u
 const UNICODE_PUNCTUATION_RE = /\p{P}/u
 const CJK_OPENING_PUNCTUATION_RE = /^[《「『【〔〖〘〚〈（［｛“‘﹁﹃﹙﹛﹝]$/u
 const CJK_CLOSING_PUNCTUATION_RE = /^[》」』】〕〗〙〛〉）］｝”’﹂﹄﹚﹜﹞]$/u
@@ -154,6 +155,22 @@ function isPunctuationChar(ch?: string) {
   return !!ch && (ASCII_PUNCTUATION_RE.test(ch) || UNICODE_PUNCTUATION_RE.test(ch))
 }
 
+function getPreviousCodePoint(content: string, index: number) {
+  if (index <= 0)
+    return undefined
+
+  const previousIndex = index - 1
+  const codePoint = content.charCodeAt(previousIndex)
+  const codePointIndex = codePoint >= 0xDC00 && codePoint <= 0xDFFF ? previousIndex - 1 : previousIndex
+  const value = content.codePointAt(codePointIndex)
+  return value === undefined ? undefined : String.fromCodePoint(value)
+}
+
+function getNextCodePoint(content: string, index: number) {
+  const value = content.codePointAt(index)
+  return value === undefined ? undefined : String.fromCodePoint(value)
+}
+
 function isCjkOpeningPunctuation(ch?: string, previous?: string) {
   return !!ch
     && !!previous
@@ -168,19 +185,28 @@ function isCjkClosingPunctuation(ch?: string, next?: string) {
     && CJK_CLOSING_PUNCTUATION_RE.test(ch)
 }
 
+function allowsPunctuationAsOpener(ch?: string, previous?: string) {
+  return isCjkOpeningPunctuation(ch, previous)
+    || (!!previous && isPunctuationChar(previous) && !!ch && ASCII_OPENING_PUNCTUATION_RE.test(ch))
+}
+
 function isEmphasisOpenDelimiter(content: string, index: number) {
-  const prev = index > 0 ? content[index - 1] : undefined
-  const next = content[index + 1]
+  const prev = getPreviousCodePoint(content, index)
+  const next = getNextCodePoint(content, index + 1)
 
   if (!next || isWhitespaceChar(next))
     return false
 
-  return !(isPunctuationChar(next) && !isCjkOpeningPunctuation(next, prev) && !!prev && !isWhitespaceChar(prev) && !isPunctuationChar(prev))
+  if (!isPunctuationChar(next))
+    return true
+  if (allowsPunctuationAsOpener(next, prev))
+    return true
+  return !prev || isWhitespaceChar(prev)
 }
 
 function isEmphasisCloseDelimiter(content: string, index: number) {
-  const prev = index > 0 ? content[index - 1] : undefined
-  const next = content[index + 1]
+  const prev = getPreviousCodePoint(content, index)
+  const next = getNextCodePoint(content, index + 1)
 
   if (!prev || isWhitespaceChar(prev))
     return false
@@ -215,18 +241,22 @@ function findNextUnescapedEmphasisClose(
 }
 
 function isStrongOpenDelimiter(content: string, index: number) {
-  const prev = index > 0 ? content[index - 1] : undefined
-  const next = content[index + 2]
+  const prev = getPreviousCodePoint(content, index)
+  const next = getNextCodePoint(content, index + 2)
 
   if (!next || isWhitespaceChar(next))
     return false
 
-  return !(isPunctuationChar(next) && !isCjkOpeningPunctuation(next, prev) && !!prev && !isWhitespaceChar(prev) && !isPunctuationChar(prev))
+  if (!isPunctuationChar(next))
+    return true
+  if (allowsPunctuationAsOpener(next, prev))
+    return true
+  return !prev || isWhitespaceChar(prev)
 }
 
 function isStrongCloseDelimiter(content: string, index: number) {
-  const prev = index > 0 ? content[index - 1] : undefined
-  const next = content[index + 2]
+  const prev = getPreviousCodePoint(content, index)
+  const next = getNextCodePoint(content, index + 2)
 
   if (!prev || isWhitespaceChar(prev))
     return false
@@ -344,8 +374,8 @@ function getAsteriskRunInfo(content: string, start: number) {
   let end = start
   while (end < content.length && content[end] === '*')
     end++
-  const prev = start > 0 ? content[start - 1] : undefined
-  const next = end < content.length ? content[end] : undefined
+  const prev = getPreviousCodePoint(content, start)
+  const next = getNextCodePoint(content, end)
   return {
     len: end - start,
     prev,
@@ -420,6 +450,146 @@ function recoverTrailingMarkdownLinkLabel(raw?: string, href?: string) {
   return match[2] === href ? match[1] : null
 }
 
+function hasInvalidStrongCandidate(content: string) {
+  const visibleContent = decodeVisibleTextFromRaw(content)
+  let index = visibleContent.indexOf('**')
+  while (index !== -1) {
+    if (!isEscapedVisibleChar(content, index, '*')
+      && !isEscapedVisibleChar(content, index + 1, '*')
+      && !isStrongOpenDelimiter(visibleContent, index)) {
+      return true
+    }
+    index = visibleContent.indexOf('**', index + 2)
+  }
+  return false
+}
+
+function getRawPrefixForVisibleText(raw: string, content: string) {
+  if (!content)
+    return ''
+
+  const rawIndex = getRawIndexForVisibleIndex(raw, content.length - 1)
+  if (rawIndex === -1)
+    return null
+
+  const prefix = raw.slice(0, rawIndex + 1)
+  return decodeVisibleTextFromRaw(prefix) === content ? prefix : null
+}
+
+function getRawSuffixForVisibleText(raw: string, content: string) {
+  if (!content)
+    return ''
+
+  const directIndex = raw.lastIndexOf(content)
+  if (directIndex !== -1) {
+    const suffix = raw.slice(directIndex)
+    if (decodeVisibleTextFromRaw(suffix) === content)
+      return suffix
+  }
+
+  for (let index = raw.length - 1; index >= 0; index--) {
+    const suffix = raw.slice(index)
+    if (decodeVisibleTextFromRaw(suffix) === content)
+      return suffix
+  }
+  return null
+}
+
+function repairCollapsedStrongTokens(tokens: MarkdownToken[], raw?: string) {
+  if (!raw || tokens.length < 3)
+    return null
+  if (!tokens.some(token => token.type === 'strong_open') || !tokens.some(token => token.type === 'strong_close'))
+    return null
+  if (tokens.length !== 5
+    || tokens[0]?.type !== 'text'
+    || tokens[1]?.type !== 'strong_open'
+    || tokens[2]?.type !== 'text'
+    || tokens[3]?.type !== 'strong_close'
+    || tokens[4]?.type !== 'text') {
+    return null
+  }
+
+  const previous = tokens[0]
+  const previousContent = String(previous.content ?? '')
+  const previousRaw = getRawPrefixForVisibleText(raw, previousContent)
+  if (!previousRaw || !hasInvalidStrongCandidate(previousRaw))
+    return null
+
+  return [{
+    ...tokens[0],
+    type: 'text',
+    content: raw,
+    raw,
+  } as MarkdownToken]
+}
+
+function repairStrongAroundInlineLink(tokens: MarkdownToken[], raw?: string) {
+  if (!raw || tokens.length < 3)
+    return null
+  const first = tokens[0]
+  const last = tokens[tokens.length - 1]
+  if (first?.type !== 'text' || last?.type !== 'text')
+    return null
+
+  const prefix = String(first.content ?? '')
+  const suffix = String(last.content ?? '')
+  if (!prefix.endsWith('**') || !suffix.startsWith('**'))
+    return null
+
+  const previous = getPreviousCodePoint(prefix, prefix.length - 2)
+  const canOpen = !previous || isWhitespaceChar(previous) || isPunctuationChar(previous)
+
+  const rawPrefix = getRawPrefixForVisibleText(raw, prefix)
+  const rawSuffix = getRawSuffixForVisibleText(raw, suffix)
+  if (!rawPrefix || !rawSuffix)
+    return null
+  const hasEscapedMarker = isEscapedVisibleChar(rawPrefix, prefix.length - 2, '*')
+    || isEscapedVisibleChar(rawPrefix, prefix.length - 1, '*')
+    || isEscapedVisibleChar(rawSuffix, 0, '*')
+    || isEscapedVisibleChar(rawSuffix, 1, '*')
+
+  const nextAfterClose = getNextCodePoint(suffix, 2)
+  const canClose = !nextAfterClose || isWhitespaceChar(nextAfterClose) || isPunctuationChar(nextAfterClose)
+
+  const middle = tokens.slice(1, -1)
+  const isSyntheticLink = middle.length === 1 && middle[0]?.type === 'link'
+  if (!isSyntheticLink)
+    return null
+
+  const innerTokens = middle.map((token) => {
+    if (token.type !== 'link' || token.content != null)
+      return token
+
+    const linkToken = token as MarkdownToken & { href?: unknown, text?: unknown }
+    return {
+      ...token,
+      content: String(token.raw ?? `[${linkToken.text ?? ''}](${linkToken.href ?? ''})`),
+    }
+  })
+
+  if (!canOpen || !canClose || hasEscapedMarker) {
+    const literalTokens: MarkdownToken[] = []
+    if (prefix)
+      literalTokens.push({ ...first, type: 'text_special', content: prefix, raw: prefix })
+    literalTokens.push(...innerTokens)
+    if (suffix)
+      literalTokens.push({ ...last, type: 'text_special', content: suffix, raw: suffix })
+    return literalTokens
+  }
+
+  const normalized: MarkdownToken[] = []
+  const textBefore = prefix.slice(0, -2)
+  const textAfter = suffix.slice(2)
+  if (textBefore)
+    normalized.push({ ...first, content: textBefore, raw: textBefore })
+  normalized.push({ type: 'strong_open', tag: 'strong', content: '', markup: '**', nesting: 1 } as MarkdownToken)
+  normalized.push(...innerTokens)
+  normalized.push({ type: 'strong_close', tag: 'strong', content: '', markup: '**', nesting: -1 } as MarkdownToken)
+  if (textAfter)
+    normalized.push({ ...last, content: textAfter, raw: textAfter })
+  return normalized
+}
+
 // Process inline tokens (for text inside paragraphs, headings, etc.)
 export function parseInlineTokens(
   tokens: MarkdownToken[],
@@ -429,6 +599,10 @@ export function parseInlineTokens(
 ): ParsedNode[] {
   if (!tokens || tokens.length === 0)
     return []
+
+  const repairedTokens = repairStrongAroundInlineLink(tokens, raw) ?? repairCollapsedStrongTokens(tokens, raw)
+  if (repairedTokens)
+    return parseInlineTokens(repairedTokens, raw, pPreToken, options)
 
   const inheritedContext = (options as InternalParseOptions | undefined)?.__linkifyDemotionContext
   const inferredContext = inferLinkifyDemotionContext(raw)

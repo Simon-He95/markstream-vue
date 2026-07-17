@@ -12,6 +12,8 @@ pnpm add markstream-react
 
 Optional features are peer dependencies. Install only what your Markdown output needs.
 
+Install `stream-diffs` for enhanced File/FileDiff code blocks. While Markdown is streaming or offscreen, React keeps the stable `<pre>` fallback. After the fence closes and the block is visible, it creates one final highlighted surface and swaps only after the first stable frame. The runtime is disposed on unmount or code-block identity change.
+
 ## Quick Start
 
 Import one Markstream CSS file explicitly. The JavaScript entry does not inject styles automatically.

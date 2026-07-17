@@ -157,6 +157,7 @@ export interface LinkNodeProps {
 export interface PreCodeNodeProps {
   node: CodeBlockNode
   className?: string
+  diffHideUnchangedRegions?: CodeBlockDiffHideUnchangedRegions
   style?: CSSProperties
   showLineNumbers?: boolean
   diffInline?: boolean

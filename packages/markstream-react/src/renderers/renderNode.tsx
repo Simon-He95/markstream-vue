@@ -276,6 +276,8 @@ function renderCodeBlock(
       stream={ctx.codeBlockStream}
       monacoOptions={ctx.codeBlockThemes?.monacoOptions}
       themes={ctx.codeBlockThemes?.themes}
+      darkTheme={ctx.codeBlockThemes?.darkTheme}
+      lightTheme={ctx.codeBlockThemes?.lightTheme}
       minWidth={ctx.codeBlockThemes?.minWidth}
       maxWidth={ctx.codeBlockThemes?.maxWidth}
       isDark={ctx.isDark}

@@ -33,7 +33,7 @@ const configs = entryNames.map((entryName) => {
       /^node:.*$/,
       /^react(?:\/.*)?$/,
       /^react-dom(?:\/.*)?$/,
-      /^(?:katex|mermaid|stream-monaco|stream-markdown)(?:\/.*)?$/,
+      /^(?:katex|mermaid|stream-diffs|stream-monaco|stream-markdown)(?:\/.*)?$/,
       /^stream-markdown-parser(?:\/.*)?$/,
       /^markstream-core(?:\/.*)?$/,
       /^@antv\/infographic(?:\/.*)?$/,

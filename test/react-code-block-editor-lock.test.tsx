@@ -32,8 +32,12 @@ function resetStreamMonacoHelpers() {
   })
 
   helpers.useMonaco.mockReset().mockImplementation(() => helpers)
-  helpers.createEditor.mockReset().mockImplementation(async () => {})
-  helpers.createDiffEditor.mockReset().mockImplementation(async () => {})
+  helpers.createEditor.mockReset().mockImplementation(async (element: HTMLElement) => {
+    appendMockEditorSurface(element, 'monaco-editor')
+  })
+  helpers.createDiffEditor.mockReset().mockImplementation(async (element: HTMLElement) => {
+    appendMockEditorSurface(element, 'monaco-diff-editor')
+  })
   helpers.updateCode.mockReset()
   helpers.updateDiff.mockReset()
   helpers.getEditor.mockReset().mockImplementation(() => null)
@@ -79,7 +83,18 @@ function setElementRect(element: Element, rect: { top: number, bottom: number, h
   })
 }
 
+function appendMockEditorSurface(element: HTMLElement, className: string) {
+  const surface = document.createElement('div')
+  surface.className = className
+  const content = document.createElement('div')
+  content.className = 'view-lines'
+  surface.appendChild(content)
+  setElementRect(surface, { top: 0, bottom: 120, height: 120 })
+  element.appendChild(surface)
+}
+
 afterEach(() => {
+  vi.unstubAllGlobals()
   document.body.innerHTML = ''
   ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = false
 })
@@ -87,7 +102,53 @@ afterEach(() => {
 describe('markstream-react codeBlockNode theme updates', () => {
   beforeEach(() => {
     resetStreamMonacoHelpers()
+    vi.stubGlobal('IntersectionObserver', undefined)
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+  })
+
+  it('keeps streaming code in pre and creates one final surface after the fence closes', async () => {
+    const helpers = getStreamMonacoHelpers()
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    const render = async (code: string, loading: boolean) => {
+      await act(async () => {
+        root.render(React.createElement(CodeBlockNode as any, {
+          node: {
+            type: 'code_block',
+            language: 'typescript',
+            code,
+            raw: `\`\`\`typescript\n${code}\n\`\`\``,
+            loading,
+          },
+          loading,
+          stream: true,
+          showHeader: false,
+        }))
+      })
+      await flushReact()
+    }
+
+    await render('const first = true', true)
+    expect(host.querySelector('pre.code-fallback-plain')?.textContent).toContain('const first = true')
+    expect(helpers.useMonaco).not.toHaveBeenCalled()
+    expect(helpers.createEditor).not.toHaveBeenCalled()
+
+    await render('const final = true', true)
+    expect(host.querySelector('pre.code-fallback-plain')?.textContent).toContain('const final = true')
+    expect(helpers.useMonaco).not.toHaveBeenCalled()
+    expect(helpers.createEditor).not.toHaveBeenCalled()
+
+    await render('const final = true', false)
+    await waitForCallCount(helpers.createEditor, 1)
+    expect(helpers.createEditor).toHaveBeenCalledTimes(1)
+    expect(helpers.createEditor).toHaveBeenCalledWith(expect.any(HTMLElement), 'const final = true', 'typescript')
+    expect(helpers.useMonaco.mock.calls[0]?.[0]?.stream).toBe(false)
+    expect(helpers.useMonaco.mock.calls[0]?.[0]?.disableFileHeader).toBe(true)
+
+    await act(async () => {
+      root.unmount()
+    })
   })
 
   it('updates single-editor themes without recreating the editor when isDark toggles', async () => {
@@ -232,7 +293,7 @@ describe('markstream-react codeBlockNode theme updates', () => {
     })
     expect(options?.fontSize).toBe(12)
     expect(options?.lineHeight).toBe(18)
-    expect(options?.padding).toEqual({ top: 0, bottom: 0 })
+    expect(options?.padding).toEqual({ top: 8, bottom: 8 })
 
     await act(async () => {
       root.unmount()
@@ -271,6 +332,7 @@ describe('markstream-react codeBlockNode theme updates', () => {
       const monacoRoot = document.createElement('div')
       monacoRoot.className = 'monaco-diff-editor'
       setElementRect(monacoRoot, { top: 0, bottom: 500, height: 500 })
+      monacoRoot.appendChild(document.createElement('div'))
       el.appendChild(monacoRoot)
     })
 
@@ -402,6 +464,7 @@ describe('markstream-react codeBlockNode theme updates', () => {
 describe('markstream-react codeBlockNode plain text theme fallback', () => {
   beforeEach(() => {
     resetStreamMonacoHelpers()
+    vi.stubGlobal('IntersectionObserver', undefined)
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
   })
 
@@ -426,6 +489,7 @@ describe('markstream-react codeBlockNode plain text theme fallback', () => {
       lines.style.color = 'rgb(17, 24, 39)'
 
       editor.append(background, lines)
+      setElementRect(editor, { top: 0, bottom: 120, height: 120 })
       el.appendChild(editor)
     })
 

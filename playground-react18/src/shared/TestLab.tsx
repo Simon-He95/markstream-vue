@@ -548,6 +548,7 @@ export function TestLab({ frameworkLabel, onGoHome }: TestLabProps) {
               <div className="preview-surface">
                 <NodeRenderer
                   content={deferredPreview}
+                  final={!isStreaming}
                   typewriter={false}
                   codeBlockStream
                   isDark={isDark}
@@ -555,6 +556,7 @@ export function TestLab({ frameworkLabel, onGoHome }: TestLabProps) {
                   customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
                   codeBlockDarkTheme="vitesse-dark"
                   codeBlockLightTheme="vitesse-light"
+                  renderCodeBlocksAsPre={false}
                 />
               </div>
 

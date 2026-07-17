@@ -77,12 +77,12 @@ function readPositiveNumber(value: unknown): number | undefined {
 
 function readMonacoPadding(value: unknown) {
   if (!value || typeof value !== 'object')
-    return { top: 0, bottom: 0 }
+    return { top: 8, bottom: 8 }
 
   const raw = value as Record<string, unknown>
   return {
-    top: readPositiveNumber(raw.top) ?? 0,
-    bottom: readPositiveNumber(raw.bottom) ?? 0,
+    top: readPositiveNumber(raw.top) ?? 8,
+    bottom: readPositiveNumber(raw.bottom) ?? 8,
   }
 }
 
@@ -259,6 +259,33 @@ function shouldPreferPlainTextFallbackSurface(bg: string, fg: string, isPlainTex
     || (fgLuminance != null && fgLuminance > 190)
 }
 
+function hasRenderedEditorSurface(host: HTMLElement) {
+  const surface = host.querySelector<HTMLElement>('.stream-diffs-shell, .monaco-editor, .monaco-diff-editor')
+  if (!surface || !surface.firstElementChild)
+    return false
+  const rect = surface.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
+async function waitForEditorVisualReady(host: HTMLElement, isCurrent: () => boolean) {
+  for (let frame = 0; frame < 120; frame += 1) {
+    if (!isCurrent())
+      return false
+    if (hasRenderedEditorSurface(host)) {
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      return isCurrent() && hasRenderedEditorSurface(host)
+    }
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+  }
+  return false
+}
+
+function getEditorContentSignature(node: CodeBlockNodeProps['node'], language: string) {
+  return node.diff
+    ? `diff\0${language}\0${node.originalCode ?? ''}\0${node.updatedCode ?? node.code ?? ''}`
+    : `single\0${language}\0${node.code ?? ''}`
+}
+
 export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactEvents) {
   const props = { ...DEFAULTS, ...rawProps } as ResolvedProps & CodeBlockNodeReactEvents
   const {
@@ -298,6 +325,7 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
   const runtimeMonacoOptionsRef = useRef<Record<string, any> | null>(null)
   const structuralSignatureRef = useRef<string | null>(null)
   const editorHeightSyncDisposablesRef = useRef<any[]>([])
+  const editorHeightSyncRafRef = useRef<number | null>(null)
   const diffDomHeightObserverRef = useRef<MutationObserver | null>(null)
   const expandedRef = useRef(false)
 
@@ -313,6 +341,7 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
   const [collapsed, setCollapsed] = useState(false)
   const [inlinePreviewOpen, setInlinePreviewOpen] = useState(false)
   const [languageIconsRevision, setLanguageIconsRevision] = useState(0)
+  const shouldDelayEditor = loading || !viewportReady
 
   const { t } = useSafeI18n()
 
@@ -402,18 +431,22 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
 
   const scheduleEditorHeightSync = useCallback((nextExpanded: boolean) => {
     applyEditorHeight(nextExpanded)
-    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function')
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') {
       return
-
-    const first = window.requestAnimationFrame(() => {
+    }
+    if (editorHeightSyncRafRef.current != null)
+      return
+    editorHeightSyncRafRef.current = window.requestAnimationFrame(() => {
+      editorHeightSyncRafRef.current = null
       applyEditorHeight(nextExpanded)
-      window.requestAnimationFrame(() => applyEditorHeight(nextExpanded))
     })
-    window.setTimeout(() => applyEditorHeight(nextExpanded), 180)
-    return () => window.cancelAnimationFrame(first)
   }, [applyEditorHeight])
 
   const clearEditorHeightSyncBindings = useCallback(() => {
+    if (editorHeightSyncRafRef.current != null && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(editorHeightSyncRafRef.current)
+      editorHeightSyncRafRef.current = null
+    }
     for (const disposable of editorHeightSyncDisposablesRef.current) {
       try {
         if (typeof disposable === 'function')
@@ -497,7 +530,6 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
     }
     catch {}
     clearEditorHeightSyncBindings()
-    createEditorPromiseRef.current = null
     editorKindRef.current = null
     editorMountElRef.current = null
     setEditorReady(false)
@@ -637,25 +669,25 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
 
   const buildRuntimeMonacoOptions = useCallback(() => {
     const nextOptions = {
-      wordWrap: 'on',
+      wordWrap: 'off',
       wrappingIndent: 'same',
       themes,
       ...(resolvedMonacoOptions || {}),
+      stream: false,
       theme: requestedTheme,
+      disableFileHeader: true,
       ...(node.diff ? { diffAppearance: effectiveDiffAppearance } : {}),
       onThemeChange() {
         syncEditorCssVars()
       },
     } as Record<string, any>
 
-    if (node.diff) {
-      nextOptions.fontSize ??= preFallbackMetrics.fontSize
-      nextOptions.lineHeight ??= preFallbackMetrics.lineHeight
-      nextOptions.padding ??= { top: preFallbackMetrics.paddingTop, bottom: preFallbackMetrics.paddingBottom }
-      nextOptions.tabSize ??= preFallbackMetrics.tabSize
-      if (preFallbackMetrics.fontFamily)
-        nextOptions.fontFamily ??= preFallbackMetrics.fontFamily
-    }
+    nextOptions.fontSize ??= preFallbackMetrics.fontSize
+    nextOptions.lineHeight ??= preFallbackMetrics.lineHeight
+    nextOptions.padding ??= { top: preFallbackMetrics.paddingTop, bottom: preFallbackMetrics.paddingBottom }
+    nextOptions.tabSize ??= preFallbackMetrics.tabSize
+    if (preFallbackMetrics.fontFamily)
+      nextOptions.fontFamily ??= preFallbackMetrics.fontFamily
 
     return nextOptions
   }, [effectiveDiffAppearance, node.diff, preFallbackMetrics, requestedTheme, resolvedMonacoOptions, syncEditorCssVars, themes])
@@ -734,6 +766,11 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
         mounted = false
       }
     }
+    if (shouldDelayEditor) {
+      return () => {
+        mounted = false
+      }
+    }
     if (helpersRef.current) {
       syncRuntimeMonacoOptions()
       return () => {
@@ -774,7 +811,7 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
     return () => {
       mounted = false
     }
-  }, [syncRuntimeMonacoOptions])
+  }, [shouldDelayEditor, syncRuntimeMonacoOptions])
 
   // Vue parity: if language is not provided, detect it from streaming code.
   useEffect(() => {
@@ -797,6 +834,8 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
   }, [codeLanguage, detectedLanguage, node.language])
   const canonicalLanguage = useMemo(() => normalizeLanguageIdentifier(rawLanguage), [rawLanguage])
   const monacoLanguage = useMemo(() => resolveMonacoLanguageId(canonicalLanguage), [canonicalLanguage])
+  const latestMonacoLanguageRef = useRef(monacoLanguage)
+  latestMonacoLanguageRef.current = monacoLanguage
   const isPlainTextLanguage = useMemo(() => monacoLanguage === 'plaintext', [monacoLanguage])
   const languageIcon = useMemo(
     () => getLanguageIcon(canonicalLanguage),
@@ -854,8 +893,6 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
       backgroundColor: `var(--vscode-editor-background, ${resolvedSurfaceIsDark ? '#111827' : '#ffffff'})`,
     }
   }, [node.diff, resolvedSurfaceIsDark])
-
-  const shouldDelayEditor = stream === false && loading
 
   // Vue parity: keep theme in sync without recreating Monaco.
   useEffect(() => {
@@ -926,6 +963,7 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
     syncRuntimeMonacoOptions()
 
     const currentNode = latestNodeRef.current
+    let renderedSignature = getEditorContentSignature(currentNode, monacoLanguage)
     const desiredKind: 'diff' | 'single' = currentNode.diff ? 'diff' : 'single'
     const attachedEl = editorMountElRef.current
     const hasExpectedView = desiredKind === 'diff'
@@ -985,11 +1023,46 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
           catch {}
         }
 
-        bindDiffEditorHeightSync()
-        syncEditorCssVars()
-        if (!expanded && !collapsed)
-          scheduleEditorHeightSync(false)
-        setEditorReady(true)
+        while (editorLifecycleIdRef.current === creationId) {
+          const latestNode = latestNodeRef.current
+          const latestLanguage = latestMonacoLanguageRef.current
+          const latestKind = latestNode.diff ? 'diff' : 'single'
+          if (latestKind !== desiredKind)
+            return
+
+          const latestSignature = getEditorContentSignature(latestNode, latestLanguage)
+          if (latestSignature !== renderedSignature) {
+            if (latestNode.diff && helpers.updateDiff) {
+              await Promise.resolve(helpers.updateDiff(
+                String(latestNode.originalCode ?? ''),
+                String(latestNode.updatedCode ?? latestNode.code ?? ''),
+                latestLanguage,
+              ))
+            }
+            else if (helpers.updateCode) {
+              await Promise.resolve(helpers.updateCode(String(latestNode.code ?? ''), latestLanguage))
+            }
+            renderedSignature = latestSignature
+          }
+
+          bindDiffEditorHeightSync()
+          syncEditorCssVars()
+          if (!expanded && !collapsed)
+            scheduleEditorHeightSync(false)
+          const visualReady = await waitForEditorVisualReady(
+            el,
+            () => editorLifecycleIdRef.current === creationId,
+          )
+          const runtimeReady = typeof helpers.whenVisualReady === 'function'
+            ? await helpers.whenVisualReady()
+            : true
+          if (!visualReady || !runtimeReady || editorLifecycleIdRef.current !== creationId)
+            throw new Error('Editor surface did not paint')
+          if (renderedSignature !== getEditorContentSignature(latestNodeRef.current, latestMonacoLanguageRef.current))
+            continue
+          setEditorReady(true)
+          return
+        }
       }
       catch {
         if (editorLifecycleIdRef.current === creationId)
@@ -1024,6 +1097,10 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
     let cancelled = false
     void (async () => {
       resetEditorInstance()
+      try {
+        await createEditorPromiseRef.current
+      }
+      catch {}
       if (cancelled)
         return
       try {
@@ -1059,7 +1136,13 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
       resetEditorInstance()
       return
     }
-    void ensureEditorCreation()
+    void (async () => {
+      try {
+        await createEditorPromiseRef.current
+      }
+      catch {}
+      await ensureEditorCreation()
+    })()
   }, [collapsed, ensureEditorCreation, monacoReady, resetEditorInstance, shouldDelayEditor, useFallback, viewportReady])
 
   useEffect(() => {
@@ -1103,6 +1186,10 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
           }
           catch {}
         }
+        try {
+          await Promise.resolve(ensureEditorCreation())
+        }
+        catch {}
       }
 
       try {
@@ -1238,9 +1325,10 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
     return (
       <PreCodeNode
         className="code-fallback-plain m-0"
+        diffHideUnchangedRegions={(resolvedMonacoOptions as any)?.diffHideUnchangedRegions ?? true}
         diffInline={preFallbackDiffInline}
         node={node as any}
-        showLineNumbers={Boolean(node.diff)}
+        showLineNumbers={true}
         style={preFallbackStyle}
       />
     )
@@ -1500,8 +1588,7 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
                 <div className="code-editor-layer">
                   <div
                     ref={editorHostRef}
-                    className={`code-editor-container${stream ? '' : ' code-height-placeholder'}`}
-                    style={{ visibility: editorReady ? 'visible' : 'hidden' }}
+                    className={`code-editor-container${stream ? '' : ' code-height-placeholder'}${editorReady ? '' : ' is-staging'}`}
                     aria-hidden={!editorReady}
                   />
                   {!editorReady && (
@@ -1510,9 +1597,10 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
                     >
                       <PreCodeNode
                         className="code-fallback-plain m-0"
+                        diffHideUnchangedRegions={(resolvedMonacoOptions as any)?.diffHideUnchangedRegions ?? true}
                         diffInline={preFallbackDiffInline}
                         node={node as any}
-                        showLineNumbers={Boolean(node.diff)}
+                        showLineNumbers={true}
                         style={preFallbackStyle}
                       />
                     </div>

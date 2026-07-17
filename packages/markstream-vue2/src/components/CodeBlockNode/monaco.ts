@@ -22,7 +22,7 @@ async function warmupShikiTokenizer(m: any) {
   try {
     const highlighter = await getOrCreateHighlighter(
       ['vitesse-dark', 'vitesse-light'],
-      ['plaintext', 'text', 'javascript'],
+      ['javascript'],
     )
 
     if (highlighter && typeof highlighter.codeToTokens === 'function') {

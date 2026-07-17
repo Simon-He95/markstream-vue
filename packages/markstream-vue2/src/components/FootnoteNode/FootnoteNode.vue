@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, getCurrentInstance } from 'vue-demi'
-import { isLegacyVue26Vm } from '../../utils/vue26'
+import { markRaw, version } from 'vue-demi'
+import { isLegacyVue26Version } from '../../utils/vue26'
 import NodeRenderer from '../NodeRenderer'
 import LegacyNodesRenderer from '../NodeRenderer/LegacyNodesRenderer.vue'
 
@@ -22,11 +22,7 @@ const props = defineProps<{
 
 // 定义事件
 defineEmits(['copy'])
-const instance = getCurrentInstance()
-const nestedRenderer = computed(() => {
-  const vm = instance?.proxy as any
-  return isLegacyVue26Vm(vm) ? LegacyNodesRenderer : NodeRenderer
-})
+const nestedRenderer = markRaw(isLegacyVue26Version(version) ? LegacyNodesRenderer : NodeRenderer)
 </script>
 
 <template>

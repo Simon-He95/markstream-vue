@@ -38,6 +38,7 @@ export default [
       }),
     ],
     external: [
+      /^stream-diffs(?:\/.*)?$/,
       /^stream-markdown-parser(?:\/.*)?$/,
       /^markstream-core(?:\/.*)?$/,
       /^vue-demi(?:\/.*)?$/,

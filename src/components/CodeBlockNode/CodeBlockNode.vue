@@ -600,7 +600,7 @@ function resolvePreFallbackDiffCollapse() {
   const minimumLineCount = Math.max(1, Math.floor(options.minimumLineCount ?? 4))
   return {
     contextLineCount,
-    collapsedContextThreshold: contextLineCount + minimumLineCount - 1,
+    collapsedContextThreshold: minimumLineCount - 1,
   }
 }
 function isHostScrollManagedCodeBlockElement(el?: HTMLElement | null) {
@@ -3728,7 +3728,7 @@ async function runEditorCreation(el: HTMLElement) {
       ? await waitForDiffEditorVisualReady({ requireHighlight: true })
       : await waitForSingleEditorVisualReady()
     : runtimeVisualReady
-  if (isUnmounted)
+  if (isUnmounted || desiredEditorKind.value !== creationKind || codeEditor.value !== el)
     return
   if (!diffVisualReady) {
     markEditorCreationFailed()
@@ -4520,7 +4520,11 @@ watch(
               syncDiffScrollFromFallback()
               syncInlineFoldProxies()
               refreshDiffStats()
-              const visualReady = await waitForDiffEditorVisualReady({ requireHighlight: true })
+              const localVisualReady = await waitForDiffEditorVisualReady({ requireHighlight: true })
+              const runtimeVisualReady = whenRuntimeVisualReady
+                ? await whenRuntimeVisualReady()
+                : true
+              const visualReady = localVisualReady && runtimeVisualReady
               if (!isUnmounted && visualReady && !editorDisplayReady.value)
                 await revealEditorDisplay()
               scheduleEditorHeightSync()

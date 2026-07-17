@@ -149,7 +149,8 @@ new Vue({
 
 - For simple chat streaming, passing `content` is the fastest way to integrate.
 - For high-frequency SSE / token streaming, long conversations, or very large code/table/math blocks, prefer parsing outside the renderer and pass `nodes` instead of reparsing the whole `content` string every chunk.
-- Keep `viewport-priority` enabled unless you explicitly want eager rendering. Mermaid / Monaco / D2 blocks now stay idle while offscreen and resume when they approach the viewport.
+- Install `stream-diffs` for enhanced File/FileDiff code blocks. Code stays in the stable `<pre>` while its fence is incomplete or offscreen; Vue 2 creates one final highlighted surface after completion and visibility, then swaps after the first stable frame.
+- Keep `viewport-priority` enabled unless you explicitly want eager rendering. Mermaid, Diffs, and D2 blocks stay idle while offscreen and resume when they approach the viewport.
 
 ```vue
 <template>

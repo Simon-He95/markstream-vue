@@ -143,6 +143,10 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         external: (id: string) => {
+          if (id === 'stream-diffs' || id.startsWith('stream-diffs/'))
+            return true
+          if (/node_modules\/stream-diffs(?:\/|$)/.test(id))
+            return true
           if (id === 'stream-monaco' || id.startsWith('stream-monaco/'))
             return true
           if (/node_modules\/stream-monaco(?:\/|$)/.test(id))
@@ -166,6 +170,7 @@ export default defineConfig(({ mode }) => {
             'katex',
             'mermaid',
             'katex/contrib/mhchem',
+            'stream-diffs',
             'stream-monaco',
             'stream-markdown',
             'stream-markdown-parser',

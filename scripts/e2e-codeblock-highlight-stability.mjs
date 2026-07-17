@@ -168,6 +168,10 @@ async function collectRegression(page) {
 
   const seenHighlightBlocks = new Set()
   const regressedBlocks = new Set()
+  const changedHighlightedBlocks = new Set()
+  const changedHighlightDetails = []
+  const regressionDetails = []
+  const highlightedText = new Map()
   const uniqueProgress = new Set()
   let maxVisibleFallbacks = 0
 
@@ -175,22 +179,37 @@ async function collectRegression(page) {
   while (Date.now() - start < 20000) {
     const snapshot = await page.evaluate(() => {
       const blocks = Array.from(document.querySelectorAll('.code-block-container')).map((block, index) => {
+        const component = block.__vue__
         const render = block.querySelector('.code-block-render')
         const fallback = block.querySelector('.code-fallback-plain')
         const renderText = render?.textContent?.trim() || ''
         const fallbackText = fallback?.textContent?.trim() || ''
+        const renderStyle = render ? window.getComputedStyle(render) : null
         const style = fallback ? window.getComputedStyle(fallback) : null
+        const fallbackVisible = Boolean(
+          fallback
+          && fallbackText.length > 0
+          && style
+          && style.display !== 'none'
+          && style.visibility !== 'hidden'
+          && Number(style.opacity || '1') > 0.05,
+        )
         return {
           index,
-          hasRenderContent: Boolean(renderText.length || render?.children.length),
-          fallbackVisible: Boolean(
-            fallback
-            && fallbackText.length > 0
-            && style
-            && style.display !== 'none'
-            && style.visibility !== 'hidden'
-            && Number(style.opacity || '1') > 0.05,
+          uid: component?._uid,
+          loading: component?.loading ?? component?.$props?.loading,
+          nodeLoading: component?.node?.loading ?? component?.$props?.node?.loading,
+          renderText,
+          fallbackText,
+          hasRenderContent: Boolean(
+            (renderText.length || render?.children.length)
+            && renderStyle
+            && renderStyle.display !== 'none'
+            && renderStyle.visibility !== 'hidden'
+            && Number(renderStyle.opacity || '1') > 0.05
+            && !fallbackVisible,
           ),
+          fallbackVisible,
         }
       })
 
@@ -208,12 +227,40 @@ async function collectRegression(page) {
 
     let visibleFallbacks = 0
     for (const block of snapshot.blocks) {
-      if (block.hasRenderContent)
+      if (block.hasRenderContent) {
         seenHighlightBlocks.add(block.index)
+        const previousText = highlightedText.get(block.index)
+        if (previousText != null && previousText !== block.renderText) {
+          changedHighlightedBlocks.add(block.index)
+          if (changedHighlightDetails.length < 20) {
+            changedHighlightDetails.push({
+              index: block.index,
+              progress: snapshot.progress,
+              loading: block.loading,
+              nodeLoading: block.nodeLoading,
+              previous: previousText.slice(0, 160),
+              next: block.renderText.slice(0, 160),
+            })
+          }
+        }
+        highlightedText.set(block.index, block.renderText)
+      }
       if (block.fallbackVisible)
         visibleFallbacks += 1
-      if (seenHighlightBlocks.has(block.index) && block.fallbackVisible)
+      if (seenHighlightBlocks.has(block.index) && block.fallbackVisible) {
         regressedBlocks.add(block.index)
+        if (regressionDetails.length < 20) {
+          regressionDetails.push({
+            index: block.index,
+            uid: block.uid,
+            progress: snapshot.progress,
+            loading: block.loading,
+            nodeLoading: block.nodeLoading,
+            renderText: block.renderText.slice(0, 120),
+            fallbackText: block.fallbackText?.slice(0, 120),
+          })
+        }
+      }
     }
     maxVisibleFallbacks = Math.max(maxVisibleFallbacks, visibleFallbacks)
 
@@ -223,9 +270,54 @@ async function collectRegression(page) {
     await page.waitForTimeout(120)
   }
 
+  const finalStart = Date.now()
+  while (Date.now() - finalStart < 12000 && seenHighlightBlocks.size === 0) {
+    const blocks = await page.evaluate(() => (
+      Array.from(document.querySelectorAll('.code-block-container')).map((block, index) => {
+        const render = block.querySelector('.code-block-render')
+        const fallback = block.querySelector('.code-fallback-plain')
+        const renderStyle = render ? window.getComputedStyle(render) : null
+        const fallbackStyle = fallback ? window.getComputedStyle(fallback) : null
+        const fallbackVisible = Boolean(
+          fallback
+          && fallback.textContent?.trim()?.length
+          && fallbackStyle
+          && fallbackStyle.display !== 'none'
+          && fallbackStyle.visibility !== 'hidden'
+          && Number(fallbackStyle.opacity || '1') > 0.05,
+        )
+        return {
+          index,
+          hasRenderContent: Boolean(
+            (render?.textContent?.trim()?.length || render?.children.length)
+            && renderStyle
+            && renderStyle.display !== 'none'
+            && renderStyle.visibility !== 'hidden'
+            && Number(renderStyle.opacity || '1') > 0.05
+            && !fallbackVisible,
+          ),
+          fallbackVisible,
+        }
+      })
+    ))
+
+    for (const block of blocks) {
+      if (block.hasRenderContent)
+        seenHighlightBlocks.add(block.index)
+      if (seenHighlightBlocks.has(block.index) && block.fallbackVisible)
+        regressedBlocks.add(block.index)
+    }
+
+    if (seenHighlightBlocks.size === 0)
+      await page.waitForTimeout(120)
+  }
+
   return {
     seenHighlightBlocks: Array.from(seenHighlightBlocks),
     regressedBlocks: Array.from(regressedBlocks),
+    changedHighlightedBlocks: Array.from(changedHighlightedBlocks),
+    changedHighlightDetails,
+    regressionDetails,
     uniqueProgress: Array.from(uniqueProgress).sort((a, b) => a - b),
     maxVisibleFallbacks,
   }
@@ -315,7 +407,9 @@ async function main() {
       lowContrastBlocks,
       unnormalizedTitleBlocks,
       consoleErrorCount: consoleErrors.length,
+      consoleErrors: consoleErrors.slice(0, 20),
       pageErrorCount: pageErrors.length,
+      pageErrors: pageErrors.slice(0, 20),
       screenshot,
     }
 
@@ -326,6 +420,9 @@ async function main() {
     }
     if (result.seenHighlightBlocks.length === 0) {
       throw new Error('No highlighted code block was observed during the run')
+    }
+    if (result.changedHighlightedBlocks.length > 0) {
+      throw new Error(`Highlighted code blocks kept updating: ${result.changedHighlightedBlocks.join(', ')}`)
     }
     if (result.consoleErrorCount > 0 || result.pageErrorCount > 0) {
       throw new Error(`Detected browser errors (console=${result.consoleErrorCount}, page=${result.pageErrorCount})`)

@@ -7,8 +7,9 @@
   import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
   import { getLanguageIcon, isLikelyIncompleteLanguageIdentifier, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../utils/languageIcon'
   import HtmlPreviewFrame from './HtmlPreviewFrame.svelte'
+  import PreCodeNode from './PreCodeNode.svelte'
   import { copyTextToClipboard, resolveCssSize } from './shared/rich-block-helpers'
-  import { getString, sanitizeClassToken } from './shared/node-helpers'
+  import { getString } from './shared/node-helpers'
 
   type Props = {
     node: SvelteRenderableNode
@@ -65,12 +66,6 @@
     minimumLineCount: 4,
     revealLineCount: 5,
   })
-  const disabledDiffHideUnchangedRegions = Object.freeze({
-    enabled: false,
-    contextLineCount: 0,
-    minimumLineCount: Number.POSITIVE_INFINITY,
-    revealLineCount: 0,
-  })
   const streamingLanguageTokens = ['javascript', 'plaintext', 'shellscript', 'typescript']
 
   function resolveRecoverableFallbackLanguage(error: unknown) {
@@ -89,6 +84,8 @@
       queueRecoverableLanguageRetry(recoverableLanguage)
       return
     }
+    if (typeof console !== 'undefined')
+      console.warn('[markstream-svelte] Failed to mount code block editor:', error)
     fallbackLanguage = rawLanguage
     useFallback = true
   }
@@ -122,6 +119,7 @@
   }
 
   let editorHost: HTMLDivElement | null = $state(null)
+  let container: HTMLDivElement | null = $state(null)
   let helpers: any = $state(null)
   let runtimeMonacoOptions: Record<string, any> | null = $state(null)
   let ensureMonacoPromise: Promise<void> | null = $state(null)
@@ -150,6 +148,8 @@
   let tokenizeTimer: ReturnType<typeof setTimeout> | null = $state(null)
   let tokenizeRaf: number | null = $state(null)
   let tokenizeShouldRefreshModelValue = $state(false)
+  let viewportReady = $state(false)
+  let visibilityObserver: IntersectionObserver | null = null
 
   let rawLanguage = $derived(getString((node as any)?.language).trim())
   let canonicalLanguage = $derived(normalizeLanguageIdentifier(rawLanguage))
@@ -174,19 +174,31 @@
   let defaultCodeFontSize = $derived(Number(mergedMonacoOptions.fontSize) || 13)
   let minWidthValue = $derived(resolveCssSize(minWidth ?? resolvedThemes?.minWidth))
   let maxWidthValue = $derived(resolveCssSize(maxWidth ?? resolvedThemes?.maxWidth))
+  let fallbackMaxHeight = $derived.by(() => {
+    const value = getMaxHeightValue()
+    return Number.isFinite(value) ? `${value}px` : 'none'
+  })
   let containerStyle = $derived([
     minWidthValue ? `min-width: ${minWidthValue}` : '',
     maxWidthValue ? `max-width: ${maxWidthValue}` : '',
+    `--vscode-editor-font-size: ${codeFontSize}px`,
+    '--vscode-editor-line-height: 20px',
+    `--markstream-code-max-height: ${fallbackMaxHeight}`,
+    `--markstream-code-padding-top: ${Number((resolvedMonacoOptions.padding as any)?.top ?? 8) || 0}px`,
+    `--markstream-code-padding-bottom: ${Number((resolvedMonacoOptions.padding as any)?.bottom ?? 8) || 0}px`,
+    `--markstream-code-white-space: ${resolvedMonacoOptions.wordWrap === 'off' ? 'pre' : 'pre-wrap'}`,
   ].filter(Boolean).join('; '))
   let languageIcon = $derived(getLanguageIcon(canonicalLanguage || rawLanguage || 'plain'))
   let displayLanguage = $derived(languageMap[canonicalLanguage] || (rawLanguage ? rawLanguage.toUpperCase() : languageMap['']))
   let isPreviewable = $derived(isShowPreview !== false && (canonicalLanguage === 'html' || canonicalLanguage === 'svg'))
   let previewTitle = $derived(canonicalLanguage === 'svg' ? t('artifacts.svgPreviewTitle') : t('artifacts.htmlPreviewTitle'))
-  let shouldDelayEditor = $derived(resolvedStream === false && resolvedLoading)
+  let viewportPriorityEnabled = $derived(context?.viewportPriority !== false)
+  let shouldDelayEditor = $derived(resolvedLoading || (viewportPriorityEnabled && !viewportReady))
   let documentStreaming = $derived(context?.final === false || resolvedLoading)
   let shouldDeferStreamingLanguage = $derived(resolvedStream !== false && documentStreaming && (isLikelyIncompleteLanguageIdentifier(rawLanguage) || isStreamingLanguagePrefix(rawLanguage)))
   let shouldRender = $derived(!(resolvedLoading && !code.trim()))
-  let preLanguageClass = $derived(sanitizeClassToken(rawLanguage || monacoLanguage))
+  let preFallbackDiffInline = $derived((resolvedMonacoOptions as Record<string, any>).renderSideBySide === false)
+  let preFallbackHideUnchangedRegions = $derived((resolvedMonacoOptions as Record<string, any>).diffHideUnchangedRegions ?? true)
   let showPreWhileMonacoLoads = $derived(!useFallback && !shouldDelayEditor && !shouldDeferStreamingLanguage && !editorReady)
   let showPreFallback = $derived(useFallback || shouldDelayEditor || shouldDeferStreamingLanguage || showPreWhileMonacoLoads)
   let settledRefreshSignature = $derived(diff
@@ -198,6 +210,26 @@
       useFallback = false
       fallbackLanguage = ''
     }
+  })
+
+  $effect(() => {
+    void mounted
+    void container
+    void viewportPriorityEnabled
+    if (!mounted)
+      return
+    if (!viewportPriorityEnabled) {
+      visibilityObserver?.disconnect()
+      visibilityObserver = null
+      viewportReady = true
+      return
+    }
+    if (!container) {
+      visibilityObserver?.disconnect()
+      visibilityObserver = null
+      return
+    }
+    observeViewport()
   })
 
   $effect(() => {
@@ -249,8 +281,28 @@
     if (loadingSettledRefreshTimer)
       clearTimeout(loadingSettledRefreshTimer)
     cancelEditorTokenization()
+    visibilityObserver?.disconnect()
+    visibilityObserver = null
     cleanupEditor()
   })
+
+  function observeViewport() {
+    if (!container)
+      return
+    visibilityObserver?.disconnect()
+    if (typeof IntersectionObserver === 'undefined') {
+      viewportReady = true
+      return
+    }
+    visibilityObserver = new IntersectionObserver((entries) => {
+      if (!entries.some(entry => entry.isIntersecting || entry.intersectionRatio > 0))
+        return
+      viewportReady = true
+      visibilityObserver?.disconnect()
+      visibilityObserver = null
+    }, { rootMargin: '400px' })
+    visibilityObserver.observe(container)
+  }
 
   function getResolvedCode(sourceNode: SvelteRenderableNode) {
     if ((sourceNode as any)?.diff)
@@ -302,13 +354,17 @@
       readOnly: true,
       minimap: { enabled: false },
       lineNumbers: 'on',
-      wordWrap: 'on',
+      wordWrap: 'off',
       wrappingIndent: 'same',
+      stream: false,
+      disableFileHeader: true,
       revealDebounceMs: 75,
     }
     const finalOptions = {
       MAX_HEIGHT: maxHeight,
       fontSize: codeFontSize,
+      lineHeight: 20,
+      padding: { top: 8, bottom: 8 },
       themes: buildThemeList(),
     }
 
@@ -326,13 +382,6 @@
     const hideUnchangedRegions = raw.hideUnchangedRegions === undefined
       ? undefined
       : resolveDiffHideUnchangedRegionsOption(raw.hideUnchangedRegions)
-    const streamPreviewDiff = resolvedStream !== false && resolvedLoading !== false
-    const activeDiffHideUnchangedRegions = streamPreviewDiff
-      ? { ...disabledDiffHideUnchangedRegions }
-      : diffHideUnchangedRegions
-    const activeHideUnchangedRegions = streamPreviewDiff
-      ? { ...disabledDiffHideUnchangedRegions }
-      : hideUnchangedRegions
     const experimental = {
       ...((raw.experimental as Record<string, unknown> | undefined) ?? {}),
     }
@@ -355,7 +404,7 @@
       overviewRulerBorder: false,
       hideCursorInOverviewRuler: true,
       scrollBeyondLastLine: false,
-      diffHideUnchangedRegions: activeDiffHideUnchangedRegions,
+      diffHideUnchangedRegions,
       useInlineViewWhenSpaceIsLimited: raw.useInlineViewWhenSpaceIsLimited ?? false,
       diffLineStyle: 'background',
       diffAppearance: 'auto',
@@ -369,8 +418,8 @@
       ...diffDefaults,
       ...raw,
       experimental,
-      ...(activeHideUnchangedRegions === undefined ? {} : { hideUnchangedRegions: activeHideUnchangedRegions }),
-      diffHideUnchangedRegions: activeDiffHideUnchangedRegions,
+      ...(hideUnchangedRegions === undefined ? {} : { hideUnchangedRegions }),
+      diffHideUnchangedRegions,
       ...finalOptions,
     }
   }
@@ -426,8 +475,22 @@
   }
 
   async function syncEditor() {
-    if (!mounted || !shouldRender || !editorHost || collapsed || shouldDelayEditor || shouldDeferStreamingLanguage)
+    if (!mounted || !shouldRender)
       return
+    if (shouldDelayEditor || shouldDeferStreamingLanguage) {
+      if (createEditorPromise || editorKind) {
+        lifecycleId += 1
+        cleanupEditor(false)
+      }
+      return
+    }
+    if (!editorHost || collapsed) {
+      if (createEditorPromise || editorKind) {
+        lifecycleId += 1
+        cleanupEditor(false)
+      }
+      return
+    }
 
     await ensureMonaco()
     if (!mounted || useFallback || !helpers)
@@ -465,11 +528,50 @@
   }
 
   function hasRenderedEditorDom(kind: 'single' | 'diff') {
-    if (!editorHost)
+    if (!editorHost || !helpers)
       return false
-    return kind === 'diff'
-      ? Boolean(editorHost.querySelector('.monaco-diff-editor'))
-      : Boolean(editorHost.querySelector('.monaco-editor'))
+    const hasView = kind === 'diff'
+      ? Boolean(helpers.getDiffEditorView?.())
+      : Boolean(helpers.getEditorView?.())
+    return hasView && hasRenderedEditorSurface()
+  }
+
+  function renderedEditorSurfaceRect() {
+    if (!editorHost)
+      return null
+    const surface = editorHost.querySelector<HTMLElement>('.stream-diffs-shell, .monaco-editor, .monaco-diff-editor')
+    if (!surface || !surface.firstElementChild)
+      return null
+    const rect = surface.getBoundingClientRect()
+    return rect.width > 0 && rect.height > 0
+      ? { height: rect.height, width: rect.width }
+      : null
+  }
+
+  function hasRenderedEditorSurface() {
+    return renderedEditorSurfaceRect() !== null
+  }
+
+  async function waitForEditorVisualReady(creationId: number) {
+    if (helpers?.whenVisualReady && !await helpers.whenVisualReady())
+      return false
+    let previousRect: { height: number, width: number } | null = null
+    for (let frame = 0; frame < 120; frame += 1) {
+      if (!mounted || lifecycleId !== creationId)
+        return false
+      const rect = renderedEditorSurfaceRect()
+      if (
+        rect
+        && previousRect
+        && Math.abs(rect.width - previousRect.width) < 0.5
+        && Math.abs(rect.height - previousRect.height) < 0.5
+      ) {
+        return true
+      }
+      previousRect = rect
+      await nextAnimationFrame()
+    }
+    return false
   }
 
   async function recreateEditor(kind: 'single' | 'diff') {
@@ -478,7 +580,7 @@
 
     const creationId = ++lifecycleId
     editorReady = false
-    createEditorPromise = (async () => {
+    const pending = (async () => {
       try {
         cleanupEditor(false)
         if (!mounted || !editorHost || lifecycleId !== creationId)
@@ -489,28 +591,50 @@
 
         if (kind === 'diff' && typeof helpers.createDiffEditor === 'function') {
           await helpers.createDiffEditor(editorHost, originalCode, updatedCode || code, monacoLanguage)
-          await Promise.resolve(helpers.updateDiff?.(originalCode, updatedCode || code, monacoLanguage))
           editorKind = 'diff'
         }
         else {
           await helpers.createEditor(editorHost, code, monacoLanguage)
-          await Promise.resolve(helpers.updateCode?.(code, monacoLanguage))
           editorKind = 'single'
         }
-        applyEditorOptions()
-        editorReady = true
-        bindEditorHeightSync()
-        scheduleEditorHeightSync()
-        queueThemeSync()
+        while (mounted && lifecycleId === creationId) {
+          const desiredKind: 'single' | 'diff' = diff ? 'diff' : 'single'
+          if (desiredKind !== kind)
+            return
+          const renderedSignature = settledRefreshSignature
+          if (diff && typeof helpers.updateDiff === 'function')
+            await Promise.resolve(helpers.updateDiff(originalCode, updatedCode || code, monacoLanguage))
+          else
+            await Promise.resolve(helpers.updateCode?.(code, monacoLanguage))
+          applyEditorOptions()
+          if (!await waitForEditorVisualReady(creationId))
+            throw new Error('Editor surface did not paint')
+          if (renderedSignature !== settledRefreshSignature)
+            continue
+          syncEditorHostHeight(true)
+          await nextAnimationFrame()
+          if (!mounted || lifecycleId !== creationId)
+            return
+          editorReady = true
+          bindEditorHeightSync()
+          scheduleEditorHeightSync()
+          queueThemeSync()
+          return
+        }
       }
       catch (error) {
-        if (mounted) {
+        if (mounted && lifecycleId === creationId) {
           markEditorFallback(error)
         }
       }
-    })().finally(() => {
-      createEditorPromise = null
+    })()
+    const tracked = pending.finally(() => {
+      if (createEditorPromise === tracked)
+        createEditorPromise = null
+      if (mounted && !editorReady && !useFallback)
+        queueMicrotask(() => void syncEditor())
     })
+    createEditorPromise = tracked
 
     return createEditorPromise
   }
@@ -575,13 +699,17 @@
   function cleanupEditor(disposeHelpers = true) {
     clearEditorHeightSyncBindings()
     cancelEditorHeightSync()
+    const activeHelpers = helpers
     try {
-      if (disposeHelpers)
-        helpers?.cleanupEditor?.()
-      else
-        (helpers?.safeClean || helpers?.cleanupEditor)?.()
+      activeHelpers?.safeClean?.()
     }
     catch {}
+    if (activeHelpers?.cleanupEditor && activeHelpers.cleanupEditor !== activeHelpers.safeClean) {
+      try {
+        activeHelpers.cleanupEditor()
+      }
+      catch {}
+    }
     editorKind = null
     editorReady = false
     lastLayoutWidth = null
@@ -615,7 +743,7 @@
       return
     heightSyncRaf = window.requestAnimationFrame(() => {
       heightSyncRaf = null
-      window.requestAnimationFrame(() => syncEditorHostHeight())
+      syncEditorHostHeight()
     })
   }
 
@@ -735,8 +863,8 @@
     heightSyncDisposables = []
   }
 
-  function syncEditorHostHeight() {
-    if (!editorHost || !helpers || !editorReady || collapsed)
+  function syncEditorHostHeight(force = false) {
+    if (!editorHost || !helpers || (!editorReady && !force) || collapsed)
       return
 
     const maxHeight = getMaxHeightValue()
@@ -815,6 +943,11 @@
     if (typeof window === 'undefined')
       return null
     try {
+      const streamDiffsShell = container.querySelector<HTMLElement>('.stream-diffs-shell')
+      const streamDiffsHeight = streamDiffsShell?.getBoundingClientRect().height ?? 0
+      if (streamDiffsHeight > 0)
+        return Math.ceil(streamDiffsHeight)
+
       const hostRect = container.getBoundingClientRect()
       if (hostRect.height <= 0)
         return null
@@ -902,6 +1035,7 @@
 
 {#if shouldRender}
   <div
+    bind:this={container}
     class:is-dark={resolvedIsDark}
     class:is-plain-text={monacoLanguage === 'plaintext'}
     class:is-rendering={resolvedLoading}
@@ -963,7 +1097,13 @@
           <div bind:this={editorHost} class:is-hidden={showPreFallback} class="code-editor-container"></div>
         {/if}
         {#if showPreFallback}
-          <pre class="code-pre-fallback"><code class={preLanguageClass ? `language-${preLanguageClass}` : undefined}>{code}</code></pre>
+          <PreCodeNode
+            class="code-pre-fallback"
+            node={node}
+            showLineNumbers={true}
+            diffInline={preFallbackDiffInline}
+            diffHideUnchangedRegions={preFallbackHideUnchangedRegions}
+          />
         {/if}
       </div>
     {/if}

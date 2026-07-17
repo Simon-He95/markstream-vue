@@ -192,7 +192,12 @@ function resolveChromeLaunchOptions() {
 
 async function waitForHiddenRegions(page, timeout = 20000) {
   await page.waitForFunction(() => {
-    const hiddenTexts = Array.from(document.querySelectorAll('.diff-hidden-lines'))
+    const readyBlocks = Array.from(document.querySelectorAll(
+      '.code-block-container.is-diff[data-markstream-enhanced="true"][data-markstream-enhancement-state="ready"][data-markstream-code-block-state="settled"]',
+    ))
+    const hiddenTexts = readyBlocks
+      .flatMap(block => Array.from(block.querySelectorAll('diffs-container')))
+      .flatMap(el => Array.from(el.shadowRoot?.querySelectorAll('[data-separator="line-info"]') ?? []))
       .map(el => (el.textContent ?? '').trim())
       .filter(Boolean)
     return hiddenTexts.some(text => /hidden lines|unchanged|unmodified/i.test(text))
@@ -221,24 +226,30 @@ async function collectResult(page, name, extra = {}) {
       const n = Number.parseFloat(String(value ?? ''))
       return Number.isFinite(n) ? n : null
     }
-    const diffEditors = Array.from(document.querySelectorAll('.monaco-diff-editor'))
-    const hiddenTexts = Array.from(document.querySelectorAll('.diff-hidden-lines'))
+    const diffEditors = Array.from(document.querySelectorAll(
+      '.code-block-container.is-diff[data-markstream-enhanced="true"][data-markstream-enhancement-state="ready"][data-markstream-code-block-state="settled"] .stream-diffs-shell',
+    ))
+    const surfaces = diffEditors.map((editorEl) => {
+      const container = editorEl.querySelector('diffs-container')
+      return { editorEl, root: container?.shadowRoot ?? null }
+    })
+    const hiddenTexts = surfaces
+      .flatMap(({ root }) => Array.from(root?.querySelectorAll('[data-separator="line-info"]') ?? []))
       .map(el => (el.textContent ?? '').trim())
       .filter(Boolean)
 
-    const originalVisibleLines = document.querySelectorAll('.editor.original .view-line').length
-    const modifiedVisibleLines = document.querySelectorAll('.editor.modified .view-line').length
-    const bodyText = document.body.textContent ?? ''
-    const diffEditorMetrics = diffEditors.map((editorEl, index) => {
+    const bodyText = `${document.body.textContent ?? ''} ${surfaces.map(({ root }) => root?.textContent ?? '').join(' ')}`
+    const diffEditorMetrics = surfaces.map(({ editorEl, root }, index) => {
       const editorRect = editorEl.getBoundingClientRect()
       const host = editorEl.closest('.code-editor-container')
       const hostStyle = host instanceof HTMLElement ? window.getComputedStyle(host) : null
-      const editorHiddenTexts = Array.from(editorEl.querySelectorAll('.diff-hidden-lines'))
+      const editorStyle = window.getComputedStyle(editorEl)
+      const pre = root?.querySelector('pre')
+      const preStyle = pre ? window.getComputedStyle(pre) : null
+      const editorHiddenTexts = Array.from(root?.querySelectorAll('[data-separator="line-info"]') ?? [])
         .map(el => (el.textContent ?? '').trim())
         .filter(Boolean)
-      const foldButtonCandidates = Array.from(
-        editorEl.querySelectorAll('.markstream-inline-fold-proxy, .diff-hidden-lines a'),
-      )
+      const foldButtonCandidates = Array.from(root?.querySelectorAll('[data-expand-button]') ?? [])
       const foldButton
         = foldButtonCandidates.find(candidate => isVisibleButton(candidate))
           ?? foldButtonCandidates[0]
@@ -250,8 +261,8 @@ async function collectResult(page, name, extra = {}) {
 
       return {
         index,
-        isSideBySide: editorEl.classList.contains('side-by-side'),
-        foldButtonKind: foldButton?.classList.contains('markstream-inline-fold-proxy') ? 'proxy' : (foldButton ? 'native' : null),
+        isSideBySide: preStyle?.display === 'grid',
+        foldButtonKind: foldButton ? 'stream-diffs' : null,
         hiddenRegionTexts: editorHiddenTexts,
         hostHeightPx,
         hostInlineHeight: host instanceof HTMLElement ? host.style.height : '',
@@ -260,6 +271,10 @@ async function collectResult(page, name, extra = {}) {
         hostOverflow,
         hostOverflowY: hostStyle?.overflowY ?? null,
         editorHeightPx: roundPx(editorEl.getBoundingClientRect().height),
+        editorScrollHeightPx: roundPx(editorEl.scrollHeight),
+        editorClientHeightPx: roundPx(editorEl.clientHeight),
+        editorOverflowY: editorStyle.overflowY,
+        editorScrollable: editorEl.scrollHeight > editorEl.clientHeight + 1,
         foldButtonRect: foldButtonRect
           ? {
               x: roundPx(foldButtonRect.x),
@@ -281,8 +296,8 @@ async function collectResult(page, name, extra = {}) {
       }
     })
     const foldedMetrics = diffEditorMetrics.filter(metric => metric.hiddenRegionTexts.length > 0)
-    const inlineMetrics = foldedMetrics.filter(metric => metric.isSideBySide === false)
     const foldedHostShrinks = foldedMetrics.length > 0 && foldedMetrics.every(metric => metric.hostShrunkAfterFolding === true)
+    const inlineMetrics = foldedMetrics.filter(metric => metric.isSideBySide === false)
     const inlineFoldButtonVisible = inlineMetrics.length > 0 && inlineMetrics.every(metric => metric.foldButtonVisible === true)
 
     return {
@@ -293,8 +308,7 @@ async function collectResult(page, name, extra = {}) {
       hiddenRegionTexts: hiddenTexts,
       hasHiddenRegionText: hiddenTexts.some(text => /hidden lines|unchanged|unmodified/i.test(text)),
       bodyContainsHiddenLinesText: /hidden lines|unchanged|unmodified/i.test(bodyText),
-      originalVisibleLines,
-      modifiedVisibleLines,
+      visibleLines: surfaces.reduce((sum, { root }) => sum + (root?.querySelectorAll('[data-line]').length ?? 0), 0),
       foldedHostShrinks,
       inlineFoldButtonVisible,
       diffEditorMetrics,
@@ -309,7 +323,7 @@ async function runControlledScenario(context, baseUrl) {
   const url = `${baseUrl}/test#data=raw:${encodeURIComponent(markdown)}`
 
   await page.goto(url, { waitUntil: 'networkidle' })
-  await page.waitForSelector('.monaco-diff-editor', { timeout: 20000 })
+  await page.waitForSelector('.code-block-container.is-diff[data-markstream-enhanced="true"][data-markstream-enhancement-state="ready"][data-markstream-code-block-state="settled"] .stream-diffs-shell', { timeout: 30000 })
   await waitForHiddenRegions(page)
   await page.waitForTimeout(500)
 
@@ -327,10 +341,10 @@ async function runControlledScenario(context, baseUrl) {
 async function runHomeScenario(context, baseUrl) {
   const page = await context.newPage()
   const url = `${baseUrl}/`
-  const diffEditor = page.locator('.monaco-diff-editor').last()
+  const diffEditor = page.locator('.code-block-container.is-diff[data-markstream-enhanced="true"][data-markstream-enhancement-state="ready"][data-markstream-code-block-state="settled"] .stream-diffs-shell')
 
   await page.goto(url, { waitUntil: 'networkidle' })
-  await page.waitForSelector('.monaco-diff-editor', { timeout: 30000 })
+  await diffEditor.waitFor({ state: 'visible', timeout: 30000 })
   await diffEditor.scrollIntoViewIfNeeded()
   await page.waitForTimeout(500)
   await waitForHiddenRegions(page, 30000)
@@ -344,26 +358,39 @@ async function runHomeScenario(context, baseUrl) {
 async function runHomeInlineScenario(context, baseUrl) {
   const page = await context.newPage()
   const url = `${baseUrl}/`
-  const diffEditor = page.locator('.monaco-diff-editor').last()
+  const diffEditor = page.locator('.code-block-container.is-diff[data-markstream-enhanced="true"][data-markstream-enhancement-state="ready"][data-markstream-code-block-state="settled"] .stream-diffs-shell')
 
   await page.setViewportSize({ width: 430, height: 900 })
   await page.goto(url, { waitUntil: 'networkidle' })
-  await page.waitForSelector('.monaco-diff-editor', { timeout: 30000 })
+  await diffEditor.waitFor({ state: 'visible', timeout: 30000 })
   await diffEditor.scrollIntoViewIfNeeded()
   await waitForHiddenRegions(page, 30000)
   await page.waitForTimeout(800)
 
   const initial = await collectResult(page, 'index-route-inline', { url })
-  const foldButton = page.locator('.markstream-inline-fold-proxy:visible, .diff-hidden-lines a:visible').first()
+  const foldButton = diffEditor.locator('[data-expand-button]').first()
   await foldButton.click()
-  await page.waitForFunction(() => document.querySelectorAll('.diff-hidden-lines').length === 0, { timeout: 10000 })
-  const afterExpandHiddenRegionCount = await page.locator('.diff-hidden-lines').count()
+  await page.waitForFunction(({ previousLines, previousTexts }) => {
+    const roots = Array.from(document.querySelectorAll(
+      '.code-block-container.is-diff[data-markstream-enhanced="true"][data-markstream-enhancement-state="ready"][data-markstream-code-block-state="settled"] diffs-container',
+    ))
+      .map(el => el.shadowRoot)
+      .filter(Boolean)
+    const currentLines = roots.reduce((sum, root) => sum + root.querySelectorAll('[data-line]').length, 0)
+    const currentTexts = roots
+      .flatMap(root => Array.from(root.querySelectorAll('[data-separator="line-info"]')))
+      .map(el => (el.textContent ?? '').trim())
+    return currentLines > previousLines || JSON.stringify(currentTexts) !== JSON.stringify(previousTexts)
+  }, { previousLines: initial.visibleLines, previousTexts: initial.hiddenRegionTexts }, { timeout: 10000 })
+  const afterExpand = await collectResult(page, 'index-route-inline-expanded', { url })
+  const afterExpandHiddenRegionCount = afterExpand.hiddenRegionCount
 
   await page.close()
   return {
     ...initial,
     afterExpandHiddenRegionCount,
-    afterExpandFoldCleared: afterExpandHiddenRegionCount === 0,
+    afterExpandFoldCleared: afterExpand.visibleLines > initial.visibleLines
+      || JSON.stringify(afterExpand.hiddenRegionTexts) !== JSON.stringify(initial.hiddenRegionTexts),
   }
 }
 

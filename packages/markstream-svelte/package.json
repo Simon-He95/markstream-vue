@@ -88,6 +88,7 @@
     "@terrastruct/d2": ">=0.1.33",
     "katex": ">=0.16.22",
     "mermaid": ">=11",
+    "stream-diffs": ">=0.0.1",
     "stream-monaco": ">=0.0.48",
     "svelte": ">=5 <6"
   },
@@ -102,6 +103,9 @@
       "optional": true
     },
     "mermaid": {
+      "optional": true
+    },
+    "stream-diffs": {
       "optional": true
     },
     "stream-monaco": {

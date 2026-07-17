@@ -145,6 +145,7 @@ export interface SvelteRenderContext {
   isDark?: boolean
   indexKey?: string
   final?: boolean
+  viewportPriority?: boolean
   typewriter?: boolean
   fade?: boolean
   textStreamState?: Map<string, string>
@@ -207,6 +208,7 @@ export function buildRenderContext(
     isDark: props.isDark,
     indexKey: props.indexKey != null ? String(props.indexKey) : undefined,
     final: props.final,
+    viewportPriority: props.viewportPriority,
     typewriter: props.typewriter,
     fade: props.fade,
     textStreamState,

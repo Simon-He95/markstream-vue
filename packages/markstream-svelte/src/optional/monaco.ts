@@ -4,6 +4,17 @@ let pendingImport: Promise<MonacoRuntimeModule | null> | null = null
 let workersPreloaded = false
 let codeBlockRuntimeReady = false
 
+const runtimeLoaders = [
+  () => import('stream-diffs'),
+  () => import('stream-monaco'),
+]
+
+function normalizeRuntimeModule(imported: any): MonacoRuntimeModule | null {
+  if (typeof imported?.useMonaco === 'function')
+    return imported
+  return typeof imported?.default?.useMonaco === 'function' ? imported.default : null
+}
+
 export interface MonacoRuntimeHelpers {
   createEditor?: (container: HTMLElement, code: string, language: string) => Promise<unknown> | unknown
   createDiffEditor?: (container: HTMLElement, original: string, modified: string, language: string) => Promise<unknown> | unknown
@@ -15,6 +26,7 @@ export interface MonacoRuntimeHelpers {
   getEditorView?: () => unknown
   getDiffEditorView?: () => unknown
   refreshDiffPresentation?: () => unknown
+  whenVisualReady?: () => Promise<boolean> | boolean
 }
 
 export interface MonacoRuntimeModule {
@@ -39,12 +51,14 @@ export async function preloadCodeBlockRuntime() {
 async function preloadWorkers(mod: any) {
   if (workersPreloaded)
     return
-  workersPreloaded = true
   const existingEnv = (globalThis as any)?.MonacoEnvironment
-  if (existingEnv && (typeof existingEnv.getWorker === 'function' || typeof existingEnv.getWorkerUrl === 'function'))
+  if (existingEnv && (typeof existingEnv.getWorker === 'function' || typeof existingEnv.getWorkerUrl === 'function')) {
+    workersPreloaded = true
     return
+  }
   if (typeof mod?.preloadMonacoWorkers === 'function')
     await mod.preloadMonacoWorkers()
+  workersPreloaded = true
 }
 
 async function warmupShikiTokenizer(mod: any) {
@@ -55,7 +69,7 @@ async function warmupShikiTokenizer(mod: any) {
   try {
     const highlighter = await getOrCreateHighlighter(
       ['vitesse-dark', 'vitesse-light'],
-      ['plaintext', 'text', 'javascript'],
+      ['javascript'],
     )
 
     if (highlighter && typeof highlighter.codeToTokens === 'function') {
@@ -79,18 +93,23 @@ export async function getUseMonaco(): Promise<MonacoRuntimeModule | null> {
     return null
 
   pendingImport = (async () => {
-    try {
-      const imported: any = await import('stream-monaco')
-      monacoModule = imported?.default ?? imported
-      await preloadWorkers(monacoModule)
-      codeBlockRuntimeReady = true
-      void warmupShikiTokenizer(monacoModule)
-      return monacoModule
+    for (const load of runtimeLoaders) {
+      try {
+        const imported: any = await load()
+        const candidate = normalizeRuntimeModule(imported)
+        if (!candidate)
+          continue
+        await preloadWorkers(candidate)
+        monacoModule = candidate
+        codeBlockRuntimeReady = true
+        void warmupShikiTokenizer(monacoModule)
+        return monacoModule
+      }
+      catch {}
     }
-    catch {
-      importAttempted = true
-      return null
-    }
+
+    importAttempted = true
+    return null
   })()
 
   try {

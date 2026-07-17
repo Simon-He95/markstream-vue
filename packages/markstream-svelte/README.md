@@ -27,8 +27,12 @@ Optional heavy renderers stay as peer dependencies, matching the Vue and React p
 Plain Markdown does not require these packages:
 
 ```bash
-pnpm add katex mermaid stream-monaco @terrastruct/d2 @antv/infographic
+pnpm add katex mermaid stream-diffs @terrastruct/d2 @antv/infographic
 ```
+
+`stream-diffs` handles enhanced code and File/FileDiff blocks. `stream-monaco` remains available as the Monaco runtime fallback.
+
+With `stream-diffs` installed, Svelte keeps the stable `<pre>` while a fence is incomplete or offscreen. It creates one final surface after completion and visibility, waits for the first stable frame, then swaps layers. A stale async creation is ignored after destroy or code-block identity change.
 
 ## Basic Usage
 

@@ -387,6 +387,9 @@ importers:
       mermaid:
         specifier: '>=11'
         version: 11.13.0
+      stream-diffs:
+        specifier: '>=0.0.1'
+        version: 0.0.1(@shikijs/themes@4.3.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(vue@3.5.25(typescript@5.9.3))
       stream-markdown-parser:
         specifier: workspace:*
         version: link:../markdown-parser

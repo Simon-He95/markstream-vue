@@ -76,6 +76,11 @@ export interface MonacoModule {
 let mod: MonacoModule | null = null
 let loadingPromise: Promise<MonacoModule | null> | null = null
 
+const runtimeLoaders = [
+  () => import('stream-diffs'),
+  () => import('stream-monaco'),
+]
+
 function normalizeMonacoModule(value: unknown): MonacoModule | null {
   const moduleValue = value as MonacoModule | undefined
   if (typeof moduleValue?.useMonaco === 'function')
@@ -96,14 +101,16 @@ export async function getUseMonaco(): Promise<MonacoModule | null> {
 
   loadingPromise = (async () => {
     if (!mod) {
-      try {
-        mod = normalizeMonacoModule(await import('stream-diffs'))
-        if (!mod)
-          return null
+      for (const load of runtimeLoaders) {
+        try {
+          mod = normalizeMonacoModule(await load())
+          if (mod)
+            break
+        }
+        catch {}
       }
-      catch {
+      if (!mod)
         return null
-      }
     }
 
     try {

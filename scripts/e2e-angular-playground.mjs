@@ -322,7 +322,7 @@ async function waitForHomeCompletion(page, timeout = 180000) {
     const total = Number.parseInt(match[2], 10)
     const percent = Number.parseInt(match[3], 10)
     return total > 0 && current >= total && percent === 100
-  }, { timeout })
+  }, null, { timeout })
 }
 
 async function collectHomeCompletionMetrics(page) {
@@ -342,7 +342,8 @@ async function collectHomeCompletionMetrics(page) {
   })
 }
 
-async function waitForHomeStreamingCodeHighlight(page, timeout = 180000) {
+async function waitForHomeCompletedCodeHighlight(page, timeout = 180000) {
+  await page.locator('.panel.preview .markstream-angular .code-block-container').first().scrollIntoViewIfNeeded()
   const startedAt = Date.now()
   let lastSnapshot = null
 
@@ -359,21 +360,18 @@ async function waitForHomeStreamingCodeHighlight(page, timeout = 180000) {
         total,
         percent,
         done: total > 0 && current >= total && percent === 100,
-        monacoCount: document.querySelectorAll('.panel.preview .markstream-angular [data-markstream-monaco="1"]').length,
-        fallbackPreCount: document.querySelectorAll('.panel.preview .markstream-angular .code-fallback-plain').length,
+        monacoCount: document.querySelectorAll('.panel.preview .markstream-angular [data-markstream-monaco="1"] .stream-diffs-shell, .panel.preview .markstream-angular [data-markstream-monaco="1"] .monaco-editor, .panel.preview .markstream-angular [data-markstream-monaco="1"] .monaco-diff-editor').length,
+        fallbackPreCount: document.querySelectorAll('.panel.preview .markstream-angular .code-pre-fallback').length,
       }
     })
 
-    if (lastSnapshot.monacoCount > 0)
-      return lastSnapshot
-
-    if (lastSnapshot.done)
+    if (lastSnapshot.done && lastSnapshot.monacoCount > 0)
       return lastSnapshot
 
     await page.waitForTimeout(400)
   }
 
-  throw new Error(`Timed out waiting for a highlighted home code block: ${JSON.stringify(lastSnapshot)}`)
+  throw new Error(`Timed out waiting for a completed visible code block surface: ${JSON.stringify(lastSnapshot)}`)
 }
 
 async function collectHomeThinkingMetrics(page) {
@@ -486,8 +484,8 @@ async function verifyBaselineInteractions(page) {
 async function collectDiffMetrics(page) {
   return page.evaluate(() => ({
     wrapperCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"]').length,
-    monacoCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"] .monaco-editor').length,
-    monacoDiffCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"] .monaco-diff-editor').length,
+    monacoCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"] .stream-diffs-shell, .preview-surface [data-markstream-monaco="1"] .monaco-editor').length,
+    monacoDiffCount: document.querySelectorAll('.preview-surface [data-markstream-monaco-diff="1"] .stream-diffs-shell, .preview-surface [data-markstream-monaco-diff="1"] .monaco-diff-editor').length,
     badgeTexts: Array.from(document.querySelectorAll('.preview-surface .markstream-angular-enhanced-block__badge'))
       .map(node => node.textContent?.trim())
       .filter(Boolean),
@@ -517,7 +515,7 @@ async function collectThinkingMetrics(page) {
   return page.evaluate(() => ({
     thinkingCount: document.querySelectorAll('.preview-surface .thinking-node').length,
     mermaidSvgCount: document.querySelectorAll('.preview-surface .thinking-node .markstream-angular-mermaid svg').length,
-    monacoCount: document.querySelectorAll('.preview-surface .thinking-node [data-markstream-monaco="1"]').length,
+    monacoCount: document.querySelectorAll('.preview-surface .thinking-node [data-markstream-monaco="1"] .stream-diffs-shell, .preview-surface .thinking-node [data-markstream-monaco="1"] .monaco-editor, .preview-surface .thinking-node [data-markstream-monaco="1"] .monaco-diff-editor').length,
     listCount: document.querySelectorAll('.preview-surface .thinking-node li').length,
     previewExcerpt: (document.querySelector('.preview-surface')?.textContent || '').slice(0, 500),
   }))
@@ -545,7 +543,7 @@ async function waitForDiffEditors(page, timeout = 60000) {
   while (Date.now() - startedAt < timeout) {
     lastSnapshot = await page.evaluate(() => ({
       wrapperCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"]').length,
-      monacoCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"] .monaco-editor').length,
+      monacoCount: document.querySelectorAll('.preview-surface [data-markstream-monaco="1"] .stream-diffs-shell, .preview-surface [data-markstream-monaco="1"] .monaco-editor').length,
       badgeTexts: Array.from(document.querySelectorAll('.preview-surface .markstream-angular-enhanced-block__badge'))
         .map(node => node.textContent?.trim())
         .filter(Boolean),
@@ -586,8 +584,8 @@ async function collectStreamingMetrics(page) {
     const pill = document.querySelectorAll('.workspace-card .mini-pill')[1]
     const foot = document.querySelectorAll('.workspace-card__foot span')[3]
     return pill?.textContent?.trim() === 'Streaming'
-      && foot?.textContent?.includes('正在逐步追加中')
-  }, { timeout: 10000 })
+      && foot?.textContent?.includes('Streaming 中')
+  }, null, { timeout: 10000 })
 
   const earlyProgress = await readProgress()
 
@@ -597,8 +595,8 @@ async function collectStreamingMetrics(page) {
     const foot = document.querySelectorAll('.workspace-card__foot span')[3]
     return progress?.textContent?.trim() === '100%'
       && pill?.textContent?.trim() === 'Ready'
-      && foot?.textContent?.includes('已显示完整输入')
-  }, { timeout: 30000 })
+      && foot?.textContent?.includes('Angular renderer')
+  }, null, { timeout: 30000 })
 
   return {
     earlyProgress,
@@ -673,12 +671,12 @@ async function main() {
     const homeProgressText = (await page.locator('.meta').textContent()).trim()
     const homeStreamingHealth = await collectHomeStreamingHealth(page, homeProgressText)
     const homeHoverSelector = await waitForHomeHoverTarget(page)
-    const homeStreamingCodeHighlight = await waitForHomeStreamingCodeHighlight(page)
     const homeHoverDuringStreaming = await exerciseHomeHoverDuringStreaming(page, homeHoverSelector)
     const homeThinking = await collectHomeThinkingMetrics(page)
     const homeLinkTooltip = await collectHomeLinkTooltip(page)
     await waitForHomeCompletion(page)
     const homeCompletion = await collectHomeCompletionMetrics(page)
+    const homeStreamingCodeHighlight = await waitForHomeCompletedCodeHighlight(page)
     await page.getByRole('button', { name: 'Open /test' }).click()
     await page.waitForURL(new RegExp(`http://${host}:${port}/test$`), { timeout: 15000 })
     await page.waitForSelector('text=markstream-angular /test', { timeout: 30000 })
@@ -696,12 +694,14 @@ async function main() {
       const thinkingDebug = await collectThinkingDebug(page)
       throw new Error(`Timed out waiting for thinking Mermaid render: ${JSON.stringify(thinkingDebug)}`, { cause: error })
     }
-    await page.waitForSelector('.preview-surface .thinking-node [data-markstream-monaco="1"]', { timeout: 30000 })
+    await page.waitForSelector('.preview-surface .thinking-node [data-markstream-monaco="1"] .stream-diffs-shell, .preview-surface .thinking-node [data-markstream-monaco="1"] .monaco-editor, .preview-surface .thinking-node [data-markstream-monaco="1"] .monaco-diff-editor', { timeout: 30000 })
     const thinking = await collectThinkingMetrics(page)
 
     await page.getByRole('button', { name: 'Diff 与代码流' }).click()
     await waitForDiffEditors(page)
     const diff = await collectDiffMetrics(page)
+    if (diff.monacoDiffCount < 1)
+      throw new Error(`Expected a rendered Monaco diff surface, received ${diff.monacoDiffCount}`)
     await verifyDiffInteractions(page)
 
     await page.getByRole('button', { name: '结构压力' }).click()
@@ -748,7 +748,8 @@ async function main() {
     if (result.homeStreamingHealth.frameCount < 20 || result.homeStreamingHealth.metaText === result.homeProgressText) {
       throw new Error(`Home page became unresponsive while streaming: ${JSON.stringify(result.homeStreamingHealth)}`)
     }
-    if (result.homeCompletion.metaText !== '11268 / 11268 (100%)') {
+    const completionMatch = result.homeCompletion.metaText.match(/^(\d+)\s*\/\s*(\d+)\s*\((\d+)%\)$/)
+    if (!completionMatch || completionMatch[1] !== completionMatch[2] || completionMatch[3] !== '100') {
       throw new Error(`Home page did not reach full completion: ${JSON.stringify(result.homeCompletion)}`)
     }
     if (!result.homeCompletion.containsTaylor || !result.homeCompletion.containsOrthogonalComplement || !result.homeCompletion.containsHelloWorldTail) {
@@ -777,8 +778,8 @@ async function main() {
     if (!result.homeLinkTooltip.visible || !result.homeLinkTooltip.text.includes('https://github.com/Simon-He95/markstream-vue')) {
       throw new Error(`Home link tooltip did not match the shared singleton behavior: ${JSON.stringify(result.homeLinkTooltip)}`)
     }
-    if (result.homeStreamingCodeHighlight.monacoCount < 1 || result.homeStreamingCodeHighlight.done) {
-      throw new Error(`Home code blocks did not enter highlighted mode before stream completion: ${JSON.stringify(result.homeStreamingCodeHighlight)}`)
+    if (result.homeStreamingCodeHighlight.monacoCount < 1 || !result.homeStreamingCodeHighlight.done) {
+      throw new Error(`Completed visible code blocks did not enter highlighted mode: ${JSON.stringify(result.homeStreamingCodeHighlight)}`)
     }
     if (baseline.katexCount < 1 || baseline.mermaidSvgCount < 1 || baseline.infographicSvgCount < 1 || baseline.d2SvgCount < 1) {
       throw new Error(`Baseline enhancements did not all render: ${JSON.stringify(baseline)}`)

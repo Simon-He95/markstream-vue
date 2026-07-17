@@ -19,19 +19,22 @@ pnpm add markstream-angular @angular/core @angular/common
 
 Optional peer dependencies:
 
-- `stream-monaco` for Monaco-powered code blocks
+- `stream-diffs` for enhanced File/FileDiff and code blocks
+- `stream-monaco` as the Monaco runtime fallback
 - `mermaid` for Mermaid diagrams
 - `katex` for math rendering
 - `@terrastruct/d2` for D2 diagrams
 - `@antv/infographic` for infographic blocks
 
-Install only the peers your output actually needs. Plain Markdown does not require Mermaid, KaTeX, Monaco, D2, or Infographic.
+Install only the peers your output actually needs. Plain Markdown does not require Mermaid, KaTeX, Diffs, Monaco, D2, or Infographic.
 
 Example:
 
 ```bash
-pnpm add stream-monaco mermaid katex @terrastruct/d2 @antv/infographic
+pnpm add stream-diffs mermaid katex @terrastruct/d2 @antv/infographic
 ```
+
+Angular keeps the stable `<pre>` while a fence is incomplete or offscreen. After completion and visibility, it creates one final File/FileDiff surface in a staging layer and swaps only after the first stable frame. Pending creation is invalidated on destroy, collapse, or code-block identity change.
 
 ## Quick Start
 

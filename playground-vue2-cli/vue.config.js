@@ -65,6 +65,21 @@ function setAliasIfExists(alias, key, filePath) {
 const markstreamVue2Root = resolvePackageRoot('markstream-vue2')
 const markstreamCoreRoot = resolvePackageRoot('markstream-core') || resolveNodeModulesPackageRoot('markstream-core')
 const streamMonacoRoot = resolvePackageRoot('stream-monaco')
+const streamDiffsRoot = resolvePackageRoot('stream-diffs') || resolveNodeModulesPackageRoot('stream-diffs')
+const linkedPierreDiffsRoot = streamDiffsRoot && path.join(streamDiffsRoot, 'node_modules/@pierre/diffs')
+const pierreDiffsRoot = resolvePackageRoot('@pierre/diffs')
+  || (linkedPierreDiffsRoot && fs.existsSync(linkedPierreDiffsRoot)
+    ? fs.realpathSync(linkedPierreDiffsRoot)
+    : null)
+const pierreDependencyRoot = pierreDiffsRoot && path.dirname(path.dirname(pierreDiffsRoot))
+const linkedPierreThemingRoot = pierreDependencyRoot && path.join(pierreDependencyRoot, '@pierre/theming')
+const pierreThemingRoot = linkedPierreThemingRoot && fs.existsSync(linkedPierreThemingRoot)
+  ? fs.realpathSync(linkedPierreThemingRoot)
+  : null
+const linkedPierreThemeRoot = pierreDependencyRoot && path.join(pierreDependencyRoot, '@pierre/theme')
+const pierreThemeRoot = linkedPierreThemeRoot && fs.existsSync(linkedPierreThemeRoot)
+  ? fs.realpathSync(linkedPierreThemeRoot)
+  : null
 const streamMarkdownRoot = resolvePackageRoot('stream-markdown') || resolveNodeModulesPackageRoot('stream-markdown')
 const floatingUiDomEntry = tryResolve('@floating-ui/dom')
 const floatingUiDomRoot = resolvePackageRoot('@floating-ui/dom')
@@ -163,6 +178,12 @@ setAliasIfExists(
 // workspace root.
 setAliasIfExists(alias, 'stream-monaco$', streamMonacoRoot ? path.join(streamMonacoRoot, 'dist/index.js') : null)
 setAliasIfExists(alias, 'stream-monaco', streamMonacoRoot ? path.join(streamMonacoRoot, 'dist') : null)
+setAliasIfExists(alias, 'stream-diffs$', streamDiffsRoot ? path.join(streamDiffsRoot, 'dist/index.mjs') : null)
+setAliasIfExists(alias, '@pierre/diffs$', pierreDiffsRoot ? path.join(pierreDiffsRoot, 'dist/index.js') : null)
+setAliasIfExists(alias, '@pierre/theming$', pierreThemingRoot ? path.join(pierreThemingRoot, 'dist/index.js') : null)
+setAliasIfExists(alias, '@pierre/theming/color$', pierreThemingRoot ? path.join(pierreThemingRoot, 'dist/color.js') : null)
+setAliasIfExists(alias, '@pierre/theming/themes$', pierreThemingRoot ? path.join(pierreThemingRoot, 'dist/themes.js') : null)
+setAliasIfExists(alias, '@pierre/theme', pierreThemeRoot ? path.join(pierreThemeRoot, 'dist') : null)
 
 // Make `monaco-editor` resolvable for Webpack 4 + pnpm.
 // We alias the package directory so both `monaco-editor` and subpath imports work.
@@ -212,6 +233,8 @@ function createOptionalIgnoreRegex() {
   const maybeIgnore = []
   if (!streamMarkdownRoot)
     maybeIgnore.push('stream-markdown')
+  if (!streamDiffsRoot)
+    maybeIgnore.push('stream-diffs')
   if (!tryResolve('stream-monaco'))
     maybeIgnore.push('stream-monaco')
   if (!monacoEditorRoot)
@@ -247,8 +270,15 @@ function createMonacoAssetCopyPlugins() {
 module.exports = {
   transpileDependencies: [
     'markstream-vue2',
+    '@pierre/diffs',
+    '@pierre/theme',
+    '@pierre/theming',
+    '@shikijs/transformers',
+    'diff',
+    'hast-util-to-html',
     'stream-markdown-parser',
     'stream-markdown',
+    'stream-diffs',
     'stream-monaco',
     'monaco-editor',
     'shiki',

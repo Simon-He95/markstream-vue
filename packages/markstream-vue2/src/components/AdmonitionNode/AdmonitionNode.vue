@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, getCurrentInstance, ref } from 'vue-demi'
-import { isLegacyVue26Vm } from '../../utils/vue26'
+import { computed, markRaw, ref, version } from 'vue-demi'
+import { isLegacyVue26Version } from '../../utils/vue26'
 import NodeRenderer from '../NodeRenderer'
 import LegacyNodesRenderer from '../NodeRenderer/LegacyNodesRenderer.vue'
 
@@ -54,11 +54,7 @@ function toggleCollapse() {
 
 // 为无障碍生成 ID（用于 aria-labelledby）
 const headerId = `admonition-${Math.random().toString(36).slice(2, 9)}`
-const instance = getCurrentInstance()
-const nestedRenderer = computed(() => {
-  const vm = instance?.proxy as any
-  return isLegacyVue26Vm(vm) ? LegacyNodesRenderer : NodeRenderer
-})
+const nestedRenderer = markRaw(isLegacyVue26Version(version) ? LegacyNodesRenderer : NodeRenderer)
 </script>
 
 <template>

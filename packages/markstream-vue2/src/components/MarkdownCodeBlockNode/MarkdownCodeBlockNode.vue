@@ -11,6 +11,7 @@ import {
 import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
+import { useViewportPriority } from '../../composables/viewportPriority'
 import { getLanguageIcon, languageIconsRevision, languageMap, normalizeLanguageIdentifier } from '../../utils'
 import { isDevEnvironment } from '../../utils/devEnv'
 
@@ -85,6 +86,9 @@ const rendererTarget = ref<HTMLElement | null>(null)
 const fallbackHtml = ref('')
 const rendererReady = ref(false)
 const hasStableRender = ref(false)
+const viewportReady = ref(typeof window === 'undefined')
+const registerVisibility = useViewportPriority()
+let viewportHandle: ReturnType<typeof registerVisibility> | null = null
 let renderObserver: MutationObserver | undefined
 let lastCommittedRenderSignature = ''
 let rendererMutationVersion = 0
@@ -427,6 +431,10 @@ function isCurrentRenderEpoch(epoch = renderEpoch) {
   return !disposed && epoch === renderEpoch
 }
 
+function canInitializeRenderer() {
+  return props.loading === false && viewportReady.value
+}
+
 function disposeCurrentRenderer(options: { resetStableRender?: boolean } = {}) {
   const current = renderer
   renderer = undefined
@@ -686,6 +694,11 @@ async function initRenderer(epoch: number) {
   if (!isCurrentRenderEpoch(epoch))
     return
 
+  if (!canInitializeRenderer()) {
+    renderFallback(props.node.code, true)
+    return
+  }
+
   await ensureStreamMarkdownLoaded()
   if (!isCurrentRenderEpoch(epoch))
     return
@@ -763,11 +776,6 @@ async function initRenderer(epoch: number) {
     return
   }
 
-  if (props.stream === false && props.loading) {
-    renderFallback(props.node.code, !hasStableRender.value)
-    return
-  }
-
   renderFallback(props.node.code, !hasStableRender.value)
   const previousMutationVersion = rendererMutationVersion
   const previousRendererHtml = rendererTarget.value?.innerHTML
@@ -814,6 +822,8 @@ function cleanupRenderer() {
   renderObserver = undefined
   disconnectRendererThemeObserver()
   pendingRenderSignature = null
+  viewportHandle?.destroy()
+  viewportHandle = null
   disposeCurrentRenderer({ resetStableRender: true })
 }
 
@@ -822,7 +832,6 @@ renderFallback(props.node.code, true)
 if (getCurrentInstance()) {
   onMounted(() => {
     startRendererThemeObserver()
-    void safeInitRenderer()
   })
   onBeforeUnmount(cleanupRenderer)
 }
@@ -830,6 +839,8 @@ else {
   void nextTick(async () => {
     await nextTick()
     startRendererThemeObserver()
+    if (!canInitializeRenderer())
+      return
     await safeInitRenderer()
     if (!lastCommittedRenderSignature && hasRendererContent()) {
       markRendererCommitted(
@@ -844,11 +855,31 @@ else {
 }
 
 watch(highlightRegistrationKey, async () => {
-  await safeInitRenderer()
+  if (canInitializeRenderer())
+    await safeInitRenderer()
 })
 
-watch(() => props.loading, (loading) => {
-  if (loading)
+watch(
+  () => container.value,
+  (el) => {
+    viewportHandle?.destroy()
+    viewportHandle = null
+    if (!el) {
+      viewportReady.value = false
+      return
+    }
+    const handle = registerVisibility(el, { rootMargin: '400px' })
+    viewportHandle = handle
+    viewportReady.value = handle.isVisible.value
+    handle.whenVisible.then(() => {
+      viewportReady.value = true
+    })
+  },
+  { immediate: true },
+)
+
+watch(() => [props.loading, viewportReady.value] as const, ([loading, visible]) => {
+  if (loading || !visible)
     return
   void safeInitRenderer()
 })
@@ -873,6 +904,11 @@ watch(() => [props.node.code, props.node.language], async ([code, lang]) => {
     return
   }
 
+  if (!canInitializeRenderer()) {
+    renderFallback(code, true)
+    return
+  }
+
   if (!renderer || rendererNeedsReconfigure()) {
     renderFallback(code, !hasStableRender.value)
     await safeInitRenderer(epoch)
@@ -881,9 +917,6 @@ watch(() => [props.node.code, props.node.language], async ([code, lang]) => {
   if (!isCurrentRenderEpoch(epoch))
     return
   if (!renderer)
-    return
-
-  if (props.stream === false && props.loading)
     return
 
   renderFallback(code, !hasStableRender.value)
@@ -915,7 +948,7 @@ watch(() => [props.node.code, props.node.language], async ([code, lang]) => {
 async function handleRendererThemeChange() {
   if (!codeBlockContent.value || !rendererTarget.value)
     return
-  if (!renderer)
+  if (!renderer && canInitializeRenderer())
     await safeInitRenderer()
   await syncRendererTheme()
   syncRenderedCssVars()

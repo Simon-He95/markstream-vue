@@ -194,7 +194,7 @@ async function collectTooltipRegression(page) {
 
   const samples = []
   const startedAt = Date.now()
-  while (Date.now() - startedAt < 20000) {
+  while (Date.now() - startedAt < 45000) {
     const tooltip = await readTooltipState(page)
     const progress = await readProgress(page)
     samples.push({ tooltip, progress })

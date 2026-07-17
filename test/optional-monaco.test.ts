@@ -27,7 +27,7 @@ describe('optional stream-diffs dependency', () => {
     expect(result1).toBe(result2)
   })
 
-  it('treats an empty optional-peer stub as unavailable', async () => {
+  it('falls back to stream-monaco when stream-diffs is an empty optional-peer stub', async () => {
     vi.resetModules()
     vi.doMock('stream-diffs', () => ({
       default: {},
@@ -35,6 +35,8 @@ describe('optional stream-diffs dependency', () => {
 
     const { getUseMonaco } = await import('../src/components/CodeBlockNode/monaco')
 
-    await expect(getUseMonaco()).resolves.toBeNull()
+    await expect(getUseMonaco()).resolves.toMatchObject({
+      useMonaco: expect.any(Function),
+    })
   })
 })

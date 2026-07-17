@@ -1,13 +1,15 @@
 type MonacoTheme = any
 type SetThemeFn = (theme: MonacoTheme, force?: boolean) => Promise<void> | void
 
-let setThemeImpl: SetThemeFn | null = null
-let applying = false
-let inFlight: Promise<void> | null = null
-let inFlightKey: string | null = null
-let pendingTheme: MonacoTheme | null = null
-let pendingKey: string | null = null
-let lastAppliedKey: string | null = null
+interface ThemeQueue {
+  inFlight: Promise<void> | null
+  inFlightKey: string | null
+  pendingTheme: MonacoTheme | null
+  pendingKey: string | null
+  lastAppliedKey: string | null
+}
+
+const queues = new WeakMap<SetThemeFn, ThemeQueue>()
 
 const themeKeyCache = new WeakMap<object, string>()
 let themeKeySeq = 0
@@ -43,45 +45,49 @@ export function scheduleMonacoThemeUpdate(theme: MonacoTheme, setTheme: SetTheme
   if (!key)
     return Promise.resolve()
 
-  if (setThemeImpl !== setTheme)
-    setThemeImpl = setTheme
+  let queue = queues.get(setTheme)
+  if (!queue) {
+    queue = {
+      inFlight: null,
+      inFlightKey: null,
+      pendingTheme: null,
+      pendingKey: null,
+      lastAppliedKey: null,
+    }
+    queues.set(setTheme, queue)
+  }
 
-  if (!applying && lastAppliedKey === key)
+  if (!queue.inFlight && queue.lastAppliedKey === key)
     return Promise.resolve()
 
-  if (inFlight && (pendingKey === key || inFlightKey === key))
-    return inFlight
+  if (queue.inFlight && (queue.pendingKey === key || queue.inFlightKey === key))
+    return queue.inFlight
 
-  pendingTheme = theme
-  pendingKey = key
+  queue.pendingTheme = theme
+  queue.pendingKey = key
 
-  if (inFlight)
-    return inFlight
+  if (queue.inFlight)
+    return queue.inFlight
 
-  applying = true
-  inFlight = (async () => {
-    while (pendingTheme != null && pendingKey != null) {
-      const nextTheme = pendingTheme
-      const nextKey = pendingKey
-      pendingTheme = null
-      pendingKey = null
-      if (lastAppliedKey === nextKey)
+  queue.inFlight = (async () => {
+    while (queue.pendingTheme != null && queue.pendingKey != null) {
+      const nextTheme = queue.pendingTheme
+      const nextKey = queue.pendingKey
+      queue.pendingTheme = null
+      queue.pendingKey = null
+      if (queue.lastAppliedKey === nextKey)
         continue
-      const impl = setThemeImpl
-      if (!impl)
-        break
       try {
-        inFlightKey = nextKey
-        await Promise.resolve(impl(nextTheme))
-        lastAppliedKey = nextKey
+        queue.inFlightKey = nextKey
+        await Promise.resolve(setTheme(nextTheme))
+        queue.lastAppliedKey = nextKey
       }
       catch {}
     }
   })().finally(() => {
-    applying = false
-    inFlight = null
-    inFlightKey = null
+    queue.inFlight = null
+    queue.inFlightKey = null
   })
 
-  return inFlight
+  return queue.inFlight
 }

@@ -101,6 +101,7 @@
     "mermaid": ">=11",
     "react": ">=18",
     "react-dom": ">=18",
+    "stream-diffs": ">=0.0.1",
     "stream-markdown": ">=0.0.16",
     "stream-monaco": ">=0.0.48"
   },
@@ -115,6 +116,9 @@
       "optional": true
     },
     "mermaid": {
+      "optional": true
+    },
+    "stream-diffs": {
       "optional": true
     },
     "stream-markdown": {

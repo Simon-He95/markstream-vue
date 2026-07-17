@@ -41,4 +41,19 @@ describe('monaco theme scheduler', () => {
 
     await all
   })
+
+  it('tracks each runtime theme setter independently', async () => {
+    vi.resetModules()
+    const { scheduleMonacoThemeUpdate } = await import('../packages/markstream-react/src/components/CodeBlockNode/monacoThemeScheduler')
+    const first = vi.fn(async () => {})
+    const second = vi.fn(async () => {})
+
+    await Promise.all([
+      scheduleMonacoThemeUpdate('vitesse-dark', first),
+      scheduleMonacoThemeUpdate('vitesse-dark', second),
+    ])
+
+    expect(first).toHaveBeenCalledOnce()
+    expect(second).toHaveBeenCalledOnce()
+  })
 })

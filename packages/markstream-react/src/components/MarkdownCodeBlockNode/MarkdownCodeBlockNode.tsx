@@ -546,7 +546,7 @@ export function MarkdownCodeBlockNode(rawProps: MarkdownCodeBlockNodeProps) {
     const rawLang = props.node.language
     const registrationInput = registrationInputRef.current
 
-    if (!viewportReady) {
+    if (props.loading || !viewportReady) {
       renderFallback(code)
       return
     }
@@ -612,7 +612,6 @@ export function MarkdownCodeBlockNode(rawProps: MarkdownCodeBlockNodeProps) {
         langs: currentRegistrationConfig.rendererOptions.langs,
       })
       rendererConfigKeyRef.current = key
-      setRendererReady(true)
     }
 
     if (!rendererRef.current) {
@@ -1033,10 +1032,17 @@ export function MarkdownCodeBlockNode(rawProps: MarkdownCodeBlockNodeProps) {
             overflowX: 'auto',
           }}
         >
-          <div ref={rendererTargetRef} className="code-block-render" />
-          {!rendererReady && fallbackHtml && (
-            <div className="code-fallback-plain" dangerouslySetInnerHTML={{ __html: fallbackHtml }} />
-          )}
+          <div className="code-block-render-layer">
+            <div
+              ref={rendererTargetRef}
+              className={`code-block-render${rendererReady ? '' : ' is-staging'}`}
+              style={{ visibility: rendererReady ? 'visible' : 'hidden' }}
+              aria-hidden={!rendererReady}
+            />
+            {!rendererReady && fallbackHtml && (
+              <div className="code-fallback-plain" dangerouslySetInnerHTML={{ __html: fallbackHtml }} />
+            )}
+          </div>
         </div>
       )}
 

@@ -146,6 +146,26 @@ describe('markstream-react heavy-node prop forwarding', () => {
     expect(Object.prototype.hasOwnProperty.call(serverElement?.props ?? {}, 'constructor')).toBe(false)
   })
 
+  it('forwards configured themes to the default client code block', () => {
+    const ctx: RenderContext = {
+      ...baseCtx,
+      codeBlockThemes: {
+        darkTheme: 'vitesse-dark',
+        lightTheme: 'vitesse-light',
+      },
+    }
+
+    const element = clientRenderNode({
+      type: 'code_block',
+      language: 'ts',
+      code: 'export const value = 1',
+      raw: '```ts\nexport const value = 1\n```',
+    } as any, 'default-code-theme', ctx) as any
+
+    expect(element?.props?.darkTheme).toBe('vitesse-dark')
+    expect(element?.props?.lightTheme).toBe('vitesse-light')
+  })
+
   it('injects stable preview height estimates for client Mermaid and Infographic custom renderers', () => {
     const longMermaidCode = 'flowchart TD\nA-->B\nB-->C\nC-->D\nD-->E\nE-->F\nF-->G\nG-->H\nH-->I\nI-->J\nJ-->K\nK-->L\n'
     const infographicCode = ['# Release progress', '- Plan: complete', '- Build: active', '- Verify: pending'].join('\n')

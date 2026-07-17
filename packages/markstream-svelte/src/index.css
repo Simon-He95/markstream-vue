@@ -1663,28 +1663,240 @@ body > div[id^="dmermaid-"] {
 }
 
 .markstream-svelte .code-editor-container.is-hidden {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  visibility: hidden;
   opacity: 0;
   pointer-events: none;
 }
 
 .markstream-svelte .code-pre-fallback {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
   margin: 0;
-  padding: 1rem;
-  max-height: 500px;
+  padding: var(--markstream-code-padding-top, 8px) 0 var(--markstream-code-padding-bottom, 8px);
+  max-height: var(--markstream-code-max-height, 500px);
   overflow: auto;
   border: 0;
   border-radius: 0;
   background: var(--vscode-editor-background, var(--markstream-code-fallback-bg));
   color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg));
-  font:
-    13px/1.55 var(--vscode-editor-font-family, "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
-  white-space: pre;
+  font-family: var(--vscode-editor-font-family, "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--vscode-editor-font-size, 13px);
+  line-height: var(--vscode-editor-line-height, 20px);
+  white-space: var(--markstream-code-white-space, pre);
+  font-variant-ligatures: none;
+  tab-size: 4;
 }
 
 .markstream-svelte .code-pre-fallback code {
   color: inherit;
   font: inherit;
   background: transparent;
+}
+
+.markstream-svelte .code-pre-fallback.markstream-pre--line-numbers {
+  --markstream-pre-line-number-left: 0px;
+  --markstream-pre-line-number-width: 2ch;
+  --markstream-pre-line-number-padding-left: 2ch;
+  --markstream-pre-line-number-padding-right: 1ch;
+  --markstream-pre-line-number-separator-width: 2px;
+  --markstream-pre-line-number-gap-to-code: 1ch;
+  --markstream-pre-line-number-box-width: calc(
+    var(--markstream-pre-line-number-padding-left)
+    + var(--markstream-pre-line-number-width)
+    + var(--markstream-pre-line-number-padding-right)
+    + var(--markstream-pre-line-number-separator-width)
+  );
+  --markstream-pre-code-left: calc(
+    var(--markstream-pre-line-number-left)
+    + var(--markstream-pre-line-number-box-width)
+    + var(--markstream-pre-line-number-gap-to-code)
+  );
+}
+
+.markstream-svelte .code-pre-fallback > .markstream-pre__line-numbers {
+  position: absolute;
+  top: var(--markstream-code-padding-top, 8px);
+  left: var(--markstream-pre-line-number-left);
+  box-sizing: content-box;
+  width: var(--markstream-pre-line-number-width);
+  min-width: var(--markstream-pre-line-number-width);
+  padding-left: var(--markstream-pre-line-number-padding-left);
+  padding-right: var(--markstream-pre-line-number-padding-right);
+  border-right: var(--markstream-pre-line-number-separator-width) solid var(--markstream-diff-gutter-guide, rgb(148 163 184 / 0.18));
+  color: var(--stream-monaco-line-number, var(--markstream-diff-line-number, #6b7280));
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  text-align: right;
+  pointer-events: none;
+  user-select: none;
+}
+
+.markstream-svelte .code-pre-fallback > .markstream-pre__line-numbers > .markstream-pre__line-numbers-text {
+  display: block;
+  white-space: pre;
+}
+
+.markstream-svelte .code-pre-fallback:not(.markstream-pre--diff-preview) > .markstream-pre__code {
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  padding-left: var(--markstream-pre-code-left);
+  padding-right: 1ch;
+}
+
+.markstream-svelte .code-pre-fallback.markstream-pre--diff-preview {
+  --markstream-pre-diff-gutter-marker-width: var(--stream-monaco-gutter-marker-width, 4px);
+  --markstream-pre-diff-line-number-width: var(--stream-monaco-line-number-width, 2ch);
+  --markstream-pre-diff-line-number-padding-left: var(--stream-monaco-line-number-padding-left, 2ch);
+  --markstream-pre-diff-line-number-padding-right: var(--stream-monaco-line-number-padding-right, 1ch);
+  --markstream-pre-diff-line-number-separator-width: var(--stream-monaco-line-number-separator-width, 2px);
+  --markstream-pre-diff-line-number-gap-to-code: var(--stream-monaco-line-number-gap-to-code, 1ch);
+  --markstream-pre-diff-line-number-box-width: calc(
+    var(--markstream-pre-diff-line-number-padding-left)
+    + var(--markstream-pre-diff-line-number-width)
+    + var(--markstream-pre-diff-line-number-padding-right)
+    + var(--markstream-pre-diff-line-number-separator-width)
+  );
+  --markstream-pre-diff-code-fill-left: var(--markstream-pre-diff-line-number-box-width);
+  --markstream-pre-diff-code-left: calc(
+    var(--markstream-pre-diff-code-fill-left)
+    + var(--markstream-pre-diff-line-number-gap-to-code)
+  );
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.markstream-svelte .code-pre-fallback.markstream-pre--diff-preview > .markstream-pre__diff-code {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  width: 100%;
+  min-width: 100%;
+  font: inherit;
+  line-height: inherit;
+}
+
+.markstream-svelte .code-pre-fallback.markstream-pre--diff-inline > .markstream-pre__diff-code {
+  grid-template-columns: minmax(100%, max-content);
+  min-width: max-content;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-pane {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.markstream-svelte .code-pre-fallback:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-pane-content {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-pane--modified {
+  box-shadow: inset 1px 0 var(--markstream-diff-pane-divider, rgb(148 163 184 / 0.18));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  min-height: var(--vscode-editor-line-height, 20px);
+  padding-left: var(--markstream-pre-diff-code-left);
+  line-height: var(--vscode-editor-line-height, 20px);
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 var(--markstream-pre-diff-code-fill-left);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-rail {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  width: var(--markstream-pre-diff-gutter-marker-width);
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-number {
+  position: absolute;
+  z-index: 1;
+  inset: 0 auto 0 0;
+  box-sizing: border-box;
+  width: var(--markstream-pre-diff-line-number-box-width);
+  padding-left: var(--markstream-pre-diff-line-number-padding-left);
+  padding-right: var(--markstream-pre-diff-line-number-padding-right);
+  box-shadow: inset -1px 0 var(--markstream-diff-gutter-guide, rgb(148 163 184 / 0.18));
+  color: var(--stream-monaco-line-number, var(--markstream-diff-line-number, #6b7280));
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-content {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: max-content;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--added::before,
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--added > .markstream-pre__diff-number {
+  background: var(--stream-monaco-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--removed::before,
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
+  background: var(--stream-monaco-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--added > .markstream-pre__diff-rail {
+  background: var(--stream-monaco-added-fg, var(--markstream-diff-added-fg));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--removed > .markstream-pre__diff-rail {
+  background: var(--stream-monaco-removed-fg, var(--markstream-diff-removed-fg));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--added > .markstream-pre__diff-number {
+  color: var(--stream-monaco-added-fg, var(--markstream-diff-added-fg));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
+  color: var(--stream-monaco-removed-fg, var(--markstream-diff-removed-fg));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--spacer > *,
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--spacer::before {
+  visibility: hidden;
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--collapsed {
+  min-height: 40px;
+  padding-left: 8px;
+  color: var(--stream-monaco-unchanged-fg, var(--markstream-diff-unchanged-fg));
+  line-height: 40px;
+  background: var(--stream-monaco-unchanged-bg, var(--markstream-diff-unchanged-bg));
+}
+
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--collapsed > .markstream-pre__diff-number,
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--collapsed > .markstream-pre__diff-rail,
+.markstream-svelte .code-pre-fallback .markstream-pre__diff-line--collapsed::before {
+  display: none;
 }
 
 .markstream-svelte .code-block-container.is-diff {

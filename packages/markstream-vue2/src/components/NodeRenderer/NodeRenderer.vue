@@ -6,7 +6,7 @@ import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme, CodeBlockNodeProps, 
 import { normalizeShikiLanguage } from 'markstream-core'
 import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure, resolveCustomHtmlTags } from 'stream-markdown-parser'
 import { h as createVNode } from 'vue'
-import { computed, getCurrentInstance, inject, markRaw, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, watch } from 'vue-demi'
+import { computed, getCurrentInstance, inject, markRaw, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, version, watch } from 'vue-demi'
 import AdmonitionNode from '../../components/AdmonitionNode'
 import BlockquoteNode from '../../components/BlockquoteNode'
 import CheckboxNode from '../../components/CheckboxNode'
@@ -43,7 +43,7 @@ import { getCodeBlockExtraProps } from '../../utils/codeBlockExtraProps'
 import { clampInfographicPreviewHeight, clampMermaidPreviewHeight, estimateInfographicPreviewHeight, estimateMermaidPreviewHeight, parsePositiveNumber } from '../../utils/diagramHeight'
 import { getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText, stripCustomHtmlWrapper } from '../../utils/htmlRenderer'
 import { customComponentsRevision, getCustomNodeComponents } from '../../utils/nodeComponents'
-import { isLegacyVue26Vm } from '../../utils/vue26'
+import { isLegacyVue26Version } from '../../utils/vue26'
 import HtmlBlockNode from '../HtmlBlockNode/HtmlBlockNode.vue'
 import HtmlInlineNode from '../HtmlInlineNode/HtmlInlineNode.vue'
 import { MathBlockNodeAsync, MathInlineNodeAsync } from './asyncComponent'
@@ -220,22 +220,11 @@ const containerRef = ref<HTMLElement>()
 const viewportPriorityAutoDisabled = ref(false)
 const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
 const isClient = typeof window !== 'undefined'
-const instance = getCurrentInstance()
 const debugPerformanceEnabled = computed(() => props.debugPerformance && isClient && typeof console !== 'undefined')
-const attrs = computed<Record<string, unknown>>(() => ((instance?.proxy as any)?.$attrs ?? {}) as Record<string, unknown>)
 const textStreamState = new Map<string, string>()
 const streamRenderVersion = ref(0)
 const smoothStream = useSmoothMarkdownStream(props.smoothStreamingOptions)
-const resolvedShowTooltips = computed<boolean | undefined>(() => {
-  if (typeof props.showTooltips === 'boolean')
-    return props.showTooltips
-  const raw = attrs.value.showTooltips ?? attrs.value['show-tooltips']
-  if (raw === '' || raw === true || raw === 'true')
-    return true
-  if (raw === false || raw === 'false')
-    return false
-  return undefined
-})
+const resolvedShowTooltips = computed<boolean | undefined>(() => props.showTooltips)
 const inheritedHtmlPolicy = inject<{ value?: HtmlPolicy } | undefined>('markstreamHtmlPolicy', undefined)
 const inheritedSmoothStreaming = inject<{ value?: boolean } | undefined>('markstreamSmoothStreaming', undefined)
 const resolvedHtmlPolicy = computed<HtmlPolicy>(() => props.htmlPolicy ?? inheritedHtmlPolicy?.value ?? 'safe')
@@ -450,8 +439,9 @@ const effectiveCustomHtmlTagsSet = computed<Set<string>>(() => {
   return new Set(arr.map(t => String(t).trim().toLowerCase()).filter(Boolean))
 })
 
+const legacyVue26 = isLegacyVue26Version(version)
 const parsedNodes = computed<ParsedNode[]>(() => {
-  if (isLegacyVue26Vm(instance?.proxy as any) && !props.content && Array.isArray(props.nodes))
+  if (legacyVue26 && !props.content && Array.isArray(props.nodes))
     return EMPTY_PARSED_NODES
   // 解析 content 字符串为节点数组
   // If the consumer passed an explicit `nodes` array, return a shallow
@@ -583,22 +573,22 @@ const shouldObserveSlots = computed(() => !!registerNodeVisibility && (deferNode
 const liveNodeBufferResolved = computed(() => Math.max(0, props.liveNodeBuffer ?? 60))
 const focusIndex = ref(0)
 const nodeContentElements = new Map<number, HTMLElement | null>()
-const legacyVue26 = computed(() => {
-  const vm = instance?.proxy as any
-  return isLegacyVue26Vm(vm)
-})
-const legacyNodesMode = computed(() => legacyVue26.value && !props.content && Array.isArray(props.nodes))
+const legacyNodesMode = computed(() => legacyVue26 && !props.content && Array.isArray(props.nodes))
 const legacyNodeItems = computed<ParsedNode[]>(() => {
   if (!legacyNodesMode.value)
     return EMPTY_PARSED_NODES
   return markRaw(cloneParsedNodeList((props.nodes as unknown as ParsedNode[]) || []))
 })
 
+const getNodeRefs = (() => {
+  const proxy = getCurrentInstance()?.proxy as any
+  return () => proxy?.$refs as Record<string, any> | undefined
+})()
+
 function syncNodeRefs() {
-  const proxy = instance?.proxy as any
-  if (!proxy || !proxy.$refs)
+  const refs = getNodeRefs()
+  if (!refs)
     return
-  const refs = proxy.$refs as Record<string, any>
   const seen = new Set<number>()
   for (const item of visibleNodes.value) {
     const slot = resolveTemplateRef(refs[`node-slot-${item.index}`])
@@ -1991,7 +1981,7 @@ const legacyRenderedItems = computed(() => {
   })
 })
 const legacyStructuredContentMode = computed(() => {
-  if (!legacyVue26.value || !props.content)
+  if (!legacyVue26 || !props.content)
     return false
   return parsedNodes.value.some(node => isLegacyStructuredNode(node))
 })
@@ -2143,7 +2133,7 @@ function getRenderKey(node: ParsedNode, index: number) {
   const items = Array.isArray((node as any).items) ? (node as any).items.length : 0
   const rows = Array.isArray((node as any).rows) ? (node as any).rows.length : 0
 
-  if (!legacyVue26.value && !loading)
+  if (!legacyVue26 && !loading)
     return base
 
   const hasNestedStructure = children > 0 || items > 0 || rows > 0

@@ -10,8 +10,10 @@ const props = defineProps<{
   }
 }>()
 
-const instance = getCurrentInstance()
-const attrs = computed<Record<string, unknown>>(() => ((instance?.proxy as any)?.$attrs ?? {}) as Record<string, unknown>)
+const attrs = (() => {
+  const proxy = getCurrentInstance()?.proxy as any
+  return computed<Record<string, unknown>>(() => (proxy?.$attrs ?? {}) as Record<string, unknown>)
+})()
 const inheritedFade = inject<{ value?: boolean } | undefined>('markstreamFade', undefined)
 const inheritedTextStreamState = inject<Map<string, string> | undefined>('markstreamTextStreamState', undefined)
 const explicitFade = computed<boolean | undefined>(() => {

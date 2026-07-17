@@ -3,6 +3,17 @@ import { preload } from '../NodeRenderer/preloadMonaco'
 let mod: any = null
 let importAttempted = false
 
+const runtimeLoaders = [
+  () => import('stream-diffs'),
+  () => import('stream-monaco/legacy'),
+]
+
+function normalizeRuntimeModule(imported: any) {
+  if (typeof imported?.useMonaco === 'function')
+    return imported
+  return typeof imported?.default?.useMonaco === 'function' ? imported.default : null
+}
+
 async function warmupShikiTokenizer(m: any) {
   const getOrCreateHighlighter = m?.getOrCreateHighlighter
   if (typeof getOrCreateHighlighter !== 'function')
@@ -37,22 +48,21 @@ export async function getUseMonaco() {
   if (importAttempted)
     return null
 
-  try {
-    const imported = await import('stream-monaco/legacy')
-    mod = (imported as any)?.default ?? imported
-    await preload(mod)
-    const ok = await warmupShikiTokenizer(mod)
-    if (!ok) {
-      mod = null
-      importAttempted = true
-      return null
+  for (const load of runtimeLoaders) {
+    try {
+      const candidate = normalizeRuntimeModule(await load())
+      if (!candidate)
+        continue
+      await preload(candidate)
+      const ok = await warmupShikiTokenizer(candidate)
+      if (!ok)
+        continue
+      mod = candidate
+      return mod
     }
-    return mod
+    catch {}
   }
-  catch {
-    importAttempted = true
-    // Return null to indicate the module is not available
-    // The caller should handle the fallback gracefully
-    return null
-  }
+
+  importAttempted = true
+  return null
 }

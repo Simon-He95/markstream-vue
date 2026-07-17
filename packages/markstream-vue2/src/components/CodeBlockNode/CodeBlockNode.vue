@@ -103,18 +103,20 @@ function withPassiveOptions(options?: boolean | AddEventListenerOptions): AddEve
   return { passive: true }
 }
 
-const instance = getCurrentInstance() as any
-const hasPreviewListener = computed(() => {
-  const proxy = instance?.proxy as any
-  const listeners = proxy?.$listeners ?? {}
-  if (listeners.previewCode || listeners['preview-code'])
-    return true
-  const vnodeListeners = proxy?.$vnode?.data?.on ?? proxy?.$vnode?.componentOptions?.listeners ?? {}
-  if (vnodeListeners.previewCode || vnodeListeners['preview-code'])
-    return true
-  const props = (proxy?.$vnode as any)?.props ?? instance?.vnode?.props
-  return !!(props && (props.onPreviewCode || props.onPreviewcode))
-})
+const hasPreviewListener = (() => {
+  const instance = getCurrentInstance() as any
+  return computed(() => {
+    const proxy = instance?.proxy as any
+    const listeners = proxy?.$listeners ?? {}
+    if (listeners.previewCode || listeners['preview-code'])
+      return true
+    const vnodeListeners = proxy?.$vnode?.data?.on ?? proxy?.$vnode?.componentOptions?.listeners ?? {}
+    if (vnodeListeners.previewCode || vnodeListeners['preview-code'])
+      return true
+    const props = (proxy?.$vnode as any)?.props ?? instance?.vnode?.props
+    return !!(props && (props.onPreviewCode || props.onPreviewcode))
+  })
+})()
 const { t } = useSafeI18n()
 // No mermaid-specific handling here; NodeRenderer routes mermaid blocks.
 const codeEditor = ref<HTMLElement | null>(null)
@@ -175,8 +177,10 @@ let cleanupEditor: () => void = () => {}
 let safeClean = () => {}
 let refreshDiffPresentation: () => void = () => {}
 let createEditorPromise: Promise<void> | null = null
+let editorCreationGeneration = 0
 let detectLanguage: (code: string) => string = () => String(props.node.language ?? 'plaintext')
 let setTheme: (theme: any) => Promise<void> = async () => {}
+let whenRuntimeVisualReady: () => Promise<boolean> | boolean = () => true
 let runtimeMonacoOptions: Record<string, any> | null = null
 const inlineFoldProxyCleanups: Array<() => void> = []
 let deferredEditorVisualSyncRafId: number | null = null
@@ -313,6 +317,7 @@ if (typeof window !== 'undefined') {
         safeClean = helpers.safeClean || helpers.cleanupEditor || safeClean
         refreshDiffPresentation = helpers.refreshDiffPresentation || refreshDiffPresentation
         setTheme = helpers.setTheme || setTheme
+        whenRuntimeVisualReady = helpers.whenVisualReady || whenRuntimeVisualReady
         monacoReady.value = true
 
         if (codeEditor.value)
@@ -864,7 +869,7 @@ watch(
 watch(
   () => [props.node.originalCode, props.node.updatedCode, monacoLanguage.value, isDiff.value] as const,
   async ([originalCode, updatedCode, _language, diff]) => {
-    if (props.stream === false || !diff)
+    if (props.loading !== false || !diff)
       return
 
     if (createEditor && !editorCreated.value && codeEditor.value) {
@@ -887,7 +892,7 @@ watch(
 watch(
   () => props.node.code,
   async (newCode) => {
-    if (props.stream === false)
+    if (props.loading !== false)
       return
     if (!codeLanguage.value)
       codeLanguage.value = normalizeLanguageIdentifier(detectLanguage(newCode))
@@ -1134,13 +1139,26 @@ function setAutomaticLayout(expanded: boolean) {
   catch {}
 }
 
-async function runEditorCreation(el: HTMLElement) {
+function getEditorContentSignature() {
+  return isDiff.value
+    ? `diff\0${monacoLanguage.value}\0${props.node.originalCode ?? ''}\0${props.node.updatedCode ?? props.node.code ?? ''}`
+    : `single\0${monacoLanguage.value}\0${props.node.code ?? ''}`
+}
+
+function isCurrentEditorCreation(generation: number, el: HTMLElement, kind: 'diff' | 'single') {
+  return generation === editorCreationGeneration
+    && codeEditor.value === el
+    && desiredEditorKind.value === kind
+}
+
+async function runEditorCreation(el: HTMLElement, generation: number, kind: 'diff' | 'single') {
   if (!createEditor)
     return
 
   syncRuntimeMonacoOptions()
+  let renderedSignature = getEditorContentSignature()
 
-  if (isDiff.value) {
+  if (kind === 'diff') {
     safeClean()
     if (createDiffEditor)
       await createDiffEditor(el as HTMLElement, String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), monacoLanguage.value)
@@ -1150,8 +1168,10 @@ async function runEditorCreation(el: HTMLElement) {
   else {
     await createEditor(el as HTMLElement, props.node.code, monacoLanguage.value)
   }
+  if (!isCurrentEditorCreation(generation, el, kind))
+    return
 
-  const editor = isDiff.value ? getDiffEditorView() : getEditorView()
+  const editor = kind === 'diff' ? getDiffEditorView() : getEditorView()
   if (typeof resolvedMonacoOptions.value?.fontSize === 'number') {
     editor?.updateOptions({ fontSize: resolvedMonacoOptions.value.fontSize, automaticLayout: false })
     defaultCodeFontSize.value = resolvedMonacoOptions.value.fontSize
@@ -1178,38 +1198,88 @@ async function runEditorCreation(el: HTMLElement) {
       scheduleEditorVisualSync()
     })
   }
-  editorReady.value = true
+  while (isCurrentEditorCreation(generation, el, kind)) {
+    const latestSignature = getEditorContentSignature()
+    if (latestSignature !== renderedSignature) {
+      if (kind === 'diff') {
+        await Promise.resolve(updateDiffCode(
+          String(props.node.originalCode ?? ''),
+          String(props.node.updatedCode ?? props.node.code ?? ''),
+          monacoLanguage.value,
+        ))
+      }
+      else {
+        await Promise.resolve(updateCode(String(props.node.code ?? ''), monacoLanguage.value))
+      }
+      renderedSignature = latestSignature
+    }
+    const visualReady = await waitForEditorVisualReady(() => isCurrentEditorCreation(generation, el, kind))
+    if (!isCurrentEditorCreation(generation, el, kind))
+      return
+    if (!visualReady)
+      throw new Error('Editor surface did not paint')
+    if (renderedSignature !== getEditorContentSignature())
+      continue
+    editorReady.value = true
+    return
+  }
+}
+
+function hasRenderedEditorSurface() {
+  const surface = codeEditor.value?.querySelector<HTMLElement>('.stream-diffs-shell, .monaco-editor, .monaco-diff-editor')
+  if (!surface?.firstElementChild)
+    return false
+  const rect = surface.getBoundingClientRect()
+  return rect.width > 0 && rect.height > 0
+}
+
+async function waitForEditorVisualReady(isCurrent: () => boolean) {
+  if (!await whenRuntimeVisualReady())
+    return false
+  for (let frame = 0; frame < 120; frame += 1) {
+    if (!isCurrent())
+      return false
+    if (hasRenderedEditorSurface()) {
+      await new Promise<void>(resolve => safeRaf(() => resolve()))
+      return isCurrent() && hasRenderedEditorSurface()
+    }
+    await new Promise<void>(resolve => safeRaf(() => resolve()))
+  }
+  return false
 }
 
 function ensureEditorCreation(el: HTMLElement) {
-  if (!createEditor)
+  if (!createEditor || props.loading !== false || !viewportReady.value)
     return null
   if (createEditorPromise)
     return createEditorPromise
 
   editorCreated.value = true
   editorReady.value = false
+  const generation = ++editorCreationGeneration
+  const kind = desiredEditorKind.value
   const pending = (async () => {
-    await runEditorCreation(el)
+    await runEditorCreation(el, generation, kind)
   })()
 
-  createEditorPromise = pending.finally(() => {
-    createEditorPromise = null
+  const tracked = pending.finally(() => {
+    if (createEditorPromise === tracked)
+      createEditorPromise = null
   })
+  createEditorPromise = tracked
   return createEditorPromise
 }
 
 // 延迟创建编辑器：仅在可见且准备就绪时创建，避免无意义的初始化
 const stopCreateEditorWatch = watch(
   () => [codeEditor.value, isDiff.value, props.stream, props.loading, monacoReady.value, viewportReady.value] as const,
-  async ([el, _isDiff, stream, loading, _monacoReady, visible]) => {
+  async ([el, _isDiff, _stream, loading, _monacoReady, visible]) => {
     if (!el || !createEditor)
       return
     if (!visible)
       return
 
-    // If streaming is disabled, defer editor creation until loading is finished
-    if (stream === false && loading !== false)
+    if (loading !== false)
       return
 
     const creation = ensureEditorCreation(el as HTMLElement)
@@ -1244,6 +1314,8 @@ watch(
 
     try {
       editorCreated.value = false
+      editorReady.value = false
+      editorCreationGeneration += 1
       createEditorPromise = null
       clearInlineFoldProxies()
       safeClean()
@@ -1465,6 +1537,8 @@ function buildRuntimeMonacoOptions() {
     themes: runtimeMonacoThemes.value,
     languages: runtimeMonacoLanguages.value,
     theme: resolveRequestedTheme(),
+    stream: false,
+    disableFileHeader: true,
     ...(isDiff.value ? { diffAppearance: effectiveDiffAppearance.value } : {}),
     onThemeChange() {
       syncEditorCssVars()
@@ -1569,6 +1643,8 @@ watch(
 
     try {
       editorCreated.value = false
+      editorReady.value = false
+      editorCreationGeneration += 1
       createEditorPromise = null
       clearInlineFoldProxies()
       safeClean()
@@ -1617,6 +1693,8 @@ onUnmounted(() => {
   // Ensure any RAF loops are stopped and editor resources are released
   stopExpandAutoResize()
   clearInlineFoldProxies()
+  editorCreationGeneration += 1
+  createEditorPromise = null
   if (deferredEditorVisualSyncRafId != null) {
     safeCancelRaf(deferredEditorVisualSyncRafId)
     deferredEditorVisualSyncRafId = null
@@ -1772,8 +1850,7 @@ onUnmounted(() => {
       <div
         ref="codeEditor"
         class="code-editor-container"
-        :class="[stream ? '' : 'code-height-placeholder']"
-        :style="{ visibility: editorReady ? 'visible' : 'hidden' }"
+        :class="[stream ? '' : 'code-height-placeholder', { 'is-staging': !editorReady }]"
         :aria-hidden="editorReady ? undefined : 'true'"
       />
       <div v-if="!editorReady" class="code-editor-fallback-surface">
@@ -1962,11 +2039,20 @@ onUnmounted(() => {
 .code-editor-layer {
   display: grid;
   min-width: 0;
+  position: relative;
 }
 
 .code-editor-layer > .code-editor-container,
 .code-editor-layer > .code-editor-fallback-surface {
   grid-area: 1 / 1;
+}
+
+.code-editor-layer > .code-editor-container.is-staging {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .code-editor-fallback-surface {

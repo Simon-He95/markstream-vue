@@ -1018,6 +1018,17 @@ body > div[id^="dmermaid-"] {
 .markstream-angular .code-block-container {
   --markstream-code-fallback-bg: #ffffff;
   --markstream-code-fallback-fg: #111827;
+  --markstream-diff-editor-bg: #ffffff;
+  --markstream-diff-editor-fg: #111827;
+  --markstream-diff-gutter-guide: rgba(148, 163, 184, 0.28);
+  --markstream-diff-pane-divider: rgba(148, 163, 184, 0.2);
+  --markstream-diff-line-number: #6b7280;
+  --markstream-diff-added-fg: #2f8f68;
+  --markstream-diff-removed-fg: #c24141;
+  --markstream-diff-added-line-fill: rgb(47 143 104 / 12%);
+  --markstream-diff-removed-line-fill: rgb(194 65 65 / 12%);
+  --markstream-diff-unchanged-fg: #475569;
+  --markstream-diff-unchanged-bg: rgba(148, 163, 184, 0.12);
   margin: 1rem 0;
   overflow: hidden;
   border: 1px solid rgba(148, 163, 184, 0.24);
@@ -1030,6 +1041,16 @@ body > div[id^="dmermaid-"] {
 .dark .markstream-angular .code-block-container {
   --markstream-code-fallback-bg: #111827;
   --markstream-code-fallback-fg: #e5e7eb;
+  --markstream-diff-editor-bg: #111111;
+  --markstream-diff-editor-fg: #d4d4d4;
+  --markstream-diff-gutter-guide: rgba(82, 82, 91, 0.62);
+  --markstream-diff-line-number: rgba(161, 161, 170, 0.72);
+  --markstream-diff-added-fg: #5eead4;
+  --markstream-diff-removed-fg: #fda4af;
+  --markstream-diff-added-line-fill: rgba(13, 148, 136, 0.2);
+  --markstream-diff-removed-line-fill: rgba(225, 29, 72, 0.2);
+  --markstream-diff-unchanged-fg: #cbd5e1;
+  --markstream-diff-unchanged-bg: rgba(24, 24, 27, 0.92);
   border-color: rgba(71, 85, 105, 0.55);
   background: #0f172a;
   box-shadow: 0 22px 44px -30px rgba(2, 6, 23, 0.95);
@@ -1112,6 +1133,250 @@ body > div[id^="dmermaid-"] {
 
 .markstream-angular .code-block-body {
   position: relative;
+}
+
+.markstream-angular .code-editor-layer {
+  display: grid;
+  min-width: 0;
+  position: relative;
+}
+
+.markstream-angular .code-editor-layer > .code-editor-container,
+.markstream-angular .code-editor-layer > .code-editor-fallback-surface {
+  grid-area: 1 / 1;
+}
+
+.markstream-angular .code-editor-layer > .code-editor-container.is-staging {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.markstream-angular .code-editor-fallback-surface {
+  min-width: 0;
+  overflow: auto;
+}
+
+.markstream-angular .code-pre-fallback {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-height: var(--markstream-code-max-height, 500px);
+  margin: 0;
+  padding: var(--markstream-code-padding-top, 8px) 0 var(--markstream-code-padding-bottom, 8px);
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg));
+  color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg));
+  font-family: var(--vscode-editor-font-family, "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+  font-size: var(--vscode-editor-font-size, 13px);
+  line-height: var(--vscode-editor-line-height, 20px);
+  font-variant-ligatures: none;
+  tab-size: 4;
+  white-space: var(--markstream-code-white-space, pre);
+}
+
+.markstream-angular .code-pre-fallback code {
+  color: inherit;
+  font: inherit;
+  background: transparent;
+}
+
+.markstream-angular .code-pre-fallback.markstream-pre--line-numbers {
+  --markstream-pre-line-number-width: 2ch;
+  --markstream-pre-line-number-padding-left: 2ch;
+  --markstream-pre-line-number-padding-right: 1ch;
+  --markstream-pre-line-number-separator-width: 2px;
+  --markstream-pre-line-number-box-width: calc(
+    var(--markstream-pre-line-number-padding-left)
+    + var(--markstream-pre-line-number-width)
+    + var(--markstream-pre-line-number-padding-right)
+    + var(--markstream-pre-line-number-separator-width)
+  );
+  --markstream-pre-code-left: calc(var(--markstream-pre-line-number-box-width) + 1ch);
+}
+
+.markstream-angular .code-pre-fallback > .markstream-pre__line-numbers {
+  position: absolute;
+  top: var(--markstream-code-padding-top, 8px);
+  left: 0;
+  box-sizing: content-box;
+  width: var(--markstream-pre-line-number-width);
+  min-width: var(--markstream-pre-line-number-width);
+  padding-left: var(--markstream-pre-line-number-padding-left);
+  padding-right: var(--markstream-pre-line-number-padding-right);
+  border-right: var(--markstream-pre-line-number-separator-width) solid var(--markstream-diff-gutter-guide);
+  color: var(--markstream-diff-line-number);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  text-align: right;
+  pointer-events: none;
+  user-select: none;
+}
+
+.markstream-angular .code-pre-fallback > .markstream-pre__line-numbers > .markstream-pre__line-numbers-text {
+  display: block;
+  white-space: pre;
+}
+
+.markstream-angular .code-pre-fallback:not(.markstream-pre--diff-preview) > .markstream-pre__code {
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  padding-left: var(--markstream-pre-code-left);
+  padding-right: 1ch;
+}
+
+.markstream-angular .code-pre-fallback.markstream-pre--diff-preview {
+  --markstream-pre-diff-gutter-marker-width: 4px;
+  --markstream-pre-diff-line-number-width: 2ch;
+  --markstream-pre-diff-line-number-padding-left: 2ch;
+  --markstream-pre-diff-line-number-padding-right: 1ch;
+  --markstream-pre-diff-line-number-separator-width: 2px;
+  --markstream-pre-diff-line-number-box-width: calc(
+    var(--markstream-pre-diff-line-number-padding-left)
+    + var(--markstream-pre-diff-line-number-width)
+    + var(--markstream-pre-diff-line-number-padding-right)
+    + var(--markstream-pre-diff-line-number-separator-width)
+  );
+  --markstream-pre-diff-code-fill-left: var(--markstream-pre-diff-line-number-box-width);
+  --markstream-pre-diff-code-left: calc(var(--markstream-pre-diff-code-fill-left) + 1ch);
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.markstream-angular .code-pre-fallback > .markstream-pre__diff-code {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  width: 100%;
+  min-width: 100%;
+  font: inherit;
+  line-height: inherit;
+}
+
+.markstream-angular .code-pre-fallback.markstream-pre--diff-inline > .markstream-pre__diff-code {
+  grid-template-columns: minmax(100%, max-content);
+  min-width: max-content;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-pane {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-pane-content {
+  display: block;
+  width: max-content;
+  min-width: 100%;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-pane--modified {
+  box-shadow: inset 1px 0 var(--markstream-diff-pane-divider);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 100%;
+  min-height: var(--vscode-editor-line-height, 20px);
+  padding-left: var(--markstream-pre-diff-code-left);
+  line-height: var(--vscode-editor-line-height, 20px);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 var(--markstream-pre-diff-code-fill-left);
+  z-index: 0;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-rail {
+  position: absolute;
+  z-index: 2;
+  inset: 0 auto 0 0;
+  width: var(--markstream-pre-diff-gutter-marker-width);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-number {
+  position: absolute;
+  z-index: 1;
+  inset: 0 auto 0 0;
+  box-sizing: border-box;
+  width: var(--markstream-pre-diff-line-number-box-width);
+  padding-left: var(--markstream-pre-diff-line-number-padding-left);
+  padding-right: var(--markstream-pre-diff-line-number-padding-right);
+  box-shadow: inset -1px 0 var(--markstream-diff-gutter-guide);
+  color: var(--markstream-diff-line-number);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-content {
+  position: relative;
+  z-index: 1;
+  display: block;
+  min-width: max-content;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--added::before,
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--added > .markstream-pre__diff-number {
+  background: var(--markstream-diff-added-line-fill);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--removed::before,
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
+  background: var(--markstream-diff-removed-line-fill);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--added > .markstream-pre__diff-rail {
+  background: var(--markstream-diff-added-fg);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--removed > .markstream-pre__diff-rail {
+  background: var(--markstream-diff-removed-fg);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--added > .markstream-pre__diff-number {
+  color: var(--markstream-diff-added-fg);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
+  color: var(--markstream-diff-removed-fg);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--spacer > *,
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--spacer::before {
+  visibility: hidden;
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--collapsed {
+  min-height: 40px;
+  padding-left: 8px;
+  color: var(--markstream-diff-unchanged-fg);
+  line-height: 40px;
+  background: var(--markstream-diff-unchanged-bg);
+}
+
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--collapsed > .markstream-pre__diff-number,
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--collapsed > .markstream-pre__diff-rail,
+.markstream-angular .code-pre-fallback .markstream-pre__diff-line--collapsed::before {
+  display: none;
+}
+
+.markstream-angular .code-editor-fallback-surface > .code-fallback-plain {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  white-space: pre;
 }
 
 .code-block-body--expanded {

@@ -210,7 +210,7 @@
     "build:demo": "vite build",
     "build:view": "vite preview",
     "changelog": "conventional-changelog -p angular --tag-prefix markstream-vue@ -i CHANGELOG.md -s -r 1",
-    "release": "bumpp --all --commit --no-tag --no-push --execute 'pnpm run docs:llms:generate && conventional-changelog -p angular --tag-prefix markstream-vue@ -i CHANGELOG.md -s -r 1' && pnpm run check:workspace-deps-published && pnpm publish && node scripts/tag-package.mjs --package-json package.json --push",
+    "release": "bumpp --all --commit --no-tag --no-push --execute 'pnpm run docs:llms:generate && conventional-changelog -p angular --tag-prefix markstream-vue@ -i CHANGELOG.md -s -r 1' && pnpm run check:workspace-deps-published && pnpm publish $(node scripts/dist-tag.mjs) && node scripts/tag-package.mjs --package-json package.json --push",
     "release:angular": "pnpm run -C packages/markstream-angular release",
     "release:react": "pnpm run -C packages/markstream-react release",
     "release:svelte": "pnpm run -C packages/markstream-svelte release",

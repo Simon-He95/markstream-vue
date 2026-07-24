@@ -55,6 +55,12 @@ function packageVersionExists(name, version) {
   return result.status === 0 && result.stdout.trim() === version
 }
 
+// npm 11+ refuses to publish a prerelease version as `latest`; publish those
+// under the `next` dist-tag so the guard is satisfied and `latest` stays clean.
+function isPrerelease(version) {
+  return typeof version === 'string' && version.includes('-')
+}
+
 function gitCommit(ref) {
   const result = spawnSync('git', ['rev-parse', `${ref}^{}`], {
     cwd: repoRoot,
@@ -85,8 +91,9 @@ const packageDir = path.dirname(packageJsonPath)
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
 const dryRunPublishArgs = args.dryRun ? ['--dry-run', '--ignore-scripts'] : []
 const pnpmDryRunPublishArgs = args.dryRun ? [...dryRunPublishArgs, '--no-git-checks'] : []
+const prereleaseTagArgs = isPrerelease(packageJson.version) ? ['--tag', 'next'] : []
 
-console.log(`[publish-current] ${packageJson.name}@${packageJson.version}`)
+console.log(`[publish-current] ${packageJson.name}@${packageJson.version}${prereleaseTagArgs.length ? ` (${prereleaseTagArgs.join(' ')})` : ''}`)
 run('pnpm', ['-C', packageDir, 'run', 'build'])
 run('npm', ['config', 'get', 'registry'], packageDir)
 const published = !args.dryRun && packageVersionExists(packageJson.name, packageJson.version)
@@ -98,8 +105,8 @@ else {
   if (!args.dryRun)
     run('npm', ['whoami'], packageDir)
   if (packageDir === repoRoot)
-    run('pnpm', ['publish', '--access', 'public', ...pnpmDryRunPublishArgs], packageDir)
+    run('pnpm', ['publish', '--access', 'public', ...prereleaseTagArgs, ...pnpmDryRunPublishArgs], packageDir)
   else
-    run('npm', ['publish', '--access', 'public', ...dryRunPublishArgs], packageDir)
+    run('npm', ['publish', '--access', 'public', ...prereleaseTagArgs, ...dryRunPublishArgs], packageDir)
   run('node', ['scripts/tag-package.mjs', '--package-json', path.relative(repoRoot, packageJsonPath), ...(args.dryRun ? ['--dry-run', '--allow-dirty'] : ['--push'])])
 }

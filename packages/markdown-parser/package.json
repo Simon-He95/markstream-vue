@@ -51,7 +51,7 @@
     "lint": "eslint . --cache",
     "lint:fix": "eslint . --cache --fix",
     "prepublishOnly": "pnpm run build",
-    "release": "bumpp --commit --no-tag --no-push && npm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
+    "release": "bumpp --commit --no-tag --no-push && npm publish --access public $(node ../../scripts/dist-tag.mjs) && node ../../scripts/tag-package.mjs --package-json package.json --push"
   },
   "dependencies": {
     "markdown-it-container": "^4.0.0",

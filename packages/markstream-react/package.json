@@ -92,7 +92,7 @@
     "size:check": "node ../../scripts/check-package-size.mjs",
     "check:core-published": "node ../../scripts/check-core-published.mjs --package-json package.json --core-package-json ../markstream-core/package.json",
     "check:workspace-deps-published": "node ../../scripts/check-workspace-deps-published.mjs --package-json package.json",
-    "release": "pnpm run check:workspace-deps-published && bumpp --all --commit --no-tag --no-push --execute 'pnpm --workspace-root run docs:llms:generate' && pnpm publish --access public && node ../../scripts/tag-package.mjs --package-json package.json --push"
+    "release": "pnpm run check:workspace-deps-published && bumpp --all --commit --no-tag --no-push --execute 'pnpm --workspace-root run docs:llms:generate' && pnpm publish --access public $(node ../../scripts/dist-tag.mjs) && node ../../scripts/tag-package.mjs --package-json package.json --push"
   },
   "peerDependencies": {
     "@antv/infographic": "^0.2.3",

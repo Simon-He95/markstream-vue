@@ -632,32 +632,6 @@ function isAbortError(error: unknown) {
   return (error as any)?.name === 'AbortError'
 }
 
-/**
- * Matches native module-resolution / dynamic-import errors that occur when a
- * worker (e.g. a Blob URL inline worker) cannot resolve mermaid's lazy-loaded
- * diagram chunks. The main thread has a proper URL context and can load them.
- */
-const MODULE_RESOLUTION_ERROR_RE
-  = /Failed to resolve module specifier|Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Unable to resolve module specifier/i
-
-function requiresMainThreadMermaid(error: unknown) {
-  const message = typeof (error as any)?.message === 'string'
-    ? (error as any).message
-    : String(error ?? '')
-  // DOMPurify may be unavailable in certain worker contexts (e.g. inline
-  // workers with restricted CSP). The main thread has full DOMPurify access.
-  if (/(?:DOM)?purify\.(?:sanitize|addHook) is not a function/i.test(message))
-    return true
-  // Mermaid lazy-loads diagram-definition chunks via dynamic import(). In a
-  // Blob URL worker (e.g. Vite `?worker&inline`) relative specifiers like
-  // "./flowDiagram-XXX.js" cannot be resolved, producing errors such as
-  // "Failed to resolve module specifier". The main thread has a proper URL
-  // context and can load the chunks, so fall back to main-thread parsing.
-  if (MODULE_RESOLUTION_ERROR_RE.test(message))
-    return true
-  return false
-}
-
 function shouldRetrySequenceSemicolonEscape(error: unknown) {
   return !isTimeoutError(error) && !isAbortError(error)
 }
@@ -875,8 +849,17 @@ async function canParseOffthread(
   catch (error: any) {
     if (error?.name === 'AbortError')
       throw error
+    // Transient/structural errors with known codes must be surfaced to the
+    // caller (retry logic, availability flags, etc.) rather than masked by a
+    // main-thread fallback.
     const errorCode = error?.code || error?.name
-    if (errorCode === 'WORKER_INIT_ERROR' || error?.fallbackToRenderer || requiresMainThreadMermaid(error))
+    const isTransient
+      = errorCode === 'WORKER_BUSY'
+        || errorCode === 'WORKER_TIMEOUT'
+        || errorCode === 'WORKER_INIT_ERROR'
+        || errorCode === 'MERMAID_DISABLED'
+        || errorCode === 'WORKER_REPLACED'
+    if (!isTransient || error?.fallbackToRenderer)
       return await canParseOnMain(code, theme, opts)
     throw error
   }

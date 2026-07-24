@@ -632,13 +632,6 @@ function isAbortError(error: unknown) {
   return (error as any)?.name === 'AbortError'
 }
 
-function requiresMainThreadMermaid(error: unknown) {
-  const message = typeof (error as any)?.message === 'string'
-    ? (error as any).message
-    : String(error ?? '')
-  return /(?:DOM)?purify\.(?:sanitize|addHook) is not a function/i.test(message)
-}
-
 function shouldRetrySequenceSemicolonEscape(error: unknown) {
   return !isTimeoutError(error) && !isAbortError(error)
 }
@@ -856,8 +849,17 @@ async function canParseOffthread(
   catch (error: any) {
     if (error?.name === 'AbortError')
       throw error
+    // Transient/structural errors with known codes must be surfaced to the
+    // caller (retry logic, availability flags, etc.) rather than masked by a
+    // main-thread fallback.
     const errorCode = error?.code || error?.name
-    if (errorCode === 'WORKER_INIT_ERROR' || error?.fallbackToRenderer || requiresMainThreadMermaid(error))
+    const isTransient
+      = errorCode === 'WORKER_BUSY'
+        || errorCode === 'WORKER_TIMEOUT'
+        || errorCode === 'WORKER_INIT_ERROR'
+        || errorCode === 'MERMAID_DISABLED'
+        || errorCode === 'WORKER_REPLACED'
+    if (!isTransient || error?.fallbackToRenderer)
       return await canParseOnMain(code, theme, opts)
     throw error
   }

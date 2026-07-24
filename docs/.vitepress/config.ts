@@ -861,6 +861,12 @@ export default defineConfig({
       title: 'Markstream',
       description: docsDefaultDescription,
       link: '/',
+      themeConfig: {
+        selectText: 'Languages',
+        label: 'English',
+        ariaLabel: 'Select language',
+        nav: rootNav,
+      },
     },
     zh: {
       label: '简体中文',
@@ -868,6 +874,12 @@ export default defineConfig({
       title: 'Markstream',
       description: '适用于 AI 应用的多框架流式 Markdown 渲染器家族',
       link: '/zh/',
+      themeConfig: {
+        selectText: '选择语言',
+        label: '简体中文',
+        ariaLabel: '选择语言',
+        nav: zhNav,
+      },
     },
   },
   themeConfig: {
@@ -885,20 +897,6 @@ export default defineConfig({
       '/zh/guide/': chineseGuideSidebar,
       '/zh/': chineseGuideSidebar,
       '/': englishGuideSidebar,
-    },
-    locales: {
-      root: {
-        selectText: 'Languages',
-        label: 'English',
-        ariaLabel: 'Select language',
-        nav: rootNav,
-      },
-      zh: {
-        selectText: '选择语言',
-        label: '简体中文',
-        ariaLabel: '选择语言',
-        nav: zhNav,
-      },
     },
   },
   transformPageData(pageData) {

@@ -281,13 +281,11 @@ function ensureBuiltArtifacts() {
 
 function ensureOptionalPeersAbsent() {
   for (const pkg of [
-    'stream-monaco',
     'mermaid',
     'katex',
     '@terrastruct/d2',
     '@antv/infographic',
     'vue-i18n',
-    'stream-markdown',
   ]) {
     if (existsSync(join(tmp, 'node_modules', pkg)))
       throw new Error(`${pkg} should not be installed in minimal smoke`)
@@ -400,9 +398,6 @@ try {
       '@terrastruct/d2': '>=0.1.33',
       'katex': '>=0.16.22',
       'mermaid': '>=11',
-      'monaco-editor': '>=0.52.2 <0.56.0',
-      'stream-markdown': '>=0.0.15',
-      'stream-monaco': '>=0.0.40',
       'vue-i18n': '>=9',
     })
   }

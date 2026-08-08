@@ -1,5 +1,5 @@
 import type { NodeComponentProps } from 'markstream-react'
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
+import MarkdownRender, { setCustomComponents } from 'markstream-react'
 import 'markstream-react/index.css'
 
 function rewriteDocsUrl(url: string) {
@@ -39,14 +39,6 @@ function CustomLink({ node, ctx, renderNode, indexKey }: NodeComponentProps<any>
 setCustomComponents('migration-demo', {
   heading: CustomHeading,
   link: CustomLink,
-  code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
-      node={node}
-      isDark={isDark}
-      stream={ctx?.codeBlockStream}
-      {...(ctx?.codeBlockProps || {})}
-    />
-  ),
 })
 
 export function AdvancedArticle({ markdown }: { markdown: string }) {

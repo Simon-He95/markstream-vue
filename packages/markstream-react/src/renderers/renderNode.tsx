@@ -6,7 +6,7 @@ import { convertHtmlAttrsToProps, getHtmlTagFromContent, normalizeCustomHtmlTagN
 import { AdmonitionNode } from '../components/AdmonitionNode/AdmonitionNode'
 import { BlockquoteNode } from '../components/BlockquoteNode/BlockquoteNode'
 import { CheckboxNode } from '../components/CheckboxNode/CheckboxNode'
-import { CodeBlockNode as MonacoCodeBlockNode } from '../components/CodeBlockNode/CodeBlockNode'
+import { CodeBlockNode } from '../components/CodeBlockNode/CodeBlockNode'
 import { PreCodeNode } from '../components/CodeBlockNode/PreCodeNode'
 import { D2BlockNode } from '../components/D2BlockNode/D2BlockNode'
 import { DefinitionListNode } from '../components/DefinitionListNode/DefinitionListNode'
@@ -269,19 +269,17 @@ function renderCodeBlock(
       <PreCodeNode
         key={key}
         node={node}
-        monacoOptions={ctx.codeBlockThemes?.monacoOptions}
         showLineNumbers={ctx.codeBlockProps?.showLineNumbers === true}
       />
     )
   }
 
   return (
-    <MonacoCodeBlockNode
+    <CodeBlockNode
       key={key}
       node={node}
       loading={Boolean(node.loading)}
       stream={ctx.codeBlockStream}
-      monacoOptions={ctx.codeBlockThemes?.monacoOptions}
       themes={ctx.codeBlockThemes?.themes}
       minWidth={ctx.codeBlockThemes?.minWidth}
       maxWidth={ctx.codeBlockThemes?.maxWidth}

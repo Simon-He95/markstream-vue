@@ -4,7 +4,7 @@
 
 ## 加载 contract
 
-`getUseMonaco()` 保留历史导出名，但它动态导入的是 `stream-diffs`，不是 `stream-diffs/vue`。返回的 adapter 只提供 `CodeBlockNode` 需要的 editor-compatible 能力：创建、更新、主题、测量和释放。
+`getStreamDiffsRuntime()` 是 loader 导出名（2.0 从历史名称 `getUseMonaco` 重命名而来）。它动态导入的是 `stream-diffs`，不是 `stream-diffs/vue`。返回的 adapter 只提供 `CodeBlockNode` 需要的 editor-compatible 能力：创建、更新、主题、测量和释放。
 
 ```text
 CodeBlockNode                 markstream-vue runtime                stream-diffs

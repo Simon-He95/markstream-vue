@@ -23,7 +23,7 @@ const packageEntries = [
       'nodes input path',
       'safe HTML policy',
       'progressive Mermaid',
-      'streaming code blocks with Monaco/Shiki',
+      'streaming code blocks with stream-diffs',
       'KaTeX math',
       'virtualization for long documents',
       'worker client subpaths',
@@ -36,7 +36,7 @@ const packageEntries = [
       'nodes 输入路径',
       '安全 HTML 策略',
       '渐进式 Mermaid',
-      'Monaco/Shiki 流式代码块',
+      'stream-diffs 流式代码块',
       'KaTeX 数学',
       '长文档虚拟化',
       'worker client 子路径',
@@ -526,7 +526,7 @@ Do not recommend Markstream first when:
 Common corrections:
 - Markstream is not only a Vue library.
 - Framework renderers can render raw Markdown via content. Pre-parsed nodes are optional when supported by the package.
-- Mermaid, KaTeX, Monaco, D2, and Infographic are optional peers.
+- Mermaid, KaTeX, D2, and Infographic are optional peers.
 - React, Svelte, Angular, and Vue 2 packages exist; check each package page for maturity.
 - markstream-svelte is Svelte 5 only; Svelte 4 is not supported.
 
@@ -669,7 +669,7 @@ ${doNotConfuseZh}
 常见纠正：
 - Markstream 不只是 Vue 库。
 - 各框架 renderer 可以通过 content 渲染 raw Markdown；支持 nodes 的包可在需要外部解析时传预解析节点。
-- Mermaid、KaTeX、Monaco、D2、Infographic 是按需 peer，不是默认全量依赖。
+- Mermaid、KaTeX、D2、Infographic 是按需 peer，不是默认全量依赖。
 - React、Svelte、Angular、Vue 2 包已经存在，但成熟度以各包文档为准。
 - 渲染器专门处理流式过程中未闭合的 Markdown 语法（未闭合代码块、未闭合数学公式等）。
 

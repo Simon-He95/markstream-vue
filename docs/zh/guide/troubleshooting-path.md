@@ -15,7 +15,7 @@ description: 按症状定位 markstream-vue 的 CSS 顺序、peer 依赖、SSR�
 | 样式错乱、间距不对、Tailwind 抢样式 | [样式错乱？先做这几件事](/zh/guide/troubleshooting#css-looks-wrong-start-here) | [Tailwind 集成与样式顺序](/zh/guide/tailwind) |
 | `<thinking>` 这类可信标签被当成原生 HTML | [文档站与 VitePress 集成](/zh/guide/vitepress-docs-integration) 或 [自定义标签与高级组件](/zh/guide/custom-components) | [API 参考](/zh/guide/api) |
 | `window is not defined` 或浏览器专属依赖在 SSR 崩掉 | [排查问题](/zh/guide/troubleshooting) | [Nuxt SSR](/zh/nuxt-ssr) |
-| Mermaid、KaTeX、Monaco、D2 没有渲染出来 | [安装](/zh/guide/installation) | [渲染器与节点组件](/zh/guide/components) |
+| Mermaid、KaTeX、`stream-diffs`、D2 没有渲染出来 | [安装](/zh/guide/installation) | [渲染器与节点组件](/zh/guide/components) |
 | 聊天输出卡、频繁重解析、长内容越来越慢 | [AI 聊天与流式输出](/zh/guide/ai-chat-streaming) | [性能](/zh/guide/performance) |
 | 内置节点形态不适合业务 | [覆盖内置组件](/zh/guide/component-overrides) | [渲染器与节点组件](/zh/guide/components) |
 
@@ -61,7 +61,7 @@ description: 按症状定位 markstream-vue 的 CSS 顺序、peer 依赖、SSR�
 常见现象：
 
 - `window is not defined`
-- Mermaid / Monaco 本地能跑，但 SSR 环境报错
+- Mermaid / stream-diffs 本地能跑，但 SSR 环境报错
 - 服务端和客户端 hydration 对不上
 
 按这个顺序检查：
@@ -81,7 +81,7 @@ description: 按症状定位 markstream-vue 的 CSS 顺序、peer 依赖、SSR�
 
 - Mermaid fence 只显示源码
 - 数学公式是空白
-- Monaco 代码块是空的
+- `stream-diffs` 增强代码块是空的（未安装 stream-diffs 时回退为普通 `<pre>`）
 - D2 退回成原始文本
 
 这类问题多数不是 parser 出错，而是下面几类原因：

@@ -61,7 +61,7 @@ const streamMonaco = {
 
 streamMonaco.useMonaco.mockImplementation(() => streamMonaco)
 
-vi.mock('stream-monaco', () => ({
+vi.mock('stream-diffs', () => ({
   ...streamMonaco,
   preloadMonacoWorkers: vi.fn(async () => {}),
   getOrCreateHighlighter: vi.fn(async () => ({

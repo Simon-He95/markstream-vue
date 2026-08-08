@@ -27,7 +27,6 @@ export { default as InsertNode } from './components/InsertNode.svelte'
 export { default as LinkNode } from './components/LinkNode.svelte'
 export { default as ListItemNode } from './components/ListItemNode.svelte'
 export { default as ListNode } from './components/ListNode.svelte'
-export { default as MarkdownCodeBlockNode } from './components/MarkdownCodeBlockNode.svelte'
 export { default as MathBlockNode } from './components/MathBlockNode.svelte'
 export { default as MathInlineNode } from './components/MathInlineNode.svelte'
 export { default as MermaidBlockNode } from './components/MermaidBlockNode.svelte'
@@ -148,16 +147,14 @@ export type {
   CodeBlockDiffHunkSide,
   CodeBlockDiffLineStyle,
   CodeBlockDiffUnchangedRegionStyle,
-  CodeBlockMonacoLanguage,
-  CodeBlockMonacoOptions,
-  CodeBlockMonacoTheme,
-  CodeBlockMonacoThemeObject,
+  CodeBlockTheme,
+  CodeBlockThemeObject,
 } from './types/monaco'
 export {
   getLanguageIcon,
   languageMap,
   normalizeLanguageIdentifier,
-  resolveMonacoLanguageId,
+  resolveLanguageId,
   setLanguageIconResolver,
 } from './utils/languageIcon'
 export type { LanguageIconResolver } from './utils/languageIcon'

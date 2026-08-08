@@ -34,7 +34,6 @@
     codeBlockStream = true,
     codeBlockDarkTheme = undefined,
     codeBlockLightTheme = undefined,
-    codeBlockMonacoOptions = undefined,
     renderCodeBlocksAsPre = false,
     codeBlockMinWidth = undefined,
     codeBlockMaxWidth = undefined,
@@ -167,7 +166,6 @@
     codeBlockStream,
     codeBlockDarkTheme,
     codeBlockLightTheme,
-    codeBlockMonacoOptions,
     renderCodeBlocksAsPre,
     codeBlockMinWidth,
     codeBlockMaxWidth,
@@ -259,7 +257,6 @@
     void renderedNodes
     void isDark
     void renderCodeBlocksAsPre
-    void codeBlockMonacoOptions
     void codeBlockProps
     void mermaidProps
     void d2Props
@@ -392,7 +389,6 @@
       final: enhancementFinal,
       isDark,
       renderCodeBlocksAsPre,
-      monacoOptions: codeBlockMonacoOptions,
       codeBlockProps,
       mermaidProps,
       d2Props,

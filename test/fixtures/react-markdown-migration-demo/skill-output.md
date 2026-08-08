@@ -24,7 +24,7 @@ The main repository is not a real `react-markdown` consumer, so this fixture exi
 | `children` | `content` |
 | `components.h1` | `setCustomComponents('migration-demo', { heading })` with `node.level` |
 | `components.a` | custom `link` renderer |
-| `components.code` | custom `code_block` renderer with `MarkdownCodeBlockNode` |
+| `components.code` | default `code_block` renderer (stream-diffs powered) |
 | `urlTransform` | link rewrite logic moved into the custom `link` renderer |
 
 ## Manual Review Items

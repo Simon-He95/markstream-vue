@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from 'vitest'
 
 describe('optional stream-diffs dependency', () => {
   it('handles an unavailable stream-diffs peer gracefully', async () => {
-    // Dynamically import the monaco module
-    const { getUseMonaco } = await import('../src/components/CodeBlockNode/monaco')
+    // Dynamically import the stream-diffs runtime loader
+    const { getStreamDiffsRuntime } = await import('../src/components/CodeBlockNode/streamDiffs')
 
     // In a real scenario where stream-diffs is not installed,
-    // the import will fail and getUseMonaco should return null
+    // the import will fail and getStreamDiffsRuntime should return null
     // This test verifies the function exists and can be called
-    const result = await getUseMonaco()
+    const result = await getStreamDiffsRuntime()
 
     // If stream-diffs is installed (as it is in the dev environment),
     // result will be the module. If not installed, result will be null.
@@ -17,11 +17,11 @@ describe('optional stream-diffs dependency', () => {
   })
 
   it('should cache the import result', async () => {
-    const { getUseMonaco } = await import('../src/components/CodeBlockNode/monaco')
+    const { getStreamDiffsRuntime } = await import('../src/components/CodeBlockNode/streamDiffs')
 
     // Call twice to test caching
-    const result1 = await getUseMonaco()
-    const result2 = await getUseMonaco()
+    const result1 = await getStreamDiffsRuntime()
+    const result2 = await getStreamDiffsRuntime()
 
     // Both calls should return the same result (either the module or null)
     expect(result1).toBe(result2)
@@ -33,8 +33,8 @@ describe('optional stream-diffs dependency', () => {
       default: {},
     }))
 
-    const { getUseMonaco } = await import('../src/components/CodeBlockNode/monaco')
+    const { getStreamDiffsRuntime } = await import('../src/components/CodeBlockNode/streamDiffs')
 
-    await expect(getUseMonaco()).resolves.toBeNull()
+    await expect(getStreamDiffsRuntime()).resolves.toBeNull()
   })
 })

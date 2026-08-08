@@ -46,7 +46,6 @@ const isolatedRootExports = [
   'MarkdownRender',
   'VueRendererMarkdown',
   'CodeBlockNode',
-  'MarkdownCodeBlockNode',
   'MathBlockNode',
   'MathInlineNode',
   'MermaidBlockNode',

@@ -13,7 +13,7 @@ description: Define the markstream-vue 1.0 stable scope, API tiers, package vali
 - Streaming mid-state rendering with `final`, `typewriter`, `smoothStreaming`, and `useSmoothMarkdownStream`.
 - Host virtual-scroll coordination through `virtualScroll`, `MarkstreamVirtualMetrics`, `MarkstreamVirtualState`, and `MarkstreamRendererHandle`.
 - Safe HTML rendering with `htmlPolicy="safe"` as the default.
-- Optional Mermaid, KaTeX, D2, Infographic, and Monaco integrations.
+- Optional Mermaid, KaTeX, D2, Infographic, and Monaco integrations (Monaco integration removed in 2.0).
 - SSR import and render-to-string support for Vue / Vite / Nuxt / VitePress.
 - Published CSS exports: `index.css`, `index.tailwind.css`, and `index.px.css`.
 - Documented worker client exports:
@@ -54,7 +54,7 @@ import MarkdownRender, {
   isD2Enabled,
   isKatexEnabled,
   isMermaidEnabled,
-  MarkdownCodeBlockNode,
+  MarkdownCodeBlockNode, // removed in 2.0
   MathBlockNode,
   MathInlineNode,
   MermaidBlockNode,
@@ -93,7 +93,7 @@ Root exports are tiered for 1.x compatibility:
 | `getCustomNodeComponents` | Legacy registry inspection only. It reads global/customId mappings and does not include app-scoped `components`, because those are provided through Vue injection. |
 | `enableKatex` / `disableKatex` / `isKatexEnabled` / `setKatexLoader`, `enableMermaid` / `disableMermaid` / `isMermaidEnabled` / `setMermaidLoader`, `enableD2` / `disableD2` / `isD2Enabled` / `setD2Loader` | Stable optional integration controls. |
 | `setDefaultI18nMap`, `setDefaultMathOptions` | Stable customization hooks. |
-| Individual node components such as `CodeBlockNode`, `PreCodeNode`, `MarkdownCodeBlockNode`, `MermaidBlockNode`, `MathBlockNode`, `MathInlineNode`, `D2BlockNode`, and `InfographicBlockNode` | Stable override surface for custom renderers when used with documented props. |
+| Individual node components such as `CodeBlockNode`, `PreCodeNode`, `MarkdownCodeBlockNode` (removed in 2.0), `MermaidBlockNode`, `MathBlockNode`, `MathInlineNode`, `D2BlockNode`, and `InfographicBlockNode` | Stable override surface for custom renderers when used with documented props. |
 | Parser utilities re-exported from `stream-markdown-parser` and documented markdown plugin utilities | Stable as documented, subject to the parser/core version policy below. |
 | Low-level utility exports under `markstream-vue/utils/*` | Advanced utility surface; only documented utilities are covered by the 1.x compatibility promise. |
 
@@ -140,7 +140,7 @@ pnpm test:smoke:pack
 pnpm test:smoke:pack:optional
 ```
 
-The smoke packs the workspace packages, installs the tarball into a fresh Vite app, verifies root imports, CSS exports, Tailwind safelist export, stable worker client subpaths, experimental worker subpaths remain importable, SSR import/render, app-scoped custom components, and optional-peer absence. The optional variant installs Mermaid, KaTeX, D2, Infographic, Monaco, `stream-markdown`, and `vue-i18n`.
+The smoke packs the workspace packages, installs the tarball into a fresh Vite app, verifies root imports, CSS exports, Tailwind safelist export, stable worker client subpaths, experimental worker subpaths remain importable, SSR import/render, app-scoped custom components, and optional-peer absence. The optional variant installs Mermaid, KaTeX, D2, Infographic, Monaco and `stream-markdown` (both removed in 2.0), and `vue-i18n`.
 
 ## Security release gate
 
@@ -159,9 +159,9 @@ Use `htmlPolicy="trusted"` only for content that is fully controlled by the appl
 
 The 1.0 public benchmark covers the shipped playground scenarios:
 
-- Diagnostic Studio baseline, thinking, diff, and stress samples in MarkdownCodeBlock and Monaco modes using `/test?benchmark=1`.
+- Diagnostic Studio baseline, thinking, diff, and stress samples in MarkdownCodeBlock and Monaco modes (both removed in 2.0) using `/test?benchmark=1`.
 - Main playground reverse-flex chat initial load, full-scroll pass, and streaming replay using `/?benchmark=1`.
-- Real-browser Web Vitals probes for a million-character restore and scripted scroll path, plus a code-block scroll-into-Monaco path.
+- Real-browser Web Vitals probes for a million-character restore and scripted scroll path, plus a code-block scroll-into-Monaco path (Monaco removed in 2.0).
 
 Track LCP, CLS, settle time, frame sample count, frame p95/max `requestAnimationFrame` interval, frame sample density, full-scroll heavy-settle frame p95, max long task, page DOM node count, renderer DOM node count, visible fallback count, heavy-block readiness, scroll drift, and best-effort Chrome-only heap after renderer unmount plus GC. The hard release gate covers fallback counts, heavy-block readiness, DOM budget, CLS, long tasks, settle time, and Web Vitals frame stall budgets.
 

@@ -27,10 +27,10 @@ description: 将 markstream-vue 接入 VitePress 与文档站，覆盖 content �
 ## 2. 先装一套适合文档站的最小依赖
 
 ```bash
-pnpm add markstream-vue stream-markdown
+pnpm add markstream-vue
 ```
 
-这套组合很适合作为文档站默认值：基础 Markdown 渲染，加上轻量代码高亮。
+这套组合很适合作为文档站默认值：基础 Markdown 渲染。增强代码块需要 `stream-diffs`。
 
 只有真的需要时再继续补：
 

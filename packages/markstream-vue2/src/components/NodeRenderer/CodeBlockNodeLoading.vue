@@ -7,7 +7,6 @@ const props = defineProps({
   node: { type: Object, required: true },
   isDark: { type: Boolean, default: false },
   loading: { type: Boolean, default: true },
-  monacoOptions: { type: Object, default: undefined },
   minWidth: { type: [String, Number], default: undefined },
   maxWidth: { type: [String, Number], default: undefined },
   showHeader: { type: Boolean, default: true },
@@ -24,25 +23,14 @@ const displayLanguage = computed(() => languageMap[language.value]
 const languageIcon = computed(() => getLanguageIcon(language.value))
 const defaultCodeFontFamily = '"SF Mono", Monaco, Consolas, "Ubuntu Mono", "Liberation Mono", "Courier New", monospace'
 
-function readPositiveNumber(value: unknown) {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined
-}
-
 const metrics = computed(() => {
-  const raw = (props.monacoOptions || {}) as Record<string, any>
-  const fontSize = readPositiveNumber(raw.fontSize) ?? 12
-  const lineHeight = readPositiveNumber(raw.lineHeight)
-    ?? (fontSize === 12 ? 18 : Math.max(12, Math.round(fontSize * 1.5)))
-  const paddingTop = typeof raw.padding?.top === 'number' && Number.isFinite(raw.padding.top) && raw.padding.top >= 0
-    ? raw.padding.top
-    : 8
-  const paddingBottom = typeof raw.padding?.bottom === 'number' && Number.isFinite(raw.padding.bottom) && raw.padding.bottom >= 0
-    ? raw.padding.bottom
-    : 8
-  const tabSize = readPositiveNumber(raw.tabSize) ?? 4
-  const fontFamily = typeof raw.fontFamily === 'string' && raw.fontFamily.trim()
-    ? raw.fontFamily.trim()
-    : defaultCodeFontFamily
+  // Fixed default metrics; the monacoOptions prop was removed in 2.0.0.
+  const fontSize = 12
+  const lineHeight = 18
+  const paddingTop = 8
+  const paddingBottom = 8
+  const tabSize = 4
+  const fontFamily = defaultCodeFontFamily
   return { fontSize, lineHeight, paddingTop, paddingBottom, tabSize, fontFamily }
 })
 

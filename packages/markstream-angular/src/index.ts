@@ -3,7 +3,6 @@ export { BlockquoteNodeComponent as BlockquoteNode } from './components/Blockquo
 export { CheckboxNodeComponent as CheckboxNode } from './components/CheckboxNode/CheckboxNode.component'
 export { CodeBlockNodeComponent as CodeBlockNode } from './components/CodeBlockNode/CodeBlockNode.component'
 export { CodeBlockNodeComponent as AngularCodeBlockNode } from './components/CodeBlockNode/CodeBlockNode.component'
-export { CodeBlockNodeComponent as MarkdownCodeBlockNode } from './components/CodeBlockNode/CodeBlockNode.component'
 export { HtmlPreviewFrameComponent as HtmlPreviewFrame } from './components/CodeBlockNode/HtmlPreviewFrame.component'
 export { D2BlockNodeComponent as D2BlockNode } from './components/D2BlockNode/D2BlockNode.component'
 export { DefinitionListNodeComponent as DefinitionListNode } from './components/DefinitionListNode/DefinitionListNode.component'
@@ -132,16 +131,14 @@ export type {
   CodeBlockDiffHunkSide,
   CodeBlockDiffLineStyle,
   CodeBlockDiffUnchangedRegionStyle,
-  CodeBlockMonacoLanguage,
-  CodeBlockMonacoOptions,
-  CodeBlockMonacoTheme,
-  CodeBlockMonacoThemeObject,
+  CodeBlockTheme,
+  CodeBlockThemeObject,
 } from './types/monaco'
 export {
   getLanguageIcon,
   languageMap,
   normalizeLanguageIdentifier,
-  resolveMonacoLanguageId,
+  resolveLanguageId,
   setLanguageIconResolver,
 } from './utils/languageIcon'
 export type { LanguageIconResolver } from './utils/languageIcon'

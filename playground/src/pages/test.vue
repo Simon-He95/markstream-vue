@@ -22,8 +22,6 @@ import {
 
 } from '../../../playground-shared/versionSandbox'
 import CodeBlockNode from '../../../src/components/CodeBlockNode'
-import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
-import MarkdownCodeBlockNode from '../../../src/components/MarkdownCodeBlockNode'
 import { disableKatex, enableKatex, isKatexEnabled } from '../../../src/components/MathInlineNode/katex'
 import { disableMermaid, enableMermaid, isMermaidEnabled } from '../../../src/components/MermaidBlockNode/mermaid'
 import MarkdownRender from '../../../src/components/NodeRenderer'
@@ -156,10 +154,9 @@ const STREAM_SLICE_OPTIONS = [
   { value: 'boundary-aware', label: 'Boundary Aware' },
 ] as const satisfies ReadonlyArray<{ value: StreamSliceMode, label: string }>
 const RENDER_MODE_OPTIONS = [
-  { value: 'monaco', label: 'stream-diffs' },
-  { value: 'markdown', label: 'MarkdownCodeBlock' },
+  { value: 'stream-diffs', label: 'stream-diffs' },
   { value: 'pre', label: 'PreCodeNode' },
-] as const satisfies ReadonlyArray<{ value: 'monaco' | 'markdown' | 'pre', label: string }>
+] as const satisfies ReadonlyArray<{ value: 'stream-diffs' | 'pre', label: string }>
 const HTML_POLICY_OPTIONS = [
   { value: 'trusted', label: 'Trusted' },
   { value: 'safe', label: 'Safe' },
@@ -178,13 +175,6 @@ const sandboxFrameworkOptions = testSandboxFrameworks.map(framework => ({
   label: framework.label,
 })) as ReadonlyArray<{ value: SandboxFrameworkId, label: string }>
 
-const diffHideUnchangedRegions = {
-  enabled: true,
-  contextLineCount: 2,
-  minimumLineCount: 4,
-  revealLineCount: 0,
-} as const
-
 function resolveInitialDarkMode() {
   return typeof document !== 'undefined'
     ? document.documentElement.classList.contains('dark')
@@ -201,19 +191,6 @@ function resolveInitialDiffLayoutMode(): DiffLayoutMode {
 }
 
 const diffLayoutMode = useLocalStorage<DiffLayoutMode>('vmr-test-diff-layout-mode', resolveInitialDiffLayoutMode())
-const testPageMonacoOptions = computed(() => {
-  const sideBySide = diffLayoutMode.value === 'side-by-side'
-  return {
-    renderSideBySide: sideBySide,
-    useInlineViewWhenSpaceIsLimited: !sideBySide,
-    maxComputationTime: 0,
-    ignoreTrimWhitespace: false,
-    renderIndicators: true,
-    diffAlgorithm: 'legacy',
-    diffHideUnchangedRegions,
-    hideUnchangedRegions: diffHideUnchangedRegions,
-  } as const
-})
 
 const selectedSampleId = useLocalStorage<SampleId>('vmr-test-sample', 'baseline')
 const input = ref<string>(sampleCards[0].content)
@@ -228,7 +205,7 @@ const streamSliceMode = useLocalStorage<StreamSliceMode>('vmr-test-stream-slice-
 const streamDebug = useLocalStorage<boolean>('vmr-test-stream-debug', false)
 const isDark = useLocalStorage<boolean>('vmr-test-dark', resolveInitialDarkMode())
 
-const renderMode = useLocalStorage<'monaco' | 'pre' | 'markdown'>('vmr-test-render-mode', 'monaco')
+const renderMode = useLocalStorage<'stream-diffs' | 'pre'>('vmr-test-render-mode', 'stream-diffs')
 const codeBlockStream = useLocalStorage<boolean>('vmr-test-code-stream', true)
 const viewportPriority = useLocalStorage<boolean>('vmr-test-viewport-priority', true)
 const codeBlockViewportRootMargin = useLocalStorage<string>('vmr-test-code-block-viewport-root-margin', '')
@@ -241,7 +218,7 @@ const htmlPolicy = useLocalStorage<HtmlPolicy>('vmr-test-html-policy', 'trusted'
 const testPageCustomHtmlTags = ['think', 'thinking'] as const
 
 if (!isBenchmarkMode)
-  getUseMonaco()
+  import('../../../src/components/CodeBlockNode/streamDiffs').then(({ getStreamDiffsRuntime }) => getStreamDiffsRuntime()).catch(() => {})
 setKaTeXWorker(new KatexWorker())
 setMermaidWorker(new MermaidWorker())
 
@@ -372,8 +349,6 @@ const streamChunkRangeLabel = computed(() => `${normalizedChunkSizeRange.value.m
 const streamDelayRangeLabel = computed(() => `${normalizedChunkDelayRange.value.min}-${normalizedChunkDelayRange.value.max}ms`)
 const streamModeLabel = computed(() => streamTransportMode.value === 'readable-stream' ? 'ReadableStream' : 'Scheduler')
 const renderModeLabel = computed(() => {
-  if (renderMode.value === 'markdown')
-    return 'MarkdownCodeBlock'
   if (renderMode.value === 'pre')
     return 'PreCodeNode'
   return 'stream-diffs'
@@ -2792,8 +2767,6 @@ watch(isDark, (value) => {
 watch(() => renderMode.value, (mode) => {
   if (mode === 'pre')
     setCustomComponents({ code_block: PreCodeNode, think: ThinkingNode, thinking: ThinkingNode })
-  else if (mode === 'markdown')
-    setCustomComponents({ code_block: MarkdownCodeBlockNode, think: ThinkingNode, thinking: ThinkingNode })
   else
     setCustomComponents({ code_block: CodeBlockNode, think: ThinkingNode, thinking: ThinkingNode })
 }, { immediate: true })
@@ -3338,7 +3311,6 @@ watch(mermaidEnabled, (enabled) => {
                     :fade="!isBenchmarkMode"
                     code-block-dark-theme="vitesse-dark"
                     code-block-light-theme="vitesse-light"
-                    :code-block-monaco-options="testPageMonacoOptions"
                     :parse-options="previewParseOptions"
                     :debug-performance="isBenchmarkMode"
                   />

@@ -1,5 +1,5 @@
 ---
-description: 按文档站、AI 聊天、Mermaid、KaTeX、Monaco 和大文档场景选择正确的 markstream-vue 安装与 peer 依赖组合。
+description: 按文档站、AI 聊天、Mermaid、KaTeX 和大文档场景选择正确的 markstream-vue 安装与 peer 依赖组合。
 ---
 
 # 安装
@@ -22,22 +22,20 @@ yarn add markstream-vue
 
 | 能力 | 需要的包 | 适用场景 |
 |------|---------|---------|
-| 轻量高亮代码块 | `stream-markdown` | 文档站、SSR、包体积敏感场景 |
 | 增强代码块与 diff（推荐） | `stream-diffs` | 需要复制、预览、展开、字体控制、语法高亮和 File/Diff surface |
-| legacy Monaco 代码块 | `stream-monaco` | `stream-diffs` 未安装时的自动回退 |
 | Mermaid 图表 | `mermaid` | 渲染 `mermaid` fenced code block |
 | D2 图表 | `@terrastruct/d2` | 渲染 `d2` / `d2lang` fenced code block |
 | KaTeX 数学公式 | `katex` | 行内或块级公式 |
 | Infographic 图表 | `@antv/infographic` | 渲染 `infographic` fenced code block；还需要配置 `setInfographicLoader` |
 
-所有框架包（vue、vue2、react、svelte、angular）的增强代码块都通过同一个双运行时 loader 解析：优先 `stream-diffs`，未安装时自动回退 `stream-monaco`，两者都未安装则渲染普通 `<pre>`。安装其中一个即可，不需要同时装两个。
+所有框架包（vue、vue2、react、svelte、angular）的增强代码块都通过同一个 loader 解析：安装 `stream-diffs` 时使用增强的 `stream-diffs` surface，否则渲染普通 `<pre>`。
 
 ## 3. 常见安装配方
 
 ### 文档站 / SSR 优先
 
 ```bash
-pnpm add markstream-vue stream-markdown
+pnpm add markstream-vue
 ```
 
 如果你接下来要做的是文档站、内容站或 VitePress 主题，继续看 [文档站与 VitePress 集成](/zh/guide/vitepress-docs-integration)。
@@ -59,7 +57,7 @@ pnpm add markstream-vue mermaid @terrastruct/d2 katex
 ### 一次性全开
 
 ```bash
-pnpm add markstream-vue stream-markdown stream-diffs mermaid @terrastruct/d2 katex @antv/infographic
+pnpm add markstream-vue stream-diffs mermaid @terrastruct/d2 katex @antv/infographic
 ```
 
 Infographic 是显式 opt-in 能力。安装 `@antv/infographic` 后，按 [AntV Infographic](/zh/guide/infographic) 配置 `setInfographicLoader`。

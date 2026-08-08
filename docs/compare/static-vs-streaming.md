@@ -35,7 +35,7 @@ Mermaid diagrams, KaTeX formulas, and code blocks don't render immediately on fi
 
 - **Mermaid**: renders after the closing ` ``` ` and a short stabilization delay
 - **KaTeX**: renders after the closing `$$` or `$`
-- **Code blocks**: render incrementally with diff tracking (Monaco) or on close (Shiki)
+- **Code blocks**: render incrementally with stream-diffs diff tracking or on close
 
 ### Viewport priority
 Heavy blocks that are offscreen (below the visible area) stay idle until the user scrolls near them. This keeps the DOM and CPU load predictable even for very long responses.

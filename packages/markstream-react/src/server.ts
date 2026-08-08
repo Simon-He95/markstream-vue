@@ -1,7 +1,6 @@
 export type { HtmlPreviewFrameProps } from './components/CodeBlockNode/HtmlPreviewFrame'
 export type { LinkNodeStyleProps } from './components/LinkNode/LinkNode'
 export type { ListItemNodeProps } from './components/ListItemNode/ListItemNode'
-export type { MarkdownCodeBlockNodeProps } from './components/MarkdownCodeBlockNode/MarkdownCodeBlockNode'
 export type { TooltipPlacement, TooltipProps } from './components/Tooltip/Tooltip'
 export {
   clearGlobalCustomComponents,
@@ -46,7 +45,6 @@ export { InsertNode } from './server-renderer'
 export { LinkNode } from './server-renderer'
 export { ListItemNode } from './server-renderer'
 export { ListNode } from './server-renderer'
-export { MarkdownCodeBlockNode } from './server-renderer'
 export { MathBlockNode } from './server-renderer'
 export { MathInlineNode } from './server-renderer'
 export { MermaidBlockNode } from './server-renderer'

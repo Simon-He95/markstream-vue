@@ -1,7 +1,7 @@
 import {
+  CodeBlockNode,
   createKaTeXWorkerFromCDN,
   createMermaidWorkerFromCDN,
-  MarkdownCodeBlockNode,
   setCustomComponents,
   setKaTeXWorker,
   setMermaidWorker,
@@ -15,10 +15,9 @@ import 'katex/dist/katex.min.css'
 
 Vue.config.productionTip = false
 
-// In Vue CLI (Webpack 4), Monaco+Shiki integration is fragile and can fail with
-// internal Monaco service errors or Shiki TextMate regex engine crashes.
-// For this playground, use stream-markdown's Shiki renderer instead.
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+// In Vue CLI (Webpack 4), the heavy Monaco/Shiki renderers are not bundled in
+// markstream-vue2 2.0. Use the CodeBlockNode component instead.
+setCustomComponents({ code_block: CodeBlockNode })
 
 Vue.use(VueRendererMarkdown)
 

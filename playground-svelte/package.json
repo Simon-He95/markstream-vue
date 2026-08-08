@@ -16,7 +16,6 @@
     "markstream-svelte": "workspace:*",
     "mermaid": ">=11.16.0",
     "stream-diffs": "latest",
-    "stream-markdown": "latest",
     "stream-markdown-parser": "workspace:*",
     "svelte": "^5.56.8"
   },

@@ -4,15 +4,13 @@
 
 ## Quick summary
 - Enhanced mode (install `stream-diffs`) — finalized File/FileDiff surface with syntax highlighting and diff interactions
-- Fallback — plain `<pre><code>` when neither `stream-diffs` nor `stream-monaco` is installed
-- If you want Shiki-based highlighting, use `MarkdownCodeBlockNode` (peer: `stream-markdown`)
+- Fallback — plain `<pre><code>` when `stream-diffs` is not installed
 
 ## Props
 Refer to `src/types/component-props.ts` for full signature. Key props:
 - `node` — code_block node (required)
 - `loading`, `stream`, `isShowPreview`
-- `monacoOptions` — typed as `CodeBlockMonacoOptions` for API compatibility and forwarded to the `stream-diffs` adapter
-  - diff options such as `diffHideUnchangedRegions`, `diffLineStyle`, `diffAppearance`, `diffUnchangedRegionStyle`, `diffHunkActionsOnHover`, `diffHunkHoverHideDelayMs`, and `onDiffHunkAction` belong here
+- Code/diff options are not configurable per block in 2.0; the enhanced surface uses the `stream-diffs` built-in defaults. Theming is done through `theme` / `darkTheme` / `lightTheme` / `themes`.
 - Header controls: `showHeader`, `showCollapseButton`, `showCopyButton`, `showExpandButton`, `showPreviewButton`, `showFontSizeButtons`, `showTooltips`
 - HTML preview sandbox: `htmlPreviewAllowScripts` defaults to `false`, and `htmlPreviewSandbox` lets you override the iframe sandbox tokens directly
 
@@ -27,8 +25,8 @@ Default diff UX in enhanced mode:
 - `diffHunkActionsOnHover: true`
 - `diffHunkHoverHideDelayMs: 160`
 
-You can override any of them through `monacoOptions`.
-When the preset uses `diffAppearance: 'auto'`, `CodeBlockNode` resolves it to the current light/dark surface before passing the options to its `stream-diffs` adapter.
+These are the `stream-diffs` built-in defaults; in 2.0 there is no per-block override prop.
+When `diffAppearance: 'auto'` is used, `CodeBlockNode` resolves it to the current light/dark surface before passing the options to its `stream-diffs` adapter.
 
 Diff blocks also show `- / +` line counts in the built-in header.
 
@@ -232,7 +230,7 @@ The `theme` prop accepts either a fixed theme or a light/dark pair:
 
 When using a `{ light, dark }` pair, the component automatically switches based on the `isDark` prop.
 
-The `themes` prop registers the available themes so Monaco can lazy-load them on demand.
+The `themes` prop registers the available themes so the runtime can lazy-load them on demand.
 
 > **Backward compatibility:** `darkTheme` / `lightTheme` props still work but are deprecated. Prefer the unified `theme` prop.
 
@@ -264,8 +262,3 @@ const node = { type: 'code_block', language: 'js', code: 'console.log("hello")',
 ```
 
 ---
-
-Tell me if you want me to also:
-- Add stricter TS types for `defineEmits` in the SFC
-- Update the docs sidebar to link this page (I can add the entry to `docs/guide/index.md` or the sidebar config)
-- Add a runnable example in `playground/` demonstrating slot usage and event interception

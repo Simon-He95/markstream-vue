@@ -7,7 +7,6 @@ import type {
 } from '../../../src/exports'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller'
-import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
 import MarkdownRender, { useMarkstreamVirtualAdapter } from '../../../src/exports'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
 import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
@@ -22,7 +21,7 @@ type RestoreAnchor = NonNullable<MarkstreamThreadVirtualState['outerAnchor']>
 
 setKaTeXWorker(new KatexWorker())
 setMermaidWorker(new MermaidWorker())
-getUseMonaco()
+import('../../../src/components/CodeBlockNode/streamDiffs').then(({ getStreamDiffsRuntime }) => getStreamDiffsRuntime()).catch(() => {})
 
 interface BaseTimelineItem {
   threadId: ThreadId
@@ -683,8 +682,8 @@ function isElementVisiblyPainted(el: HTMLElement | null) {
   return rect.width > 0 && rect.height > 0
 }
 
-function hasVisibleMonacoDom(root: HTMLElement) {
-  return Array.from(root.querySelectorAll<HTMLElement>('.monaco-editor, .monaco-diff-editor'))
+function hasVisibleStreamDiffsDom(root: HTMLElement) {
+  return Array.from(root.querySelectorAll<HTMLElement>('diffs-container, .stream-diffs-shell, .stream-diffs-surface'))
     .some(isElementVisiblyPainted)
 }
 
@@ -784,7 +783,7 @@ function isCodeBlockReady(content: HTMLElement) {
   if (hasUsableCodeFallback(fallback))
     return true
 
-  return hasVisibleMonacoDom(codeBlock)
+  return hasVisibleStreamDiffsDom(codeBlock)
 }
 
 function isVisibleNodeSlotReady(slot: HTMLElement) {
@@ -877,7 +876,7 @@ function readExternalRestoreSignature() {
       const content = slot.querySelector<HTMLElement>(':scope > .node-content')
       const code = content?.querySelector<HTMLElement>('[data-markstream-code-block="1"]')
       const fallback = content?.querySelector<HTMLElement>('pre.code-pre-fallback')
-      const editor = content?.querySelector<HTMLElement>('.monaco-editor, .monaco-diff-editor')
+      const editor = content?.querySelector<HTMLElement>('diffs-container, .stream-diffs-shell')
       const mermaid = content?.querySelector<HTMLElement>('[data-markstream-mermaid], .mermaid-block-container')
       const math = content?.querySelector<HTMLElement>('[data-markstream-math]')
 

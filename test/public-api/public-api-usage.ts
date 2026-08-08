@@ -32,15 +32,8 @@ import type {
   MermaidBlockNodeProps,
   NodeRendererProps,
   NodeRendererTypewriter,
-  ShikiCodeBlockProps,
   SmoothMarkdownStreamOptions,
 } from 'markstream-vue'
-import type {
-  ShikiCodeBlockProps as ReactShikiCodeBlockProps,
-} from '../../packages/markstream-react/src/types/component-props'
-import type {
-  ShikiCodeBlockProps as Vue2ShikiCodeBlockProps,
-} from '../../packages/markstream-vue2/src/types/component-props'
 import { full as markdownItEmojiFull } from 'markdown-it-emoji'
 import MarkdownRender, {
   clearGlobalCustomComponents,
@@ -185,16 +178,7 @@ const safeMermaidSvgElement: SVGElement | null = toSafeSvgElement<SVGElement>('<
 const brokenMermaidSvg: boolean = isBrokenMermaidSvg('<svg viewBox="0 0 0 10"><rect width="10" height="10" /></svg>')
 
 const codeBlockProps: Partial<CodeBlockNodeProps> = {}
-const vueShikiCodeBlockPropsAcceptsLangs = {
-  langs: ['typescript', 'vue'] as const,
-} satisfies ShikiCodeBlockProps
-const reactShikiCodeBlockPropsAcceptsLangs = {
-  langs: ['typescript', 'tsx'] as const,
-} satisfies ReactShikiCodeBlockProps
-const vue2ShikiCodeBlockPropsAcceptsLangs = {
-  langs: ['javascript', 'vue'] as const,
-} satisfies Vue2ShikiCodeBlockProps
-const nodeRendererCodeBlockPropsWithMonacoThemeObject: NodeRendererProps = {
+const nodeRendererCodeBlockPropsWithThemeObject: NodeRendererProps = {
   content: '```ts\nconsole.log(1)\n```',
   codeBlockProps: {
     themes: [
@@ -206,14 +190,6 @@ const nodeRendererCodeBlockPropsWithMonacoThemeObject: NodeRendererProps = {
         colors: {},
       },
     ],
-  },
-}
-const nodeRendererCodeBlockPropsWithShikiOptions: NodeRendererProps = {
-  content: '```ts\nconsole.log(1)\n```',
-  codeRenderer: 'shiki',
-  codeBlockProps: {
-    themes: ['vitesse-light', 'vitesse-dark'],
-    langs: ['ts', 'vue'],
   },
 }
 const mermaidProps: Partial<MermaidBlockNodeProps> = {}
@@ -391,11 +367,7 @@ void safeMermaidSvgMarkup
 void safeMermaidSvgElement
 void brokenMermaidSvg
 void codeBlockProps
-void vueShikiCodeBlockPropsAcceptsLangs
-void reactShikiCodeBlockPropsAcceptsLangs
-void vue2ShikiCodeBlockPropsAcceptsLangs
-void nodeRendererCodeBlockPropsWithMonacoThemeObject
-void nodeRendererCodeBlockPropsWithShikiOptions
+void nodeRendererCodeBlockPropsWithThemeObject
 void mermaidProps
 void mathProps
 void mathInlineProps

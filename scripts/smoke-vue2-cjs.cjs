@@ -15,7 +15,6 @@ const expectedVue2Exports = [
   'default',
   'MarkdownRender',
   'MarkdownRenderer',
-  'MarkdownCodeBlockNode',
   'CodeBlockNode',
 ]
 

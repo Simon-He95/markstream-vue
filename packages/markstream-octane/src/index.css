@@ -1116,15 +1116,15 @@
   --markstream-diff-removed-inline-border: transparent;
   --markstream-diff-added-gutter: linear-gradient(
     90deg,
-    var(--markstream-diff-added-fg) 0 var(--stream-monaco-gutter-marker-width, 4px),
-    rgb(20 184 166 / 0.08) var(--stream-monaco-gutter-marker-width, 4px) 100%
+    var(--markstream-diff-added-fg) 0 var(--markstream-gutter-marker-width, 4px),
+    rgb(20 184 166 / 0.08) var(--markstream-gutter-marker-width, 4px) 100%
   );
   --markstream-diff-removed-gutter: repeating-linear-gradient(
         180deg,
         var(--markstream-diff-removed-fg) 0 2px,
         transparent 2px 4px
       )
-      left / var(--stream-monaco-gutter-marker-width, 4px) 100% no-repeat,
+      left / var(--markstream-gutter-marker-width, 4px) 100% no-repeat,
     linear-gradient(90deg, rgb(255 54 88 / 0.08) 0 100%);
   --markstream-diff-added-line-fill: rgb(231 248 244 / 0.96);
   --markstream-diff-removed-line-fill: rgb(255 241 241 / 0.98);
@@ -1176,15 +1176,15 @@
   --markstream-diff-removed-inline-border: transparent;
   --markstream-diff-added-gutter: linear-gradient(
     90deg,
-    var(--markstream-diff-added-fg) 0 var(--stream-monaco-gutter-marker-width, 4px),
-    rgb(94 234 212 / 0.2) var(--stream-monaco-gutter-marker-width, 4px) 100%
+    var(--markstream-diff-added-fg) 0 var(--markstream-gutter-marker-width, 4px),
+    rgb(94 234 212 / 0.2) var(--markstream-gutter-marker-width, 4px) 100%
   );
   --markstream-diff-removed-gutter: repeating-linear-gradient(
         180deg,
         var(--markstream-diff-removed-fg) 0 2px,
         transparent 2px 4px
       )
-      left / var(--stream-monaco-gutter-marker-width, 4px) 100% no-repeat,
+      left / var(--markstream-gutter-marker-width, 4px) 100% no-repeat,
     linear-gradient(90deg, rgb(253 164 175 / 0.18) 0 100%);
   --markstream-diff-added-line-fill: linear-gradient(
     90deg,
@@ -1200,22 +1200,6 @@
 
 :where(.markstream-octane) .code-editor-container {
   transition: height 180ms ease, max-height 180ms ease;
-}
-
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .monaco-editor-background,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .margin,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .lines-content {
-  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg)) !important;
-}
-
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .margin,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .view-lines,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .view-line,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .view-line span,
-:where(.markstream-octane) .code-block-container.is-plain-text:not(.is-diff) .monaco-editor .line-numbers {
-  color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg)) !important;
 }
 
 :where(.markstream-octane) .code-action-btn {
@@ -1296,126 +1280,6 @@
   --vscode-widget-shadow: var(--markstream-diff-widget-shadow);
 }
 
-:where(.markstream-octane) .code-block-container .monaco-diff-editor .diffOverview {
-  background-color: var(--vscode-editor-background, #111827);
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-diff-editor .diffOverview,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .decorationsOverviewRuler {
-  display: none !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  overflow: hidden !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-diff-editor {
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center:not(.stream-monaco-clickable) > *:not(a) {
-  visibility: hidden !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines-compact .text {
-  opacity: 0 !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root {
-  --stream-monaco-gutter-gap: var(--markstream-diff-gutter-gap) !important;
-  --stream-monaco-line-number: var(--markstream-diff-line-number) !important;
-  --stream-monaco-line-number-active: var(--markstream-diff-line-number-active) !important;
-  --stream-monaco-added-fg: var(--markstream-diff-added-fg) !important;
-  --stream-monaco-removed-fg: var(--markstream-diff-removed-fg) !important;
-  --stream-monaco-added-line: var(--markstream-diff-added-line) !important;
-  --stream-monaco-removed-line: var(--markstream-diff-removed-line) !important;
-  --stream-monaco-added-inline: var(--markstream-diff-added-inline) !important;
-  --stream-monaco-removed-inline: var(--markstream-diff-removed-inline) !important;
-  --stream-monaco-added-inline-border: var(--markstream-diff-added-inline-border) !important;
-  --stream-monaco-removed-inline-border: var(--markstream-diff-removed-inline-border) !important;
-  --stream-monaco-added-line-fill: var(--markstream-diff-added-line-fill) !important;
-  --stream-monaco-removed-line-fill: var(--markstream-diff-removed-line-fill) !important;
-  --stream-monaco-added-gutter: var(--markstream-diff-added-gutter) !important;
-  --stream-monaco-removed-gutter: var(--markstream-diff-removed-gutter) !important;
-  --stream-monaco-added-line-shadow: none !important;
-  --stream-monaco-removed-line-shadow: none !important;
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center:not(.stream-monaco-unchanged-bridge-source),
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge {
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--stream-monaco-unchanged-fg) !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge {
-  right: calc(
-    var(--stream-monaco-gutter-marker-width) - var(--stream-monaco-unchanged-rail-width) / 2 + (var(--stream-monaco-gutter-gap) * 2)
-  ) !important;
-  width: auto !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:hover,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:focus-visible,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary.stream-monaco-focus-visible {
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--markstream-diff-unchanged-fg) !important;
-  padding-left: calc(
-    var(--stream-monaco-gutter-marker-width) + (var(--stream-monaco-gutter-gap) * 2)
-  ) !important;
-  padding-right: calc(
-    var(--stream-monaco-gutter-marker-width) + (var(--stream-monaco-gutter-gap) * 2)
-  ) !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge.stream-monaco-diff-unchanged-bridge-line-info .stream-monaco-unchanged-rail,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:hover,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:focus-visible,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal.stream-monaco-focus-visible {
-  background: var(--stream-monaco-unchanged-bg) !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail {
-  border-right-color: var(--markstream-diff-unchanged-divider) !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal {
-  border-bottom-color: transparent !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail.stream-monaco-unchanged-rail-both .stream-monaco-unchanged-reveal:first-child {
-  border-bottom-color: var(--markstream-diff-unchanged-divider) !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail.stream-monaco-unchanged-rail-top-only .stream-monaco-unchanged-reveal,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail.stream-monaco-unchanged-rail-bottom-only .stream-monaco-unchanged-reveal {
-  border-bottom: 0 !important;
-}
-
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center .stream-monaco-unchanged-meta,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center .stream-monaco-unchanged-count,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center .stream-monaco-unchanged-metadata-label,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-meta,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-count,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-metadata-label,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:hover,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:focus-visible,
-:where(.markstream-octane) .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal.stream-monaco-focus-visible {
-  color: var(--markstream-diff-unchanged-fg) !important;
-}
 
 :where(.markstream-octane) .code-block-content {
   display: grid;
@@ -1523,10 +1387,10 @@
   font-variant-ligatures: none;
   tab-size: var(--markstream-pre-tab-size, 4);
 
-  --markstream-pre-diff-gutter-marker-width: var(--stream-monaco-gutter-marker-width, 4px);
-  --markstream-pre-diff-gutter-gap: var(--stream-monaco-gutter-gap, 8px);
-  --markstream-pre-diff-code-gap: var(--stream-monaco-diff-code-gap, 7.8px);
-  --markstream-pre-diff-code-padding: var(--stream-monaco-diff-code-padding, 0px);
+  --markstream-pre-diff-gutter-marker-width: var(--markstream-gutter-marker-width, 4px);
+  --markstream-pre-diff-gutter-gap: var(--markstream-gutter-gap, 8px);
+  --markstream-pre-diff-code-gap: var(--markstream-diff-code-gap, 7.8px);
+  --markstream-pre-diff-code-padding: var(--markstream-diff-code-padding, 0px);
   --markstream-diff-added-fg: var(--diff-added-fg, #2f8f68);
   --markstream-diff-removed-fg: var(--diff-removed-fg, #c24141);
   --markstream-diff-added-line-fill: var(--diff-added-bg, rgb(47 143 104 / 12%));
@@ -1542,21 +1406,21 @@
     transparent var(--markstream-pre-diff-gutter-marker-width) 100%
   );
   --markstream-pre-diff-line-number-width: var(
-    --stream-monaco-line-number-width,
+    --markstream-line-number-width,
     39px
   );
-  --markstream-pre-diff-line-number-padding-left: var(--stream-monaco-line-number-padding-left, 15.6px);
-  --markstream-pre-diff-line-number-padding-right: var(--stream-monaco-line-number-padding-right, 7.8px);
+  --markstream-pre-diff-line-number-padding-left: var(--markstream-line-number-padding-left, 15.6px);
+  --markstream-pre-diff-line-number-padding-right: var(--markstream-line-number-padding-right, 7.8px);
   --markstream-pre-diff-line-number-gap-to-code: var(
-    --stream-monaco-original-line-number-gap-to-code,
-    var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
+    --markstream-original-line-number-gap-to-code,
+    var(--markstream-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
   );
   --markstream-pre-diff-line-number-left: var(
-    --stream-monaco-line-number-left,
+    --markstream-line-number-left,
     var(--markstream-pre-diff-gutter-marker-width)
   );
   --markstream-pre-diff-line-number-border: var(
-    --stream-monaco-gutter-guide,
+    --markstream-gutter-guide,
     var(--markstream-diff-gutter-guide, hsl(var(--ms-border, 214 32% 91%) / 0.72))
   );
   --markstream-pre-diff-line-number-align: var(--markstream-diff-line-number-align, right);
@@ -1573,11 +1437,11 @@
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview.markstream-pre--diff-inline {
   --markstream-pre-diff-line-number-gap-to-code: var(
-    --stream-monaco-modified-line-number-gap-to-code,
-    var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
+    --markstream-modified-line-number-gap-to-code,
+    var(--markstream-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
   );
   --markstream-pre-diff-line-number-left: var(
-    --stream-monaco-line-number-left,
+    --markstream-line-number-left,
     var(--markstream-pre-diff-gutter-marker-width)
   );
 }
@@ -1614,11 +1478,11 @@
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-pane--modified {
   --markstream-pre-diff-line-number-gap-to-code: var(
-    --stream-monaco-modified-line-number-gap-to-code,
-    var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
+    --markstream-modified-line-number-gap-to-code,
+    var(--markstream-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
   );
   --markstream-pre-diff-line-number-left: var(
-    --stream-monaco-line-number-left,
+    --markstream-line-number-left,
     var(--markstream-pre-diff-gutter-marker-width)
   );
   box-shadow: inset 1px 0 var(--markstream-diff-pane-divider, rgb(148 163 184 / 0.18));
@@ -1674,7 +1538,7 @@
   box-shadow: inset -1px 0 var(--markstream-pre-diff-line-number-border);
   padding-left: var(--markstream-pre-diff-line-number-padding-left, 15.6px);
   padding-right: var(--markstream-pre-diff-line-number-padding-right, 7.8px);
-  color: var(--stream-monaco-line-number, var(--markstream-diff-line-number, #6b7280));
+  color: var(--markstream-line-number, var(--markstream-diff-line-number, #6b7280));
   font-variant-numeric: tabular-nums;
   line-height: var(--markstream-pre-diff-line-height, 18px);
   text-align: var(--markstream-pre-diff-line-number-align, right);
@@ -1682,13 +1546,13 @@
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-number {
-  background: var(--stream-monaco-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
-  color: var(--stream-monaco-added-fg, var(--markstream-diff-added-fg, var(--markstream-diff-line-number, #6b7280)));
+  background: var(--markstream-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
+  color: var(--markstream-added-fg, var(--markstream-diff-added-fg, var(--markstream-diff-line-number, #6b7280)));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
-  background: var(--stream-monaco-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
-  color: var(--stream-monaco-removed-fg, var(--markstream-diff-removed-fg, var(--markstream-diff-line-number, #6b7280)));
+  background: var(--markstream-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
+  color: var(--markstream-removed-fg, var(--markstream-diff-removed-fg, var(--markstream-diff-line-number, #6b7280)));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-content {
@@ -1713,27 +1577,27 @@
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--hunk {
-  color: var(--stream-monaco-unchanged-fg, var(--markstream-diff-unchanged-fg, var(--markstream-diff-line-number, currentColor)));
+  color: var(--markstream-unchanged-fg, var(--markstream-diff-unchanged-fg, var(--markstream-diff-line-number, currentColor)));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--hunk::before {
-  background: var(--stream-monaco-unchanged-bg, var(--markstream-diff-unchanged-bg, transparent));
+  background: var(--markstream-unchanged-bg, var(--markstream-diff-unchanged-bg, transparent));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--added::before {
-  background: var(--stream-monaco-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
+  background: var(--markstream-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--removed::before {
-  background: var(--stream-monaco-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
+  background: var(--markstream-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-rail {
-  background: var(--stream-monaco-added-gutter, var(--markstream-diff-added-gutter, currentColor));
+  background: var(--markstream-added-gutter, var(--markstream-diff-added-gutter, currentColor));
 }
 
 :where(.markstream-octane) .code-fallback-plain.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-rail {
-  background: var(--stream-monaco-removed-gutter, var(--markstream-diff-removed-gutter, currentColor));
+  background: var(--markstream-removed-gutter, var(--markstream-diff-removed-gutter, currentColor));
 }
 
 :where(.markstream-octane) .code-loading-placeholder {

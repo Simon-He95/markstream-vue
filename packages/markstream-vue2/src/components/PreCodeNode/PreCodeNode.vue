@@ -91,7 +91,7 @@ const lineNumbersText = computed(() => {
 })
 
 const lineNumberLayoutStyle = computed(() => {
-  // Non-diff fallback only: diff preview keeps its own stream-monaco gutter sizing.
+  // Non-diff fallback only: diff preview keeps its own diff gutter sizing.
   if (props.showLineNumbers !== true || isDiffPreview.value)
     return undefined
   const maximumLineNumber = codeLineCount.value
@@ -494,10 +494,10 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
   padding-left: 0;
   padding-right: 0;
 
-  --markstream-pre-diff-gutter-marker-width: var(--stream-monaco-gutter-marker-width, 4px);
-  --markstream-pre-diff-gutter-gap: var(--stream-monaco-gutter-gap, 8px);
-  --markstream-pre-diff-code-gap: var(--stream-monaco-diff-code-gap, 7.8px);
-  --markstream-pre-diff-code-padding: var(--stream-monaco-diff-code-padding, 0px);
+  --markstream-pre-diff-gutter-marker-width: 4px;
+  --markstream-pre-diff-gutter-gap: 8px;
+  --markstream-pre-diff-code-gap: 7.8px;
+  --markstream-pre-diff-code-padding: 0px;
   --markstream-diff-added-fg: var(--diff-added-fg, #2f8f68);
   --markstream-diff-removed-fg: var(--diff-removed-fg, #c24141);
   --markstream-diff-added-line-fill: var(--diff-added-bg, rgb(47 143 104 / 12%));
@@ -512,24 +512,12 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
     var(--markstream-diff-removed-fg) 0 var(--markstream-pre-diff-gutter-marker-width),
     transparent var(--markstream-pre-diff-gutter-marker-width) 100%
   );
-  --markstream-pre-diff-line-number-width: var(
-    --stream-monaco-line-number-width,
-    39px
-  );
-  --markstream-pre-diff-line-number-padding-left: var(--stream-monaco-line-number-padding-left, 15.6px);
-  --markstream-pre-diff-line-number-padding-right: var(--stream-monaco-line-number-padding-right, 7.8px);
-  --markstream-pre-diff-line-number-gap-to-code: var(
-    --stream-monaco-original-line-number-gap-to-code,
-    var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
-  );
-  --markstream-pre-diff-line-number-left: var(
-    --stream-monaco-line-number-left,
-    var(--markstream-pre-diff-gutter-marker-width)
-  );
-  --markstream-pre-diff-line-number-border: var(
-    --stream-monaco-gutter-guide,
-    var(--markstream-diff-gutter-guide, hsl(var(--ms-border, 214 32% 91%) / 0.72))
-  );
+  --markstream-pre-diff-line-number-width: 39px;
+  --markstream-pre-diff-line-number-padding-left: 15.6px;
+  --markstream-pre-diff-line-number-padding-right: 7.8px;
+  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
+  --markstream-pre-diff-line-number-left: var(--markstream-pre-diff-gutter-marker-width);
+  --markstream-pre-diff-line-number-border: var(--markstream-diff-gutter-guide, hsl(var(--ms-border, 214 32% 91%) / 0.72));
   --markstream-pre-diff-line-number-align: var(--markstream-diff-line-number-align, right);
   --markstream-pre-diff-code-fill-left: calc(
     var(--markstream-pre-diff-line-number-left)
@@ -543,14 +531,8 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview.markstream-pre--diff-inline {
-  --markstream-pre-diff-line-number-gap-to-code: var(
-    --stream-monaco-modified-line-number-gap-to-code,
-    var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
-  );
-  --markstream-pre-diff-line-number-left: var(
-    --stream-monaco-line-number-left,
-    var(--markstream-pre-diff-gutter-marker-width)
-  );
+  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
+  --markstream-pre-diff-line-number-left: var(--markstream-pre-diff-gutter-marker-width);
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview > .markstream-pre__diff-code {
@@ -584,14 +566,8 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-pane--modified {
-  --markstream-pre-diff-line-number-gap-to-code: var(
-    --stream-monaco-modified-line-number-gap-to-code,
-    var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))
-  );
-  --markstream-pre-diff-line-number-left: var(
-    --stream-monaco-line-number-left,
-    var(--markstream-pre-diff-gutter-marker-width)
-  );
+  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
+  --markstream-pre-diff-line-number-left: var(--markstream-pre-diff-gutter-marker-width);
   box-shadow: inset 1px 0 var(--markstream-diff-pane-divider, rgb(148 163 184 / 0.18));
 }
 
@@ -645,7 +621,7 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
   box-shadow: inset -1px 0 var(--markstream-pre-diff-line-number-border);
   padding-left: var(--markstream-pre-diff-line-number-padding-left, 15.6px);
   padding-right: var(--markstream-pre-diff-line-number-padding-right, 7.8px);
-  color: var(--stream-monaco-line-number, var(--markstream-diff-line-number, #6b7280));
+  color: var(--markstream-diff-line-number, #6b7280);
   font-variant-numeric: tabular-nums;
   line-height: var(--markstream-pre-diff-line-height, 18px);
   text-align: var(--markstream-pre-diff-line-number-align, right);
@@ -653,13 +629,13 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-number {
-  background: var(--stream-monaco-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
-  color: var(--stream-monaco-added-fg, var(--markstream-diff-added-fg, var(--markstream-diff-line-number, #6b7280)));
+  background: var(--markstream-diff-added-line-fill, transparent);
+  color: var(--markstream-diff-added-fg, var(--markstream-diff-line-number, #6b7280));
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
-  background: var(--stream-monaco-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
-  color: var(--stream-monaco-removed-fg, var(--markstream-diff-removed-fg, var(--markstream-diff-line-number, #6b7280)));
+  background: var(--markstream-diff-removed-line-fill, transparent);
+  color: var(--markstream-diff-removed-fg, var(--markstream-diff-line-number, #6b7280));
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-content {
@@ -684,27 +660,27 @@ const diffPreviewPanes = computed(() => isDiffPreview.value ? buildDiffPanes(isI
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--hunk {
-  color: var(--stream-monaco-unchanged-fg, var(--markstream-diff-unchanged-fg, var(--markstream-diff-line-number, currentColor)));
+  color: var(--markstream-diff-unchanged-fg, var(--markstream-diff-line-number, currentColor));
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--hunk::before {
-  background: var(--stream-monaco-unchanged-bg, var(--markstream-diff-unchanged-bg, transparent));
+  background: var(--markstream-diff-unchanged-bg, transparent);
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--added::before {
-  background: var(--stream-monaco-added-line-fill, var(--markstream-diff-added-line-fill, transparent));
+  background: var(--markstream-diff-added-line-fill, transparent);
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed::before {
-  background: var(--stream-monaco-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));
+  background: var(--markstream-diff-removed-line-fill, transparent);
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-rail {
-  background: var(--stream-monaco-added-gutter, var(--markstream-diff-added-gutter, currentColor));
+  background: var(--markstream-diff-added-gutter, currentColor);
 }
 
 .markstream-vue2 pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-rail {
-  background: var(--stream-monaco-removed-gutter, var(--markstream-diff-removed-gutter, currentColor));
+  background: var(--markstream-diff-removed-gutter, currentColor);
 }
 
 /* Keyboard accessibility: visible focus when scroll container is focused */

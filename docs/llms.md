@@ -82,7 +82,7 @@ From `stream-markdown-parser` (`packages/markdown-parser/src/index.ts`):
 When “it doesn’t render” or “looks wrong”, check these in order:
 
 1) **CSS order/reset**: reset first, then `markstream-vue/index.css` (Tailwind: use `@import 'markstream-vue/index.css' layer(components);`).
-2) **Optional peer installed** (Mermaid/KaTeX/Monaco/Shiki).
+2) **Optional peer installed** (Mermaid/KaTeX).
 3) **Loader enabled** if you disabled or override it: `enableMermaid()` / `enableKatex()`.
 4) **Peer CSS imported** where required: `katex/dist/katex.min.css` (Mermaid does not require extra CSS).
 5) **Standalone node wrapper**: standalone node components need a `.markstream-vue` wrapper for scoped styles/vars.
@@ -165,23 +165,23 @@ Use these as “answer skeletons”: quick steps + minimal repro questions + whe
 - Docs: `docs/guide/math.md`, `docs/guide/installation.md`
 - Code: `src/components/MathInlineNode/katex.ts`
 
-### Monaco code blocks missing features / blank
+### Code block runtime not working / blank
 
-- Signals: “toolbar missing”, “blank editor”
+- Signals: “toolbar missing”, “blank code block”
 - Steps:
-  - Install peer `stream-monaco`
-  - Ensure Monaco workers are bundled (Vite plugin) and you’re on the client
-  - For app-level preloading, call `preloadCodeBlockRuntime()` from `markstream-vue`; do not import `stream-monaco` directly just to warm workers
-- Ask: “Any worker-related console errors? Are Monaco workers bundled in production?”
-- Docs: `docs/guide/monaco.md`, `docs/guide/components.md`
+  - `CodeBlockNode` is the only code block renderer, enhanced via `stream-diffs` (diff tracking, code/render options)
+  - For app-level preloading, call `preloadCodeBlockRuntime()` from `markstream-vue`
+  - Set `code-renderer` to `'pre'` (plain) or `'stream-diffs'` (enhanced); no extra peer is required
+- Ask: “Any console errors? Which `code-renderer` value are you using?”
+- Docs: `docs/guide/code-block-runtime.md`, `docs/guide/components.md`
 
-### Prefer lightweight code blocks (no Monaco)
+### Prefer lightweight code blocks (no diffs)
 
 - Signals: “SSR friendly”, “reduce bundle”
 - Steps:
-  - Use `MarkdownCodeBlockNode` (Shiki) or `render-code-blocks-as-pre`
-  - If using Shiki, install `stream-markdown`
-- Ask: “Need highlighting or just plain code?”
+  - Use `code-renderer="pre"` for plain `<pre>` code blocks (no diff tracking)
+  - Use `code-renderer="stream-diffs"` on `CodeBlockNode` when you want diff tracking
+- Ask: “Need diff tracking or just plain code?”
 - Docs: `docs/guide/code-blocks.md`, `docs/guide/components.md`
 
 ### Custom components in Markdown (`&lt;thinking&gt;`)

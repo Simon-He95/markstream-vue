@@ -2,7 +2,7 @@
   "name": "markstream-vue2",
   "type": "module",
   "version": "0.0.53",
-  "description": "Vue 2.6/2.7 streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Shiki, and Vue 2 component rendering.",
+  "description": "Vue 2.6/2.7 streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and Vue 2 component rendering.",
   "author": "Simon He",
   "license": "MIT",
   "homepage": "https://markstream.simonhe.me/frameworks/vue2",
@@ -60,7 +60,7 @@
     "progressive-mermaid",
     "katex",
     "streaming-katex",
-    "shiki",
+    "stream-diffs",
     "streaming-code-blocks",
     "streaming-diff",
     "diff-codeblock",
@@ -116,8 +116,6 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "stream-diffs": ">=0.0.2",
-    "stream-markdown": ">=0.0.16",
-    "stream-monaco": ">=0.0.48",
     "vue": ">=2.6.14 <3",
     "vue-i18n": ">=9"
   },
@@ -141,9 +139,6 @@
       "optional": true
     },
     "stream-markdown": {
-      "optional": true
-    },
-    "stream-monaco": {
       "optional": true
     },
     "vue-i18n": {

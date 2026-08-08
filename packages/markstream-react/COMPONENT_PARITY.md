@@ -30,7 +30,6 @@
 | `src/components/LinkNode/LinkNode.vue` | `packages/markstream-react/src/components/LinkNode/LinkNode.tsx` | `LinkNodeProps` 两端一致；tooltip 使用单例实现（Vue `useSingletonTooltip` ↔ React `tooltip/singletonTooltip`） |
 | `src/components/ListItemNode/ListItemNode.vue` | `packages/markstream-react/src/components/ListItemNode/ListItemNode.tsx` | 节点组件 |
 | `src/components/ListNode/ListNode.vue` | `packages/markstream-react/src/components/ListNode/ListNode.tsx` | 节点组件 |
-| `src/components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.vue` | `packages/markstream-react/src/components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.tsx` | 节点组件（markdown fenced code 的轻量渲染） |
 | `src/components/MathBlockNode/MathBlockNode.vue` | `packages/markstream-react/src/components/MathBlockNode/MathBlockNode.tsx` | `MathBlockNodeProps` 两端一致 |
 | `src/components/MathInlineNode/MathInlineNode.vue` | `packages/markstream-react/src/components/MathInlineNode/MathInlineNode.tsx` | `MathInlineNodeProps` 两端一致 |
 | `src/components/MermaidBlockNode/MermaidBlockNode.vue` | `packages/markstream-react/src/components/MermaidBlockNode/MermaidBlockNode.tsx` | `MermaidBlockNodeProps` 两端一致；Vue emits `copy`/`export`/`open-modal`/`toggle-mode` ↔ React `onCopy`/`onExport`/`onOpenModal`/`onToggleMode`；全屏为独立 Portal 弹层（样式在 `packages/markstream-react/src/index.css` 的 `.mermaid-modal-*`） |

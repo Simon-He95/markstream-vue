@@ -2,7 +2,7 @@
   "name": "markstream-react",
   "type": "module",
   "version": "0.0.56-beta.4",
-  "description": "React/Next.js streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, Monaco, and custom React components.",
+  "description": "React/Next.js streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom React components.",
   "author": "Simon He",
   "license": "MIT",
   "homepage": "https://markstream.simonhe.me/frameworks/react",
@@ -39,9 +39,7 @@
     "streaming-mermaid",
     "katex",
     "streaming-katex",
-    "shiki",
-    "monaco",
-    "monaco-editor",
+    "stream-diffs",
     "streaming-code-blocks",
     "large-documents",
     "safe-html",
@@ -101,9 +99,7 @@
     "mermaid": ">=11",
     "react": ">=18",
     "react-dom": ">=18",
-    "stream-diffs": ">=0.0.2",
-    "stream-markdown": ">=0.0.16",
-    "stream-monaco": ">=0.0.48"
+    "stream-diffs": ">=0.0.2"
   },
   "peerDependenciesMeta": {
     "@antv/infographic": {
@@ -119,12 +115,6 @@
       "optional": true
     },
     "stream-diffs": {
-      "optional": true
-    },
-    "stream-markdown": {
-      "optional": true
-    },
-    "stream-monaco": {
       "optional": true
     }
   },

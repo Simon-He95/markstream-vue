@@ -13,7 +13,7 @@ description: markstream-vue 1.0 稳定范围、发布门禁、性能报告和发
 - `final`、`typewriter`、`smoothStreaming`、`useSmoothMarkdownStream`。
 - 通过 `virtualScroll`、`MarkstreamVirtualMetrics`、`MarkstreamVirtualState`、`MarkstreamRendererHandle` 与宿主 virtual-scroll 协作。
 - 默认安全 HTML 策略 `htmlPolicy="safe"`。
-- 可选 Mermaid、KaTeX、D2、Infographic、Monaco 集成。
+- 可选 Mermaid、KaTeX、D2、Infographic、Monaco 集成（Monaco 集成已在 2.0 移除）。
 - Vue / Vite / Nuxt / VitePress SSR import 与 render-to-string。
 - CSS exports：`index.css`、`index.tailwind.css`、`index.px.css`。
 - Worker client exports：`markstream-vue/workers/katexWorkerClient` 与 `markstream-vue/workers/mermaidWorkerClient`。

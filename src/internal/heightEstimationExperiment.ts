@@ -6,7 +6,7 @@ import { resolveDiffInlineLayout } from '../components/CodeBlockNode/codeBlockHe
 
 type WhiteSpaceMode = 'normal' | 'pre-wrap'
 type EstimateKind = 'simple-text' | 'code-block'
-type CodeRendererKind = 'monaco' | 'markdown' | 'pre'
+type CodeRendererKind = 'stream-diffs' | 'pre'
 
 export interface HeightEstimationExperimentConfig {
   enabled?: boolean
@@ -81,7 +81,6 @@ export interface EstimatedNodeHeight {
 
 export interface CodeBlockEstimateOptions {
   rendererKind: CodeRendererKind
-  monacoOptions?: Record<string, any> | null | undefined
   showHeader?: boolean
   width?: number
 }
@@ -91,8 +90,6 @@ const PREPARED_CACHE_LIMIT = 240
 const BLOCK_ESTIMATE_CACHE_LIMIT = 4000
 const CODE_BLOCK_HEADER_HEIGHT = 40
 const CODE_BLOCK_DEFAULT_CAP = 500
-const MARKDOWN_CODE_LINE_HEIGHT = 21
-const MARKDOWN_CODE_VERTICAL_PADDING = 32
 const PRE_CODE_LINE_HEIGHT = 28
 const DIFF_METADATA_PREFIXES = ['diff ', 'index ', '--- ', '+++ ', '@@ ']
 
@@ -400,30 +397,22 @@ function getInlineDiffLineCount(node: ParsedNode) {
 
 function getCodeBlockVisibleLineCount(
   node: ParsedNode,
-  monacoOptions?: Record<string, any> | null,
   width = 0,
 ) {
   if ((node as any).diff) {
-    if (!resolveDiffInlineLayout(monacoOptions ?? {}, width))
+    if (!resolveDiffInlineLayout({}, width))
       return getSplitDiffLineCount(node)
     return getInlineDiffLineCount(node)
   }
   return countCodeLines(getDisplayCode((node as any).code, (node as any).loading === true))
 }
 
-function resolveMonacoLineHeight(monacoOptions: Record<string, any> | null | undefined) {
-  const fontSize = typeof monacoOptions?.fontSize === 'number' && monacoOptions.fontSize > 0
-    ? monacoOptions.fontSize
-    : 12
-  if (typeof monacoOptions?.lineHeight === 'number' && monacoOptions.lineHeight > 0)
-    return monacoOptions.lineHeight
-  return Math.round(fontSize * 1.5)
+function resolveStreamDiffsLineHeight() {
+  return 18
 }
 
-function resolveMonacoVerticalPadding(monacoOptions: Record<string, any> | null | undefined, isDiff: boolean) {
-  const top = typeof monacoOptions?.padding?.top === 'number' ? monacoOptions.padding.top : (isDiff ? 0 : 8)
-  const bottom = typeof monacoOptions?.padding?.bottom === 'number' ? monacoOptions.padding.bottom : (isDiff ? 0 : 8)
-  return Math.max(0, top) + Math.max(0, bottom)
+function resolveStreamDiffsVerticalPadding(isDiff: boolean) {
+  return isDiff ? 0 : 16
 }
 
 export function estimateCodeBlockHeight(
@@ -439,19 +428,12 @@ export function estimateCodeBlockHeight(
   let contentHeight = 0
   let cap = CODE_BLOCK_DEFAULT_CAP
 
-  if (rendererKind === 'monaco') {
-    const monacoOptions = options.monacoOptions ?? {}
-    const lineCount = getCodeBlockVisibleLineCount(node, monacoOptions, options.width)
-    const lineHeight = resolveMonacoLineHeight(monacoOptions)
-    const verticalPadding = resolveMonacoVerticalPadding(monacoOptions, isDiff)
-    cap = typeof monacoOptions.MAX_HEIGHT === 'number' && monacoOptions.MAX_HEIGHT > 0
-      ? monacoOptions.MAX_HEIGHT
-      : CODE_BLOCK_DEFAULT_CAP
+  if (rendererKind === 'stream-diffs') {
+    const lineCount = getCodeBlockVisibleLineCount(node, options.width)
+    const lineHeight = resolveStreamDiffsLineHeight()
+    const verticalPadding = resolveStreamDiffsVerticalPadding(isDiff)
+    cap = CODE_BLOCK_DEFAULT_CAP
     contentHeight = Math.round(lineCount * lineHeight + verticalPadding)
-  }
-  else if (rendererKind === 'markdown') {
-    const lineCount = getCodeBlockVisibleLineCount(node)
-    contentHeight = Math.round(lineCount * MARKDOWN_CODE_LINE_HEIGHT + MARKDOWN_CODE_VERTICAL_PADDING)
   }
   else {
     const lineCount = getCodeBlockVisibleLineCount(node)
@@ -465,8 +447,8 @@ export function estimateCodeBlockHeight(
     height: Math.round(visibleContentHeight + (showHeader ? CODE_BLOCK_HEADER_HEIGHT : 0)),
     contentHeight: visibleContentHeight,
     rendererKind,
-    ...(isDiff && rendererKind === 'monaco'
-      ? { diffInline: resolveDiffInlineLayout(options.monacoOptions ?? {}, options.width ?? 0) }
+    ...(isDiff && rendererKind === 'stream-diffs'
+      ? { diffInline: resolveDiffInlineLayout({}, options.width ?? 0) }
       : {}),
   }
 }

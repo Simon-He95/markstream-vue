@@ -6,10 +6,10 @@ import katex from 'katex'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createSSRApp, defineComponent, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
+import CodeBlockNode from '../src/components/CodeBlockNode'
 import { disableD2, enableD2 } from '../src/components/D2BlockNode/d2'
 import HtmlBlockNode from '../src/components/HtmlBlockNode/HtmlBlockNode.vue'
 import { disableInfographic } from '../src/components/InfographicBlockNode/infographic'
-import MarkdownCodeBlockNode from '../src/components/MarkdownCodeBlockNode'
 import MathBlockNode from '../src/components/MathBlockNode'
 import MathInlineNode from '../src/components/MathInlineNode'
 import { disableKatex, enableKatex, setKatexLoader } from '../src/components/MathInlineNode/katex'
@@ -260,7 +260,7 @@ Footnotes are server-rendered.[^1]
     }
     const renderApp = async (tenant: string) => {
       const app = createSSRApp({
-        render: () => h(MarkdownCodeBlockNode, {
+        render: () => h(CodeBlockNode, {
           node,
           loading: false,
           stream: false,
@@ -292,7 +292,7 @@ Footnotes are server-rendered.[^1]
       loading: false,
     }
     const app = createSSRApp({
-      render: () => h(MarkdownCodeBlockNode, {
+      render: () => h(CodeBlockNode, {
         node,
         loading: false,
         stream: false,
@@ -892,8 +892,8 @@ export const greet = (name: string) => \`hello \${name}\`
     expect(html).toContain('hello ' + '$' + '{name}')
   })
 
-  it('renders the standalone MarkdownCodeBlockNode shell during SSR', async () => {
-    const html = await renderComponent(MarkdownCodeBlockNode, {
+  it('renders the standalone CodeBlockNode shell during SSR', async () => {
+    const html = await renderComponent(CodeBlockNode, {
       node: {
         type: 'code_block',
         language: 'ts',

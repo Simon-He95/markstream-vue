@@ -11,8 +11,8 @@ keywords:
 faq:
   - question: Why should mobile WebViews use index.px.css?
     answer: px CSS keeps Markstream internal sizing stable when the host app or operating system changes the root font size.
-  - question: Should mobile chat surfaces use Monaco code blocks?
-    answer: Usually no. Use pre or lightweight highlighting on mobile WebViews unless the user explicitly needs an editor.
+  - question: Should mobile chat surfaces use the enhanced code block surface?
+    answer: Usually no. Use plain `pre` rendering on mobile WebViews unless the user explicitly needs the enhanced `stream-diffs` surface.
   - question: When should virtualization be enabled on mobile?
     answer: Enable it earlier than desktop, especially when AI responses exceed about 10 KB or include multiple code, diagram, or math blocks.
 ---
@@ -83,8 +83,8 @@ Chat mode uses smaller render batches and disables animations that may be expens
 ```
 On mobile, enable virtualization for documents > 10KB (vs 100KB on desktop).
 
-### 3. Disable Monaco on mobile
-Monaco Editor is heavy for mobile WebViews. Use Shiki for syntax highlighting or fall back to `<pre>`:
+### 3. Use plain `pre` code blocks on mobile
+The enhanced `stream-diffs` surface can be heavy for mobile WebViews. For read-only chat, fall back to plain `<pre>` rendering:
 
 ```vue
 <MarkdownRender

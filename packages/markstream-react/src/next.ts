@@ -27,7 +27,6 @@ import { InsertNode as ClientInsertNode } from './components/InsertNode/InsertNo
 import { LinkNode as ClientLinkNode } from './components/LinkNode/LinkNode'
 import { ListItemNode as ClientListItemNode } from './components/ListItemNode/ListItemNode'
 import { ListNode as ClientListNode } from './components/ListNode/ListNode'
-import { MarkdownCodeBlockNode as ClientMarkdownCodeBlockNode } from './components/MarkdownCodeBlockNode/MarkdownCodeBlockNode'
 import { MathBlockNode as ClientMathBlockNode } from './components/MathBlockNode/MathBlockNode'
 import { MathInlineNode as ClientMathInlineNode } from './components/MathInlineNode/MathInlineNode'
 import { MermaidBlockNode as ClientMermaidBlockNode } from './components/MermaidBlockNode/MermaidBlockNode'
@@ -53,7 +52,7 @@ import {
   removeCustomComponents,
   setCustomComponents,
 } from './customComponents'
-import { AdmonitionNode as ServerAdmonitionNode, BlockquoteNode as ServerBlockquoteNode, CheckboxNode as ServerCheckboxNode, CodeBlockNode as ServerCodeBlockNode, D2BlockNode as ServerD2BlockNode, DefinitionListNode as ServerDefinitionListNode, EmojiNode as ServerEmojiNode, EmphasisNode as ServerEmphasisNode, FallbackComponent as ServerFallbackComponent, FootnoteAnchorNode as ServerFootnoteAnchorNode, FootnoteNode as ServerFootnoteNode, FootnoteReferenceNode as ServerFootnoteReferenceNode, HardBreakNode as ServerHardBreakNode, HeadingNode as ServerHeadingNode, HighlightNode as ServerHighlightNode, HtmlBlockNode as ServerHtmlBlockNode, HtmlInlineNode as ServerHtmlInlineNode, HtmlPreviewFrame as ServerHtmlPreviewFrame, ImageNode as ServerImageNode, InfographicBlockNode as ServerInfographicBlockNode, InlineCodeNode as ServerInlineCodeNode, InsertNode as ServerInsertNode, LinkNode as ServerLinkNode, ListItemNode as ServerListItemNode, ListNode as ServerListNode, MarkdownCodeBlockNode as ServerMarkdownCodeBlockNode, MathBlockNode as ServerMathBlockNode, MathInlineNode as ServerMathInlineNode, MermaidBlockNode as ServerMermaidBlockNode, NodeRenderer as ServerNodeRenderer, ParagraphNode as ServerParagraphNode, PreCodeNode as ServerPreCodeNode, ReferenceNode as ServerReferenceNode, StrikethroughNode as ServerStrikethroughNode, StrongNode as ServerStrongNode, SubscriptNode as ServerSubscriptNode, SuperscriptNode as ServerSuperscriptNode, TableNode as ServerTableNode, TextNode as ServerTextNode, ThematicBreakNode as ServerThematicBreakNode, Tooltip as ServerTooltip, VmrContainerNode as ServerVmrContainerNode } from './server-renderer'
+import { AdmonitionNode as ServerAdmonitionNode, BlockquoteNode as ServerBlockquoteNode, CheckboxNode as ServerCheckboxNode, CodeBlockNode as ServerCodeBlockNode, D2BlockNode as ServerD2BlockNode, DefinitionListNode as ServerDefinitionListNode, EmojiNode as ServerEmojiNode, EmphasisNode as ServerEmphasisNode, FallbackComponent as ServerFallbackComponent, FootnoteAnchorNode as ServerFootnoteAnchorNode, FootnoteNode as ServerFootnoteNode, FootnoteReferenceNode as ServerFootnoteReferenceNode, HardBreakNode as ServerHardBreakNode, HeadingNode as ServerHeadingNode, HighlightNode as ServerHighlightNode, HtmlBlockNode as ServerHtmlBlockNode, HtmlInlineNode as ServerHtmlInlineNode, HtmlPreviewFrame as ServerHtmlPreviewFrame, ImageNode as ServerImageNode, InfographicBlockNode as ServerInfographicBlockNode, InlineCodeNode as ServerInlineCodeNode, InsertNode as ServerInsertNode, LinkNode as ServerLinkNode, ListItemNode as ServerListItemNode, ListNode as ServerListNode, MathBlockNode as ServerMathBlockNode, MathInlineNode as ServerMathInlineNode, MermaidBlockNode as ServerMermaidBlockNode, NodeRenderer as ServerNodeRenderer, ParagraphNode as ServerParagraphNode, PreCodeNode as ServerPreCodeNode, ReferenceNode as ServerReferenceNode, StrikethroughNode as ServerStrikethroughNode, StrongNode as ServerStrongNode, SubscriptNode as ServerSubscriptNode, SuperscriptNode as ServerSuperscriptNode, TableNode as ServerTableNode, TextNode as ServerTextNode, ThematicBreakNode as ServerThematicBreakNode, Tooltip as ServerTooltip, VmrContainerNode as ServerVmrContainerNode } from './server-renderer'
 
 function createNextEntryComponent<P>(
   ClientComponent: React.ComponentType<P>,
@@ -118,7 +117,6 @@ export const InsertNode = createNextEntryComponent(ClientInsertNode, ServerInser
 export const LinkNode = createNextEntryComponent(ClientLinkNode, ServerLinkNode)
 export const ListItemNode = createNextEntryComponent(ClientListItemNode, ServerListItemNode)
 export const ListNode = createNextEntryComponent(ClientListNode, ServerListNode)
-export const MarkdownCodeBlockNode = createNextEntryComponent(ClientMarkdownCodeBlockNode, ServerMarkdownCodeBlockNode)
 export const MathBlockNode = createNextEntryComponent(ClientMathBlockNode, ServerMathBlockNode)
 export const MathInlineNode = createNextEntryComponent(ClientMathInlineNode, ServerMathInlineNode)
 export const MermaidBlockNode = createNextEntryComponent(ClientMermaidBlockNode, ServerMermaidBlockNode)
@@ -153,7 +151,6 @@ export type { HtmlPreviewFrameProps } from './components/CodeBlockNode/HtmlPrevi
 export * from './components/D2BlockNode/d2'
 export type { LinkNodeStyleProps } from './components/LinkNode/LinkNode'
 export type { ListItemNodeProps } from './components/ListItemNode/ListItemNode'
-export type { MarkdownCodeBlockNodeProps } from './components/MarkdownCodeBlockNode/MarkdownCodeBlockNode'
 export type { TooltipPlacement, TooltipProps } from './components/Tooltip/Tooltip'
 export type {
   CustomComponentDisplayMode,

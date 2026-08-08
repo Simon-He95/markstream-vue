@@ -33,8 +33,6 @@ export type { LinkNodeStyleProps } from './components/LinkNode/LinkNode.tsrx'
 export { ListItemNode } from './components/ListItemNode/ListItemNode.tsrx'
 export type { ListItemNodeProps } from './components/ListItemNode/ListItemNode.tsrx'
 export { ListNode } from './components/ListNode/ListNode.tsrx'
-export { MarkdownCodeBlockNode } from './components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.tsrx'
-export type { MarkdownCodeBlockNodeProps } from './components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.tsrx'
 export { MathBlockNode } from './components/MathBlockNode/MathBlockNode.tsrx'
 export { MathInlineNode } from './components/MathInlineNode/MathInlineNode.tsrx'
 export { MermaidBlockNode } from './components/MermaidBlockNode/MermaidBlockNode.tsrx'
@@ -89,12 +87,10 @@ export type {
   CodeBlockDiffHunkSide,
   CodeBlockDiffLineStyle,
   CodeBlockDiffUnchangedRegionStyle,
-  CodeBlockMonacoLanguage,
-  CodeBlockMonacoOptions,
-  CodeBlockMonacoTheme,
-  CodeBlockMonacoThemeObject,
   CodeBlockNodeProps,
   CodeBlockPreviewPayload,
+  CodeBlockTheme,
+  CodeBlockThemeObject,
   D2BlockNodeProps,
   ImageNodeProps,
   InfographicBlockNodeProps,

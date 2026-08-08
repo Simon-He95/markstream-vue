@@ -34,7 +34,7 @@ Both `markstream-react` and [Streamdown](https://streamdown.ai) are designed for
 | react-markdown-style API | ❌ different API | ✅ drop-in style |
 | Mermaid | ✅ built-in Markstream integration / optional peer | ✅ via `@streamdown/mermaid` |
 | Math / KaTeX | ✅ optional peer / worker-capable | ✅ via `@streamdown/math` |
-| Code highlighting | ✅ Monaco/Shiki-oriented renderer, diff-aware code blocks | ✅ via `@streamdown/code` using Shiki |
+| Code highlighting | ✅ stream-diffs powered code blocks with diff tracking | ✅ via `@streamdown/code` using Shiki |
 | Cross-framework family | ✅ Vue/React/Svelte/Angular | ❌ React-focused |
 | Long-document live-node bounding | ✅ renderer-level controls | Needs separate app-level virtualization |
 | Best fit | Multi-framework AI apps, heavy blocks, long docs | React apps wanting a streaming drop-in path |

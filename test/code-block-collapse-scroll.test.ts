@@ -98,7 +98,6 @@ function mountCodeBlock(lineCount: number) {
       showFontSizeButtons: false,
       showPreviewButton: false,
       showTooltips: false,
-      monacoOptions: { MAX_HEIGHT: 500 },
     },
   })
 }
@@ -131,9 +130,6 @@ describe('code block scroll restoration after collapse', () => {
 
     reportedContentHeight = 500
     triggerEditorContentSizeChange()
-    await wrapper.setProps({ monacoOptions: { MAX_HEIGHT: 500, fontSize: 13 } })
-    await wrapper.setProps({ monacoOptions: { MAX_HEIGHT: 500, fontSize: 14 } })
-    await wrapper.setProps({ monacoOptions: { MAX_HEIGHT: 500, fontSize: 15 } })
     await flush()
     await flush()
 

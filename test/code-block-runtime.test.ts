@@ -5,9 +5,9 @@ describe('code block runtime interop', () => {
     vi.resetModules()
     const streamDiffs = await import('stream-diffs')
     ;(streamDiffs.preloadMonacoWorkers as any).mockClear?.()
-    const { getUseMonaco, isCodeBlockRuntimeReady } = await import('../src/components/CodeBlockNode/monaco')
+    const { getStreamDiffsRuntime, isCodeBlockRuntimeReady } = await import('../src/components/CodeBlockNode/streamDiffs')
 
-    await getUseMonaco()
+    await getStreamDiffsRuntime()
 
     expect(streamDiffs.preloadMonacoWorkers).toHaveBeenCalledTimes(1)
     expect(isCodeBlockRuntimeReady()).toBe(true)
@@ -17,7 +17,7 @@ describe('code block runtime interop', () => {
     vi.resetModules()
     const streamDiffs = await import('stream-diffs')
     ;(streamDiffs.preloadMonacoWorkers as any).mockClear?.()
-    const { isCodeBlockRuntimeReady, preloadCodeBlockRuntime } = await import('../src/components/CodeBlockNode/monaco')
+    const { isCodeBlockRuntimeReady, preloadCodeBlockRuntime } = await import('../src/components/CodeBlockNode/streamDiffs')
 
     expect(isCodeBlockRuntimeReady()).toBe(false)
     await expect(preloadCodeBlockRuntime()).resolves.toBe(true)

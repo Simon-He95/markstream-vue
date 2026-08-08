@@ -64,7 +64,7 @@ Before you ask for code changes, include:
 - framework and version, for example Vue 3, Nuxt 3, React 18, Angular 20, or Svelte 5
 - CSS stack, for example Tailwind, UnoCSS, reset libraries, or a design system
 - rendering mode: static article, docs site, SSR, or streaming chat
-- required capabilities: enhanced File/Diff code blocks, lightweight Shiki highlighting, Mermaid, D2, KaTeX, or Infographic
+- required capabilities: enhanced File/Diff code blocks, Mermaid, D2, KaTeX, or Infographic
 - whether overrides must stay scoped to one area of the app
 
 Without that context, assistants often install the wrong peers or place CSS in the wrong order.
@@ -75,7 +75,7 @@ Without that context, assistants often install the wrong peers or place CSS in t
 
 ```text
 Install markstream-vue into this Vue 3 app.
-Use the smallest peer-dependency set that matches these needs: [fill in stream-diffs File/Diff code blocks / Shiki / Mermaid / D2 / KaTeX / Infographic].
+Use the smallest peer-dependency set that matches these needs: [fill in stream-diffs File/Diff code blocks / Mermaid / D2 / KaTeX / Infographic].
 Keep CSS order safe with my existing stack: [fill in Tailwind / UnoCSS / reset library].
 Add one minimal render example, and explain whether I should use `content` or `nodes`.
 If you replace or override anything, keep it scoped with `custom-id`.

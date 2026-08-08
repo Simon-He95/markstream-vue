@@ -20,7 +20,6 @@ const EXPORT_NAMES = [
   'CheckboxNode',
   'CodeBlockNode',
   'ReactCodeBlockNode',
-  'MarkdownCodeBlockNode',
   'PreCodeNode',
   'D2BlockNode',
   'MermaidBlockNode',

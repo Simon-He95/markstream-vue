@@ -144,8 +144,7 @@ For a full end-to-end rollout order, peer selection, and chat-specific tuning, c
 
 For a full list of components and props, visit [Components & node renderers](/guide/components). Highlights:
 
-- `CodeBlockNode` — enhanced File/FileDiff blocks (requires `stream-diffs`; the public `'monaco'` renderer name remains for compatibility).
-- `MarkdownCodeBlockNode` — Shiki-based lightweight highlighting.
+- `CodeBlockNode` — enhanced File/FileDiff blocks (requires `stream-diffs`).
 - `MermaidBlockNode` — requires `mermaid` ≥ 11 (no extra CSS).
 - `D2BlockNode` — requires `@terrastruct/d2` (no extra CSS).
 - `ImageNode` — emits `click`, `load`, `error` for custom previews.

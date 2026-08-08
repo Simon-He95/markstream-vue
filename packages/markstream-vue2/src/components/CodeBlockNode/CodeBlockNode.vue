@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import type { CodeBlockNode as ParsedCodeBlockNode } from 'stream-markdown-parser'
 import type { CodeBlockPreviewPayload } from '../../types/component-props'
-// Avoid static import of `stream-monaco` for types so the runtime bundle
+// Avoid static import of `stream-diffs` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
 import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 // Tooltip is provided as a singleton via composable to avoid many DOM nodes
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useViewportPriority } from '../../composables/viewportPriority'
-import { getLanguageIcon, languageIconsRevision, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../../utils'
+import { getLanguageIcon, languageIconsRevision, languageMap, normalizeLanguageIdentifier, resolveLanguageId } from '../../utils'
 import { safeCancelRaf, safeRaf } from '../../utils/safeRaf'
 import PreCodeNode from '../PreCodeNode'
 import HtmlPreviewFrame from './HtmlPreviewFrame.vue'
-import { getUseMonaco } from './monaco'
-import { scheduleGlobalMonacoTheme } from './monacoThemeScheduler'
+import { getStreamDiffsRuntime } from './streamDiffs'
 
 const props = defineProps({
   node: { type: Object, required: true },
@@ -23,7 +22,6 @@ const props = defineProps({
   darkTheme: { type: [Object, String], default: undefined },
   lightTheme: { type: [Object, String], default: undefined },
   isShowPreview: { type: Boolean, default: true },
-  monacoOptions: { type: Object, default: undefined },
   enableFontSizeControl: { type: Boolean, default: true },
   minWidth: { type: [String, Number], default: undefined },
   maxWidth: { type: [String, Number], default: undefined },
@@ -49,63 +47,6 @@ const emits = defineEmits<{
   (e: 'copy', code: string): void
 }>()
 
-// Chrome warns when Monaco registers non-passive touchstart listeners.
-// Patch the editor host so touch handlers default to passive for Monaco roots.
-const MONACO_TOUCH_PATCH_FLAG = '__markstreamMonacoPassiveTouch__'
-
-if (typeof window !== 'undefined')
-  ensureMonacoPassiveTouchListeners()
-
-function ensureMonacoPassiveTouchListeners() {
-  try {
-    const globalObj = window as any
-    if (globalObj[MONACO_TOUCH_PATCH_FLAG])
-      return
-    const proto = window.Element?.prototype
-    const nativeAdd = proto?.addEventListener
-    if (!proto || !nativeAdd)
-      return
-    proto.addEventListener = function patchedMonacoTouchStart(
-      this: Element,
-      type: string,
-      listener: EventListenerOrEventListenerObject,
-      options?: boolean | AddEventListenerOptions,
-    ) {
-      if (type === 'touchstart' && shouldForcePassiveForMonaco(this, options))
-        return nativeAdd.call(this, type, listener, withPassiveOptions(options))
-      return nativeAdd.call(this, type, listener, options)
-    }
-    globalObj[MONACO_TOUCH_PATCH_FLAG] = true
-  }
-  catch {}
-}
-
-function shouldForcePassiveForMonaco(target: EventTarget | null, options?: boolean | AddEventListenerOptions) {
-  if (!target)
-    return false
-  const el = target as Element
-  if (typeof el.closest !== 'function')
-    return false
-  if (!el.closest('.monaco-editor, .monaco-diff-editor'))
-    return false
-  if (options && typeof options === 'object' && 'passive' in options)
-    return false
-  return true
-}
-
-function withPassiveOptions(options?: boolean | AddEventListenerOptions): AddEventListenerOptions {
-  if (options == null)
-    return { passive: true }
-  if (typeof options === 'boolean')
-    return { capture: options, passive: true }
-  if (typeof options === 'object') {
-    if ('passive' in options)
-      return options
-    return { ...options, passive: true }
-  }
-  return { passive: true }
-}
-
 const instance = getCurrentInstance() as any
 const hasPreviewListener = computed(() => {
   const proxy = instance?.proxy as any
@@ -126,13 +67,13 @@ const copyText = ref(false)
 // local tooltip logic removed; use shared `showTooltipForAnchor` / `hideTooltip`
 
 const codeLanguage = ref(normalizeLanguageIdentifier(props.node.language))
-const monacoLanguage = computed(() => resolveMonacoLanguageId(codeLanguage.value))
-const isPlainTextLanguage = computed(() => monacoLanguage.value === 'plaintext')
+const languageId = computed(() => resolveLanguageId(codeLanguage.value))
+const isPlainTextLanguage = computed(() => languageId.value === 'plaintext')
 const isExpanded = ref(false)
 const isCollapsed = ref(false)
 const editorCreated = ref(false)
 const editorReady = ref(false)
-const monacoReady = ref(false)
+const runtimeReady = ref(false)
 let expandRafId: number | null = null
 const heightBeforeCollapse = ref<number | null>(null)
 let resumeGuardFrames = 0
@@ -164,8 +105,8 @@ onBeforeUnmount(() => {
   viewportHandle = null
 })
 
-// Lazy-load `stream-monaco` helpers at runtime so consumers who don't install
-// `stream-monaco` won't have the editor code bundled. We provide safe no-op
+// Lazy-load the stream-diffs helpers at runtime so consumers who don't install
+// `stream-diffs` won't have the editor code bundled. We provide safe no-op
 // fallbacks for the minimal API we use.
 let createEditor: ((el: HTMLElement, code: string, lang: string) => void) | null = null
 let createDiffEditor: ((el: HTMLElement, original: string, modified: string, lang: string) => void) | null = null
@@ -183,7 +124,6 @@ let setTheme: (theme: any) => Promise<void> = async () => {}
 let whenRuntimeVisualReady: (() => Promise<boolean>) | null = null
 let runtimeMonacoOptions: Record<string, any> | null = null
 let isUnmounted = false
-const inlineFoldProxyCleanups: Array<() => void> = []
 let deferredEditorVisualSyncRafId: number | null = null
 const isDiff = computed(() => props.node.diff)
 const defaultDiffHideUnchangedRegions = Object.freeze({
@@ -200,7 +140,7 @@ function readPositiveNumber(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined
 }
 
-function readMonacoPadding(value: unknown) {
+function readPadding(value: unknown) {
   if (!value || typeof value !== 'object')
     return { top: 0, bottom: 0 }
 
@@ -211,67 +151,31 @@ function readMonacoPadding(value: unknown) {
   }
 }
 
-function resolveDiffHideUnchangedRegionsOption(value: unknown) {
-  if (typeof value === 'boolean')
-    return value
-  if (value && typeof value === 'object') {
-    const raw = value as Record<string, unknown>
-    return {
-      ...defaultDiffHideUnchangedRegions,
-      ...raw,
-      enabled: raw.enabled ?? true,
-    }
-  }
-  return { ...defaultDiffHideUnchangedRegions }
-}
-
-const resolvedMonacoOptions = computed(() => {
-  const raw = props.monacoOptions ? { ...props.monacoOptions } : {}
-  if (!isDiff.value)
-    return raw
-
-  const diffHideUnchangedRegions = raw.diffHideUnchangedRegions === undefined
-    ? { ...defaultDiffHideUnchangedRegions }
-    : resolveDiffHideUnchangedRegionsOption(raw.diffHideUnchangedRegions)
-  const hideUnchangedRegions = raw.hideUnchangedRegions === undefined
-    ? undefined
-    : resolveDiffHideUnchangedRegionsOption(raw.hideUnchangedRegions)
-  const diffUnchangedRegionStyle = raw.diffUnchangedRegionStyle ?? 'line-info'
-  const diffDefaults = {
-    maxComputationTime: 0,
-    diffAlgorithm: 'legacy',
-    ignoreTrimWhitespace: false,
-    renderIndicators: true,
-    diffUpdateThrottleMs: 120,
-    renderLineHighlight: 'none',
-    renderLineHighlightOnlyWhenFocus: true,
-    selectionHighlight: false,
-    occurrencesHighlight: 'off',
-    matchBrackets: 'never',
-    lineDecorationsWidth: 4,
-    lineNumbersMinChars: 2,
-    glyphMargin: false,
-    minimap: { enabled: false },
-    renderOverviewRuler: false,
-    overviewRulerBorder: false,
-    hideCursorInOverviewRuler: true,
-    scrollBeyondLastLine: false,
-    diffHideUnchangedRegions,
-    useInlineViewWhenSpaceIsLimited: raw.useInlineViewWhenSpaceIsLimited ?? false,
-    diffLineStyle: 'background',
-    diffAppearance: 'auto',
-    diffUnchangedRegionStyle,
-    diffHunkActionsOnHover: false,
-    diffHunkHoverHideDelayMs: 160,
-  }
-
-  return {
-    ...diffDefaults,
-    ...raw,
-    ...(hideUnchangedRegions === undefined ? {} : { hideUnchangedRegions }),
-    diffHideUnchangedRegions,
-  }
-})
+// Fixed runtime defaults for the stream-diffs surface. The monacoOptions
+// prop was removed in 2.0.0; code block presentation uses these constants.
+const resolvedMonacoOptions = computed<Record<string, any>>(() => ({
+  MAX_HEIGHT: 500,
+  fontSize: 12,
+  lineHeight: 18,
+  wordWrap: 'on',
+  tabSize: 4,
+  fontFamily: defaultPreFallbackFontFamily,
+  renderSideBySide: true,
+  useInlineViewWhenSpaceIsLimited: false,
+  diffLineStyle: 'background',
+  diffAppearance: 'auto',
+  diffUnchangedRegionStyle: 'line-info',
+  diffHunkActionsOnHover: false,
+  diffHunkHoverHideDelayMs: 160,
+  maxComputationTime: 0,
+  diffAlgorithm: 'legacy',
+  ignoreTrimWhitespace: false,
+  renderIndicators: true,
+  diffUpdateThrottleMs: 120,
+  enableSplitViewResizing: true,
+  originalEditable: false,
+  diffHideUnchangedRegions: { ...defaultDiffHideUnchangedRegions },
+}))
 
 // In streaming scenarios, the opening fence info string can arrive in chunks
 // (e.g. "```d" then "iff json:..."), which means a block may flip between
@@ -286,12 +190,12 @@ const isDevEnv = typeof import.meta !== 'undefined' && Boolean((import.meta as a
 if (typeof window !== 'undefined') {
   ;(async () => {
     try {
-      const mod = await getUseMonaco()
-      // If mod is null, stream-monaco is not available
+      const mod = await getStreamDiffsRuntime()
+      // If mod is null, stream-diffs is not available
       if (!mod) {
         // Only log warning in development mode
         if (isDevEnv) {
-          console.warn('[markstream-vue2] stream-monaco is not installed. Code blocks will use basic rendering. Install stream-monaco for enhanced code editor features.')
+          console.warn('[markstream-vue2] stream-diffs is not installed. Code blocks will use basic rendering. Install stream-diffs for enhanced code editor features.')
         }
         usePreCodeRender.value = true
         return
@@ -320,7 +224,7 @@ if (typeof window !== 'undefined') {
         refreshDiffPresentation = helpers.refreshDiffPresentation || refreshDiffPresentation
         setTheme = helpers.setTheme || setTheme
         whenRuntimeVisualReady = helpers.whenVisualReady || null
-        monacoReady.value = true
+        runtimeReady.value = true
 
         if (codeEditor.value)
           await ensureEditorCreation(codeEditor.value as HTMLElement)
@@ -377,61 +281,6 @@ function waitForAnimationFrame() {
   })
 }
 
-function expectsLanguageTokensForLine(text: string) {
-  return /['"`{}()[\]:;=<>.,]|\/\/|\/\*|\b(?:async|await|class|const|enum|export|for|function|if|import|interface|let|return|switch|type|var|while)\b/.test(
-    text.replace(/\u00A0/g, ' ').trim(),
-  )
-}
-
-function hasLanguageHighlightReady(root: HTMLElement | null | undefined) {
-  if (isPlainTextLanguage.value)
-    return true
-  if (!root)
-    return false
-
-  const viewLines = Array.from(
-    root.querySelectorAll<HTMLElement>(
-      '.monaco-diff-editor .view-lines .view-line, .monaco-editor .view-lines .view-line',
-    ),
-  ).filter(line => Boolean(line.textContent?.trim()))
-  if (!viewLines.length)
-    return false
-
-  const tokenCandidateLines = viewLines.filter(line => expectsLanguageTokensForLine(line.textContent ?? ''))
-  if (!tokenCandidateLines.length)
-    return true
-
-  return tokenCandidateLines.some((line) => {
-    const spans = Array.from(line.querySelectorAll<HTMLElement>('span'))
-      .filter(span => span.textContent?.trim())
-    return spans.some((span) => {
-      const tokenClasses = String(span.className || '').split(/\s+/)
-      return tokenClasses.some(className => /^mtk\d+$/.test(className) && className !== 'mtk1')
-    })
-  })
-}
-
-function hasCurrentEditorContent() {
-  const editor = isDiff.value
-    ? getDiffEditorView()?.getModifiedEditor?.() ?? getDiffEditorView()
-    : getEditorView()
-  const model = editor?.getModel?.()
-  if (typeof model?.getValue !== 'function')
-    return true
-  const expected = isDiff.value
-    ? String(props.node.updatedCode ?? props.node.code ?? '')
-    : String(props.node.code ?? '')
-  return model.getValue() === expected
-}
-
-function hasRenderedEditorDom(root = codeEditor.value) {
-  if (!root)
-    return false
-  if (root.querySelector('diffs-container, .stream-diffs-shell'))
-    return true
-  return Boolean(root.querySelector('.monaco-diff-editor .view-lines .view-line, .monaco-editor .view-lines .view-line'))
-}
-
 async function waitForEditorVisualReady() {
   if (whenRuntimeVisualReady) {
     try {
@@ -446,45 +295,21 @@ async function waitForEditorVisualReady() {
       return false
     }
   }
-
+  // stream-diffs always exposes whenVisualReady; keep a lightweight DOM
+  // fallback that only checks for the stream-diffs host element.
   const maxPasses = 30
   for (let pass = 0; pass < maxPasses; pass++) {
     if (isUnmounted)
       return false
-
-    const code = isDiff.value
-      ? String(props.node.updatedCode ?? props.node.code ?? '')
-      : String(props.node.code ?? '')
-    const domReady = hasRenderedEditorDom()
-    const highlightReady = !code.trim() || isPlainTextLanguage.value || hasLanguageHighlightReady(codeEditor.value)
-    if (hasCurrentEditorContent() && domReady && highlightReady) {
+    if (codeEditor.value?.querySelector('diffs-container, .stream-diffs-shell')) {
       await nextTick()
       await waitForAnimationFrame()
-      if (!isUnmounted && hasCurrentEditorContent() && hasRenderedEditorDom())
-        return !code.trim() || isPlainTextLanguage.value || hasLanguageHighlightReady(codeEditor.value)
+      return !isUnmounted
     }
-
     await nextTick()
     await waitForAnimationFrame()
   }
-
   return false
-}
-
-function measureLineHeightFromDom(): number | null {
-  try {
-    const root = codeEditor.value as HTMLElement | null
-    if (!root)
-      return null
-    const lineEl = root.querySelector('.view-lines .view-line') as HTMLElement | null
-    if (lineEl) {
-      const h = Math.ceil(lineEl.getBoundingClientRect().height)
-      if (h > 0)
-        return h
-    }
-  }
-  catch {}
-  return null
 }
 
 function readActualFontSizeFromEditor(): number | null {
@@ -497,24 +322,6 @@ function readActualFontSizeFromEditor(): number | null {
       const size = info?.fontSize
       if (typeof size === 'number' && Number.isFinite(size) && size > 0)
         return size
-    }
-  }
-  catch {}
-  try {
-    const root = codeEditor.value as HTMLElement | null
-    if (root) {
-      const lineEl = root.querySelector('.view-lines .view-line') as HTMLElement | null
-      if (lineEl) {
-        try {
-          if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
-            const fs = window.getComputedStyle(lineEl).fontSize
-            const m = fs && fs.match(/^(\d+(?:\.\d+)?)/)
-            if (m)
-              return Number.parseFloat(m[1])
-          }
-        }
-        catch {}
-      }
     }
   }
   catch {}
@@ -533,11 +340,8 @@ function getLineHeightSafe(editor: any): number {
   }
   catch {}
 
-  const domH = measureLineHeightFromDom()
-  if (domH && domH > 0)
-    return domH
   const fs = Number.isFinite(codeFontSize.value) && codeFontSize.value! > 0 ? (codeFontSize.value as number) : 12
-  // Conservative fallback close to Monaco's default ratio
+  // Conservative fallback close to the editor's default ratio
   return Math.max(12, Math.round(fs * 1.35))
 }
 function ensureFontBaseline() {
@@ -638,30 +442,6 @@ function computeContentHeight(): number | null {
   }
 }
 
-function getColorLuminance(color: string) {
-  const channels = String(color ?? '').match(/\d+(?:\.\d+)?/g)
-  if (!channels || channels.length < 3)
-    return null
-  const [r, g, b] = channels.slice(0, 3).map(Number)
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-function shouldPreferPlainTextFallbackSurface(bg: string, fg: string, expectDark: boolean) {
-  if (!isPlainTextLanguage.value)
-    return false
-
-  const bgLuminance = getColorLuminance(bg)
-  const fgLuminance = getColorLuminance(fg)
-
-  if (expectDark) {
-    return (bgLuminance != null && bgLuminance > 170)
-      || (fgLuminance != null && fgLuminance < 110)
-  }
-
-  return (bgLuminance != null && bgLuminance < 85)
-    || (fgLuminance != null && fgLuminance > 190)
-}
-
 // Keep runtime theme variables on the editor host. Writing them to the outer
 // shell would restyle the still-visible pre fallback while the editor is hidden,
 // producing an extra background-only state before the final handoff.
@@ -671,14 +451,10 @@ function syncEditorCssVars() {
   if (!editorEl || !rootEl)
     return
 
-  rootEl.style.removeProperty('--vscode-editor-foreground')
-  rootEl.style.removeProperty('--vscode-editor-background')
-  rootEl.style.removeProperty('--vscode-editor-selectionBackground')
-
+  // Align the enhanced surface with the pre-fallback geometry: stream-diffs/
+  // pierre honor these CSS variables on the editor host (custom properties
+  // inherit across the pierre shadow boundary).
   const targetEl = editorEl
-  // Align the enhanced surface with the pre-fallback geometry (see vue3):
-  // stream-diffs/pierre honor these CSS variables on the editor host (custom
-  // properties inherit across the pierre shadow boundary).
   const runtimeMetrics = resolvedMonacoOptions.value
   const tabSize = readPositiveNumber(runtimeMetrics?.tabSize) ?? 4
   targetEl.style.setProperty('--diffs-tab-size', String(tabSize))
@@ -690,57 +466,6 @@ function syncEditorCssVars() {
   else {
     targetEl.style.removeProperty('--diffs-gap-block')
   }
-  if (isDiff.value) {
-    targetEl.style.removeProperty('--vscode-editor-foreground')
-    targetEl.style.removeProperty('--vscode-editor-background')
-    targetEl.style.removeProperty('--vscode-editor-selectionBackground')
-    return
-  }
-  // Monaco usually applies theme variables on an element with class
-  // 'monaco-editor' or on the editor root; try to read from either.
-  const editorRoot = (editorEl.querySelector('.monaco-editor') || editorEl) as HTMLElement
-  const bgEl = (editorRoot.querySelector('.monaco-editor-background') || editorRoot) as HTMLElement
-  const fgEl = (editorRoot.querySelector('.view-lines') || editorRoot) as HTMLElement
-
-  let rootStyles: CSSStyleDeclaration | null = null
-  let bgStyles: CSSStyleDeclaration | null = null
-  let fgStyles: CSSStyleDeclaration | null = null
-  try {
-    if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
-      rootStyles = window.getComputedStyle(editorRoot)
-      bgStyles = bgEl === editorRoot ? rootStyles : window.getComputedStyle(bgEl)
-      fgStyles = fgEl === editorRoot ? rootStyles : window.getComputedStyle(fgEl)
-    }
-  }
-  catch {
-    rootStyles = null
-    bgStyles = null
-    fgStyles = null
-  }
-  const fgVar = String(rootStyles?.getPropertyValue('--vscode-editor-foreground') ?? '').trim()
-  const bgVar = String(rootStyles?.getPropertyValue('--vscode-editor-background') ?? '').trim()
-  const selVar = String(
-    rootStyles?.getPropertyValue('--vscode-editor-selectionBackground')
-    ?? rootStyles?.getPropertyValue('--vscode-editor-hoverHighlightBackground')
-    ?? '',
-  ).trim()
-
-  const fg = fgVar || String(fgStyles?.color ?? rootStyles?.color ?? '').trim()
-  const bg = bgVar || String(bgStyles?.backgroundColor ?? rootStyles?.backgroundColor ?? '').trim()
-
-  if (shouldPreferPlainTextFallbackSurface(bg, fg, rootEl.classList.contains('is-dark'))) {
-    targetEl.style.removeProperty('--vscode-editor-foreground')
-    targetEl.style.removeProperty('--vscode-editor-background')
-    targetEl.style.removeProperty('--vscode-editor-selectionBackground')
-    return
-  }
-
-  if (fg)
-    targetEl.style.setProperty('--vscode-editor-foreground', fg)
-  if (bg)
-    targetEl.style.setProperty('--vscode-editor-background', bg)
-  if (selVar)
-    targetEl.style.setProperty('--vscode-editor-selectionBackground', selVar)
 }
 
 let resizeSyncHandler: (() => void) | null = null
@@ -813,129 +538,20 @@ function updateExpandedHeight() {
   catch {}
 }
 
-function clearInlineFoldProxies() {
-  while (inlineFoldProxyCleanups.length > 0) {
-    try {
-      inlineFoldProxyCleanups.pop()?.()
-    }
-    catch {}
-  }
-}
-
-function syncInlineFoldProxies() {
-  clearInlineFoldProxies()
-
-  if (!isDiff.value)
-    return
-
-  const root = codeEditor.value
-  if (!root)
-    return
-
-  const diffRoot = root.querySelector('.monaco-diff-editor') as HTMLElement | null
-  if (!diffRoot || diffRoot.classList.contains('side-by-side'))
-    return
-
-  const originalWidgets = Array.from(diffRoot.querySelectorAll('.editor.original .diff-hidden-lines'))
-  const modifiedWidgets = Array.from(diffRoot.querySelectorAll('.editor.modified .diff-hidden-lines'))
-  const pairCount = Math.min(originalWidgets.length, modifiedWidgets.length)
-
-  for (let i = 0; i < pairCount; i++) {
-    const originalWidget = originalWidgets[i] as HTMLElement
-    const modifiedWidget = modifiedWidgets[i] as HTMLElement
-    const modifiedTrigger = modifiedWidget.querySelector('a') as HTMLElement | null
-    const originalSlot = originalWidget.querySelector('.center > div:first-child') as HTMLElement | null
-
-    if (!modifiedTrigger || !originalSlot)
-      continue
-
-    const proxyButton = document.createElement('button')
-    proxyButton.type = 'button'
-    proxyButton.className = 'markstream-inline-fold-proxy'
-    const label = modifiedTrigger.getAttribute('title') || 'Show Unchanged Region'
-    proxyButton.title = label
-    proxyButton.setAttribute('aria-label', label)
-
-    const sourceIcon = modifiedTrigger.querySelector('.codicon') as HTMLElement | null
-    const icon = document.createElement('span')
-    icon.className = sourceIcon?.className || 'codicon codicon-unfold'
-    proxyButton.append(icon)
-
-    const handlePointerDown = (event: MouseEvent) => {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-    const handleClick = (event: MouseEvent) => {
-      event.preventDefault()
-      event.stopPropagation()
-      modifiedTrigger.click()
-    }
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Enter' && event.key !== ' ')
-        return
-      event.preventDefault()
-      event.stopPropagation()
-      modifiedTrigger.click()
-    }
-
-    proxyButton.addEventListener('mousedown', handlePointerDown)
-    proxyButton.addEventListener('click', handleClick)
-    proxyButton.addEventListener('keydown', handleKeyDown)
-    originalSlot.replaceChildren(proxyButton)
-
-    inlineFoldProxyCleanups.push(() => {
-      proxyButton.removeEventListener('mousedown', handlePointerDown)
-      proxyButton.removeEventListener('click', handleClick)
-      proxyButton.removeEventListener('keydown', handleKeyDown)
-      if (originalSlot.contains(proxyButton))
-        originalSlot.replaceChildren()
-    })
-  }
-}
-
 function scheduleEditorVisualSync() {
   if (deferredEditorVisualSyncRafId != null)
     return
   deferredEditorVisualSyncRafId = safeRaf(() => {
     deferredEditorVisualSyncRafId = null
     safeRaf(() => {
-      syncDiffRevealButtons()
-      syncInlineFoldProxies()
       if (isCollapsed.value)
         return
       if (isExpanded.value)
         updateExpandedHeight()
       else
         updateCollapsedHeight()
-      safeRaf(() => {
-        syncDiffRevealButtons()
-        syncInlineFoldProxies()
-      })
     })
   })
-}
-
-function syncDiffRevealButtons() {
-  if (!isDiff.value)
-    return
-
-  const root = codeEditor.value
-  if (!root)
-    return
-
-  const revealButtons = Array.from(
-    root.querySelectorAll('.stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal'),
-  )
-
-  for (const button of revealButtons) {
-    if (!(button instanceof HTMLButtonElement))
-      continue
-
-    const direction = button.dataset.direction === 'up' ? 'up' : 'down'
-    const icon = document.createElement('span')
-    icon.className = `codicon codicon-chevron-${direction}`
-    button.replaceChildren(icon)
-  }
 }
 
 function applyCollapsedContainerHeight(container: HTMLElement, contentHeight: number, maxHeight: number) {
@@ -1022,7 +638,7 @@ watch(
 )
 
 watch(
-  () => [props.node.originalCode, props.node.updatedCode, monacoLanguage.value, isDiff.value] as const,
+  () => [props.node.originalCode, props.node.updatedCode, languageId.value, isDiff.value] as const,
   async ([originalCode, updatedCode, _language, diff]) => {
     if (props.stream === false || !diff)
       return
@@ -1037,7 +653,7 @@ watch(
     updateDiffCode(
       String(originalCode ?? ''),
       String(updatedCode ?? ''),
-      monacoLanguage.value,
+      languageId.value,
     )
 
     scheduleEditorVisualSync()
@@ -1063,7 +679,7 @@ watch(
       catch {}
     }
 
-    updateCode(newCode, monacoLanguage.value)
+    updateCode(newCode, languageId.value)
 
     if (isExpanded.value)
       scheduleEditorVisualSync()
@@ -1278,12 +894,12 @@ async function runEditorCreation(el: HTMLElement) {
   if (isDiff.value) {
     safeClean()
     if (createDiffEditor)
-      await createDiffEditor(el as HTMLElement, String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), monacoLanguage.value)
+      await createDiffEditor(el as HTMLElement, String(props.node.originalCode ?? ''), String(props.node.updatedCode ?? ''), languageId.value)
     else
-      await createEditor(el as HTMLElement, props.node.code, monacoLanguage.value)
+      await createEditor(el as HTMLElement, props.node.code, languageId.value)
   }
   else {
-    await createEditor(el as HTMLElement, props.node.code, monacoLanguage.value)
+    await createEditor(el as HTMLElement, props.node.code, languageId.value)
   }
 
   const editor = isDiff.value ? getDiffEditorView() : getEditorView()
@@ -1343,8 +959,8 @@ function ensureEditorCreation(el: HTMLElement) {
 
 // 延迟创建编辑器：仅在可见且准备就绪时创建，避免无意义的初始化
 const stopCreateEditorWatch = watch(
-  () => [codeEditor.value, isDiff.value, props.stream, props.loading, monacoReady.value, viewportReady.value] as const,
-  async ([el, _isDiff, stream, loading, _monacoReady, visible]) => {
+  () => [codeEditor.value, isDiff.value, props.stream, props.loading, runtimeReady.value, viewportReady.value] as const,
+  async ([el, _isDiff, stream, loading, _runtimeReady, visible]) => {
     if (!el || !createEditor)
       return
     if (!visible)
@@ -1387,7 +1003,6 @@ watch(
     try {
       editorCreated.value = false
       createEditorPromise = null
-      clearInlineFoldProxies()
       safeClean()
       await nextTick()
       await ensureEditorCreation(codeEditor.value as HTMLElement)
@@ -1421,8 +1036,8 @@ function addRuntimeLanguage(languages: string[], language: unknown) {
     return
 
   const canonical = normalizeLanguageIdentifier(language)
-  const monacoId = resolveMonacoLanguageId(canonical)
-  for (const value of [canonical, monacoId]) {
+  const languageId = resolveLanguageId(canonical)
+  for (const value of [canonical, languageId]) {
     if (value && !languages.includes(value))
       languages.push(value)
   }
@@ -1447,7 +1062,7 @@ const runtimeMonacoLanguages = computed(() => {
 
   addRuntimeLanguage(languages, props.node.language)
   addRuntimeLanguage(languages, codeLanguage.value)
-  addRuntimeLanguage(languages, monacoLanguage.value)
+  addRuntimeLanguage(languages, languageId.value)
   addRuntimeLanguage(languages, 'plaintext')
   return languages
 })
@@ -1492,7 +1107,7 @@ function themeUpdate() {
     return
   }
 
-  void scheduleGlobalMonacoTheme(setTheme, themeToSet)
+  void Promise.resolve(setTheme(themeToSet))
     .then(syncPresentation)
     .catch(() => {})
 }
@@ -1561,7 +1176,7 @@ const preFallbackMetrics = computed(() => {
   const fontFamily = typeof raw?.fontFamily === 'string' && raw.fontFamily.trim()
     ? raw.fontFamily.trim()
     : defaultPreFallbackFontFamily
-  const padding = readMonacoPadding(raw?.padding)
+  const padding = readPadding(raw?.padding)
   const defaultPadding = isDiff.value ? 0 : 8
   const hasConfiguredPadding = Boolean(raw?.padding && typeof raw.padding === 'object')
   const tabSize = readPositiveNumber(raw?.tabSize) ?? 4
@@ -1721,19 +1336,17 @@ const monacoStructuralSignature = computed(() => JSON.stringify({
   originalEditable: resolvedMonacoOptions.value?.originalEditable ?? false,
 }))
 
-// Watch for monacoOptions changes (deep) and try to update editor options or
-// recreate the editor when necessary.
+// Runtime options are fixed in 2.0.0 (monacoOptions prop removed); the editor
+// simply receives the latest computed defaults.
 watch(
-  () => [props.monacoOptions, viewportReady.value],
+  () => [viewportReady.value],
   () => {
     syncRuntimeMonacoOptions()
     if (!createEditor || !viewportReady.value)
       return
 
     const ed = isDiff.value ? getDiffEditorView() : getEditorView()
-    const applying = typeof resolvedMonacoOptions.value?.fontSize === 'number'
-      ? resolvedMonacoOptions.value.fontSize
-      : (Number.isFinite(codeFontSize.value) ? (codeFontSize.value as number) : undefined)
+    const applying = Number.isFinite(codeFontSize.value) ? (codeFontSize.value as number) : undefined
     if (typeof applying === 'number' && Number.isFinite(applying) && applying > 0) {
       ed?.updateOptions?.({ fontSize: applying })
     }
@@ -1750,12 +1363,12 @@ watch(
     props.themes,
     resolvedMonacoOptions.value?.theme,
     resolvedMonacoOptions.value?.diffAppearance,
-    monacoReady.value,
+    runtimeReady.value,
     editorCreated.value,
     viewportReady.value,
   ] as const,
   () => {
-    if (!monacoReady.value)
+    if (!runtimeReady.value)
       return
     themeUpdate()
   },
@@ -1763,7 +1376,7 @@ watch(
 )
 
 watch(
-  () => [monacoStructuralSignature.value, monacoReady.value, viewportReady.value] as const,
+  () => [monacoStructuralSignature.value, runtimeReady.value, viewportReady.value] as const,
   async ([nextSignature, ready, visible], [prevSignature]) => {
     syncRuntimeMonacoOptions()
     if (!isDiff.value)
@@ -1782,7 +1395,6 @@ watch(
     try {
       editorCreated.value = false
       createEditorPromise = null
-      clearInlineFoldProxies()
       safeClean()
       await nextTick()
       await ensureEditorCreation(codeEditor.value as HTMLElement)
@@ -1829,7 +1441,6 @@ onUnmounted(() => {
   isUnmounted = true
   // Ensure any RAF loops are stopped and editor resources are released
   stopExpandAutoResize()
-  clearInlineFoldProxies()
   if (deferredEditorVisualSyncRafId != null) {
     safeCancelRaf(deferredEditorVisualSyncRafId)
     deferredEditorVisualSyncRafId = null
@@ -2091,15 +1702,15 @@ onUnmounted(() => {
   --markstream-diff-removed-inline-border: transparent;
   --markstream-diff-added-gutter: linear-gradient(
     90deg,
-    var(--markstream-diff-added-fg) 0 var(--stream-monaco-gutter-marker-width, 4px),
-    rgb(20 184 166 / 0.08) var(--stream-monaco-gutter-marker-width, 4px) 100%
+    var(--markstream-diff-added-fg) 0 4px,
+    rgb(20 184 166 / 0.08) 4px 100%
   );
   --markstream-diff-removed-gutter: repeating-linear-gradient(
         180deg,
         var(--markstream-diff-removed-fg) 0 2px,
         transparent 2px 4px
       )
-      left / var(--stream-monaco-gutter-marker-width, 4px) 100% no-repeat,
+      left / 4px 100% no-repeat,
     linear-gradient(90deg, rgb(255 54 88 / 0.08) 0 100%);
   --markstream-diff-added-line-fill: rgb(231 248 244 / 0.96);
   --markstream-diff-removed-line-fill: rgb(255 241 241 / 0.98);
@@ -2151,15 +1762,15 @@ onUnmounted(() => {
   --markstream-diff-removed-inline-border: transparent;
   --markstream-diff-added-gutter: linear-gradient(
     90deg,
-    var(--markstream-diff-added-fg) 0 var(--stream-monaco-gutter-marker-width, 4px),
-    rgb(94 234 212 / 0.2) var(--stream-monaco-gutter-marker-width, 4px) 100%
+    var(--markstream-diff-added-fg) 0 4px,
+    rgb(94 234 212 / 0.2) 4px 100%
   );
   --markstream-diff-removed-gutter: repeating-linear-gradient(
         180deg,
         var(--markstream-diff-removed-fg) 0 2px,
         transparent 2px 4px
       )
-      left / var(--stream-monaco-gutter-marker-width, 4px) 100% no-repeat,
+      left / 4px 100% no-repeat,
     linear-gradient(90deg, rgb(253 164 175 / 0.18) 0 100%);
   --markstream-diff-added-line-fill: linear-gradient(
     90deg,
@@ -2321,22 +1932,6 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
   color: var(--markstream-diff-editor-fg);
 }
 
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .monaco-editor-background),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .margin),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .lines-content) {
-  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg)) !important;
-}
-
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .margin),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .view-lines),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .view-line),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .view-line span),
-.code-block-container.is-plain-text:not(.is-diff) :deep(.monaco-editor .line-numbers) {
-  color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg)) !important;
-}
-
 .code-block-container.is-diff .code-block-header {
   padding: 18px 20px 14px;
   color: var(--markstream-diff-shell-fg);
@@ -2365,64 +1960,6 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
     var(--markstream-diff-editor-bg) 90%,
     var(--markstream-diff-editor-fg) 10%
   );
-  --stream-monaco-editor-bg: var(--markstream-diff-editor-bg);
-  --stream-monaco-editor-fg: var(--markstream-diff-editor-fg);
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg);
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg);
-  --stream-monaco-frame-radius: 18px;
-  --stream-monaco-fixed-editor-bg: var(--markstream-diff-panel-bg-strong);
-  --stream-monaco-frame-border: var(--markstream-diff-frame-border);
-  --stream-monaco-frame-shadow: var(--markstream-diff-frame-shadow);
-  --stream-monaco-panel-bg: var(--markstream-diff-panel-bg);
-  --stream-monaco-panel-bg-soft: var(--markstream-diff-panel-bg-soft);
-  --stream-monaco-panel-bg-strong: var(--markstream-diff-panel-bg-strong);
-  --stream-monaco-panel-border: var(--markstream-diff-panel-border);
-  --stream-monaco-pane-divider: var(--markstream-diff-pane-divider);
-  --stream-monaco-gutter-bg: var(--markstream-diff-gutter-bg);
-  --stream-monaco-gutter-guide: var(--markstream-diff-gutter-guide);
-  --stream-monaco-gutter-marker-width: 4px;
-  --stream-monaco-gutter-gap: var(--markstream-diff-gutter-gap);
-  --stream-monaco-line-number: var(--markstream-diff-line-number);
-  --stream-monaco-line-number-active: var(--markstream-diff-line-number-active);
-  --stream-monaco-line-number-left: calc(
-    var(--stream-monaco-gutter-marker-width) + var(--stream-monaco-gutter-gap)
-  );
-  --stream-monaco-line-number-width: 36px;
-  --stream-monaco-line-number-align: center;
-  --stream-monaco-original-margin-width: calc(
-    var(--stream-monaco-gutter-marker-width) +
-      (var(--stream-monaco-gutter-gap) * 2) +
-      var(--stream-monaco-line-number-width)
-  );
-  --stream-monaco-original-scrollable-left: var(--stream-monaco-original-margin-width);
-  --stream-monaco-original-scrollable-width: calc(
-    100% - var(--stream-monaco-original-margin-width)
-  );
-  --stream-monaco-modified-margin-width: calc(
-    var(--stream-monaco-gutter-marker-width) +
-      (var(--stream-monaco-gutter-gap) * 2) +
-      var(--stream-monaco-line-number-width)
-  );
-  --stream-monaco-modified-scrollable-left: var(--stream-monaco-modified-margin-width);
-  --stream-monaco-modified-scrollable-width: calc(
-    100% - var(--stream-monaco-modified-margin-width)
-  );
-  --stream-monaco-added-fg: var(--markstream-diff-added-fg);
-  --stream-monaco-removed-fg: var(--markstream-diff-removed-fg);
-  --stream-monaco-added-line: var(--markstream-diff-added-line);
-  --stream-monaco-removed-line: var(--markstream-diff-removed-line);
-  --stream-monaco-added-inline: var(--markstream-diff-added-inline);
-  --stream-monaco-removed-inline: var(--markstream-diff-removed-inline);
-  --stream-monaco-added-outline: transparent;
-  --stream-monaco-removed-outline: transparent;
-  --stream-monaco-added-inline-border: var(--markstream-diff-added-inline-border);
-  --stream-monaco-removed-inline-border: var(--markstream-diff-removed-inline-border);
-  --stream-monaco-added-line-shadow: none;
-  --stream-monaco-removed-line-shadow: none;
-  --stream-monaco-added-gutter: var(--markstream-diff-added-gutter);
-  --stream-monaco-removed-gutter: var(--markstream-diff-removed-gutter);
-  --stream-monaco-added-line-fill: var(--markstream-diff-added-line-fill);
-  --stream-monaco-removed-line-fill: var(--markstream-diff-removed-line-fill);
 }
 
 .code-block-container.is-rendering .code-height-placeholder{
@@ -2510,178 +2047,6 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
   display: block;
   width: 100%;
   height: 100%;
-}
-
-.code-block-container ::v-deep .monaco-diff-editor .diffOverview{
-  background-color: var(--vscode-editor-background);
-}
-
-::v-deep .stream-monaco-diff-root .monaco-diff-editor .diffOverview,
-::v-deep .stream-monaco-diff-root .decorationsOverviewRuler {
-  display: none !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  overflow: hidden !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-diff-editor {
-  border: 0 !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center:not(.stream-monaco-clickable) > *:not(a) {
-  visibility: hidden !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-editor .diff-hidden-lines-compact .text {
-  opacity: 0 !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root {
-  --stream-monaco-gutter-gap: var(--markstream-diff-gutter-gap) !important;
-  --stream-monaco-line-number: var(--markstream-diff-line-number) !important;
-  --stream-monaco-line-number-active: var(--markstream-diff-line-number-active) !important;
-  --stream-monaco-added-fg: var(--markstream-diff-added-fg) !important;
-  --stream-monaco-removed-fg: var(--markstream-diff-removed-fg) !important;
-  --stream-monaco-added-line: var(--markstream-diff-added-line) !important;
-  --stream-monaco-removed-line: var(--markstream-diff-removed-line) !important;
-  --stream-monaco-added-inline: var(--markstream-diff-added-inline) !important;
-  --stream-monaco-removed-inline: var(--markstream-diff-removed-inline) !important;
-  --stream-monaco-added-inline-border: var(--markstream-diff-added-inline-border) !important;
-  --stream-monaco-removed-inline-border: var(--markstream-diff-removed-inline-border) !important;
-  --stream-monaco-added-line-fill: var(--markstream-diff-added-line-fill) !important;
-  --stream-monaco-removed-line-fill: var(--markstream-diff-removed-line-fill) !important;
-  --stream-monaco-added-gutter: var(--markstream-diff-added-gutter) !important;
-  --stream-monaco-removed-gutter: var(--markstream-diff-removed-gutter) !important;
-  --stream-monaco-added-line-shadow: none !important;
-  --stream-monaco-removed-line-shadow: none !important;
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center:not(.stream-monaco-unchanged-bridge-source),
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge {
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--stream-monaco-unchanged-fg) !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge {
-  right: calc(
-    var(--stream-monaco-gutter-marker-width) - var(--stream-monaco-unchanged-rail-width) / 2 + (var(--stream-monaco-gutter-gap) * 2)
-  ) !important;
-  width: auto !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:hover,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:focus-visible,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary.stream-monaco-focus-visible {
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--markstream-diff-unchanged-fg) !important;
-  padding-left: calc(
-    var(--stream-monaco-gutter-marker-width) + (var(--stream-monaco-gutter-gap) * 2)
-  ) !important;
-  padding-right: calc(
-    var(--stream-monaco-gutter-marker-width) + (var(--stream-monaco-gutter-gap) * 2)
-  ) !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge.stream-monaco-diff-unchanged-bridge-line-info .stream-monaco-unchanged-rail,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:hover,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:focus-visible,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal.stream-monaco-focus-visible {
-  background: var(--stream-monaco-unchanged-bg) !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail {
-  border-right-color: var(--markstream-diff-unchanged-divider) !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal {
-  border-bottom-color: transparent !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail.stream-monaco-unchanged-rail-both .stream-monaco-unchanged-reveal:first-child {
-  border-bottom-color: var(--markstream-diff-unchanged-divider) !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail.stream-monaco-unchanged-rail-top-only .stream-monaco-unchanged-reveal,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail.stream-monaco-unchanged-rail-bottom-only .stream-monaco-unchanged-reveal {
-  border-bottom: 0 !important;
-}
-
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center .stream-monaco-unchanged-meta,
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center .stream-monaco-unchanged-count,
-.code-block-container ::v-deep .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center .stream-monaco-unchanged-metadata-label,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-meta,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-count,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-metadata-label,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:hover,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:focus-visible,
-.code-block-container ::v-deep .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal.stream-monaco-focus-visible {
-  color: var(--markstream-diff-unchanged-fg) !important;
-}
-
-.code-block-container ::v-deep .monaco-diff-editor:not(.side-by-side) .editor.original .diff-hidden-lines .center {
-  align-items: center;
-  justify-content: center;
-}
-
-.code-block-container ::v-deep .monaco-diff-editor:not(.side-by-side) .editor.original .diff-hidden-lines .center > div:first-child {
-  align-items: center;
-  display: flex;
-  justify-content: center !important;
-  min-width: 100%;
-  width: 100% !important;
-}
-
-.code-block-container ::v-deep .monaco-diff-editor:not(.side-by-side) .editor.modified .diff-hidden-lines .center > div:first-child {
-  display: none !important;
-}
-
-.code-block-container ::v-deep .markstream-inline-fold-proxy {
-  align-items: center;
-  appearance: none;
-  background: transparent;
-  border: 0;
-  border-radius: 4px;
-  box-shadow: none;
-  color: var(--vscode-diffEditor-unchangedRegionForeground, currentColor);
-  cursor: pointer;
-  display: inline-flex;
-  height: 16px;
-  justify-content: center;
-  padding: 0;
-  width: 16px;
-}
-
-.code-block-container ::v-deep .markstream-inline-fold-proxy:hover,
-.code-block-container ::v-deep .markstream-inline-fold-proxy:focus-visible {
-  color: var(--vscode-editorLink-activeForeground, var(--vscode-diffEditor-unchangedRegionForeground, currentColor));
-}
-
-.code-block-container ::v-deep .markstream-inline-fold-proxy:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder, currentColor);
-  outline-offset: 1px;
-}
-
-.code-block-container ::v-deep .markstream-inline-fold-proxy .codicon {
-  color: inherit;
-  font-size: 16px;
-  height: 16px;
-  line-height: 16px;
-  width: 16px;
 }
 
 @container (max-width: 640px) {

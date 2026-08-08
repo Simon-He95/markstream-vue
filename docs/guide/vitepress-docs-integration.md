@@ -35,10 +35,10 @@ For docs sites, `content` is usually the right default:
 ## 2. Install the smallest docs-friendly set
 
 ```bash
-pnpm add markstream-vue stream-markdown
+pnpm add markstream-vue
 ```
 
-That gives you a good default for docs sites: regular Markdown rendering plus lightweight highlighted code blocks.
+That gives you a good default for docs sites: regular Markdown rendering. Enhanced code blocks need `stream-diffs`.
 
 Add more peers only if your docs actually need them:
 

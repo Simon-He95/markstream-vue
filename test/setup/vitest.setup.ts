@@ -80,6 +80,7 @@ vi.mock('stream-monaco', () => ({
 
 vi.mock('stream-diffs', () => ({
   useMonaco: streamMonacoHelpers.useMonaco,
+  preloadStreamDiffsWorkers: vi.fn(async () => {}),
   preloadMonacoWorkers: vi.fn(async () => {}),
   detectLanguage: () => 'plaintext',
 }))

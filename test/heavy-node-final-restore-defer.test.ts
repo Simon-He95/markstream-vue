@@ -127,7 +127,7 @@ describe('final restore heavy-node deferral', () => {
   afterEach(async () => {
     const infographic = await import('../src/components/InfographicBlockNode/infographic')
     infographic.disableInfographic()
-    vi.doUnmock('../src/components/CodeBlockNode/monaco')
+    vi.doUnmock('../src/components/CodeBlockNode/streamDiffs')
     vi.doUnmock('../src/components/D2BlockNode/d2')
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
@@ -249,14 +249,12 @@ describe('final restore heavy-node deferral', () => {
     }
   })
 
-  it.each(['monaco', 'shiki'] as const)('does not load the %s runtime for an offscreen history block', async (codeRenderer) => {
+  it('does not load the stream-diffs runtime for an offscreen history block', async () => {
     const runtimeLoader = vi.fn(async () => null)
-    vi.doMock('../src/components/CodeBlockNode/monaco', () => ({
-      getUseMonaco: runtimeLoader,
+    vi.doMock('../src/components/CodeBlockNode/streamDiffs', () => ({
+      getStreamDiffsRuntime: runtimeLoader,
     }))
-    const component = codeRenderer === 'shiki'
-      ? (await import('../src/components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.vue')).default
-      : (await import('../src/components/CodeBlockNode/CodeBlockNode.vue')).default
+    const component = (await import('../src/components/CodeBlockNode/CodeBlockNode.vue')).default
     const wrapper = await mountWithHistoryDeferral(component, {
       node: {
         type: 'code_block',
@@ -491,12 +489,12 @@ describe('final restore heavy-node deferral', () => {
       setTheme: vi.fn(async () => {}),
     }
     const useMonaco = vi.fn(() => monacoHelpers)
-    const monacoLoader = vi.fn(async () => ({
+    const streamDiffsLoader = vi.fn(async () => ({
       useMonaco,
       detectLanguage: () => 'typescript',
     }))
-    vi.doMock('../src/components/CodeBlockNode/monaco', () => ({
-      getUseMonaco: monacoLoader,
+    vi.doMock('../src/components/CodeBlockNode/streamDiffs', () => ({
+      getStreamDiffsRuntime: streamDiffsLoader,
     }))
 
     try {
@@ -514,7 +512,7 @@ describe('final restore heavy-node deferral', () => {
           content: createMixedHistoryContent(),
           final: true,
           mode: 'chat',
-          codeRenderer: 'monaco',
+          codeRenderer: 'stream-diffs',
           smoothStreaming: false,
           batchRendering: false,
           fade: false,
@@ -556,7 +554,7 @@ describe('final restore heavy-node deferral', () => {
       }, { timeout: 3000 })
 
       expect(countHistoryImageRequests()).toBe(0)
-      expect(monacoLoader).toHaveBeenCalledTimes(0)
+      expect(streamDiffsLoader).toHaveBeenCalledTimes(0)
       expect(katexLoader).toHaveBeenCalledTimes(1)
       expect(katexRender).toHaveBeenCalledTimes(1)
       expect(mermaidLoader).toHaveBeenCalledTimes(0)
@@ -565,7 +563,7 @@ describe('final restore heavy-node deferral', () => {
       await drainCurrentlyQueuedIdleCallbacks()
 
       expect(countHistoryImageRequests()).toBe(0)
-      expect(monacoLoader).toHaveBeenCalledTimes(0)
+      expect(streamDiffsLoader).toHaveBeenCalledTimes(0)
       expect(katexLoader).toHaveBeenCalledTimes(1)
       expect(mermaidLoader).toHaveBeenCalledTimes(0)
       expect(infographicLoader).toHaveBeenCalledTimes(0)
@@ -609,7 +607,7 @@ describe('final restore heavy-node deferral', () => {
         const enhancedInfographicTarget = wrapper.get('[data-markstream-infographic="1"]')
         expect(countHistoryImageRequests()).toBe(1)
         expect(image.attributes('src')).toBe('https://example.com/history-integration.png')
-        expect(monacoLoader).toHaveBeenCalledTimes(1)
+        expect(streamDiffsLoader).toHaveBeenCalledTimes(1)
         expect(monacoHelpers.createEditor).toHaveBeenCalledTimes(1)
         expect(enhancedCodeTarget.attributes('data-markstream-enhanced')).toBe('true')
         expect(enhancedCodeTarget.text()).toContain('code-semantic')
@@ -635,7 +633,7 @@ describe('final restore heavy-node deferral', () => {
       katex.disableKatex()
       mermaid.disableMermaid()
       infographic.disableInfographic()
-      vi.doUnmock('../src/components/CodeBlockNode/monaco')
+      vi.doUnmock('../src/components/CodeBlockNode/streamDiffs')
       if (originalGetBBox) {
         Object.defineProperty(SVGElement.prototype, 'getBBox', {
           configurable: true,

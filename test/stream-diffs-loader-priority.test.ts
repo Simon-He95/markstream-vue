@@ -1,30 +1,29 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * Verifies the dual-runtime loader contract shared by all framework packages:
- * `stream-diffs` is preferred (smaller, no monaco-editor), `stream-monaco`
- * is the fallback, and a null result lets callers degrade to <pre> rendering.
+ * Verifies the stream-diffs-only loader contract shared by all framework
+ * packages: `stream-diffs` is the sole enhanced-code-block runtime, and a
+ * null result lets callers degrade to <pre> rendering.
  */
 
 interface LoaderModule {
   useMonaco?: (options?: unknown) => unknown
   preloadMonacoWorkers?: () => Promise<unknown>
-  getOrCreateHighlighter?: (...args: unknown[]) => Promise<unknown>
   default?: LoaderModule
 }
 
 const LOADERS = [
-  ['react', '../../packages/markstream-react/src/components/CodeBlockNode/monaco.ts'],
-  ['svelte', '../../packages/markstream-svelte/src/optional/monaco.ts'],
-  ['angular', '../../packages/markstream-angular/src/optional/monaco.ts'],
-  ['vue2', '../../packages/markstream-vue2/src/components/CodeBlockNode/monaco.ts'],
+  ['react', '../../packages/markstream-react/src/components/CodeBlockNode/monaco.ts', 'getStreamDiffsRuntime'],
+  ['svelte', '../../packages/markstream-svelte/src/optional/monaco.ts', 'getUseMonaco'],
+  ['angular', '../../packages/markstream-angular/src/optional/monaco.ts', 'getUseMonaco'],
+  ['vue2', '../../packages/markstream-vue2/src/components/CodeBlockNode/streamDiffs.ts', 'getStreamDiffsRuntime'],
 ] as const
 
 function runtimeModule(useMonacoResult: Record<string, string>) {
   const runtime = {
     useMonaco: () => useMonacoResult,
+    preloadStreamDiffsWorkers: async () => {},
     preloadMonacoWorkers: async () => {},
-    getOrCreateHighlighter: async () => ({ codeToTokens: () => ({}) }),
   }
   // Loaders normalize through `mod.default ?? mod`, so expose both shapes.
   return {
@@ -33,56 +32,35 @@ function runtimeModule(useMonacoResult: Record<string, string>) {
   }
 }
 
-async function getLoader(loaderPath: string) {
+async function getLoader(loaderPath: string, exportName: string) {
   vi.resetModules()
-  const { getUseMonaco } = await import(loaderPath) as {
-    getUseMonaco: () => Promise<LoaderModule | null>
-  }
-  return getUseMonaco
+  const mod = await import(loaderPath) as Record<string, () => Promise<LoaderModule | null>>
+  const loader = mod[exportName]
+  expect(typeof loader).toBe('function')
+  return loader
 }
 
 afterEach(() => {
   vi.resetModules()
 })
 
-describe('dual-runtime monaco loader (stream-diffs preferred)', () => {
-  it.each(LOADERS)('%s loader picks stream-diffs when both runtimes are available', async (_name, loaderPath) => {
+describe('stream-diffs-only code block loader', () => {
+  it.each(LOADERS)('%s loader loads stream-diffs when available', async (_name, loaderPath, exportName) => {
     vi.doMock('stream-diffs', () => runtimeModule({ runtime: 'stream-diffs' }))
-    vi.doMock('stream-monaco', () => runtimeModule({ runtime: 'stream-monaco' }))
-    vi.doMock('stream-monaco/legacy', () => runtimeModule({ runtime: 'stream-monaco' }))
 
-    const getUseMonaco = await getLoader(loaderPath)
-    const mod = await getUseMonaco()
+    const loader = await getLoader(loaderPath, exportName)
+    const mod = await loader()
     expect(mod).not.toBeNull()
     expect(mod?.useMonaco?.()).toEqual({ runtime: 'stream-diffs' })
   })
 
-  it.each(LOADERS)('%s loader falls back to stream-monaco when stream-diffs is absent', async (_name, loaderPath) => {
+  it.each(LOADERS)('%s loader returns null when stream-diffs is absent', async (_name, loaderPath, exportName) => {
     vi.doMock('stream-diffs', () => {
       throw new Error('stream-diffs not installed')
     })
-    vi.doMock('stream-monaco', () => runtimeModule({ runtime: 'stream-monaco' }))
-    vi.doMock('stream-monaco/legacy', () => runtimeModule({ runtime: 'stream-monaco' }))
 
-    const getUseMonaco = await getLoader(loaderPath)
-    const mod = await getUseMonaco()
-    expect(mod).not.toBeNull()
-    expect(mod?.useMonaco?.()).toEqual({ runtime: 'stream-monaco' })
-  })
-
-  it.each(LOADERS)('%s loader returns null when neither runtime is installed', async (_name, loaderPath) => {
-    vi.doMock('stream-diffs', () => {
-      throw new Error('stream-diffs not installed')
-    })
-    vi.doMock('stream-monaco', () => {
-      throw new Error('stream-monaco not installed')
-    })
-    vi.doMock('stream-monaco/legacy', () => {
-      throw new Error('stream-monaco not installed')
-    })
-
-    const getUseMonaco = await getLoader(loaderPath)
-    const mod = await getUseMonaco()
+    const loader = await getLoader(loaderPath, exportName)
+    const mod = await loader()
     expect(mod).toBeNull()
   })
 })

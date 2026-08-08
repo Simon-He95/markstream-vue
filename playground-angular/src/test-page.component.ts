@@ -7,13 +7,13 @@ import { CommonModule } from '@angular/common'
 import { ChangeDetectionStrategy, Component, computed, EventEmitter, inject, Output, signal, ViewChild } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import {
+  CodeBlockNode,
   disableKatex,
   disableMermaid,
   enableKatex,
   enableMermaid,
   isKatexEnabled,
   isMermaidEnabled,
-  MarkdownCodeBlockNode,
   MarkstreamAngularComponent,
   PreCodeNode,
 } from 'markstream-angular'
@@ -31,29 +31,12 @@ import { ThinkingNodeComponent } from './thinking-node.component'
 
 type SampleId = TestLabSampleId
 type FrameworkId = TestLabFrameworkId
-type RenderMode = 'monaco' | 'pre' | 'markdown'
+type RenderMode = 'stream-diffs' | 'pre' | 'markdown'
 type NoticeType = 'success' | 'error' | 'info'
 
 const CURRENT_FRAMEWORK: FrameworkId = 'angular'
 const DARK_MODE_KEY = 'vmr-test-dark'
 const MAX_URL_LEN = 2000
-const diffHideUnchangedRegions = {
-  enabled: true,
-  contextLineCount: 2,
-  minimumLineCount: 4,
-  revealLineCount: 5,
-} as const
-
-const testPageMonacoOptions = {
-  renderSideBySide: true,
-  useInlineViewWhenSpaceIsLimited: true,
-  maxComputationTime: 0,
-  ignoreTrimWhitespace: false,
-  renderIndicators: true,
-  diffAlgorithm: 'legacy',
-  diffHideUnchangedRegions,
-  hideUnchangedRegions: diffHideUnchangedRegions,
-} as const
 
 function readStoredString(key: string, fallback: string) {
   if (typeof window === 'undefined')
@@ -99,7 +82,7 @@ function readCheckedInput(event: Event, fallback = false) {
 }
 
 function normalizeRenderMode(value: string | null | undefined): RenderMode {
-  return value === 'pre' || value === 'markdown' ? value : 'monaco'
+  return value === 'pre' || value === 'markdown' ? value : 'stream-diffs'
 }
 
 function normalizeSampleId(value: string | null | undefined): SampleId {
@@ -399,7 +382,6 @@ function basePageUrl() {
                   [typewriter]="typewriter()"
                   [codeBlockStream]="codeBlockStream()"
                   [renderCodeBlocksAsPre]="renderMode() === 'pre'"
-                  [codeBlockMonacoOptions]="testPageMonacoOptions"
                   [parseOptions]="parseOptions()"
                   [customHtmlTags]="thinkingTags"
                   [customComponents]="customComponents()"
@@ -581,8 +563,8 @@ function basePageUrl() {
               <label class="select-control">
                 <span>代码块模式</span>
                 <select [value]="renderMode()" (change)="updateRenderMode($event)">
-                  <option value="monaco">Monaco</option>
-                  <option value="markdown">MarkdownCodeBlock</option>
+                  <option value="stream-diffs">Stream Diffs</option>
+                  <option value="markdown">CodeBlockNode</option>
                   <option value="pre">PreCodeNode</option>
                 </select>
               </label>
@@ -636,7 +618,6 @@ export class TestPageComponent implements OnInit, OnDestroy {
   readonly sampleCards = TEST_LAB_SAMPLES
   readonly sandboxFrameworks = testSandboxFrameworks
   readonly thinkingTags = ['thinking'] as const
-  readonly testPageMonacoOptions = testPageMonacoOptions
 
   readonly selectedSampleId = signal<SampleId>(normalizeSampleId(readStoredString('vmr-test-sample', 'baseline')))
   readonly input = signal(this.resolveInitialSample().content)
@@ -648,7 +629,7 @@ export class TestPageComponent implements OnInit, OnDestroy {
   readonly isStreaming = signal(false)
   readonly streamSpeed = signal(clampInt(readStoredNumber('vmr-test-stream-speed', 4), 1, 80, 4))
   readonly streamInterval = signal(clampInt(readStoredNumber('vmr-test-stream-interval', 24), 8, 300, 24))
-  readonly renderMode = signal<RenderMode>(normalizeRenderMode(readStoredString('vmr-test-render-mode', 'monaco')))
+  readonly renderMode = signal<RenderMode>(normalizeRenderMode(readStoredString('vmr-test-render-mode', 'stream-diffs')))
   readonly codeBlockStream = signal(readStoredBoolean('vmr-test-code-stream', true))
   readonly viewportPriority = signal(readStoredBoolean('vmr-test-viewport-priority', true))
   readonly batchRendering = signal(readStoredBoolean('vmr-test-batch-rendering', true))
@@ -703,10 +684,10 @@ export class TestPageComponent implements OnInit, OnDestroy {
   readonly previewThemeButtonLabel = computed(() => this.isDark() ? '切换浅色' : '切换暗色')
   readonly renderModeLabel = computed(() => {
     if (this.renderMode() === 'markdown')
-      return 'MarkdownCodeBlock'
+      return 'CodeBlockNode'
     if (this.renderMode() === 'pre')
       return 'PreCodeNode'
-    return 'Monaco'
+    return 'Stream Diffs'
   })
 
   readonly streamFeatureSummaryLabel = computed(() => {
@@ -731,7 +712,7 @@ export class TestPageComponent implements OnInit, OnDestroy {
     if (this.renderMode() === 'pre')
       components.code_block = PreCodeNode as Type<any>
     else if (this.renderMode() === 'markdown')
-      components.code_block = MarkdownCodeBlockNode as Type<any>
+      components.code_block = CodeBlockNode as Type<any>
     return components
   })
 

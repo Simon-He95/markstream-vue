@@ -42,31 +42,26 @@ describe('rendererModeDefaults', () => {
       mode: 'docs',
       codeRenderer: undefined,
       renderCodeBlocksAsPre: undefined,
-    })).toBe('monaco')
+    })).toBe('stream-diffs')
     expect(resolveNodeRendererCodeRenderer({
       mode: 'chat',
       codeRenderer: undefined,
       renderCodeBlocksAsPre: undefined,
     })).toBe('pre')
     expect(resolveNodeRendererCodeRenderer({
-      mode: 'docs',
-      codeRenderer: 'shiki',
-      renderCodeBlocksAsPre: undefined,
-    })).toBe('shiki')
-    expect(resolveNodeRendererCodeRenderer({
       mode: 'chat',
-      codeRenderer: 'shiki',
+      codeRenderer: 'stream-diffs',
       renderCodeBlocksAsPre: false,
-    })).toBe('shiki')
+    })).toBe('stream-diffs')
     expect(resolveNodeRendererCodeRenderer({
       mode: 'docs',
-      codeRenderer: 'monaco',
+      codeRenderer: 'stream-diffs',
       renderCodeBlocksAsPre: true,
     })).toBe('pre')
     expect(resolveNodeRendererCodeRenderer({
       mode: 'chat',
       codeRenderer: undefined,
       renderCodeBlocksAsPre: false,
-    })).toBe('monaco')
+    })).toBe('stream-diffs')
   })
 })

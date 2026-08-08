@@ -151,7 +151,6 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   @Input() codeBlockStream = true
   @Input() codeBlockDarkTheme?: NodeRendererProps['codeBlockDarkTheme']
   @Input() codeBlockLightTheme?: NodeRendererProps['codeBlockLightTheme']
-  @Input() codeBlockMonacoOptions?: NodeRendererProps['codeBlockMonacoOptions']
   @Input() renderCodeBlocksAsPre = false
   @Input() codeBlockMinWidth?: string | number
   @Input() codeBlockMaxWidth?: string | number
@@ -958,7 +957,6 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
       final: this.effectiveFinal,
       isDark: this.isDark,
       renderCodeBlocksAsPre: this.renderCodeBlocksAsPre,
-      monacoOptions: this.codeBlockMonacoOptions,
       d2ThemeId: this.d2Props?.themeId ?? null,
       d2DarkThemeId: this.d2Props?.darkThemeId ?? null,
       showTooltips: this.showTooltips,

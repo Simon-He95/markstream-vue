@@ -2,8 +2,6 @@
 
 This project is built with help from several open source projects and libraries. Big thanks to the authors and maintainers of:
 
-- [stream-monaco](https://github.com/Simon-He95/stream-monaco)
-- [stream-markdown](https://github.com/Simon-He95/stream-markdown)
 - [mermaid](https://mermaid-js.github.io/mermaid)
 - [shiki](https://github.com/shikijs/shiki)
 - [markdown-it-ts](https://github.com/Simon-He95/markdown-it-ts)

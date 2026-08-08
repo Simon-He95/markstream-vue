@@ -1,6 +1,6 @@
 ---
 title: Angular 快速开始
-description: 在 Angular 20+ standalone 应用中快速使用 markstream-angular，覆盖 signal 内容、流式 Markdown、Mermaid、KaTeX、Monaco 选项和 alpha API 注意事项。
+description: 在 Angular 20+ standalone 应用中快速使用 markstream-angular，覆盖 signal 内容、流式 Markdown、Mermaid、KaTeX、stream-diffs 增强代码块选项和 alpha API 注意事项。
 keywords:
   - markstream-angular 快速开始
   - Angular 流式 Markdown 快速开始
@@ -86,16 +86,10 @@ export class StreamingDemoComponent {
 ## TypeScript Props
 
 ```ts
-import type { CodeBlockMonacoOptions, NodeRendererProps } from 'markstream-angular'
-
-const monacoOptions: CodeBlockMonacoOptions = {
-  fontSize: 13,
-  wordWrap: 'on',
-}
+import type { NodeRendererProps } from 'markstream-angular'
 
 const props: NodeRendererProps = {
   content: '# Angular',
-  codeBlockMonacoOptions: monacoOptions,
   final: true,
 }
 ```

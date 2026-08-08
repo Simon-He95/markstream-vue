@@ -172,36 +172,40 @@ async function main() {
       const slot = homeRenderer.locator('[data-node-type="code_block"]').filter({ hasText: expected.source }).first()
       const shell = slot.locator('.code-block-container')
       await shell.waitFor({ timeout: 30000 })
-      await shell.locator('.monaco-editor').first().waitFor({ state: 'attached', timeout: 30000 })
+      await shell.locator('.stream-diffs-shell').first().waitFor({ state: 'attached', timeout: 30000 })
       const state = await slot.evaluate((element, source) => ({
         hasBareFallback: Boolean(element.querySelector(':scope > .node-content > pre')),
-        hasMonaco: Boolean(element.querySelector('.monaco-editor')),
+        hasStreamDiffs: Boolean(element.querySelector('.stream-diffs-shell')),
         hasSource: Array.from(element.querySelectorAll('pre code')).some(code => code.textContent?.includes(source)),
       }), expected.source)
       assert(!state.hasBareFallback, `${expected.language} code block permanently degraded to a bare fallback`)
-      assert(state.hasMonaco, `${expected.language} code block did not initialize Monaco`)
+      assert(state.hasStreamDiffs, `${expected.language} code block did not initialize stream-diffs`)
       assert(state.hasSource, `${expected.language} code block lost its streamed source`)
     }
 
     const javascriptBlock = homeRenderer.locator('.code-block-container').filter({ hasText: 'const { app, BrowserWindow }' }).first()
-    await javascriptBlock.locator('.monaco-editor .view-line').first().waitFor({ timeout: 30000 })
+    // stream-diffs renders its finalized surface inside a `diffs-container`
+    // shadow root; the `.stream-diffs-finalized` marker appears once the
+    // stream controller has been finalized and the highlighted surface is up.
+    await javascriptBlock.locator('.stream-diffs-shell .stream-diffs-finalized').first().waitFor({ timeout: 30000 })
     const javascriptState = await javascriptBlock.evaluate((element) => {
-      const tokenColors = new Set(
-        Array.from(element.querySelectorAll('.view-line span[class*="mtk"]'))
-          .map(token => getComputedStyle(token).color),
-      )
+      const finalized = element.querySelector('.stream-diffs-shell .stream-diffs-finalized')
+      const diffsContainer = finalized?.querySelector('diffs-container')
+      const shadowPre = diffsContainer?.shadowRoot?.querySelector('pre')
+      const renderedLineCount = shadowPre?.querySelectorAll('[data-line-type]').length ?? 0
       const fallback = element.querySelector('.code-editor-fallback-surface')
       return {
         hasCode: element.textContent?.includes('mainWindow') && element.textContent.includes('loadURL'),
-        hasMonaco: Boolean(element.querySelector('.monaco-editor')),
-        highlightedTokenColorCount: tokenColors.size,
+        hasStreamDiffs: Boolean(element.querySelector('.stream-diffs-shell')),
+        finalized: Boolean(finalized),
+        renderedLineCount,
         fallbackHidden: !fallback || getComputedStyle(fallback).display === 'none',
       }
     })
     assert(javascriptState.hasCode, 'The JavaScript code block rendered without its source code')
-    assert(javascriptState.hasMonaco, 'The JavaScript code block did not retain its Monaco editor')
-    assert(javascriptState.highlightedTokenColorCount > 2, 'The JavaScript code block has no syntax highlighting')
-    assert(javascriptState.fallbackHidden, 'The code fallback remained visible after Monaco became ready')
+    assert(javascriptState.hasStreamDiffs, 'The JavaScript code block did not retain its stream-diffs editor')
+    assert(javascriptState.finalized && javascriptState.renderedLineCount > 0, 'The JavaScript code block did not finalize its stream-diffs surface')
+    assert(javascriptState.fallbackHidden, 'The code fallback remained visible after stream-diffs became ready')
 
     const settingsPanel = page.locator('.settings-panel')
     await settingsPanel.getByText('Code Theme', { exact: true }).waitFor()
@@ -323,14 +327,14 @@ async function main() {
     const assertReloadFixture = async (phase) => {
       await page.locator('.workspace-card--share-preview .preview-surface .markstream-octane').waitFor()
       const slot = page.locator('[data-node-type="code_block"]').filter({ hasText: 'done()' }).first()
-      await slot.locator('.code-block-container .monaco-editor').waitFor({ state: 'attached', timeout: 30000 })
+      await slot.locator('.code-block-container .stream-diffs-shell').first().waitFor({ state: 'attached', timeout: 30000 })
       const state = await slot.evaluate(element => ({
         hasBareFallback: Boolean(element.querySelector(':scope > .node-content > pre')),
-        hasMonaco: Boolean(element.querySelector('.monaco-editor')),
+        hasStreamDiffs: Boolean(element.querySelector('.stream-diffs-shell')),
         source: Array.from(element.querySelectorAll('pre code')).map(code => code.textContent ?? '').join('\n'),
       }))
       assert(!state.hasBareFallback, `${phase}: TypeScript fixture permanently degraded to a bare fallback`)
-      assert(state.hasMonaco, `${phase}: TypeScript fixture did not initialize Monaco`)
+      assert(state.hasStreamDiffs, `${phase}: TypeScript fixture did not initialize stream-diffs`)
       const normalizedSource = state.source.trimEnd()
       assert(normalizedSource.split('\n').length === 13, `${phase}: TypeScript fixture did not preserve all 13 lines`)
       assert(normalizedSource.endsWith('done()'), `${phase}: TypeScript fixture lost its final done() line`)

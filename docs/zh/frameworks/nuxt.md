@@ -22,7 +22,7 @@ faq:
 
 # Nuxt 流式 Markdown 渲染器
 
-Nuxt 项目通常同时有 SSR 内容和浏览器专属能力。`markstream-vue` 可以处理 SSR-first Markdown，也可以在 client-only 区域承接 AI 聊天、SSE/WebSocket、Mermaid、KaTeX、Monaco 等重型能力。关键是不要把所有 Nuxt 使用方式都包进 `<ClientOnly>`；只有依赖浏览器 API 的部分才需要 client boundary。
+Nuxt 项目通常同时有 SSR 内容和浏览器专属能力。`markstream-vue` 可以处理 SSR-first Markdown，也可以在 client-only 区域承接 AI 聊天、SSE/WebSocket、Mermaid、KaTeX、`stream-diffs` 增强代码块等重型能力。关键是不要把所有 Nuxt 使用方式都包进 `<ClientOnly>`；只有依赖浏览器 API 的部分才需要 client boundary。
 
 ```bash
 pnpm add markstream-vue
@@ -43,7 +43,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 | --- | --- |
 | 普通 Markdown SSR | 先走 Vue/Nuxt 基础渲染 |
 | AI 聊天实时输出 | 在 client 组件里传 `content` 和 `final` |
-| Mermaid / Monaco | 放在浏览器边界后启用 |
+| Mermaid / stream-diffs | 放在浏览器边界后启用 |
 | 移动端 Nuxt WebView | 使用 `index.px.css` 并测试字体缩放 |
 
 不适合的情况：只需要构建时渲染静态 Markdown，或 Nuxt 页面完全不涉及流式更新、重型块和长文档。

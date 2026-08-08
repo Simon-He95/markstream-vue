@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * CodeBlockShell — shared header/buttons/skeleton/collapse wrapper
- * for all built-in code block renderers (Monaco, Shiki, Pre).
+ * for all built-in code block renderers (stream-diffs, Shiki, Pre).
  *
  * This is a "dumb" template component. All state lives in the parent;
  * Shell receives it via props and communicates back via emits.
@@ -235,7 +235,7 @@ const fontIncreaseDisabled = computed(() =>
     </slot>
   </div>
 
-  <!-- Content: keep slot subtree mounted so Monaco/renderer state survives collapse. -->
+  <!-- Content: keep slot subtree mounted so stream-diffs/renderer state survives collapse. -->
   <div
     v-show="stream ? true : !loading"
     class="code-block-shell-content"

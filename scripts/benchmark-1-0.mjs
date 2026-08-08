@@ -32,7 +32,7 @@ const scenarios = [
     title: `Diagnostic Studio / ${sample}`,
     command: ['node', ['scripts/e2e-playground-performance.mjs']],
     env: { PLAYGROUND_SAMPLE: sample },
-    notes: 'Runs /test?benchmark=1 in MarkdownCodeBlock and Monaco modes, then scrolls the preview surface.',
+    notes: 'Runs /test?benchmark=1 in the stream-diffs enhanced code block mode, then scrolls the preview surface.',
   })),
   {
     id: 'main-playground-chat',
@@ -47,7 +47,7 @@ const scenarios = [
     command: ['node', ['scripts/e2e-web-vitals-performance.mjs']],
     env: {},
     resultPathEnv: 'WEB_VITALS_JSON_PATH',
-    notes: 'Runs lab LCP, phase CLS, Event Timing, trace, and DOM probes for million-character restore, scroll recovery, and Monaco code block interaction.',
+    notes: 'Runs lab LCP, phase CLS, Event Timing, trace, and DOM probes for million-character restore, scroll recovery, and stream-diffs enhanced code block interaction.',
   },
 ]
 const requiredScenarioIds = scenarios.map(scenario => scenario.id)
@@ -285,7 +285,7 @@ function scenarioRows(entry) {
     return rows
 
   if (entry.id.startsWith('diagnostic-')) {
-    for (const mode of ['markdown', 'monaco']) {
+    for (const mode of ['stream-diffs']) {
       const row = result[mode]
       if (!row)
         continue
@@ -322,12 +322,12 @@ function scenarioRows(entry) {
       rows.push({ scenario: entry.title, phase: 'million scripted scroll', row: result.millionRestore.scroll, heavyBlockScope: 'all' })
     for (const interaction of result.millionRestore?.interactions ?? [])
       rows.push({ scenario: entry.title, phase: `million interaction ${interaction.label}`, row: interaction, viewport: result.millionRestore?.viewport, heavyBlockScope: 'all' })
-    if (result.codeblockMonaco?.initial)
-      rows.push({ scenario: entry.title, phase: 'codeblock initial', row: result.codeblockMonaco.initial, heavyBlockScope: 'visible' })
-    if (result.codeblockMonaco?.scroll)
-      rows.push({ scenario: entry.title, phase: 'codeblock scripted scroll', row: result.codeblockMonaco.scroll, heavyBlockScope: 'visible' })
-    for (const interaction of result.codeblockMonaco?.interactions ?? [])
-      rows.push({ scenario: entry.title, phase: `codeblock interaction ${interaction.label}`, row: interaction, viewport: result.codeblockMonaco?.viewport, heavyBlockScope: 'visible' })
+    if (result.codeblockStreamDiffs?.initial)
+      rows.push({ scenario: entry.title, phase: 'codeblock initial', row: result.codeblockStreamDiffs.initial, heavyBlockScope: 'visible' })
+    if (result.codeblockStreamDiffs?.scroll)
+      rows.push({ scenario: entry.title, phase: 'codeblock scripted scroll', row: result.codeblockStreamDiffs.scroll, heavyBlockScope: 'visible' })
+    for (const interaction of result.codeblockStreamDiffs?.interactions ?? [])
+      rows.push({ scenario: entry.title, phase: `codeblock interaction ${interaction.label}`, row: interaction, viewport: result.codeblockStreamDiffs?.viewport, heavyBlockScope: 'visible' })
   }
 
   return rows

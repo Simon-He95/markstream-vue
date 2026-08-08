@@ -26,14 +26,12 @@ markstream-react 通过可选的对等依赖支持各种功能。只安装你需
 
 | 功能 | 所需包 | 安装命令 |
 |---------|------------------|-----------------|
-| Shiki 代码块（`MarkdownCodeBlockNode`） | `stream-markdown` | `pnpm add stream-markdown` |
 | 增强代码块（推荐） | `stream-diffs` | `pnpm add stream-diffs` |
-| Monaco 编辑器代码块（自动回退） | `stream-monaco` | `pnpm add stream-monaco` |
 | Mermaid 图表 | `mermaid` | `pnpm add mermaid` |
 | D2 图表 | `@terrastruct/d2` | `pnpm add @terrastruct/d2` |
 | 数学公式渲染（KaTeX） | `katex` | `pnpm add katex` |
 
-增强代码块通过双运行时 loader 解析：优先 `stream-diffs`（更小，不依赖 `monaco-editor`），未安装时自动回退 `stream-monaco`，两者都未安装则渲染普通 `<pre>`。安装其中一个即可，不需要同时装两个。
+增强代码块使用可选的对等依赖 `stream-diffs`。未安装时会回退渲染普通 `<pre>`。代码与 diff 选项使用 `stream-diffs` 内置默认值，主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 控制。
 
 ## 可选：在 Vite / Vite 兼容打包器中启用线程外 Worker
 
@@ -58,8 +56,6 @@ import 'katex/dist/katex.min.css'
 ```
 
 `markstream-react` 不会从 JavaScript 入口自动注入渲染器样式。请在应用 shell 或组件入口显式导入一个 Markstream CSS 文件：`index.css`、`index.px.css` 或 `index.tailwind.css`。
-
-Monaco（`stream-monaco`）不需要单独导入 CSS。
 
 注意：`markstream-react/index.css` 的样式被限制在内部的 `.markstream-react` 容器下，以减少全局样式冲突。`MarkdownRender` 默认在该容器内渲染。如果你单独渲染节点组件，请用 `<div className="markstream-react">...</div>` 包裹它们。
 
@@ -89,29 +85,29 @@ module.exports = {
 一次性启用所有功能：
 
 ```bash
-pnpm add stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+pnpm add stream-diffs mermaid @terrastruct/d2 katex
 # 或
-npm install stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+npm install stream-diffs mermaid @terrastruct/d2 katex
 ```
 
 ### 功能详情
 
 #### 代码语法高亮
 
-需要安装 `stream-markdown`：
+需要安装 `stream-diffs`：
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
 
-`stream-markdown` 已内置 `MarkdownCodeBlockNode` 所需的 Shiki runtime。若要在 `MarkdownRender` 中使用 Shiki，请覆盖 `code_block` 渲染器（或直接使用 `MarkdownCodeBlockNode`）。
+`stream-diffs` 为增强的 `CodeBlockNode` 运行时提供代码与 diff 的默认配置。未安装时会回退渲染普通 `<pre>`。需要自定义行为时，可通过 `setCustomComponents` 覆盖 `code_block` 渲染器：
 
 ```tsx
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
+import { setCustomComponents } from 'markstream-react'
 
 setCustomComponents({
   code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
+    <MyCodeBlock
       node={node}
       isDark={isDark}
       stream={ctx?.codeBlockStream}
@@ -121,15 +117,7 @@ setCustomComponents({
 })
 ```
 
-#### Monaco 编辑器
-
-完整的代码块功能（复制按钮、字体大小控制、展开/折叠）：
-
-```bash
-pnpm add stream-monaco
-```
-
-如果不安装 `stream-monaco`，代码块仍会渲染，但交互式按钮可能无法工作。
+主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 属性控制。
 
 #### Mermaid 图表
 

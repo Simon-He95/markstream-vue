@@ -1,5 +1,5 @@
 import type { AfterViewInit, ElementRef, OnChanges, OnDestroy } from '@angular/core'
-import type { CodeBlockMonacoTheme } from '../../types/monaco'
+import type { CodeBlockTheme } from '../../types/monaco'
 import type { AngularRenderableNode, AngularRenderContext } from '../shared/node-helpers'
 import { CommonModule } from '@angular/common'
 import {
@@ -12,7 +12,7 @@ import {
 } from '@angular/core'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { getUseMonaco } from '../../optional/monaco'
-import { getLanguageIcon, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../../utils/languageIcon'
+import { getLanguageIcon, languageMap, normalizeLanguageIdentifier, resolveLanguageId } from '../../utils/languageIcon'
 import { PreCodeNodeComponent } from '../PreCodeNode/PreCodeNode.component'
 import { getString } from '../shared/node-helpers'
 import { HtmlPreviewFrameComponent } from './HtmlPreviewFrame.component'
@@ -20,6 +20,8 @@ import { HtmlPreviewFrameComponent } from './HtmlPreviewFrame.component'
 const defaultCodeFontFamily = '"SF Mono", Monaco, Consolas, "Ubuntu Mono", "Liberation Mono", "Courier New", monospace'
 const defaultCodeFontSize = 12
 const defaultCodeLineHeight = 18
+const defaultMaxEditorHeight = 500
+const defaultTabSize = 4
 
 function readPositiveCodeMetric(value: unknown) {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : undefined
@@ -34,7 +36,7 @@ interface MonacoHelpers {
   safeClean?: () => void
   getEditorView?: () => any
   getDiffEditorView?: () => any
-  setTheme?: (theme?: CodeBlockMonacoTheme) => Promise<unknown> | unknown
+  setTheme?: (theme?: CodeBlockTheme) => Promise<unknown> | unknown
 }
 
 function parseCodeFenceInfo(raw: string) {
@@ -293,7 +295,7 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
   fontSize = defaultCodeFontSize
 
   private helpers: MonacoHelpers | null = null
-  private runtimeMonacoOptions: Record<string, any> | null = null
+  private runtimeOptions: Record<string, any> | null = null
   private createPromise: Promise<void> | null = null
   private syncPromise: Promise<void> | null = null
   private editorKind: 'single' | 'diff' | null = null
@@ -350,13 +352,6 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
     return this.mergedProps.themes ?? this.context?.codeBlockThemes?.themes ?? ['vitesse-dark', 'vitesse-light']
   }
 
-  get resolvedMonacoOptions() {
-    return {
-      ...(this.context?.codeBlockThemes?.monacoOptions || {}),
-      ...(this.mergedProps.monacoOptions || {}),
-    }
-  }
-
   get resolvedEnableFontSizeControl() {
     if (typeof this.mergedProps.enableFontSizeControl === 'boolean')
       return this.mergedProps.enableFontSizeControl
@@ -407,12 +402,12 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
     return normalizeLanguageIdentifier(this.rawLanguage) || 'plain'
   }
 
-  get monacoLanguage() {
-    return resolveMonacoLanguageId(this.rawLanguage)
+  get language() {
+    return resolveLanguageId(this.rawLanguage)
   }
 
   get isPlainTextLanguage() {
-    return this.monacoLanguage === 'plaintext'
+    return this.language === 'plaintext'
   }
 
   get displayLanguage() {
@@ -498,27 +493,19 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
   }
 
   get preFallbackStyle(): Record<string, string> {
-    const options = this.resolvedMonacoOptions
     const fontSize = readPositiveCodeMetric(this.fontSize) ?? defaultCodeFontSize
-    const lineHeight = readPositiveCodeMetric(options.lineHeight)
-      ?? (fontSize === defaultCodeFontSize ? defaultCodeLineHeight : Math.max(12, Math.round(fontSize * 1.5)))
-    const padding = options.padding && typeof options.padding === 'object'
-      ? options.padding as Record<string, unknown>
-      : null
+    const lineHeight = fontSize === defaultCodeFontSize ? defaultCodeLineHeight : Math.max(12, Math.round(fontSize * 1.5))
     const defaultPadding = this.isDiff ? 0 : 8
-    const paddingTop = readPositiveCodeMetric(padding?.top) ?? (padding?.top === 0 ? 0 : defaultPadding)
-    const paddingBottom = readPositiveCodeMetric(padding?.bottom) ?? (padding?.bottom === 0 ? 0 : defaultPadding)
-    const fontFamily = typeof options.fontFamily === 'string' && options.fontFamily.trim()
-      ? options.fontFamily.trim()
-      : defaultCodeFontFamily
+    const paddingTop = defaultPadding
+    const paddingBottom = defaultPadding
 
     return {
-      '--markstream-code-font-family': fontFamily,
+      '--markstream-code-font-family': defaultCodeFontFamily,
       '--markstream-code-padding-y': `${paddingTop}px`,
       '--markstream-code-padding-bottom': `${paddingBottom}px`,
       '--vscode-editor-font-size': `${fontSize}px`,
       '--vscode-editor-line-height': `${lineHeight}px`,
-      'font-family': fontFamily,
+      'font-family': defaultCodeFontFamily,
       'font-size': `${fontSize}px`,
       'line-height': `${lineHeight}px`,
     }
@@ -628,7 +615,7 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
 
   private applyInitialFontSize() {
     const previousDefault = this.defaultFontSize
-    const initial = Number(this.resolvedMonacoOptions.fontSize)
+    const initial = defaultCodeFontSize
     this.defaultFontSize = Number.isFinite(initial) && initial > 0 ? initial : defaultCodeFontSize
     if (
       !(typeof this.fontSize === 'number' && Number.isFinite(this.fontSize) && this.fontSize > 0)
@@ -713,9 +700,6 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
         return
       }
 
-      const configuredUnsafeCSS = typeof this.resolvedMonacoOptions.unsafeCSS === 'string'
-        ? this.resolvedMonacoOptions.unsafeCSS
-        : ''
       const options = {
         wordWrap: 'on',
         stream: this.resolvedLoading !== false,
@@ -724,22 +708,20 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
         minimap: { enabled: false },
         lineNumbers: 'on',
         revealDebounceMs: 75,
-        MAX_HEIGHT: 500,
+        MAX_HEIGHT: defaultMaxEditorHeight,
         fontFamily: defaultCodeFontFamily,
         fontSize: this.defaultFontSize,
         lineHeight: defaultCodeLineHeight,
         padding: this.isDiff ? { top: 0, bottom: 0 } : { top: 8, bottom: 8 },
         themes: this.resolvedThemes,
         theme: this.resolvedIsDark ? this.resolvedDarkTheme : this.resolvedLightTheme,
-        ...(this.resolvedMonacoOptions || {}),
         // The Angular shell already owns the language/file header. Keep the
         // enhanced surface headerless so it matches the Vue 3 handoff contract.
         disableFileHeader: true,
-        unsafeCSS: `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }
-${configuredUnsafeCSS}`.trim(),
+        unsafeCSS: `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }`,
       }
 
-      this.runtimeMonacoOptions = options
+      this.runtimeOptions = options
       this.helpers = monacoModule.useMonaco(options)
     })()
 
@@ -762,15 +744,15 @@ ${configuredUnsafeCSS}`.trim(),
     host.innerHTML = ''
     this.editorKind = kind
     this.editorStreamMode = streamMode
-    if (this.runtimeMonacoOptions)
-      this.runtimeMonacoOptions.stream = streamMode
+    if (this.runtimeOptions)
+      this.runtimeOptions.stream = streamMode
 
     if (kind === 'diff') {
       await Promise.resolve(this.helpers.createDiffEditor?.(
         host,
         this.originalCode,
         this.resolvedCode,
-        this.monacoLanguage,
+        this.language,
       ))
       this.syncEditorGeometryVars()
       return
@@ -779,14 +761,14 @@ ${configuredUnsafeCSS}`.trim(),
     await Promise.resolve(this.helpers.createEditor?.(
       host,
       this.resolvedCode,
-      this.monacoLanguage,
+      this.language,
     ))
     this.syncEditorGeometryVars()
   }
 
-  // Align the enhanced surface with the pre-fallback geometry. stream-diffs /
-  // pierre honor these CSS variables on the editor host (custom properties
-  // inherit across the pierre shadow boundary):
+  // Align the enhanced surface with the pre-fallback geometry. stream-diffs
+  // honors these CSS variables on the editor host (custom properties inherit
+  // across the shadow boundary):
   // - `--diffs-tab-size`: fallback defaults to 4, pierre defaults to 2.
   // - `--diffs-gap-block`: only set when padding is present; the default 8px
   //   gap already matches the fallback.
@@ -794,17 +776,8 @@ ${configuredUnsafeCSS}`.trim(),
     const host = this.editorHost?.nativeElement
     if (!host)
       return
-    const tabSize = readPositiveCodeMetric(this.resolvedMonacoOptions.tabSize) ?? 4
-    host.style.setProperty('--diffs-tab-size', String(tabSize))
-    const rawPadding = this.resolvedMonacoOptions.padding
-    const hasConfiguredPadding = Boolean(rawPadding && typeof rawPadding === 'object')
-    if (hasConfiguredPadding) {
-      const top = readPositiveCodeMetric((rawPadding as Record<string, unknown>).top) ?? 0
-      host.style.setProperty('--diffs-gap-block', `${top}px`)
-    }
-    else {
-      host.style.removeProperty('--diffs-gap-block')
-    }
+    host.style.setProperty('--diffs-tab-size', String(defaultTabSize))
+    host.style.removeProperty('--diffs-gap-block')
   }
 
   private async updateEditor() {
@@ -812,20 +785,18 @@ ${configuredUnsafeCSS}`.trim(),
       return
 
     if (this.isDiff && this.editorKind === 'diff' && typeof this.helpers.updateDiff === 'function') {
-      await Promise.resolve(this.helpers.updateDiff(this.originalCode, this.resolvedCode, this.monacoLanguage))
+      await Promise.resolve(this.helpers.updateDiff(this.originalCode, this.resolvedCode, this.language))
       return
     }
 
-    await Promise.resolve(this.helpers.updateCode?.(this.resolvedCode, this.monacoLanguage))
+    await Promise.resolve(this.helpers.updateCode?.(this.resolvedCode, this.language))
   }
 
-  private hasRenderedEditorDom(kind: 'single' | 'diff') {
+  private hasRenderedEditorDom(_kind: 'single' | 'diff') {
     const host = this.editorHost?.nativeElement
     if (!host)
       return false
-    const monacoSelector = kind === 'diff' ? '.monaco-diff-editor' : '.monaco-editor'
     return !!host.querySelector([
-      monacoSelector,
       'diffs-container',
       '.stream-diffs-shell',
       '[data-stream-diffs-state]',
@@ -834,8 +805,6 @@ ${configuredUnsafeCSS}`.trim(),
 
   private getVisualEditorSurface() {
     return this.editorHost?.nativeElement.querySelector<HTMLElement>([
-      '.monaco-diff-editor',
-      '.monaco-editor',
       'diffs-container',
       '[data-stream-diffs-state]',
       '.stream-diffs-shell',
@@ -967,14 +936,6 @@ ${configuredUnsafeCSS}`.trim(),
   }
 
   private resolveEditorLineHeight() {
-    const fromOptions = Number(this.resolvedMonacoOptions.lineHeight)
-    if (Number.isFinite(fromOptions) && fromOptions > 0)
-      return fromOptions
-
-    const fromFontOption = Number(this.resolvedMonacoOptions.fontSize)
-    if (Number.isFinite(fromFontOption) && fromFontOption > 0)
-      return Math.max(12, Math.round(fromFontOption * 1.35))
-
     const fromState = Number(this.fontSize)
     if (Number.isFinite(fromState) && fromState > 0)
       return Math.max(12, Math.round(fromState * 1.35))
@@ -983,12 +944,7 @@ ${configuredUnsafeCSS}`.trim(),
   }
 
   private resolveMaxHeight() {
-    const raw = this.resolvedMonacoOptions.MAX_HEIGHT ?? 500
-    if (typeof raw === 'number' && Number.isFinite(raw))
-      return raw > 0 ? raw : 500
-    const matched = String(raw).match(/^(\d+(?:\.\d+)?)/)
-    const parsed = matched ? Number.parseFloat(matched[1]) : 500
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 500
+    return defaultMaxEditorHeight
   }
 
   private cancelDeferredHeightSync() {

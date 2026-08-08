@@ -24,7 +24,7 @@ The renderer is optimized for streaming and large docs. Key features:
 Performance tips:
 
 - Stream long documents in chunks
-- Use `MarkdownCodeBlockNode` or `renderCodeBlocksAsPre` for non-editable code
+- Use `renderCodeBlocksAsPre` for non-editable code
 - Scope custom components to enable GC
 - Use `setDefaultMathOptions` at bootstrap
 

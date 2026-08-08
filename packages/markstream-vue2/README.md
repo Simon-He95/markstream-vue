@@ -149,7 +149,7 @@ new Vue({
 
 - For simple chat streaming, passing `content` is the fastest way to integrate.
 - For high-frequency SSE / token streaming, long conversations, or very large code/table/math blocks, prefer parsing outside the renderer and pass `nodes` instead of reparsing the whole `content` string every chunk.
-- Keep `viewport-priority` enabled unless you explicitly want eager rendering. Mermaid / Monaco / D2 blocks now stay idle while offscreen and resume when they approach the viewport.
+- Keep `viewport-priority` enabled unless you explicitly want eager rendering. Mermaid / stream-diffs / D2 blocks now stay idle while offscreen and resume when they approach the viewport.
 
 ```vue
 <template>
@@ -187,21 +187,18 @@ Notes:
 
 ## Enhanced Code Blocks
 
-Code blocks use a dual-runtime loader across all Markstream packages: `stream-diffs` is preferred (smaller, no `monaco-editor`), `stream-monaco` is the automatic fallback (through the `stream-monaco/legacy` entry for Webpack 4 / CJS toolchains), and a plain `<pre>` is rendered when neither is installed.
+Code blocks use `stream-diffs` across all Markstream packages: `stream-diffs` is preferred (smaller runtime, no `monaco-editor`), and a plain `<pre>` is rendered when it is not installed.
 
-Install the recommended runtime:
+Install the runtime:
 
 ```bash
 pnpm add stream-diffs
-# or, to keep the legacy Monaco surface as the fallback:
-pnpm add stream-monaco
 ```
 
 `CodeBlockNode` renders a single code block with the header, toolbar, and a `stream-diffs` File / FileDiff surface:
 
 ```vue
 <script lang="ts">
-import type { CodeBlockMonacoOptions } from 'markstream-vue2'
 import { CodeBlockNode } from 'markstream-vue2'
 import Vue from 'vue'
 
@@ -215,29 +212,17 @@ export default Vue.extend({
         code: 'const answer = 42',
         raw: 'const answer = 42',
       },
-      // fontSize / lineHeight / tabSize also drive the streaming <pre> fallback
-      // so the enhanced surface swaps in without a visual jump.
-      monacoOptions: {
-        fontSize: 14,
-        lineHeight: 21,
-        tabSize: 4,
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-        wordWrap: 'off',
-        theme: 'vitesse-dark',
-        renderSideBySide: true,
-        MAX_HEIGHT: 640,
-      } as CodeBlockMonacoOptions,
     }
   },
 })
 </script>
 
 <template>
-  <CodeBlockNode :node="node" :monaco-options="monacoOptions" />
+  <CodeBlockNode :node="node" is-dark show-line-numbers show-header />
 </template>
 ```
 
-Component props (kebab-case in templates): `is-dark`, `show-line-numbers`, `show-header`, and `monaco-options`. `monacoOptions` also covers diff blocks (`renderSideBySide`, `diffHunkActionsOnHover`, `onDiffHunkAction`). Vue 2.6 apps need `@vue/composition-api`; see the Webpack 4 notes above if you use Vue CLI 4.
+Component props (kebab-case in templates): `is-dark`, `show-line-numbers`, `show-header`. Vue 2.6 apps need `@vue/composition-api`; see the Webpack 4 notes above if you use Vue CLI 4.
 
 ## Language-specific code block overrides
 
@@ -380,15 +365,15 @@ module.exports = {
 
 ## Notes
 
-- The Vue 2 package is a compatibility port for legacy Vue 2 apps and mirrors the Vue 3 renderer feature set where practical (virtualization, streaming code blocks, Monaco, Mermaid, KaTeX, tooltip singleton).
-- Optional peers are still required for those features (`stream-diffs` for the recommended enhanced code blocks, `stream-monaco` as a fallback for legacy Monaco rendering, `stream-markdown`, `mermaid`, `katex`, etc.).
+- The Vue 2 package is a compatibility port for legacy Vue 2 apps and mirrors the Vue 3 renderer feature set where practical (virtualization, streaming code blocks, stream-diffs, Mermaid, KaTeX, tooltip singleton).
+- Optional peers are still required for those features (`stream-diffs` for the recommended enhanced code blocks, `mermaid`, `katex`, etc.).
 - Custom node components are supported via `setCustomComponents` from `markstream-vue2`.
 - If you only render short static Markdown, a smaller Vue 2 Markdown component may be a simpler fit.
 
 ## TypeScript
 
-Parser node types are re-exported from `stream-markdown-parser`, and Vue 2 specific mapping / Monaco types are available from `markstream-vue2` itself:
+Parser node types are re-exported from `stream-markdown-parser`, and Vue 2 specific mapping types are available from `markstream-vue2` itself:
 
 ```ts
-import type { CodeBlockMonacoOptions, CustomComponents, ParsedNode } from 'markstream-vue2'
+import type { CustomComponents, ParsedNode } from 'markstream-vue2'
 ```

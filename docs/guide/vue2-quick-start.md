@@ -177,18 +177,17 @@ This uses @vue/composition-api.
 
 ### Code Syntax Highlighting
 
-Install dependencies:
+Install the optional peer:
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
+
+Enhanced code blocks (the `CodeBlockNode` runtime) use `stream-diffs` built-in defaults for code and diff options, with theming via `theme` / `darkTheme` / `lightTheme` / `themes`. When `stream-diffs` is not installed, code blocks fall back to a plain `<pre>`.
 
 ```vue
 <script>
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
-
-// Use Shiki-based code blocks inside MarkdownRender
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+import MarkdownRender from 'markstream-vue2'
 
 export default {
   components: { MarkdownRender },

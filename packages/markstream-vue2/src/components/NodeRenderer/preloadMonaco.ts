@@ -1,5 +1,11 @@
 let isPreload = false
-export async function preload(m) {
+
+/**
+ * Preload the stream-diffs worker stack ahead of the first editor mount.
+ * stream-diffs exports `preloadMonacoWorkers()`; the MonacoEnvironment check
+ * is kept as a harmless guard for consumers that already configured workers.
+ */
+export async function preload(m: any) {
   if (isPreload)
     return
   isPreload = true

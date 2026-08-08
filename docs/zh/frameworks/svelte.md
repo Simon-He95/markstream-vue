@@ -1,6 +1,6 @@
 ---
 title: Svelte 5 流式 Markdown 渲染器
-description: 使用 markstream-svelte 在 Svelte 5 / SvelteKit AI 聊天、LLM token 流、SSE/WebSocket、未闭合 Markdown、长文档、自定义组件、Mermaid、KaTeX 和 Monaco 场景中渲染流式 Markdown。当前是 beta API，不支持 Svelte 4。
+description: 使用 markstream-svelte 在 Svelte 5 / SvelteKit AI 聊天、LLM token 流、SSE/WebSocket、未闭合 Markdown、长文档、自定义组件、Mermaid、KaTeX 和 stream-diffs 增强代码块场景中渲染流式 Markdown。当前是 beta API，不支持 Svelte 4。
 keywords:
   - markstream-svelte
   - Svelte 5 流式 Markdown 渲染器

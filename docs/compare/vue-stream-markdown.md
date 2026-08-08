@@ -32,7 +32,7 @@ Choose by output shape, not by brand:
 | --- | --- |
 | Small chat messages with basic Markdown | `vue-stream-markdown` |
 | LLM token streams with unclosed fences, tables, math, or HTML-like tags | `markstream-vue` |
-| Mermaid, KaTeX, Monaco/Shiki, D2, or Infographic blocks | `markstream-vue` |
+| Mermaid, KaTeX, diff-tracking code blocks, D2, or Infographic blocks | `markstream-vue` |
 | Nuxt SSR or VitePress docs integration | `markstream-vue` |
 | Long responses with bounded live nodes | `markstream-vue` |
 | The smallest Vue streaming Markdown dependency | `vue-stream-markdown` |
@@ -41,7 +41,7 @@ Choose by output shape, not by brand:
 
 Use `vue-stream-markdown` when:
 - You need a lightweight Vue 3 streaming Markdown renderer
-- You don't need Mermaid/KaTeX/Monaco support
+- You don't need Mermaid/KaTeX or diff-tracking code blocks
 - You don't need virtualized long documents
 - You want the smallest Vue streaming Markdown dependency
 - Your Markdown is mostly paragraphs, lists, links, and basic code fences
@@ -52,7 +52,7 @@ Use `markstream-vue` when:
 - You need stable incomplete Markdown during LLM token streaming
 - You need progressive Mermaid during streaming
 - KaTeX math in AI output matters
-- Monaco or Shiki code blocks with diff tracking are needed
+- stream-diffs powered code blocks with diff tracking are needed
 - Virtualized long documents (1MB+) are part of your use case
 - Safe HTML policy without `v-html` is required
 - Mobile WebView `px` CSS for root-font scaling matters
@@ -68,8 +68,7 @@ Use `markstream-vue` when:
 | `content` + `nodes` input paths | ✅ both | content-focused |
 | Progressive Mermaid | ✅ optional peer | ❌ |
 | KaTeX math | ✅ optional peer | ❌ |
-| Monaco code blocks | ✅ optional peer | ❌ |
-| Shiki highlighting | ✅ optional peer | ❌ |
+| Diff-tracking code blocks | ✅ `stream-diffs` | ❌ |
 | Virtualization | ✅ | ❌ |
 | Safe HTML policy | ✅ configurable | ⚠️ |
 | Mobile px CSS | ✅ `index.px.css` | ❌ |
@@ -108,7 +107,7 @@ defineProps<{
 
 ### Nuxt and VitePress SSR
 
-`markstream-vue` has documented Nuxt and VitePress paths. Standard Markdown can render during SSR, while browser-only optional peers such as Mermaid, KaTeX workers, or Monaco can stay behind client boundaries.
+`markstream-vue` has documented Nuxt and VitePress paths. Standard Markdown can render during SSR, while browser-only optional peers such as Mermaid, KaTeX workers, or the enhanced code runtime can stay behind client boundaries.
 
 Use the lighter renderer when the page is client-only and does not need SSR-first output.
 
@@ -118,7 +117,7 @@ If AI answers can grow beyond tens of kilobytes, renderer-level controls matter.
 
 ## Bundle and dependency notes
 
-`markstream-vue` is larger at base because it includes the parser and rendering infrastructure. However, optional peers (Mermaid, KaTeX, Monaco, D2, Infographic) are only loaded when installed and imported. If you do not install or import those optional peers, their library payload is not part of the default dependency path.
+`markstream-vue` is larger at base because it includes the parser and rendering infrastructure. However, optional peers (Mermaid, KaTeX, stream-diffs, D2, Infographic) are only loaded when installed and imported. If you do not install or import those optional peers, their library payload is not part of the default dependency path.
 
 `vue-stream-markdown` is smaller at base but offers fewer features. Choose based on your AI output requirements, not just bundle size.
 

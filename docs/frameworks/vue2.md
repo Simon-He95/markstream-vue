@@ -1,6 +1,6 @@
 ---
 title: 'Vue 2 streaming Markdown renderer for AI chat'
-description: Use markstream-vue2 in Vue 2.6 and Vue 2.7 legacy apps for AI chat streaming Markdown, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Shiki code blocks, and Vue 2 component rendering.
+description: Use markstream-vue2 in Vue 2.6 and Vue 2.7 legacy apps for AI chat streaming Markdown, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, enhanced code blocks, and Vue 2 component rendering.
 keywords:
   - markstream-vue2
   - Vue 2 streaming Markdown renderer
@@ -12,7 +12,7 @@ keywords:
   - Vue2 incomplete Markdown
   - Vue2 Mermaid Markdown
   - Vue2 KaTeX Markdown
-  - Vue2 Shiki code blocks
+  - Vue2 code blocks
   - legacy Vue 2 Markdown renderer
 softwareName: markstream-vue2
 softwarePackage: markstream-vue2
@@ -35,7 +35,7 @@ faq:
 ---
 # Vue 2 streaming Markdown renderer for AI chat
 
-`markstream-vue2` is the Vue 2.6 / 2.7 renderer in the Markstream family. Use it when a legacy Vue 2 app needs AI chat Markdown, LLM token streams, SSE/WebSocket output, incomplete Markdown state handling, Mermaid, KaTeX, Shiki-backed code blocks, or Vue 2 component rendering.
+`markstream-vue2` is the Vue 2.6 / 2.7 renderer in the Markstream family. Use it when a legacy Vue 2 app needs AI chat Markdown, LLM token streams, SSE/WebSocket output, incomplete Markdown state handling, Mermaid, KaTeX, enhanced code blocks, or Vue 2 component rendering.
 
 For Vue 3, Nuxt 3, or a new project, start with [`markstream-vue`](/frameworks/vue) instead.
 
@@ -134,20 +134,10 @@ For high-frequency long streams, use the parser/node path described in the [Vue 
 
 ## Mermaid, KaTeX, and code blocks
 
-Install optional peers only for the blocks you render. Enhanced code blocks use a dual-runtime loader — `stream-diffs` is recommended, `stream-monaco` is the automatic fallback, and a plain `<pre>` is rendered when neither is installed:
+Install optional peers only for the blocks you render. Enhanced code blocks use the optional `stream-diffs` peer and fall back to a plain `<pre>` when it is not installed:
 
 ```bash
 pnpm add stream-diffs
-# or
-pnpm add stream-markdown
-```
-
-Then enable Shiki-backed code blocks:
-
-```js
-import { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
-
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
 ```
 
 For Mermaid diagrams, install `mermaid`. For KaTeX math, install `katex` and import its stylesheet:

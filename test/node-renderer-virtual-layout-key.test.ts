@@ -1,4 +1,3 @@
-import { getHighlightRegistrationKey } from 'markstream-core'
 import { describe, expect, it } from 'vitest'
 import {
   buildVirtualMeasurementKey,
@@ -22,7 +21,7 @@ describe('virtual layout key helpers', () => {
 
   it('combines host and renderer layout keys without dropping empty host keys', () => {
     const layoutKey = buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       isDark: false,
       codeBlockStream: true,
     })
@@ -34,7 +33,7 @@ describe('virtual layout key helpers', () => {
 
   it('tracks renderer mode, theme, stream, and code block sizing dimensions', () => {
     const base = buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       isDark: false,
       codeBlockStream: true,
       codeBlockMinWidth: 320,
@@ -56,7 +55,7 @@ describe('virtual layout key helpers', () => {
     })).not.toBe(base)
 
     expect(buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       isDark: true,
       codeBlockStream: true,
       codeBlockMinWidth: 320,
@@ -64,7 +63,7 @@ describe('virtual layout key helpers', () => {
     })).not.toBe(base)
 
     expect(buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       isDark: false,
       codeBlockStream: false,
       codeBlockMinWidth: 320,
@@ -72,23 +71,13 @@ describe('virtual layout key helpers', () => {
     })).not.toBe(base)
   })
 
-  it('preserves the exact monaco layout key token sequence', () => {
+  it('preserves the exact stream-diffs layout key token sequence', () => {
     const key = buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       isDark: true,
       codeBlockStream: false,
       codeBlockMinWidth: 320,
       codeBlockMaxWidth: '100%',
-      codeBlockMonacoOptions: {
-        fontSize: 14,
-        lineHeight: 20,
-        fontFamily: 'JetBrains Mono',
-        tabSize: 2,
-        MAX_HEIGHT: 560,
-        wordWrap: 'on',
-        wrappingIndent: 'same',
-        padding: { top: 12, bottom: 16 },
-      },
       codeBlockProps: {
         showHeader: true,
         showCopyButton: false,
@@ -105,14 +94,6 @@ describe('virtual layout key helpers', () => {
       'code-static',
       '320',
       '100%',
-      '14',
-      '20',
-      'JetBrains Mono',
-      '2',
-      '560',
-      'on',
-      'same',
-      '{"top":12,"bottom":16}',
       'true',
       'false',
       'true',
@@ -120,128 +101,11 @@ describe('virtual layout key helpers', () => {
       'true',
       'false',
     ].join('\u0000'))
-  })
-
-  it('preserves the exact shiki layout key token sequence', () => {
-    const registrationKey = getHighlightRegistrationKey(['github-light'], ['typescript'])
-    const key = buildVirtualRendererLayoutKey({
-      renderer: 'shiki',
-      isDark: false,
-      codeBlockStream: true,
-      codeBlockMinWidth: '16rem',
-      codeBlockMaxWidth: 960,
-      codeBlockMonacoOptions: {
-        fontSize: 18,
-        lineHeight: 28,
-      },
-      themes: ['vitesse-light'],
-      langs: ['javascript'],
-      codeBlockProps: {
-        themes: ['github-light'],
-        langs: ['ts'],
-        showHeader: false,
-        showCopyButton: true,
-        showExpandButton: false,
-        showPreviewButton: true,
-        showCollapseButton: false,
-        showFontSizeButtons: true,
-      },
-    })
-
-    expect(key).toBe([
-      'light',
-      'code-shiki',
-      'code-stream',
-      '16rem',
-      '960',
-      registrationKey,
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      'false',
-      'true',
-      'false',
-      'true',
-      'false',
-      'true',
-    ].join('\u0000'))
-  })
-
-  it('includes monaco options only for monaco renderer layout keys', () => {
-    const preBase = buildVirtualRendererLayoutKey({
-      renderer: 'pre',
-      codeBlockMonacoOptions: {
-        fontSize: 14,
-        lineHeight: 20,
-      },
-    })
-    const preChanged = buildVirtualRendererLayoutKey({
-      renderer: 'pre',
-      codeBlockMonacoOptions: {
-        fontSize: 18,
-        lineHeight: 28,
-      },
-    })
-
-    expect(preChanged).toBe(preBase)
-
-    const monacoBase = buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
-      codeBlockMonacoOptions: {
-        fontSize: 14,
-        lineHeight: 20,
-      },
-    })
-    const monacoChanged = buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
-      codeBlockMonacoOptions: {
-        fontSize: 18,
-        lineHeight: 28,
-      },
-    })
-
-    expect(monacoChanged).not.toBe(monacoBase)
-  })
-
-  it('normalizes shiki language options and honors codeBlockProps overrides', () => {
-    const shorthand = buildVirtualRendererLayoutKey({
-      renderer: 'shiki',
-      themes: ['vitesse-light'],
-      langs: ['ts', 'js'],
-    })
-    const normalized = buildVirtualRendererLayoutKey({
-      renderer: 'shiki',
-      themes: ['vitesse-light'],
-      langs: ['javascript', 'typescript'],
-    })
-
-    expect(shorthand).toBe(normalized)
-    expect(shorthand).toContain('javascript')
-    expect(shorthand).toContain('typescript')
-
-    const overridden = buildVirtualRendererLayoutKey({
-      renderer: 'shiki',
-      themes: ['vitesse-light'],
-      langs: ['typescript'],
-      codeBlockProps: {
-        themes: ['github-light'],
-        langs: ['python'],
-      },
-    })
-
-    expect(overridden).toContain('github-light')
-    expect(overridden).toContain('python')
-    expect(overridden).not.toBe(shorthand)
   })
 
   it('tracks code block chrome options that can affect layout', () => {
     const base = buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       codeBlockProps: {
         showHeader: true,
         showCopyButton: true,
@@ -249,7 +113,7 @@ describe('virtual layout key helpers', () => {
     })
 
     expect(buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       codeBlockProps: {
         showHeader: false,
         showCopyButton: true,
@@ -257,7 +121,7 @@ describe('virtual layout key helpers', () => {
     })).not.toBe(base)
 
     expect(buildVirtualRendererLayoutKey({
-      renderer: 'monaco',
+      renderer: 'stream-diffs',
       codeBlockProps: {
         showHeader: true,
         showCopyButton: false,

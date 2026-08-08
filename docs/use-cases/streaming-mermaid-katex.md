@@ -141,7 +141,7 @@ setKaTeXWorker(new KatexWorker())
 
 ## Optional peers
 
-Mermaid, KaTeX, Monaco, D2, and Infographic are **optional peers**. Install only what your AI output needs:
+Mermaid, KaTeX, D2, and Infographic are **optional peers**. Install only what your AI output needs:
 
 ```bash
 # Only Mermaid (no math)
@@ -154,7 +154,7 @@ pnpm add katex
 pnpm add mermaid katex
 
 # All heavy peers
-pnpm add mermaid katex stream-monaco @terrastruct/d2 @antv/infographic
+pnpm add mermaid katex @terrastruct/d2 @antv/infographic
 ```
 
 After installing a peer, Markstream's default loader can resolve it automatically. `enableMermaid()` and `enableKatex()` are for re-enabling or replacing optional dependency loaders; `setMermaidWorker()` and `setKaTeXWorker()` inject off-thread worker clients. If a peer is not installed or a loader is disabled, that feature falls back instead of rendering through Mermaid or KaTeX.

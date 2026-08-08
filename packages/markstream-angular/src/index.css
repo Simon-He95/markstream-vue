@@ -992,8 +992,7 @@ body > div[id^="dmermaid-"] {
   background: #0b1220;
 }
 
-.markstream-angular .markstream-angular-enhanced-block__body--code .monaco-editor,
-.markstream-angular .markstream-angular-enhanced-block__body--code .monaco-diff-editor {
+.markstream-angular .markstream-angular-enhanced-block__body--code .stream-diffs-shell {
   min-height: inherit;
 }
 
@@ -1137,19 +1136,15 @@ body > div[id^="dmermaid-"] {
   box-shadow: 0 22px 44px -30px rgba(2, 6, 23, 0.95);
 }
 
-.markstream-angular .code-block-container.is-plain-text .monaco-editor,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .monaco-editor-background,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .margin,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .lines-content {
+.markstream-angular .code-block-container.is-plain-text .stream-diffs-shell,
+.markstream-angular .code-block-container.is-plain-text .stream-diffs-shell diffs-container,
+.markstream-angular .code-block-container.is-plain-text .stream-diffs-shell [data-stream-diffs-state] {
   background: var(--vscode-editor-background, var(--markstream-code-fallback-bg)) !important;
 }
 
-.markstream-angular .code-block-container.is-plain-text .monaco-editor,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .margin,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .view-lines,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .view-line,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .view-line span,
-.markstream-angular .code-block-container.is-plain-text .monaco-editor .line-numbers {
+.markstream-angular .code-block-container.is-plain-text .stream-diffs-shell,
+.markstream-angular .code-block-container.is-plain-text .stream-diffs-shell diffs-container,
+.markstream-angular .code-block-container.is-plain-text .stream-diffs-shell [data-stream-diffs-state] {
   color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg)) !important;
 }
 

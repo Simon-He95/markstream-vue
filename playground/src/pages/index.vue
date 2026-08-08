@@ -5,7 +5,6 @@ import type { StreamPresetId } from '../composables/streamPresets'
 import type { StreamTransportMode } from '../composables/useStreamSimulator'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
-import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
 import MarkdownRender from '../../../src/components/NodeRenderer'
 import { setCustomComponents } from '../../../src/utils/nodeComponents'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
@@ -19,7 +18,6 @@ import { streamContent } from '../const/markdown'
 import { createAutoScrollChaseController } from '../utils/autoScrollChase'
 import 'katex/dist/katex.min.css'
 import '../../../src/index.css'
-// import MarkdownCodeBlockNode from '../../../src/components/MarkdownCodeBlockNode'
 
 const _d2Demo = `
 
@@ -35,22 +33,6 @@ API -> Client: response
 \`\`\`
 `
 const fullStreamContent = `${streamContent}`
-const diffHideUnchangedRegions = {
-  enabled: true,
-  contextLineCount: 2,
-  minimumLineCount: 4,
-  revealLineCount: 5,
-} as const
-const playgroundMonacoOptions = {
-  renderSideBySide: false,
-  useInlineViewWhenSpaceIsLimited: true,
-  maxComputationTime: 0,
-  ignoreTrimWhitespace: false,
-  renderIndicators: true,
-  diffAlgorithm: 'legacy',
-  diffHideUnchangedRegions,
-  hideUnchangedRegions: diffHideUnchangedRegions,
-} as const
 
 const streamChunkDelayMin = useLocalStorage<number>('vmr-settings-stream-delay-min', 14)
 const streamChunkDelayMax = useLocalStorage<number>('vmr-settings-stream-delay-max', 34)
@@ -125,9 +107,9 @@ const {
   transportMode: streamTransportMode,
 })
 
-// 预加载 Monaco 编辑器
+// 预加载 stream-diffs 运行时
 if (!isBenchmarkMode)
-  getUseMonaco()
+  import('../../../src/components/CodeBlockNode/streamDiffs').then(({ getStreamDiffsRuntime }) => getStreamDiffsRuntime()).catch(() => {})
 setKaTeXWorker(new KatexWorker())
 setMermaidWorker(new MermaidWorker())
 const router = useRouter()
@@ -914,7 +896,6 @@ onBeforeUnmount(() => {
             :fade="!smoothStreaming"
             :code-block-dark-theme="selectedTheme || undefined"
             :code-block-light-theme="selectedTheme || undefined"
-            :code-block-monaco-options="playgroundMonacoOptions"
             :html-policy="htmlPolicy"
             :themes="themes"
             :custom-html-tags="['thinking']"

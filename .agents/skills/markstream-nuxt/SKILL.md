@@ -19,7 +19,7 @@ Use this skill when the host app is Nuxt and SSR boundaries matter.
    - Use `mode="chat"` for AI chat or SSE output. It uses lightweight batches, `<pre>` code rendering by default, `fade=false`, and `max-live-nodes=0`; `smooth-streaming="auto"` paces visible output.
    - Use `mode="docs"` for rich document surfaces. It is the default, enables larger batches, tooltips, fade, and enhanced `stream-diffs` code blocks when the peer is installed.
    - Use `mode="minimal"` for lightweight non-chat surfaces.
-   - Choose regular fenced-code rendering with `code-renderer="monaco" | "shiki" | "pre"`. The compatibility-named `monaco` mode uses `stream-diffs`; `shiki` uses `stream-markdown`.
+   - Choose regular fenced-code rendering with `code-renderer="stream-diffs" | "pre"`. `stream-diffs` renders enhanced File/Diff code blocks; `pre` needs no code peer.
    - `typewriter` only controls the blinking cursor and defaults to `false`. Prefer `typewriter="simple"` for high-frequency chat.
    - When overriding mode defaults on a high-frequency stream, pair smooth streaming with `:fade="false"` to avoid delta fade stacking with high-commit pacing.
    - **Streaming vs recovering history**: in chat UIs the same `MarkdownRender` starts streaming and later switches to history when `final=true`.
@@ -37,7 +37,7 @@ Use this skill when the host app is Nuxt and SSR boundaries matter.
 - Smooth streaming is SSR-safe in `auto` mode (the default) because it gates on mount. Do not use `smooth-streaming="true"` for first-screen SSR content — it bypasses the mounted gate and can cause hydration mismatch or blank flash.
 - Avoid import-time access to browser globals from server code paths.
 - Treat the enhanced code runtime, Mermaid workers, and similar heavy peers as client-only unless the repo already has a proven SSR pattern.
-- Do not install `stream-monaco` merely because Vue 3 retains `code-renderer="monaco"`; the current enhanced surface uses `stream-diffs`.
+- Enhanced code blocks in every Markstream package use `stream-diffs`; do not install `stream-monaco`.
 - Keep `html-policy="safe"` and Mermaid strict mode unless the task is preserving trusted legacy rendering.
 - If a trusted client-only surface needs older behavior, opt out locally with `html-policy="trusted"` and `:mermaid-props="{ isStrict: false }"`, and document why that surface is trusted.
 

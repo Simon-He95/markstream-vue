@@ -4,8 +4,7 @@ import type { StreamPresetId } from '../composables/streamPresets'
 import type { StreamTransportMode } from '../composables/useStreamSimulator'
 import { Icon } from '@iconify/vue'
 import { useRouter } from 'vue-router'
-import { getUseMonaco } from '../../../src/components/CodeBlockNode/monaco'
-import MarkdownCodeBlockNode from '../../../src/components/MarkdownCodeBlockNode'
+import CodeBlockNode from '../../../src/components/CodeBlockNode'
 import MarkdownRender from '../../../src/components/NodeRenderer'
 import { setCustomComponents } from '../../../src/utils/nodeComponents'
 import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline'
@@ -87,8 +86,8 @@ const {
   transportMode: streamTransportMode,
 })
 
-// 预加载 Monaco 编辑器
-getUseMonaco()
+// 预加载 stream-diffs 运行时
+import('../../../src/components/CodeBlockNode/streamDiffs').then(({ getStreamDiffsRuntime }) => getStreamDiffsRuntime()).catch(() => {})
 setKaTeXWorker(new KatexWorker())
 setMermaidWorker(new MermaidWorker())
 const router = useRouter()
@@ -129,7 +128,7 @@ watchEffect(() => {
     streamBurstiness.value = boundedBurstiness
 })
 
-setCustomComponents('playground-demo', { thinking: ThinkingNode, code_block: MarkdownCodeBlockNode })
+setCustomComponents('playground-demo', { thinking: ThinkingNode, code_block: CodeBlockNode })
 const parseOptions = {
   preTransformTokens: (tokens: any[]) => {
     // Example: Log tokens during parsing

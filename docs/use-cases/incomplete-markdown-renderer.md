@@ -63,7 +63,7 @@ Set `final` to `true` only after the stream ends. That gives the parser one clea
 
 ### Unclosed code fences
 
-Markstream keeps an unclosed fence readable instead of treating the rest of the document as finalized highlighted code. When the closing fence arrives, the code block renderer can upgrade to Monaco, Shiki, or a plain `pre` block depending on your setup.
+Markstream keeps an unclosed fence readable instead of treating the rest of the document as finalized highlighted code. When the closing fence arrives, the code block renderer upgrades to the enhanced `stream-diffs` surface or a plain `pre` block depending on your setup.
 
 ### Partial tables
 

@@ -1,6 +1,6 @@
 # 代码块 Runtime
 
-这个保留的旧 URL 现在说明 `CodeBlockNode` 使用的可选 `stream-diffs` runtime。公共 option 的 TypeScript 名称仍保留 `Monaco`，用于兼容已有接入；默认增强 surface 已不再是 Monaco editor。
+本页说明 `CodeBlockNode` 使用的可选 `stream-diffs` runtime。2.0 移除了旧的 Monaco 选项 API 与 `stream-monaco` 回退：`stream-diffs` 是唯一增强型代码块 surface，代码与 diff 行为使用其内置默认值。
 
 ## 安装
 
@@ -10,7 +10,7 @@ pnpm add stream-diffs
 
 不需要 worker plugin，也不需要额外导入包专用 CSS。
 
-`stream-monaco` 仍然作为自动回退受支持：如果未安装 `stream-diffs`，loader 会尝试 `stream-monaco`（vue2 包走 `stream-monaco/legacy` 入口），再退而渲染普通 `<pre>`。你可以保留现有的 `stream-monaco` 安装，不需要同时安装两个 runtime。
+如果未安装 `stream-diffs`，loader 会保留 `<pre>` 回退，以纯文本形式渲染代码块，不启用增强 surface。
 
 ## Runtime 职责边界
 
@@ -39,33 +39,11 @@ CodeBlockNode                          controller + DOM surface
 
 `CodeBlockShell` 负责标题和操作栏。创建 File surface 时会关闭内部 `data-diffs-header`，DOM 始终只有一个 header。
 
-## Runtime options
+## 主题
 
-为兼容已有 API，公开的 TypeScript 名称仍为 `CodeBlockMonacoOptions`。这些值会传给 `CodeBlockNode` 使用的 `stream-diffs` adapter。
+明暗主题请使用 `theme` / `darkTheme` / `lightTheme` / `themes` props。`CodeBlockNode` 会把主题变化传给已挂载的 surface，不会重建 Vue 组件。
 
-```vue twoslash
-<script setup lang="ts">
-import type { CodeBlockMonacoOptions } from 'markstream-vue'
-import MarkdownRender from 'markstream-vue'
-
-const codeBlockMonacoOptions = {
-  fontSize: 14,
-  lineHeight: 21,
-  wordWrap: 'off',
-  renderSideBySide: true,
-  MAX_HEIGHT: 640,
-} satisfies CodeBlockMonacoOptions
-</script>
-
-<template>
-  <MarkdownRender
-    :content="['```ts', 'const answer = 42', '```'].join('\n')"
-    :code-block-monaco-options="codeBlockMonacoOptions"
-  />
-</template>
-```
-
-明暗主题请使用 `theme` prop。`CodeBlockNode` 会把主题变化传给已挂载的 surface，不会重建 Vue 组件。
+2.0 已移除 `monacoOptions` / `codeBlockMonacoOptions` props，且无替代方案；代码与 diff 选项回退到 `stream-diffs` 内置默认值。
 
 ## 可选预热
 
@@ -81,19 +59,4 @@ void preloadCodeBlockRuntime()
 
 ## Diff 交互
 
-diff block 使用相同的适配边界。通过 `monacoOptions` / `codeBlockMonacoOptions` 设置渲染与 hover action：
-
-```ts twoslash
-import type { CodeBlockMonacoOptions } from 'markstream-vue'
-
-const codeBlockMonacoOptions = {
-  renderSideBySide: true,
-  diffHunkActionsOnHover: true,
-  onDiffHunkAction(context) {
-    console.log(context.action, context.side)
-    return false
-  },
-} satisfies CodeBlockMonacoOptions
-```
-
-返回 `false` 会在回调后阻止默认 diff edit。
+diff block 使用相同的适配边界。增强 diff surface（折叠、未变化区域处理、inline/side-by-side 布局）由 `stream-diffs` 内置默认值驱动；2.0 不再提供按代码块配置的 diff options prop。

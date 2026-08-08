@@ -117,7 +117,6 @@ export const CodeBlockNodeLoading = defineComponent({
     'darkTheme',
     'lightTheme',
     'isShowPreview',
-    'monacoOptions',
     'enableFontSizeControl',
     'minWidth',
     'maxWidth',
@@ -154,29 +153,16 @@ export const CodeBlockNodeLoading = defineComponent({
         displayLanguage,
         isDiff,
       )
-      const monacoOptions = props.monacoOptions
       const diffInline = isDiff && (props.estimatedDiffInline
-        ?? resolveDiffInlineLayout(monacoOptions ?? {}, typeof window === 'undefined' ? 0 : window.innerWidth))
-      const diffAppearance = monacoOptions?.diffAppearance
-      const isSurfaceDark = diffAppearance === 'dark'
-        || (diffAppearance !== 'light' && props.isDark === true)
-      const fontSize = typeof monacoOptions?.fontSize === 'number' && Number.isFinite(monacoOptions.fontSize) && monacoOptions.fontSize > 0
-        ? monacoOptions.fontSize
-        : 12
-      const lineHeight = typeof monacoOptions?.lineHeight === 'number' && Number.isFinite(monacoOptions.lineHeight) && monacoOptions.lineHeight > 0
-        ? monacoOptions.lineHeight
-        : fontSize === 12 ? 18 : Math.max(12, Math.round(fontSize * 1.5))
-      const tabSize = typeof monacoOptions?.tabSize === 'number' && Number.isFinite(monacoOptions.tabSize) && monacoOptions.tabSize > 0
-        ? monacoOptions.tabSize
-        : 4
+        ?? resolveDiffInlineLayout({}, typeof window === 'undefined' ? 0 : window.innerWidth))
+      const isSurfaceDark = props.isDark === true
+      const fontSize = 12
+      const lineHeight = fontSize === 12 ? 18 : Math.max(12, Math.round(fontSize * 1.5))
+      const tabSize = 4
       const defaultPadding = isDiff ? 0 : 8
-      const paddingTop = typeof monacoOptions?.padding?.top === 'number' && Number.isFinite(monacoOptions.padding.top) && monacoOptions.padding.top >= 0
-        ? monacoOptions.padding.top
-        : defaultPadding
-      const paddingBottom = typeof monacoOptions?.padding?.bottom === 'number' && Number.isFinite(monacoOptions.padding.bottom) && monacoOptions.padding.bottom >= 0
-        ? monacoOptions.padding.bottom
-        : defaultPadding
-      const fontFamily = typeof monacoOptions?.fontFamily === 'string' ? monacoOptions.fontFamily.trim() : ''
+      const paddingTop = defaultPadding
+      const paddingBottom = defaultPadding
+      const fontFamily = ''
       const preStyle = {
         'fontSize': `${fontSize}px`,
         'lineHeight': `${lineHeight}px`,
@@ -325,7 +311,7 @@ export const CodeBlockNodeLoading = defineComponent({
             'reservedHeightPx': isDiff ? undefined : props.estimatedContentHeightPx,
             'diffInline': diffInline,
             'diffHideUnchangedRegions': isDiff
-              ? resolveDiffHideUnchangedRegionsOption(monacoOptions?.diffHideUnchangedRegions)
+              ? resolveDiffHideUnchangedRegionsOption(undefined)
               : undefined,
             'class': 'code-pre-fallback',
             'style': preStyle,
@@ -356,7 +342,7 @@ const CodeBlockNodeInnerAsync = defineAsyncComponent({
     }
     catch (e) {
       console.warn(
-        '[markstream-vue] Failed to load the enhanced CodeBlockNode chunk; falling back to preformatted code rendering. Enhanced code blocks require the optional "stream-diffs" peer (or "stream-monaco" as a fallback).',
+        '[markstream-vue] Failed to load the enhanced CodeBlockNode chunk; falling back to preformatted code rendering. Enhanced code blocks require the optional "stream-diffs" peer.',
         e,
       )
       return PreCodeNode

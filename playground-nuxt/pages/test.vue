@@ -7,10 +7,8 @@ import MarkdownRender, {
   disableMermaid,
   enableKatex,
   enableMermaid,
-  getUseMonaco,
   isKatexEnabled,
   isMermaidEnabled,
-  MarkdownCodeBlockNode,
   PreCodeNode,
   setCustomComponents,
   setKaTeXWorker,
@@ -75,7 +73,7 @@ const streamInterval = useLocalStorage<number>('vmr-test-stream-interval', 16) /
 const showStreamSettings = useLocalStorage<boolean>('vmr-test-show-settings', false) // 是否显示流式渲染设置
 
 // 渲染配置相关（用于测试不同代码块/渲染模式）
-const renderMode = useLocalStorage<'monaco' | 'pre' | 'markdown'>('vmr-test-render-mode', 'monaco')
+const renderMode = useLocalStorage<'stream-diffs' | 'pre' | 'markdown'>('vmr-test-render-mode', 'stream-diffs')
 const codeBlockStream = useLocalStorage<boolean>('vmr-test-code-stream', true)
 const viewportPriority = useLocalStorage<boolean>('vmr-test-viewport-priority', true)
 const batchRendering = useLocalStorage<boolean>('vmr-test-batch-rendering', true)
@@ -84,9 +82,9 @@ const debugParse = useLocalStorage<boolean>('vmr-test-debug-parse', false)
 const mathEnabled = useLocalStorage<boolean>('vmr-test-math-enabled', isKatexEnabled())
 const mermaidEnabled = useLocalStorage<boolean>('vmr-test-mermaid-enabled', isMermaidEnabled())
 
-// 预加载 Monaco 编辑器和 worker
+// 预加载 stream-diffs 运行时
 if (process.client) {
-  getUseMonaco()
+  import('markstream-vue').then(({ getStreamDiffsRuntime }) => getStreamDiffsRuntime()).catch(() => {})
   setKaTeXWorker(new KatexWorker())
   setMermaidWorker(new MermaidWorker())
 }
@@ -274,7 +272,7 @@ watch(() => renderMode.value, (mode: string) => {
     setCustomComponents({ code_block: PreCodeNode })
   }
   else if (mode === 'markdown') {
-    setCustomComponents({ code_block: MarkdownCodeBlockNode })
+    setCustomComponents({ code_block: CodeBlockNode })
   }
   else {
     setCustomComponents({ code_block: CodeBlockNode })
@@ -436,11 +434,11 @@ function toggleStreamSettings() {
                   v-model="renderMode"
                   class="w-full rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-2 py-1"
                 >
-                  <option value="monaco">
-                    Monaco 编辑器
+                  <option value="stream-diffs">
+                    Stream Diffs 编辑器
                   </option>
                   <option value="markdown">
-                    MarkdownCodeBlock (stream-markdown)
+                    CodeBlockNode
                   </option>
                   <option value="pre">
                     纯 PreCodeNode

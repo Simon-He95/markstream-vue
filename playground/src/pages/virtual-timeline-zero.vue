@@ -46,7 +46,7 @@ declare global {
           diff: boolean
           fallbackVisible: boolean
           hiddenEditor: boolean
-          monacoVisible: boolean
+          diffSurfaceVisible: boolean
           textLength: number
         }>
         diffCodeBlockProbe: Array<{
@@ -58,7 +58,7 @@ declare global {
           diff: boolean
           fallbackVisible: boolean
           hiddenEditor: boolean
-          monacoVisible: boolean
+          diffSurfaceVisible: boolean
           textLength: number
         }>
       }
@@ -379,8 +379,8 @@ function isProbeElementVisible(el: HTMLElement) {
   return rect.width > 0 && rect.height > 0
 }
 
-function hasVisibleMonacoProbe(block: HTMLElement) {
-  return Array.from(block.querySelectorAll<HTMLElement>('.monaco-editor, .monaco-diff-editor'))
+function hasVisibleDiffSurface(block: HTMLElement) {
+  return Array.from(block.querySelectorAll<HTMLElement>('.stream-diffs-shell, .stream-diffs-surface'))
     .some(isProbeElementVisible)
 }
 
@@ -403,7 +403,7 @@ function readCodeBlockProbe(root: HTMLElement | null) {
         diff: block.classList.contains('is-diff'),
         fallbackVisible,
         hiddenEditor: Boolean(block.querySelector('.code-editor-container.is-hidden')),
-        monacoVisible: hasVisibleMonacoProbe(block),
+        diffSurfaceVisible: hasVisibleDiffSurface(block),
         textLength: block.textContent?.length ?? 0,
       }
     })

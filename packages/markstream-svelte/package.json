@@ -2,7 +2,7 @@
   "name": "markstream-svelte",
   "type": "module",
   "version": "0.0.6",
-  "description": "Svelte 5 and SvelteKit streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Monaco-powered code blocks, and custom Svelte components.",
+  "description": "Svelte 5 and SvelteKit streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Svelte components.",
   "author": "Simon He",
   "license": "MIT",
   "homepage": "https://markstream.simonhe.me/frameworks/svelte",
@@ -41,10 +41,10 @@
     "streaming-mermaid",
     "katex",
     "streaming-katex",
+    "stream-diffs",
     "streaming-code-blocks",
     "d2",
     "infographic",
-    "monaco-editor",
     "large-documents",
     "custom-components",
     "beta",
@@ -89,7 +89,6 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "stream-diffs": ">=0.0.2",
-    "stream-monaco": ">=0.0.48",
     "svelte": ">=5 <6"
   },
   "peerDependenciesMeta": {
@@ -106,9 +105,6 @@
       "optional": true
     },
     "stream-diffs": {
-      "optional": true
-    },
-    "stream-monaco": {
       "optional": true
     }
   },

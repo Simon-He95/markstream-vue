@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BaseNode, HtmlPolicy, ParsedNode } from 'stream-markdown-parser'
-import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme, CodeBlockNodeProps, CodeBlockPreviewPayload, ShikiCodeBlockProps } from '../../types/component-props'
+import type { CodeBlockNodeProps, CodeBlockPreviewPayload, CodeBlockTheme, ShikiCodeBlockProps } from '../../types/component-props'
 import { normalizeShikiLanguage } from 'markstream-core'
 import { normalizeCustomHtmlTags } from 'stream-markdown-parser'
 import { computed, provide } from 'vue-demi'
@@ -62,24 +62,22 @@ const props = withDefaults(defineProps<{
   fade?: boolean
   showTooltips?: boolean
   codeBlockStream?: boolean
-  codeBlockDarkTheme?: CodeBlockMonacoTheme
-  codeBlockLightTheme?: CodeBlockMonacoTheme
-  codeBlockMonacoOptions?: CodeBlockMonacoOptions
+  codeBlockDarkTheme?: CodeBlockTheme
+  codeBlockLightTheme?: CodeBlockTheme
   codeBlockMinWidth?: string | number
   codeBlockMaxWidth?: string | number
   codeBlockProps?: NodeRendererCodeBlockProps
   renderCodeBlocksAsPre?: boolean
   /**
-   * Theme names or theme objects preloaded for Monaco-backed code blocks.
-   * When Shiki code blocks are used, only string theme names are forwarded to
-   * MarkdownCodeBlockNode / stream-markdown; theme objects are ignored.
+   * Theme names or theme objects preloaded for enhanced (stream-diffs) code
+   * blocks. When Shiki code blocks are used, only string theme names are
+   * forwarded to stream-markdown; theme objects are ignored.
    */
-  themes?: CodeBlockMonacoTheme[]
+  themes?: CodeBlockTheme[]
   /**
-   * Shiki language preload list forwarded to MarkdownCodeBlockNode.
+   * Shiki language preload list forwarded to stream-markdown.
    *
-   * Vue2's default code block renderer is Monaco-backed. This prop is used
-   * when a custom `code_block` or language renderer uses MarkdownCodeBlockNode.
+   * Used when a custom `code_block` or language renderer uses stream-markdown.
    */
   langs?: readonly string[]
   isDark?: boolean
@@ -174,7 +172,6 @@ const codeBlockBindings = computed(() => ({
   stream: props.codeBlockStream,
   darkTheme: props.codeBlockDarkTheme,
   lightTheme: props.codeBlockLightTheme,
-  monacoOptions: props.codeBlockMonacoOptions,
   themes: props.themes,
   minWidth: props.codeBlockMinWidth,
   maxWidth: props.codeBlockMaxWidth,
@@ -255,7 +252,7 @@ const renderedItems = computed(() => {
     return {
       index,
       indexKey: `${indexPrefix.value}-${index}`,
-      // Keep code blocks mounted during streaming so Shiki/Monaco renderers can
+      // Keep code blocks mounted during streaming so Shiki/stream-diffs renderers can
       // preserve their last successful DOM instead of flashing back to <pre>.
       renderKey: type === 'code_block'
         ? `${indexPrefix.value}-${index}-${type}`

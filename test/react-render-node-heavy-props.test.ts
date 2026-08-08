@@ -48,7 +48,6 @@ function CodeBlockForwardingProbe(props: any) {
     'data-dark-theme': String(props.darkTheme ?? ''),
     'data-light-theme': String(props.lightTheme ?? ''),
     'data-themes': Array.isArray(props.themes) ? props.themes.join(',') : '',
-    'data-langs': Array.isArray(props.langs) ? props.langs.join(',') : '',
   })
 }
 
@@ -211,8 +210,8 @@ describe('markstream-react heavy-node prop forwarding', () => {
     expect(genericElement?.props?.ctx?.codeBlockProps).toEqual({ showHeader: false })
   })
 
-  it('forwards top-level Shiki themes and langs through React NodeRenderer custom code_block renderers', () => {
-    const customId = 'react-node-renderer-shiki-forwarding'
+  it('forwards top-level themes through React NodeRenderer custom code_block renderers', () => {
+    const customId = 'react-node-renderer-theme-forwarding'
 
     try {
       setCustomComponents(customId, {
@@ -228,14 +227,12 @@ describe('markstream-react heavy-node prop forwarding', () => {
           codeBlockDarkTheme: 'github-dark',
           codeBlockLightTheme: 'github-light',
           themes: ['github-dark', 'github-light'],
-          langs: ['ts', 'js'],
         }),
       )
 
       expect(html).toContain('data-dark-theme="github-dark"')
       expect(html).toContain('data-light-theme="github-light"')
       expect(html).toContain('data-themes="github-dark,github-light"')
-      expect(html).toContain('data-langs="ts,js"')
     }
     finally {
       removeCustomComponents(customId)
@@ -542,15 +539,6 @@ describe('markstream-react heavy-node prop forwarding', () => {
       ...baseCtx,
       renderCodeBlocksAsPre: true,
       codeBlockProps: { showLineNumbers: true },
-      codeBlockThemes: {
-        monacoOptions: {
-          fontFamily: 'JetBrains Mono',
-          fontSize: 14,
-          lineHeight: 21,
-          padding: { top: 6, bottom: 10 },
-          tabSize: 2,
-        },
-      },
     }
 
     const clientHtml = renderToStaticMarkup(clientRenderNode(node as any, 'client-pre-typography', ctx) as any)

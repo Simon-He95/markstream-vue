@@ -33,29 +33,6 @@ async function preloadWorkers(mod: any) {
     await mod.preloadMonacoWorkers()
 }
 
-async function warmupShikiTokenizer(mod: any) {
-  const getOrCreateHighlighter = mod?.getOrCreateHighlighter
-  if (typeof getOrCreateHighlighter !== 'function')
-    return true
-
-  try {
-    const highlighter = await getOrCreateHighlighter(
-      ['vitesse-dark', 'vitesse-light'],
-      ['plaintext', 'text', 'javascript'],
-    )
-
-    if (highlighter && typeof highlighter.codeToTokens === 'function') {
-      highlighter.codeToTokens('const a = 1', { lang: 'javascript', theme: 'vitesse-dark' })
-    }
-
-    return true
-  }
-  catch (error) {
-    console.warn('[markstream-angular] Failed to warm up stream-monaco tokenizer; falling back to plain code rendering.', error)
-    return false
-  }
-}
-
 export async function getUseMonaco(): Promise<MonacoRuntimeModule | null> {
   if (monacoModule)
     return monacoModule
@@ -65,39 +42,20 @@ export async function getUseMonaco(): Promise<MonacoRuntimeModule | null> {
     return null
 
   pendingImport = (async () => {
-    // Prefer `stream-diffs`: smaller runtime without the heavy
-    // `monaco-editor` dependency. `stream-monaco` remains supported as a
-    // fallback for consumers who install it.
-    const candidates = [
-      async () => (await import('stream-diffs')) as any,
-      async () => (await import('stream-monaco')) as any,
-    ]
-
-    for (const load of candidates) {
-      try {
-        const candidate = await load()
-        const resolved = candidate?.default ?? candidate
-        if (typeof resolved?.useMonaco !== 'function')
-          continue
-        monacoModule = resolved
-        await preloadWorkers(monacoModule)
-
-        const ready = await warmupShikiTokenizer(monacoModule)
-        if (!ready) {
-          monacoModule = null
-          importAttempted = true
-          return null
-        }
-
-        return monacoModule
+    try {
+      const candidate = await import('stream-diffs')
+      if (typeof (candidate as any)?.useMonaco !== 'function') {
+        importAttempted = true
+        return null
       }
-      catch {
-        // Try the next candidate runtime.
-      }
+      monacoModule = candidate
+      await preloadWorkers(monacoModule)
+      return monacoModule
     }
-
-    importAttempted = true
-    return null
+    catch {
+      importAttempted = true
+      return null
+    }
   })()
 
   try {

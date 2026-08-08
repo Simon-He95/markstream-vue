@@ -177,18 +177,17 @@ export default defineComponent({
 
 ### 代码语法高亮
 
-安装依赖：
+安装可选对等依赖：
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
+
+增强代码块（`CodeBlockNode` 运行时）使用 `stream-diffs` 内置的代码与 diff 默认配置，主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 控制。未安装 `stream-diffs` 时，代码块会回退渲染普通 `<pre>`。
 
 ```vue
 <script>
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
-
-// 在 MarkdownRender 中使用 Shiki 代码块
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+import MarkdownRender from 'markstream-vue2'
 
 export default {
   components: { MarkdownRender },

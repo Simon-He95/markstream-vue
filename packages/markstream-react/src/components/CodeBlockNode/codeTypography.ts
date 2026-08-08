@@ -1,4 +1,4 @@
-import type { CodeBlockMonacoOptions } from '../../types/component-props'
+type CodeBlockOptions = Record<string, unknown> | null | undefined
 
 export const defaultCodeFontFamily = '"SF Mono", Monaco, Consolas, "Ubuntu Mono", "Liberation Mono", "Courier New", monospace'
 export const defaultCodeFontSize = 12
@@ -9,7 +9,7 @@ export function readPositiveCodeMetric(value: unknown): number | undefined {
 }
 
 export function resolveCodePadding(
-  options?: CodeBlockMonacoOptions | null,
+  options?: CodeBlockOptions,
   defaultPadding = 8,
 ) {
   const padding = options?.padding
@@ -24,7 +24,7 @@ export function resolveCodePadding(
 }
 
 export function resolveCodeTypography(
-  options?: CodeBlockMonacoOptions | null,
+  options?: CodeBlockOptions,
   preferredFontSize?: number,
 ) {
   const fontSize = readPositiveCodeMetric(options?.fontSize)

@@ -13,7 +13,7 @@ faq:
     answer: Enable virtualization when responses regularly exceed tens of kilobytes, contain many blocks, or cause scroll and layout work to become visible.
   - question: Is virtual-scroll required for a single long message?
     answer: Usually no. Use node-level virtualization first; virtual-scroll is for outer timeline virtualizers that coordinate many messages.
-  - question: Do offscreen Mermaid or Monaco blocks still render immediately?
+  - question: Do offscreen Mermaid or enhanced code blocks still render immediately?
     answer: Not when viewport-priority and defer-until-visible paths are enabled. Heavy blocks can stay idle until they approach the viewport.
 ---
 # Long AI responses
@@ -51,7 +51,7 @@ Markstream uses viewport-aware rendering to bound the number of live DOM nodes:
 
 ## Viewport-aware heavy blocks
 
-Mermaid diagrams, Monaco code blocks, and other heavy blocks stay idle while offscreen:
+Mermaid diagrams, enhanced code blocks, and other heavy blocks stay idle while offscreen:
 
 ```vue
 <MarkdownRender

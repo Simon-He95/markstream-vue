@@ -18,8 +18,7 @@ If you are still deciding where to customize the pipeline, start with:
 | Component | Best for | Key props/events | Extra CSS / peers | Troubleshooting hooks |
 | --------- | -------- | ---------------- | ----------------- | --------------------- |
 | `MarkdownRender` | Rendering full AST trees (default export) | Props: `content` / `nodes`, `custom-id`, `final`, `parse-options`, `custom-html-tags`, `is-dark`, `code-block-props`, `mermaid-props`, `d2-props`, `infographic-props`; events: `copy-code` for code copy text, `copy` (deprecated compatibility alias), `handleArtifactClick`, `click`, `mouseover`, `mouseout` | Import `markstream-vue/index.css` inside a reset-aware layer (CSS is scoped under an internal `.markstream-vue` container) | Use `setCustomComponents(customId, mapping)` + `custom-id` to scope overrides; see [CSS checklist](/guide/troubleshooting#css-looks-wrong-start-here) |
-| `CodeBlockNode` | Enhanced File/FileDiff code blocks | `node`, `monacoOptions`, `stream`, `loading`; events: `copy`, `previewCode`; slots `header-left` / `header-right`; diff hover actions live under `monacoOptions` (`diffHunkActionsOnHover`, `diffHunkHoverHideDelayMs`, `onDiffHunkAction`) | Install `stream-diffs`; no worker plugin or extra CSS import | SSR sends a `<pre><code>` fallback first; enhanced surface mounts after completion and visibility |
-| `MarkdownCodeBlockNode` | Lightweight highlighting via `shiki` | `node`, `stream`, `loading`; slots `header-left` / `header-right` | Requires `stream-markdown` | Use for SSR-friendly or low-bundle scenarios |
+| `CodeBlockNode` | Enhanced File/FileDiff code blocks | `node`, `stream`, `loading`; events: `copy`, `previewCode`; slots `header-left` / `header-right`; theming via `theme` / `darkTheme` / `lightTheme` / `themes` | Install `stream-diffs`; no worker plugin or extra CSS import | SSR sends a `<pre><code>` fallback first; enhanced surface mounts after completion and visibility |
 | `MermaidBlockNode` | Progressive Mermaid diagrams | `node`, `isDark`, `isStrict`, `maxHeight`, `estimatedPreviewHeightPx`; emits `copy`, `export`, `openModal`, `toggleMode` | Peer `mermaid` >= 11; no extra CSS required | SSR sends readable fallback markup first; for async errors see `/guide/mermaid` |
 | `D2BlockNode` | Progressive D2 diagrams | `node`, `isDark`, `maxHeight`, `progressiveRender`, `progressiveIntervalMs`; toolbar toggles | Peer `@terrastruct/d2`; no extra CSS | SSR sends fallback/source first; missing peer stays on fallback; see `/guide/d2` |
 | `MathBlockNode` / `MathInlineNode` | KaTeX rendering | `node` | Install `katex` and import `katex/dist/katex.min.css` | SSR can emit KaTeX HTML when you register a sync loader; otherwise it falls back to raw text |
@@ -48,17 +47,11 @@ markdownRenderProps.customId
 markdownRenderProps.isDark
 markdownRenderProps.codeBlockProps?.showHeader
 markdownRenderProps.codeBlockProps?.showTooltips
-markdownRenderProps.codeBlockMonacoOptions
-markdownRenderProps.codeBlockMonacoOptions?.theme
-markdownRenderProps.codeBlockMonacoOptions?.languages
-markdownRenderProps.codeBlockMonacoOptions?.diffHunkActionsOnHover
 markdownRenderProps.themes
 
 markdownRenderCodeBlockProps.showFontSizeButtons
 markdownRenderCodeBlockProps.showCollapseButton
 
-codeBlockProps.monacoOptions
-codeBlockProps.monacoOptions?.MAX_HEIGHT
 codeBlockProps.theme
 ```
 
@@ -109,7 +102,7 @@ setIconTheme('material')
 
 ### Best hover targets
 
-Start by hovering `:content`, `custom-id`, `:is-dark`, and `:code-block-monaco-options` in this example:
+Start by hovering `:content`, `custom-id`, `:is-dark`, and `:code-block-props` in this example:
 
 ```vue twoslash
 <script setup lang="ts">
@@ -120,10 +113,9 @@ type MarkdownRenderProps = InstanceType<typeof MarkdownRender>['$props']
 const content: MarkdownRenderProps['content'] = '# Hello'
 const customId: MarkdownRenderProps['customId'] = 'docs'
 const isDark: MarkdownRenderProps['isDark'] = true
-const monacoOptions: MarkdownRenderProps['codeBlockMonacoOptions'] = {
-  theme: 'vitesse-dark',
-  languages: ['typescript', 'vue'],
-  MAX_HEIGHT: 520,
+const codeBlockProps: MarkdownRenderProps['codeBlockProps'] = {
+  showHeader: true,
+  showTooltips: true,
 }
 </script>
 
@@ -132,7 +124,7 @@ const monacoOptions: MarkdownRenderProps['codeBlockMonacoOptions'] = {
     :content="content"
     :custom-id="customId"
     :is-dark="isDark"
-    :code-block-monaco-options="monacoOptions"
+    :code-block-props="codeBlockProps"
   />
 </template>
 ```
@@ -141,24 +133,16 @@ const monacoOptions: MarkdownRenderProps['codeBlockMonacoOptions'] = {
 
 ```vue twoslash
 <script setup lang="ts">
-import type { CodeBlockMonacoOptions } from 'markstream-vue'
 import MarkdownRender from 'markstream-vue'
 
 const md = '# Hello\n\nUse custom-id to scope styles.'
-const monacoOptions = {
-  theme: 'vitesse-dark',
-  themes: ['vitesse-dark', 'vitesse-light'],
-  languages: ['typescript', 'vue'],
-  MAX_HEIGHT: 520,
-  diffHunkActionsOnHover: true,
-} satisfies CodeBlockMonacoOptions
 </script>
 
 <template>
   <MarkdownRender
     custom-id="docs"
     :content="md"
-    :code-block-monaco-options="monacoOptions"
+    :code-block-props="{ showHeader: true }"
   />
 </template>
 ```
@@ -188,7 +172,7 @@ setCustomComponents('docs', {
 ### Performance props
 
 - **Batch rendering**: `batchRendering`, `initialRenderBatchSize`, `renderBatchSize`, `renderBatchDelay`, and `renderBatchBudgetMs` control how many nodes switch from skeletons to real components per frame. This only activates when virtualization is disabled (`:max-live-nodes="0"`).
-- **Deferred heavy nodes**: `deferNodesUntilVisible` and `viewportPriority` are enabled by default so Mermaid, D2, Monaco, and KaTeX only load near the viewport.
+- **Deferred heavy nodes**: `deferNodesUntilVisible` and `viewportPriority` are enabled by default so Mermaid, D2, and KaTeX only load near the viewport.
 - **Virtualization window**: `maxLiveNodes` limits how many rendered nodes stay in the DOM, and `liveNodeBuffer` controls overscan. See [Performance](/guide/performance).
 - **Code block fallback**: use `renderCodeBlocksAsPre` and `codeBlockStream` to downgrade standard code fences to `<pre><code>` or disable streaming updates during heavy workloads.
 
@@ -216,37 +200,15 @@ setCustomComponents('docs', {
 > File/FileDiff code block renderer with diff support and interactive toolbar actions.
 
 - **Best for**: rich code review, diff inspection, live patches, hover actions.
-- **Key props**: `node`, `monacoOptions`, `stream`, `loading`
+- **Key props**: `node`, `stream`, `loading`, plus `theme` / `darkTheme` / `lightTheme` / `themes` for theming
 - **Events**: `copy`, `previewCode`
 - **Slots**: `header-left`, `header-right`
 - **Peer**: `stream-diffs`
 - **Common gotcha**: the enhanced surface waits for the block to finish streaming and enter the viewport
 
-Reach for this when the code block itself is part of the product experience. If you only need syntax highlighting, prefer `MarkdownCodeBlockNode`. `stream-diffs` is framework-agnostic; Vue mount and unmount decisions stay in `CodeBlockNode`.
+Reach for this when the code block itself is part of the product experience. `stream-diffs` is framework-agnostic; Vue mount and unmount decisions stay in `CodeBlockNode`. Code and diff options use the `stream-diffs` built-in defaults.
 
-Deep dive: [CodeBlockNode](/guide/code-block-node), [Monaco](/guide/monaco)
-
-## MarkdownCodeBlockNode
-
-> Lightweight syntax-highlighted code block renderer powered by Shiki via `stream-markdown`.
-
-- **Best for**: SSR-friendly docs, blog-style pages, smaller bundles
-- **Key props**: `node`, `stream`, `loading`, `themes`, `langs`
-- **Slots**: `header-left`, `header-right`
-- **Peers**: `stream-markdown`
-- **Common gotcha**: if highlighting never appears, confirm `stream-markdown` is installed and loaded in the environment where rendering happens
-
-Pass `langs` to limit the Shiki languages preloaded by `stream-markdown`; omit it or pass an empty array to keep the default language preload behavior.
-
-```vue
-<MarkdownCodeBlockNode
-  :node="node"
-  :themes="['vitesse-light', 'vitesse-dark']"
-  :langs="['javascript', 'typescript', 'vue']"
-/>
-```
-
-Choose this when you do not need Monaco's editing surface or diff interactions.
+Deep dive: [CodeBlockNode](/guide/code-block-node), [Code Block Runtime](/guide/code-block-runtime)
 
 ## MermaidBlockNode
 

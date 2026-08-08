@@ -2,7 +2,7 @@
   "name": "markstream-angular",
   "type": "module",
   "version": "0.0.10",
-  "description": "Angular 20+ standalone streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Monaco-powered code blocks, and safe Angular component rendering.",
+  "description": "Angular 20+ standalone streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and safe Angular component rendering.",
   "author": "Simon He",
   "license": "MIT",
   "homepage": "https://markstream.simonhe.me/frameworks/angular",
@@ -40,7 +40,7 @@
     "streaming-mermaid",
     "katex",
     "streaming-katex",
-    "monaco-editor",
+    "stream-diffs",
     "streaming-code-blocks",
     "large-documents",
     "custom-components",
@@ -83,8 +83,7 @@
     "@terrastruct/d2": ">=0.1.33",
     "katex": ">=0.16.22",
     "mermaid": ">=11",
-    "stream-diffs": ">=0.0.2",
-    "stream-monaco": ">=0.0.48"
+    "stream-diffs": ">=0.0.2"
   },
   "peerDependenciesMeta": {
     "@antv/infographic": {
@@ -100,9 +99,6 @@
       "optional": true
     },
     "stream-diffs": {
-      "optional": true
-    },
-    "stream-monaco": {
       "optional": true
     }
   },

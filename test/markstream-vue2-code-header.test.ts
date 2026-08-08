@@ -8,7 +8,6 @@ import {
 
 const componentPaths = [
   'packages/markstream-vue2/src/components/CodeBlockNode/CodeBlockNode.vue',
-  'packages/markstream-vue2/src/components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.vue',
 ]
 
 describe('markstream-vue2 React code header parity', () => {

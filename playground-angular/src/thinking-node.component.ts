@@ -58,7 +58,6 @@ import { NodeRenderer } from 'markstream-angular'
               [themes]="context?.codeBlockThemes?.themes"
               [codeBlockDarkTheme]="context?.codeBlockThemes?.darkTheme"
               [codeBlockLightTheme]="context?.codeBlockThemes?.lightTheme"
-              [codeBlockMonacoOptions]="context?.codeBlockThemes?.monacoOptions"
               [codeBlockMinWidth]="context?.codeBlockThemes?.minWidth"
               [codeBlockMaxWidth]="context?.codeBlockThemes?.maxWidth"
               [customHtmlTags]="resolvedCustomHtmlTags"

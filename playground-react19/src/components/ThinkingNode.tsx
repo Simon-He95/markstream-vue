@@ -76,7 +76,6 @@ export function ThinkingNode(props: ThinkingNodeProps) {
                     themes={ctx?.codeBlockThemes?.themes}
                     codeBlockDarkTheme={ctx?.codeBlockThemes?.darkTheme}
                     codeBlockLightTheme={ctx?.codeBlockThemes?.lightTheme}
-                    codeBlockMonacoOptions={ctx?.codeBlockThemes?.monacoOptions}
                     codeBlockMinWidth={ctx?.codeBlockThemes?.minWidth}
                     codeBlockMaxWidth={ctx?.codeBlockThemes?.maxWidth}
                     codeBlockProps={ctx?.codeBlockProps}

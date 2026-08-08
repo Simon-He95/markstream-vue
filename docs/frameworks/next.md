@@ -31,7 +31,7 @@ Use `markstream-react` in Next.js when:
 - You want server HTML first and client enhancement after hydration
 - You need a pure server Markdown render path
 - You have live SSE/WebSocket content in a client component
-- Optional peers such as Mermaid, KaTeX, and Monaco need browser-only setup
+- Optional peers such as Mermaid, KaTeX, and stream-diffs need browser-only setup
 
 ## Install
 
@@ -105,7 +105,7 @@ export default async function ChatPage() {
 
 ## Optional peers and workers
 
-Keep browser-only optional peers such as Mermaid, KaTeX, and Monaco in client components or client plugins. Use the [Next.js SSR guide](/guide/react-next-ssr) and [React installation guide](/guide/react-installation) for framework-specific setup instead of copying Vite worker import syntax into a Next.js page.
+Keep browser-only optional peers such as Mermaid, KaTeX, and stream-diffs in client components or client plugins. Use the [Next.js SSR guide](/guide/react-next-ssr) and [React installation guide](/guide/react-installation) for framework-specific setup instead of copying Vite worker import syntax into a Next.js page.
 
 ## Key considerations
 
@@ -113,7 +113,7 @@ Keep browser-only optional peers such as Mermaid, KaTeX, and Monaco in client co
 - **Server-only**: use `markstream-react/server` when no client component boundary is needed
 - **Live streaming**: use root `markstream-react` inside a `'use client'` component
 - **CSS order**: import `markstream-react/index.css` in your app layout or component entry
-- **Optional peers**: Mermaid, KaTeX, `stream-diffs` (enhanced code blocks), Monaco (fallback) are optional — only install what your AI output needs
+- **Optional peers**: Mermaid, KaTeX, and `stream-diffs` (enhanced code blocks) are optional — only install what your AI output needs
 
 ## Full guides
 

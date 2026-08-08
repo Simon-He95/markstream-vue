@@ -16,9 +16,7 @@ Peer sets are package-specific. Confirm the selected package's current `peerDepe
 
 | Feature | Peers | Package notes |
 |---------|-------|---------------|
-| Enhanced File/Diff code blocks | `stream-diffs` | Vue 3; selected by the compatibility-named `codeRenderer="monaco"` |
-| Lightweight highlighted code blocks | `stream-markdown` | Vue 3, React, and Vue 2 |
-| Monaco-powered code blocks | `stream-monaco` | React, Svelte, Angular, and Vue 2; legacy compatibility peer in Vue 3, not its current default enhanced surface |
+| Enhanced File/Diff and diff code blocks | `stream-diffs` | All packages |
 | Mermaid | `mermaid` | All renderer packages |
 | D2 | `@terrastruct/d2` | All renderer packages |
 | KaTeX math | `katex` | All renderer packages |

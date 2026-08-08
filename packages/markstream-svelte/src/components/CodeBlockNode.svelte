@@ -1,11 +1,11 @@
 <script lang="ts">
-  import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme } from '../types/monaco'
+  import type { CodeBlockTheme } from '../types/monaco'
   import type { SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
   import { onDestroy, onMount, tick } from 'svelte'
   import { useSafeI18n } from '../i18n/useSafeI18n'
   import { getUseMonaco } from '../optional/monaco'
   import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
-  import { getLanguageIcon, isLikelyIncompleteLanguageIdentifier, languageMap, normalizeLanguageIdentifier, resolveMonacoLanguageId } from '../utils/languageIcon'
+  import { getLanguageIcon, isLikelyIncompleteLanguageIdentifier, languageMap, normalizeLanguageIdentifier, resolveLanguageId } from '../utils/languageIcon'
   import HtmlPreviewFrame from './HtmlPreviewFrame.svelte'
   import PreCodeNode from './PreCodeNode.svelte'
   import { copyTextToClipboard, resolveCssSize } from './shared/rich-block-helpers'
@@ -17,10 +17,9 @@
     isDark?: boolean | undefined
     loading?: boolean | undefined
     stream?: boolean | undefined
-    darkTheme?: CodeBlockMonacoTheme | undefined
-    lightTheme?: CodeBlockMonacoTheme | undefined
-    themes?: CodeBlockMonacoTheme[] | undefined
-    monacoOptions?: CodeBlockMonacoOptions | undefined
+    darkTheme?: CodeBlockTheme | undefined
+    lightTheme?: CodeBlockTheme | undefined
+    themes?: CodeBlockTheme[] | undefined
     minWidth?: string | number | undefined
     maxWidth?: string | number | undefined
     isShowPreview?: boolean
@@ -45,7 +44,6 @@
     darkTheme = undefined,
     lightTheme = undefined,
     themes = undefined,
-    monacoOptions = undefined,
     minWidth = undefined,
     maxWidth = undefined,
     isShowPreview = true,
@@ -76,6 +74,10 @@
   })
   const streamingLanguageTokens = ['javascript', 'plaintext', 'shellscript', 'typescript']
   const defaultPreFallbackFontFamily = '"SF Mono", Monaco, Consolas, "Ubuntu Mono", "Liberation Mono", "Courier New", monospace'
+  // 2.0: `stream-monaco` is removed and there is no `monacoOptions` prop
+  // anymore. stream-diffs is configured entirely by the component-level
+  // defaults below, so all option reads fall back to these reasonable values.
+  const defaultEditorOptions = Object.freeze({}) as Record<string, unknown>
 
   function resolveRecoverableFallbackLanguage(error: unknown) {
     const message = error instanceof Error ? error.message : String(error ?? '')
@@ -160,7 +162,7 @@
 
   let rawLanguage = $derived(getString((node as any)?.language).trim())
   let canonicalLanguage = $derived(normalizeLanguageIdentifier(rawLanguage))
-  let monacoLanguage = $derived(resolveMonacoLanguageId(canonicalLanguage || rawLanguage || 'plaintext'))
+  let monacoLanguage = $derived(resolveLanguageId(canonicalLanguage || rawLanguage || 'plaintext'))
   let code = $derived(getResolvedCode(node))
   let diff = $derived(Boolean((node as any)?.diff))
   let originalCode = $derived(getString((node as any)?.originalCode))
@@ -170,7 +172,6 @@
   let resolvedStream = $derived(stream ?? context?.codeBlockStream ?? true)
   let resolvedIsDark = $derived(isDark ?? context?.isDark ?? false)
   let resolvedThemes = $derived(context?.codeBlockThemes)
-  let mergedMonacoOptions = $derived({ ...(resolvedThemes?.monacoOptions || {}), ...(monacoOptions || {}) })
   let resolvedMonacoOptions = $derived(buildResolvedMonacoOptions())
   let requestedTheme = $derived(getThemeName(
     resolvedIsDark
@@ -178,7 +179,7 @@
       : lightTheme ?? resolvedThemes?.lightTheme,
     resolvedIsDark ? 'vitesse-dark' : 'vitesse-light',
   ))
-  let defaultCodeFontSize = $derived(Number(mergedMonacoOptions.fontSize) || 12)
+  let defaultCodeFontSize = $derived(Number(defaultEditorOptions.fontSize) || 12)
   let minWidthValue = $derived(resolveCssSize(minWidth ?? resolvedThemes?.minWidth))
   let maxWidthValue = $derived(resolveCssSize(maxWidth ?? resolvedThemes?.maxWidth))
   let containerStyle = $derived([
@@ -279,12 +280,12 @@
   }
 
   function getCodeLineHeight() {
-    return readPositiveMetric(mergedMonacoOptions.lineHeight)
+    return readPositiveMetric(defaultEditorOptions.lineHeight)
       ?? (codeFontSize === 12 ? 18 : Math.max(12, Math.round(codeFontSize * 1.5)))
   }
 
   function getCodePadding() {
-    const padding = mergedMonacoOptions.padding as Record<string, unknown> | undefined
+    const padding = defaultEditorOptions.padding as Record<string, unknown> | undefined
     const defaultPadding = diff ? 0 : 8
     return {
       top: readNonNegativeMetric(padding?.top) ?? defaultPadding,
@@ -293,15 +294,15 @@
   }
 
   function getCodeFontFamily() {
-    return typeof mergedMonacoOptions.fontFamily === 'string' && mergedMonacoOptions.fontFamily.trim()
-      ? mergedMonacoOptions.fontFamily.trim()
+    return typeof defaultEditorOptions.fontFamily === 'string' && defaultEditorOptions.fontFamily.trim()
+      ? defaultEditorOptions.fontFamily.trim()
       : defaultPreFallbackFontFamily
   }
 
   function buildPreFallbackStyle() {
     const padding = getCodePadding()
     const fontFamily = getCodeFontFamily()
-    const tabSize = readPositiveMetric(mergedMonacoOptions.tabSize) ?? 4
+    const tabSize = readPositiveMetric(defaultEditorOptions.tabSize) ?? 4
     const lineHeight = getCodeLineHeight()
     return [
       `--markstream-code-font-family: ${fontFamily}`,
@@ -320,7 +321,7 @@
     ].join('; ')
   }
 
-  function getThemeName(theme: CodeBlockMonacoTheme | undefined, fallback: string) {
+  function getThemeName(theme: CodeBlockTheme | undefined, fallback: string) {
     if (typeof theme === 'string' && theme)
       return theme
     if (theme && typeof theme === 'object' && typeof (theme as any).name === 'string')
@@ -329,8 +330,8 @@
   }
 
   function buildThemeList() {
-    const list: CodeBlockMonacoTheme[] = ['vitesse-dark', 'vitesse-light']
-    const add = (item: CodeBlockMonacoTheme | undefined) => {
+    const list: CodeBlockTheme[] = ['vitesse-dark', 'vitesse-light']
+    const add = (item: CodeBlockTheme | undefined) => {
       if (item)
         list.push(item)
     }
@@ -358,7 +359,7 @@
   }
 
   function buildResolvedMonacoOptions() {
-    const raw = { ...mergedMonacoOptions } as Record<string, any>
+    const raw = { ...defaultEditorOptions } as Record<string, any>
     const maxHeight = expanded ? 900 : (raw.MAX_HEIGHT ?? 500)
     const baseOptions = {
       readOnly: true,
@@ -500,7 +501,7 @@ ${configuredUnsafeCSS}`.trim()
     lastThemeRequest = requestedTheme
     void Promise.resolve(helpers.setTheme?.(requestedTheme)).catch((error) => {
       if (typeof console !== 'undefined')
-        console.warn('[markstream-svelte] Failed to apply Monaco theme:', error)
+        console.warn('[markstream-svelte] Failed to apply code-block theme:', error)
     })
   }
 
@@ -547,26 +548,17 @@ ${configuredUnsafeCSS}`.trim()
   function hasRenderedEditorDom(kind: 'single' | 'diff') {
     if (!editorHost)
       return false
-    if (kind === 'diff') {
-      return Boolean(editorHost.querySelector([
-        '.monaco-diff-editor',
-        'diffs-container',
-        '.stream-diffs-shell',
-        '[data-stream-diffs-state]',
-      ].join(',')))
-    }
-    return Boolean(editorHost.querySelector([
-      '.monaco-editor',
+    // stream-diffs renders its surface inside these containers.
+    const selectors = [
       'diffs-container',
       '.stream-diffs-shell',
       '[data-stream-diffs-state]',
-    ].join(',')))
+    ].join(',')
+    return Boolean(editorHost.querySelector(selectors))
   }
 
   function getVisualEditorSurface() {
     return editorHost?.querySelector<HTMLElement>([
-      '.monaco-diff-editor',
-      '.monaco-editor',
       'diffs-container',
       '[data-stream-diffs-state]',
       '.stream-diffs-shell',
@@ -760,9 +752,9 @@ ${configuredUnsafeCSS}`.trim()
   function syncEditorGeometryVars() {
     if (!editorHost)
       return
-    const tabSize = readPositiveMetric(mergedMonacoOptions.tabSize) ?? 4
+    const tabSize = readPositiveMetric(defaultEditorOptions.tabSize) ?? 4
     editorHost.style.setProperty('--diffs-tab-size', String(tabSize))
-    const rawPadding = mergedMonacoOptions.padding
+    const rawPadding = defaultEditorOptions.padding
     const hasConfiguredPadding = Boolean(rawPadding && typeof rawPadding === 'object')
     if (hasConfiguredPadding)
       editorHost.style.setProperty('--diffs-gap-block', `${getCodePadding().top}px`)
@@ -989,37 +981,19 @@ ${configuredUnsafeCSS}`.trim()
       if (hostRect.height <= 0)
         return null
 
-      const selectors = [
-        '.editor.original .view-lines .view-line',
-        '.editor.modified .view-lines .view-line',
-        '.editor.original .view-zones > div',
-        '.editor.modified .view-zones > div',
-        '.editor.original .margin-view-zones > div',
-        '.editor.modified .margin-view-zones > div',
-        '.editor.original .diff-hidden-lines',
-        '.editor.modified .diff-hidden-lines',
-        '.stream-monaco-diff-unchanged-bridge',
-      ]
-
-      let bottom = 0
-      for (const node of Array.from(container.querySelectorAll<HTMLElement>(selectors.join(',')))) {
-        const style = window.getComputedStyle(node)
-        if (style.display === 'none' || style.visibility === 'hidden')
-          continue
-        if (Number.parseFloat(style.opacity || '1') <= 0.01)
-          continue
-        const rect = node.getBoundingClientRect()
-        if (rect.height <= 0 || rect.bottom <= hostRect.top)
-          continue
-        bottom = Math.max(bottom, rect.bottom - hostRect.top)
-      }
-
-      if (bottom > 0)
-        return Math.ceil(bottom + 1)
-
-      const diffRoot = container.querySelector<HTMLElement>('.monaco-diff-editor')
-      const diffHeight = diffRoot?.getBoundingClientRect?.().height ?? 0
-      return diffHeight > 0 ? Math.ceil(diffHeight + 1) : null
+      // stream-diffs renders its surface inside these containers. Measure the
+      // rendered shell so a diff block fills its real content height even when
+      // the adapter's getContentHeight isn't available yet.
+      const surface = container.querySelector<HTMLElement>([
+        'diffs-container',
+        '.stream-diffs-shell',
+        '[data-stream-diffs-state]',
+      ].join(','))
+      if (!surface)
+        return null
+      const rect = surface.getBoundingClientRect()
+      const height = rect.bottom - hostRect.top
+      return height > 0 ? Math.ceil(height + 1) : null
     }
     catch {
       return null

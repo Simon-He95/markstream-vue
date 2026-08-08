@@ -9,7 +9,6 @@ import type {
   TableRowNode as TableRowNodeType,
 } from 'stream-markdown-parser'
 import type { HtmlPreviewFrameProps } from '../components/CodeBlockNode/HtmlPreviewFrame.tsrx'
-import type { MarkdownCodeBlockNodeProps } from '../components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.tsrx'
 import type { TooltipProps } from '../components/Tooltip/Tooltip.tsrx'
 import type { CustomComponentMap, HtmlComponentMap, StreamingComponentMap } from '../customComponents'
 import type { NodeRendererProps, RenderContext } from '../types'
@@ -243,7 +242,6 @@ function createRenderContext(
       langs: props.langs,
       darkTheme: props.codeBlockDarkTheme,
       lightTheme: props.codeBlockLightTheme,
-      monacoOptions: props.codeBlockMonacoOptions,
       minWidth: props.codeBlockMinWidth,
       maxWidth: props.codeBlockMaxWidth,
     },
@@ -372,8 +370,9 @@ function renderCodeBlock(
       node={node}
       loading={Boolean(node.loading)}
       stream={ctx.codeBlockStream}
-      monacoOptions={ctx.codeBlockThemes?.monacoOptions}
       themes={ctx.codeBlockThemes?.themes}
+      darkTheme={ctx.codeBlockThemes?.darkTheme}
+      lightTheme={ctx.codeBlockThemes?.lightTheme}
       minWidth={ctx.codeBlockThemes?.minWidth}
       maxWidth={ctx.codeBlockThemes?.maxWidth}
       isDark={ctx.isDark}
@@ -956,13 +955,6 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
   return renderStaticCodeShell('code-block-node', props.node, {
     showHeader: props.showHeader,
     fallback: 'code-block',
-  })
-}
-
-export function MarkdownCodeBlockNode(props: MarkdownCodeBlockNodeProps) {
-  return renderStaticCodeShell('markdown-code-block-node', props.node, {
-    showHeader: props.showHeader,
-    fallback: 'markdown-code-block',
   })
 }
 

@@ -107,7 +107,6 @@ setCustomComponents('next-ssr-demo', {
 ```tsx
 import type {
   HtmlPreviewFrameProps,
-  MarkdownCodeBlockNodeProps,
   NodeRendererProps,
   TooltipProps,
 } from 'markstream-react/next'

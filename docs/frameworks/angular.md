@@ -113,12 +113,11 @@ export class ChatMessageComponent {
 | --- | --- |
 | `mermaid` | Mermaid diagrams |
 | `katex` | Inline and block math rendering |
-| `stream-diffs` | Enhanced code blocks (recommended; smaller runtime, no `monaco-editor`) |
-| `stream-monaco` | Monaco-powered code blocks (automatic fallback when `stream-diffs` is absent) |
+| `stream-diffs` | Enhanced code blocks (recommended) |
 | `@terrastruct/d2` | D2 diagrams |
 | `@antv/infographic` | Infographic blocks |
 
-Shiki is not documented for `markstream-angular` unless you add a supported integration path.
+Enhanced code blocks fall back to a plain `<pre>` when `stream-diffs` is not installed.
 
 ## When not to use this package
 

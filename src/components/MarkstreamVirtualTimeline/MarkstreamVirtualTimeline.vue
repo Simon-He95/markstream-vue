@@ -267,10 +267,10 @@ function normalizeTimelineMarkdownCodeRenderer(
   value: unknown,
   mode = normalizeTimelineMarkdownMode(props.markdownMode),
 ): NodeRendererCodeRenderer {
-  if (value === 'pre' || value === 'shiki' || value === 'monaco')
+  if (value === 'pre' || value === 'stream-diffs')
     return value
 
-  return mode === 'docs' ? 'monaco' : 'pre'
+  return mode === 'docs' ? 'stream-diffs' : 'pre'
 }
 
 const normalizedTimelineMarkdownMode = computed(() => {
@@ -1168,7 +1168,7 @@ function setItemSize(
     ? restoredFloor
     : Math.ceil(size)
 
-  // Monaco / pre fallback / browser font rounding can differ by exactly 1px.
+  // stream-diffs / pre fallback / browser font rounding can differ by exactly 1px.
   // Treat that as measurement noise; otherwise an item above the current
   // anchor will restore scrollTop by 1px and visibly shimmer on refresh.
   if (
@@ -1856,8 +1856,8 @@ function isElementVisiblyPainted(el: HTMLElement) {
   return rect.width > 0 && rect.height > 0
 }
 
-function hasVisibleMonacoDom(root: HTMLElement) {
-  return Array.from(root.querySelectorAll<HTMLElement>('.monaco-editor, .monaco-diff-editor'))
+function hasVisibleStreamDiffsDom(root: HTMLElement) {
+  return Array.from(root.querySelectorAll<HTMLElement>('diffs-container, .stream-diffs-shell, .stream-diffs-surface'))
     .some(isElementVisiblyPainted)
 }
 
@@ -1923,8 +1923,8 @@ function hasReadyCodeBlockContent(content: HTMLElement) {
     const hasFallback = hasUsableRestoreFallback(fallback)
 
     // Hidden editor alone is not a visible surface. It is only safe when the
-    // pre fallback is still usable, Monaco is visibly painted, or the block is enhanced.
-    return enhanced || hasFallback || hasVisibleMonacoDom(codeBlock)
+    // pre fallback is still usable, stream-diffs is visibly painted, or the block is enhanced.
+    return enhanced || hasFallback || hasVisibleStreamDiffsDom(codeBlock)
   }
 
   return hasReadyRoutedDiagramContent(content)
@@ -2268,7 +2268,7 @@ function readRestoreViewportSignature() {
       const content = slot.querySelector<HTMLElement>(':scope > .node-content')
       const code = content?.querySelector<HTMLElement>('[data-markstream-code-block="1"]')
       const fallback = content?.querySelector<HTMLElement>('pre.code-pre-fallback')
-      const editor = content?.querySelector<HTMLElement>('.monaco-editor, .monaco-diff-editor')
+      const editor = content?.querySelector<HTMLElement>('diffs-container, .stream-diffs-shell')
 
       return [
         slot.dataset.nodeIndex ?? '',

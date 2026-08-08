@@ -1,5 +1,4 @@
 import type { NodeRendererCodeRenderer, NodeRendererProps } from '../../types/node-renderer-props'
-import { getHighlightRegistrationKey } from 'markstream-core'
 
 export interface VirtualRendererLayoutKeyOptions {
   renderer: NodeRendererCodeRenderer
@@ -7,10 +6,7 @@ export interface VirtualRendererLayoutKeyOptions {
   codeBlockStream?: boolean
   codeBlockMinWidth?: NodeRendererProps['codeBlockMinWidth']
   codeBlockMaxWidth?: NodeRendererProps['codeBlockMaxWidth']
-  codeBlockMonacoOptions?: NodeRendererProps['codeBlockMonacoOptions']
   codeBlockProps?: NodeRendererProps['codeBlockProps']
-  themes?: NodeRendererProps['themes']
-  langs?: NodeRendererProps['langs']
 }
 
 export function stringifyVirtualToken(value: unknown) {
@@ -35,34 +31,16 @@ export function stringifyVirtualToken(value: unknown) {
 
 export function buildVirtualRendererLayoutKey(options: VirtualRendererLayoutKeyOptions) {
   const renderer = options.renderer
-  const monaco = renderer === 'monaco' ? options.codeBlockMonacoOptions : undefined
   const codeProps = options.codeBlockProps as Record<string, unknown> | undefined
-  const includeShikiCodeOptions = renderer === 'shiki'
 
   return [
     options.isDark ? 'dark' : 'light',
-    renderer === 'monaco'
+    renderer === 'stream-diffs'
       ? 'code-rich'
-      : renderer === 'pre'
-        ? 'code-pre'
-        : 'code-shiki',
+      : 'code-pre',
     options.codeBlockStream === false ? 'code-static' : 'code-stream',
     stringifyVirtualToken(options.codeBlockMinWidth),
     stringifyVirtualToken(options.codeBlockMaxWidth),
-    ...(includeShikiCodeOptions
-      ? [getHighlightRegistrationKey(
-          (codeProps?.themes ?? options.themes) as readonly unknown[] | undefined,
-          (codeProps?.langs ?? options.langs) as readonly unknown[] | undefined,
-        )]
-      : []),
-    stringifyVirtualToken(monaco?.fontSize),
-    stringifyVirtualToken(monaco?.lineHeight),
-    stringifyVirtualToken(monaco?.fontFamily),
-    stringifyVirtualToken(monaco?.tabSize),
-    stringifyVirtualToken(monaco?.MAX_HEIGHT),
-    stringifyVirtualToken(monaco?.wordWrap),
-    stringifyVirtualToken(monaco?.wrappingIndent),
-    stringifyVirtualToken(monaco?.padding),
     stringifyVirtualToken(codeProps?.showHeader),
     stringifyVirtualToken(codeProps?.showCopyButton),
     stringifyVirtualToken(codeProps?.showExpandButton),

@@ -4,10 +4,9 @@ import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 
 import type { CustomComponentMap, HtmlComponentDefinitions, HtmlComponentMap, StreamingComponentDefinitions, StreamingComponentMap } from './customComponents'
 import type { SmoothMarkdownStreamOptions } from './hooks/useSmoothMarkdownStream'
 import type {
-  CodeBlockMonacoOptions,
-  CodeBlockMonacoTheme,
   CodeBlockNodeProps,
   CodeBlockPreviewPayload,
+  CodeBlockTheme,
   D2BlockNodeProps,
   InfographicBlockNodeProps,
   MermaidBlockNodeProps,
@@ -51,9 +50,8 @@ export interface NodeRendererProps<
   htmlPolicy?: HtmlPolicy
   viewportPriority?: boolean
   codeBlockStream?: boolean
-  codeBlockDarkTheme?: CodeBlockMonacoTheme
-  codeBlockLightTheme?: CodeBlockMonacoTheme
-  codeBlockMonacoOptions?: CodeBlockMonacoOptions
+  codeBlockDarkTheme?: CodeBlockTheme
+  codeBlockLightTheme?: CodeBlockTheme
   renderCodeBlocksAsPre?: boolean
   codeBlockMinWidth?: string | number
   codeBlockMaxWidth?: string | number
@@ -63,16 +61,16 @@ export interface NodeRendererProps<
   infographicProps?: Partial<Omit<InfographicBlockNodeProps, 'node' | 'loading' | 'isDark'>>
   showTooltips?: boolean
   /**
-   * Theme names or theme objects preloaded for Monaco-backed code blocks.
-   * When Shiki code blocks are used, only string theme names are forwarded to
-   * MarkdownCodeBlockNode / stream-markdown; theme objects are ignored.
+   * Theme names or theme objects preloaded for diff-backed code blocks.
+   * When Shiki code blocks are used, only string theme names are forwarded;
+   * theme objects are ignored.
    */
-  themes?: CodeBlockMonacoTheme[]
+  themes?: CodeBlockTheme[]
   /**
-   * Shiki language preload list forwarded to MarkdownCodeBlockNode.
+   * Shiki language preload list forwarded to stream-markdown.
    *
-   * The default React code block renderer is Monaco-backed. This prop is used
-   * when a custom `code_block` or language renderer uses MarkdownCodeBlockNode.
+   * The default React code block renderer is diff-backed. This prop is used
+   * when a custom `code_block` or language renderer requests Shiki languages.
    */
   langs?: readonly string[]
   isDark?: boolean
@@ -131,10 +129,9 @@ export interface RenderContext {
   codeBlockStream?: boolean
   renderCodeBlocksAsPre?: boolean
   codeBlockThemes?: {
-    themes?: CodeBlockMonacoTheme[]
-    darkTheme?: CodeBlockMonacoTheme
-    lightTheme?: CodeBlockMonacoTheme
-    monacoOptions?: CodeBlockMonacoOptions
+    themes?: CodeBlockTheme[]
+    darkTheme?: CodeBlockTheme
+    lightTheme?: CodeBlockTheme
     minWidth?: string | number
     maxWidth?: string | number
     langs?: readonly string[]

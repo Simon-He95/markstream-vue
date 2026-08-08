@@ -1,6 +1,5 @@
 /// <reference types="vitest" />
 
-import type { PluginOption } from 'vite'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
@@ -8,7 +7,6 @@ import Vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
-import monacoEditorPlugin from 'vite-plugin-monaco-editor-esm'
 import Pages from 'vite-plugin-pages'
 
 const require = createRequire(import.meta.url)
@@ -73,19 +71,6 @@ export default defineConfig(() => {
       Components({
         dts: true,
       }),
-
-      monacoEditorPlugin({
-        languageWorkers: [
-          'editorWorkerService',
-          'typescript',
-          'css',
-          'html',
-          'json',
-        ],
-        customDistPath(root, buildOutDir) {
-          return path.resolve(buildOutDir, 'monacoeditorwork')
-        },
-      }) as unknown as PluginOption,
     ],
   }
 })

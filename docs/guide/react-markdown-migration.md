@@ -34,7 +34,7 @@ Open the [React migration demo](https://markstream-react.pages.dev/migration-dem
 ## When `markstream-react` is a better fit
 
 - You render AI/chat/SSE output while text is still arriving.
-- You want progressive Mermaid, D2, KaTeX, or Monaco-backed code blocks.
+- You want progressive Mermaid, D2, KaTeX, or stream-diffs enhanced code blocks.
 - You want viewport-aware heavy-node scheduling for large documents.
 - You want to move from string-in/string-out rendering to a streaming-friendly AST model.
 
@@ -224,32 +224,18 @@ Useful node-type translations:
 
 Many `react-markdown` apps override `components.code` and wire in a third-party highlighter.
 
-With `markstream-react`, you have three common choices:
+With `markstream-react`, the default `CodeBlockNode` is enhanced by the optional `stream-diffs` runtime (falls back to a plain `<pre>` when the peer is not installed). You have two common choices:
 
-- Keep the default `CodeBlockNode` for Monaco-powered code blocks.
-- Swap `code_block` to `MarkdownCodeBlockNode` for a lighter Shiki-based renderer.
+- Keep the default `CodeBlockNode` for the enhanced `stream-diffs`-powered code blocks.
 - Set `renderCodeBlocksAsPre` when you want plain `<pre><code>`.
 
-Example: swap code blocks to Shiki:
+To use the enhanced code block runtime, install the optional peer:
 
-```tsx
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
-
-setCustomComponents('docs', {
-  code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
-      node={node}
-      isDark={isDark}
-      stream={ctx?.codeBlockStream}
-      {...(ctx?.codeBlockProps || {})}
-    />
-  ),
-})
-
-export function Article({ markdown }: { markdown: string }) {
-  return <MarkdownRender customId="docs" content={markdown} />
-}
+```bash
+pnpm add stream-diffs
 ```
+
+Theming is controlled through `theme` / `darkTheme` / `lightTheme` / `themes`, and code/diff options use `stream-diffs` built-in defaults.
 
 ## Migrating plugin logic
 

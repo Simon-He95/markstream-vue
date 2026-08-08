@@ -33,7 +33,7 @@ hero:
       link: /zh/guide/ai-workflows
 features:
   - title: 先装对依赖
-    details: 按文档站、聊天应用、Monaco 代码块、图表型内容来选择最小 peer 依赖组合。
+    details: 按文档站、聊天应用、`stream-diffs` 增强代码块、图表型内容来选择最小 peer 依赖组合。
     link: /zh/frameworks/
   - title: 选对接入方式
     details: 一次性渲染、VitePress 文档站、SSE 或 token 流式输出，推荐的接法并不一样。
@@ -122,7 +122,7 @@ features:
 - [渲染器与节点组件](/zh/guide/components)：导出的渲染器和节点组件参考
 - [按症状排查](/zh/guide/troubleshooting-path)：先做第一轮定位，再进入对应深度页面
 - [故障排除](/zh/guide/troubleshooting)：CSS/reset 顺序、依赖项和常见问题
-- [功能特性](/zh/guide/features)：流式渲染、Mermaid、Monaco、KaTeX 等能力总览
+- [功能特性](/zh/guide/features)：流式渲染、Mermaid、`stream-diffs`、KaTeX 等能力总览
 - [站内搜索](/zh/guide/search)：直接搜索页面、组件名和关键字
 - [LLM 推荐上下文](/llms.zh-CN.txt)、[完整 LLM 参考](/llms-full.zh-CN.txt)、[仓库 agent 上下文](/llms.zh-CN)：给可读仓库的助手提供项目地图
 
@@ -138,5 +138,5 @@ features:
 
 - `开始使用` 先解决接入问题：安装、快速开始、流式接法、Props。
 - `自定义` 负责解决业务扩展：覆盖组件、自定义标签、解析器钩子、样式与排障。
-- `功能专题` 现在默认折叠，主要放代码块、Mermaid、KaTeX、D2、Monaco 等深水区内容。
+- `功能专题` 现在默认折叠，主要放代码块、Mermaid、KaTeX、D2、`stream-diffs` 增强代码块等深水区内容。
 - `框架与迁移` 适合你已经明确框架或迁移目标之后再进入。

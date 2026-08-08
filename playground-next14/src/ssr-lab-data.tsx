@@ -325,17 +325,6 @@ export function createMatrixCases(entry: any, serverEntry: any) {
       }),
     },
     {
-      name: 'MarkdownCodeBlockNode',
-      element: React.createElement(entry.MarkdownCodeBlockNode, {
-        node: {
-          type: 'code_block',
-          language: 'md',
-          code: '# nested markdown',
-          raw: '# nested markdown',
-        },
-      }),
-    },
-    {
       name: 'PreCodeNode',
       element: React.createElement(entry.PreCodeNode, {
         node: {

@@ -1,7 +1,7 @@
 // Centralized exported props interfaces for components
 import type { CodeBlockNode } from 'stream-markdown-parser'
 
-export interface CodeBlockMonacoThemeObject {
+export interface CodeBlockThemeObject {
   name: string
   base?: string
   inherit?: boolean
@@ -10,25 +10,14 @@ export interface CodeBlockMonacoThemeObject {
   [key: string]: unknown
 }
 
-export type CodeBlockMonacoTheme = string | CodeBlockMonacoThemeObject
+export type CodeBlockTheme = string | CodeBlockThemeObject
 
-export type CodeBlockThemeProp = CodeBlockMonacoTheme | { light: CodeBlockMonacoTheme, dark: CodeBlockMonacoTheme }
-
-export type CodeBlockMonacoLanguage = string | ((...args: unknown[]) => unknown)
+export type CodeBlockThemeProp = CodeBlockTheme | { light: CodeBlockTheme, dark: CodeBlockTheme }
 
 export interface CommonCodeBlockProps {
   showHeader?: boolean
   showCopyButton?: boolean
   showExpandButton?: boolean
-}
-
-export interface ShikiCodeBlockProps extends CommonCodeBlockProps {
-  themes?: readonly string[]
-  /**
-   * Shiki language preload request forwarded to stream-markdown's registerHighlight().
-   * This is not a rendering allow-list; already available Shiki languages may still highlight.
-   */
-  langs?: readonly string[]
 }
 
 export interface CodeBlockDiffHideUnchangedRegionsOptions {
@@ -60,46 +49,6 @@ export interface CodeBlockDiffHunkActionContext {
   modifiedModel: unknown
 }
 
-export interface CodeBlockMonacoOptions {
-  MAX_HEIGHT?: number | string
-  fontSize?: number
-  lineHeight?: number
-  fontFamily?: string
-  tabSize?: number
-  padding?: { top?: number, bottom?: number }
-  readOnly?: boolean
-  wordWrap?: 'off' | 'on' | 'wordWrapColumn' | 'bounded' | string
-  diffWordWrap?: 'off' | 'on' | 'inherit'
-  wrappingIndent?: 'none' | 'same' | 'indent' | 'deepIndent' | string
-  theme?: string
-  themes?: CodeBlockMonacoTheme[]
-  languages?: CodeBlockMonacoLanguage[]
-  renderSideBySide?: boolean
-  useInlineViewWhenSpaceIsLimited?: boolean
-  renderSideBySideInlineBreakpoint?: number
-  enableSplitViewResizing?: boolean
-  ignoreTrimWhitespace?: boolean
-  maxComputationTime?: number
-  diffAlgorithm?: string
-  renderIndicators?: boolean
-  originalEditable?: boolean
-  revealDebounceMs?: number
-  revealStrategy?: 'bottom' | 'centerIfOutside' | 'center'
-  revealBatchOnIdleMs?: number
-  updateThrottleMs?: number
-  diffUpdateThrottleMs?: number
-  diffAutoScroll?: boolean
-  diffHideUnchangedRegions?: CodeBlockDiffHideUnchangedRegions
-  diffLineStyle?: CodeBlockDiffLineStyle
-  diffAppearance?: CodeBlockDiffAppearance
-  diffUnchangedRegionStyle?: CodeBlockDiffUnchangedRegionStyle
-  diffHunkActionsOnHover?: boolean
-  diffHunkHoverHideDelayMs?: number
-  onDiffHunkAction?: (context: CodeBlockDiffHunkActionContext) => void | boolean | Promise<void | boolean>
-  scrollbar?: Record<string, unknown>
-  [key: string]: unknown
-}
-
 export interface CodeBlockNodeProps extends CommonCodeBlockProps {
   node: CodeBlockNode
   isDark?: boolean
@@ -107,15 +56,14 @@ export interface CodeBlockNodeProps extends CommonCodeBlockProps {
   stream?: boolean
   theme?: CodeBlockThemeProp
   /** @deprecated Use `theme` prop instead. Kept for backward compatibility. */
-  darkTheme?: CodeBlockMonacoTheme
+  darkTheme?: CodeBlockTheme
   /** @deprecated Use `theme` prop instead. Kept for backward compatibility. */
-  lightTheme?: CodeBlockMonacoTheme
+  lightTheme?: CodeBlockTheme
   isShowPreview?: boolean
-  monacoOptions?: CodeBlockMonacoOptions
   enableFontSizeControl?: boolean
   minWidth?: string | number
   maxWidth?: string | number
-  themes?: CodeBlockMonacoTheme[]
+  themes?: CodeBlockTheme[]
   showPreviewButton?: boolean
   showCollapseButton?: boolean
   showFontSizeButtons?: boolean
@@ -215,12 +163,6 @@ export interface CodeBlockPreviewPayload {
   artifactType: 'text/html' | 'image/svg+xml'
   artifactTitle: string
   id: string
-}
-
-export interface MarkdownCodeBlockPreviewPayload {
-  type: 'text/html' | 'image/svg+xml'
-  content: string
-  title: string
 }
 
 export interface MermaidBlockEvent<TPayload = unknown> {

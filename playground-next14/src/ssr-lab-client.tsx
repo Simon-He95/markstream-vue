@@ -174,7 +174,7 @@ function readEnhancementState() {
   const serverFallback = document.querySelector('[data-ssr-case="fallback"][data-ssr-entry="server"]')
 
   const codeReady = Boolean(
-    nextEnhanced?.querySelector('[data-ssr-demo="code"] .monaco-editor')
+    nextEnhanced?.querySelector('[data-ssr-demo="code"] .stream-diffs-shell')
     || nextEnhanced?.querySelector('[data-ssr-demo="code"] .code-editor-fallback-surface'),
   )
   const mathReady = Boolean(nextEnhanced?.querySelector('[data-ssr-demo="math"] .katex'))

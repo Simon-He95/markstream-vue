@@ -123,9 +123,6 @@ export default defineConfig({
           if (normalized.includes('/node_modules/rxjs/'))
             return 'angular-rxjs'
 
-          if (normalized.includes('/node_modules/monaco-editor/'))
-            return 'monaco-editor'
-
           if (normalized.includes('/playground-angular/src/vendor/markstream-angular-jit.ts'))
             return 'markstream-angular'
 

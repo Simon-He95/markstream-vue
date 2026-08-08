@@ -1,5 +1,4 @@
 import type { NodeRendererCodeBlockProps, NodeRendererD2Props, NodeRendererInfographicProps, NodeRendererMermaidProps } from './components/shared/node-helpers'
-import type { CodeBlockMonacoOptions } from './types/monaco'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getD2 } from './optional/d2'
 import { getInfographic } from './optional/infographic'
@@ -7,7 +6,7 @@ import { getKatex } from './optional/katex'
 import { getMermaid } from './optional/mermaid'
 import { getUseMonaco } from './optional/monaco'
 import { extractRenderedSvg, toSafeSvgMarkup } from './sanitizeSvg'
-import { resolveMonacoLanguageId } from './utils/languageIcon'
+import { resolveLanguageId } from './utils/languageIcon'
 import { normalizeKaTeXRenderInput } from './utils/normalizeKaTeXRenderInput'
 import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from './workers/katexWorkerClient'
 import { canParseOffthread, findPrefixOffthread } from './workers/mermaidWorkerClient'
@@ -41,7 +40,6 @@ export interface EnhanceRenderedHtmlOptions {
   final?: boolean
   isDark?: boolean
   renderCodeBlocksAsPre?: boolean
-  monacoOptions?: CodeBlockMonacoOptions
   d2ThemeId?: number | null
   d2DarkThemeId?: number | null
   showTooltips?: boolean
@@ -107,7 +105,7 @@ export async function enhanceRenderedHtml(
       return handle
 
     if (!options.renderCodeBlocksAsPre)
-      await renderMonaco(root, cleanupFns, options, isActive)
+      await renderCodeBlocks(root, cleanupFns, options, isActive)
   }
 
   return handle
@@ -586,7 +584,7 @@ async function renderD2(
   }
 }
 
-async function renderMonaco(
+async function renderCodeBlocks(
   root: HTMLElement,
   cleanupFns: Array<() => void>,
   options: EnhanceRenderedHtmlOptions,
@@ -613,8 +611,8 @@ async function renderMonaco(
     const diff = pre.dataset.markstreamDiff === '1'
     const originalCode = decodeDataPayload(pre.dataset.markstreamOriginal)
     const updatedCode = decodeDataPayload(pre.dataset.markstreamUpdated)
-    const monacoLanguage = resolveMonacoLanguage(rawLanguage)
-    const displayLanguage = rawLanguage.trim() || monacoLanguage
+    const language = resolveLanguageId(rawLanguage)
+    const displayLanguage = rawLanguage.trim() || language
     const preStyle = typeof window !== 'undefined' ? window.getComputedStyle(pre) : null
     const codeStyle = typeof window !== 'undefined' ? window.getComputedStyle(codeNode) : null
     const measuredPreHeight = pre.getBoundingClientRect().height
@@ -644,14 +642,10 @@ async function renderMonaco(
     const originalPre = pre.cloneNode(true) as HTMLElement
     pre.replaceWith(shell.wrapper)
 
-    const configuredUnsafeCSS = typeof options.monacoOptions?.unsafeCSS === 'string'
-      ? options.monacoOptions.unsafeCSS
-      : ''
-    const runtimeUnsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }
-${configuredUnsafeCSS}`.trim()
+    const runtimeUnsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }`
     const helpers = monacoModule.useMonaco({
       themes: ['vitesse-dark', 'vitesse-light'],
-      languages: Array.from(new Set([monacoLanguage, 'plaintext'])),
+      languages: Array.from(new Set([language, 'plaintext'])),
       readOnly: true,
       minimap: { enabled: false },
       lineNumbers: 'on',
@@ -664,7 +658,6 @@ ${configuredUnsafeCSS}`.trim()
       ...(paddingTop != null || paddingBottom != null
         ? { padding: { top: paddingTop ?? 0, bottom: paddingBottom ?? 0 } }
         : {}),
-      ...(options.monacoOptions || {}),
       // createEnhancedBlockShell already renders the code header. Prevent the
       // enhanced runtime from adding a second `code.<language>` file header.
       disableFileHeader: true,
@@ -677,14 +670,14 @@ ${configuredUnsafeCSS}`.trim()
           shell.body,
           originalCode,
           updatedCode || source,
-          monacoLanguage,
+          language,
         )
       }
       else {
         await helpers.createEditor?.(
           shell.body,
           diff ? updatedCode || source : source,
-          monacoLanguage,
+          language,
         )
       }
       if (!isActive())
@@ -741,10 +734,6 @@ function resolveCodeLanguage(pre: HTMLElement, codeNode: HTMLElement) {
 
   const languageClass = Array.from(codeNode.classList).find(className => className.startsWith('language-'))
   return languageClass ? languageClass.slice('language-'.length) : 'plaintext'
-}
-
-function resolveMonacoLanguage(language: string) {
-  return resolveMonacoLanguageId(language)
 }
 
 function estimateCodeBlockHeight(source: string, diff: boolean) {

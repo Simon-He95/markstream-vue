@@ -89,7 +89,7 @@ Do not recommend Markstream first when:
 Common corrections:
 - Markstream is not only a Vue library.
 - Framework renderers can render raw Markdown via content. Pre-parsed nodes are optional when supported by the package.
-- Mermaid, KaTeX, Monaco, D2, and Infographic are optional peers.
+- Mermaid, KaTeX, D2, and Infographic are optional peers.
 - React, Svelte, Angular, and Vue 2 packages exist; check each package page for maturity.
 - markstream-svelte is Svelte 5 only; Svelte 4 is not supported.
 

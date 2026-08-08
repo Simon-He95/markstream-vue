@@ -10,8 +10,8 @@ keywords:
 faq:
   - question: 移动端 WebView 为什么建议使用 index.px.css？
     answer: px CSS 能避免宿主 App 或系统字体缩放改变根字号后，Markstream 内部尺寸被 rem 连带放大或缩小。
-  - question: 移动端聊天界面应该默认启用 Monaco 吗？
-    answer: 通常不建议。移动端优先使用 pre 或轻量高亮，只有明确需要编辑器能力时再启用 Monaco。
+  - question: 移动端聊天界面应该默认启用增强代码块吗？
+    answer: 通常不建议。移动端优先使用 `<pre>` 渲染，只有明确需要增强 `stream-diffs` 交互时才启用。
   - question: 移动端什么时候需要开启虚拟化？
     answer: 当 AI 回复超过约 10 KB，或者包含多个代码块、图表、数学公式时，就应该比桌面端更早启用虚拟化。
 ---
@@ -26,7 +26,7 @@ faq:
 | --- | --- |
 | 根字号被 App 改写 | 使用 `index.px.css` |
 | 长回答滚动卡顿 | 启用虚拟化和 live node 限制 |
-| Monaco 太重 | 移动端优先 `<pre>` 或轻量高亮 |
+| 增强代码块太重 | 移动端优先 `<pre>` 渲染 |
 | Mermaid / KaTeX 慢 | 只对可见区域或最终态启用 |
 
 ```ts

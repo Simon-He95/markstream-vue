@@ -10,7 +10,7 @@ description: 在 Nuxt 3 SSR 中使用 markstream-vue，获得服务端 HTML、�
 当前的 SSR 模型是：
 
 - 普通 markdown、HTML、链接、表格、脚注、图片会直接在服务端渲染。
-- 代码块会先输出稳定的服务端 `<pre><code>` fallback，再在客户端增强成 Monaco。
+- 代码块会先输出稳定的服务端 `<pre><code>` fallback，再在客户端增强为基于 `stream-diffs` 的 `CodeBlockNode` surface（未安装 `stream-diffs` 时保持为 `pre`）。
 - 数学公式在提供同步 KaTeX loader 时，可以直接在服务端输出真正的 KaTeX HTML。
 - Mermaid、D2、Infographic 会先输出可读的 SSR fallback，再在客户端增强。
 - scoped 自定义组件覆盖、自定义 node type、以及 `customHtmlTags` 也都能参与服务端渲染。
@@ -144,7 +144,7 @@ pnpm test --run test/ssr-render-to-string.test.ts test/ssr-import.test.ts
 这层测试显式覆盖了：
 
 - 轻节点 SSR 组件矩阵，例如 heading、paragraph、行内格式、link、list、table、footnote、admonition、`vmr_container`
-- 独立的 `MarkdownCodeBlockNode` SSR shell
+- 独立的 `CodeBlockNode` SSR shell
 - 通过 `setCustomComponents` 做 scoped 内置覆盖
 - 直接自定义 node type 的 SSR
 - 通过 `customHtmlTags` 接入的可信自定义标签 SSR

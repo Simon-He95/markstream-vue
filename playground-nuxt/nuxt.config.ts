@@ -40,7 +40,6 @@ export default defineNuxtConfig({
         'katex',
         'katex/dist/contrib/mhchem',
         'mermaid',
-        'stream-markdown',
         'vue-i18n',
       ],
       exclude: ['stream-diffs', 'markstream-vue'],

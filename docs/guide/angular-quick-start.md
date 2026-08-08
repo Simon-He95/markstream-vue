@@ -1,6 +1,6 @@
 ---
 title: Angular Quick Start
-description: Get markstream-angular running in an Angular 20+ standalone app with signal-based content, streaming Markdown, smooth pacing, Mermaid, KaTeX, Monaco options, and alpha API notes.
+description: Get markstream-angular running in an Angular 20+ standalone app with signal-based content, streaming Markdown, smooth pacing, Mermaid, KaTeX, stream-diffs options, and alpha API notes.
 keywords:
   - markstream-angular quick start
   - Angular streaming Markdown quick start
@@ -129,16 +129,10 @@ flowchart TD
 ## TypeScript Props
 
 ```ts
-import type { CodeBlockMonacoOptions, NodeRendererProps } from 'markstream-angular'
-
-const monacoOptions: CodeBlockMonacoOptions = {
-  fontSize: 13,
-  wordWrap: 'on',
-}
+import type { NodeRendererProps } from 'markstream-angular'
 
 const props: NodeRendererProps = {
   content: '# Angular',
-  codeBlockMonacoOptions: monacoOptions,
   final: true,
 }
 ```

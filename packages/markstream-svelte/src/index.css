@@ -1299,8 +1299,8 @@ body > div[id^="dmermaid-"] {
   background: #0b1220;
 }
 
-.markstream-svelte .markstream-svelte-enhanced-block__body--code .monaco-editor,
-.markstream-svelte .markstream-svelte-enhanced-block__body--code .monaco-diff-editor {
+.markstream-svelte .markstream-svelte-enhanced-block__body--code .stream-diffs-shell,
+.markstream-svelte .markstream-svelte-enhanced-block__body--code diffs-container {
   min-height: inherit;
 }
 
@@ -1536,19 +1536,9 @@ body > div[id^="dmermaid-"] {
   box-shadow: 0 22px 44px -30px rgba(2, 6, 23, 0.95);
 }
 
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .monaco-editor-background,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .margin,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .lines-content {
+.markstream-svelte .code-block-container.is-plain-text .stream-diffs-shell,
+.markstream-svelte .code-block-container.is-plain-text diffs-container {
   background: var(--vscode-editor-background, var(--markstream-code-fallback-bg)) !important;
-}
-
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .margin,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .view-lines,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .view-line,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .view-line span,
-.markstream-svelte .code-block-container.is-plain-text .monaco-editor .line-numbers {
   color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg)) !important;
 }
 
@@ -1853,6 +1843,12 @@ body > div[id^="dmermaid-"] {
   --vscode-editor-foreground: var(--markstream-diff-editor-fg);
   --vscode-diffEditor-unchangedRegionForeground: var(--markstream-diff-unchanged-fg);
   --vscode-diffEditor-unchangedRegionBackground: var(--markstream-diff-unchanged-bg);
+  --vscode-diffEditor-insertedTextBackground: var(--markstream-diff-added-inline);
+  --vscode-diffEditor-removedTextBackground: var(--markstream-diff-removed-inline);
+  --vscode-diffEditor-insertedLineBackground: var(--markstream-diff-added-line);
+  --vscode-diffEditor-removedLineBackground: var(--markstream-diff-removed-line);
+  --vscode-diffEditor-insertedTextBorder: var(--markstream-diff-added-inline-border);
+  --vscode-diffEditor-removedTextBorder: var(--markstream-diff-removed-inline-border);
   --vscode-focusBorder: var(--markstream-diff-focus);
   --vscode-widget-shadow: var(--markstream-diff-widget-shadow);
 }
@@ -1860,56 +1856,6 @@ body > div[id^="dmermaid-"] {
 .markstream-svelte .code-block-container.is-diff .code-editor-container {
   min-height: 0;
   background: var(--markstream-diff-editor-bg);
-}
-
-.markstream-svelte .code-block-container .stream-monaco-diff-root {
-  --stream-monaco-gutter-gap: var(--markstream-diff-gutter-gap) !important;
-  --stream-monaco-line-number: var(--markstream-diff-line-number) !important;
-  --stream-monaco-line-number-active: var(--markstream-diff-line-number-active) !important;
-  --stream-monaco-added-fg: var(--markstream-diff-added-fg) !important;
-  --stream-monaco-removed-fg: var(--markstream-diff-removed-fg) !important;
-  --stream-monaco-added-line: var(--markstream-diff-added-line) !important;
-  --stream-monaco-removed-line: var(--markstream-diff-removed-line) !important;
-  --stream-monaco-added-inline: var(--markstream-diff-added-inline) !important;
-  --stream-monaco-removed-inline: var(--markstream-diff-removed-inline) !important;
-  --stream-monaco-added-inline-border: var(--markstream-diff-added-inline-border) !important;
-  --stream-monaco-removed-inline-border: var(--markstream-diff-removed-inline-border) !important;
-  --stream-monaco-added-line-fill: var(--markstream-diff-added-line-fill) !important;
-  --stream-monaco-removed-line-fill: var(--markstream-diff-removed-line-fill) !important;
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
-}
-
-.markstream-svelte .code-block-container .stream-monaco-diff-root .monaco-diff-editor .diffOverview,
-.markstream-svelte .code-block-container .stream-monaco-diff-root .decorationsOverviewRuler {
-  display: none !important;
-}
-
-.markstream-svelte .code-block-container .stream-monaco-diff-root .monaco-editor .diff-hidden-lines .center:not(.stream-monaco-unchanged-bridge-source),
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge {
-  --stream-monaco-unchanged-bg: var(--markstream-diff-unchanged-bg) !important;
-  --stream-monaco-unchanged-fg: var(--markstream-diff-unchanged-fg) !important;
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--stream-monaco-unchanged-fg) !important;
-}
-
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary,
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:hover,
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-summary:focus-visible {
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--markstream-diff-unchanged-fg) !important;
-}
-
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail,
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal,
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:hover,
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-reveal:focus-visible {
-  background: var(--stream-monaco-unchanged-bg) !important;
-  color: var(--markstream-diff-unchanged-fg) !important;
-}
-
-.markstream-svelte .code-block-container .stream-monaco-diff-root .stream-monaco-diff-unchanged-bridge .stream-monaco-unchanged-rail {
-  border-right-color: var(--markstream-diff-unchanged-divider) !important;
 }
 
 .html-preview-frame__backdrop {

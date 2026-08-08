@@ -11,7 +11,7 @@ description: Use markstream-vue in Nuxt SSR with server-rendered HTML, stable fa
 The SSR model is:
 
 - Standard markdown, HTML, links, tables, footnotes, and images render on the server.
-- Code blocks render a stable server `<pre><code>` fallback first, then enhance to Monaco on the client.
+- Code blocks render a stable server `<pre><code>` fallback first, then enhance to the `stream-diffs`-backed `CodeBlockNode` surface on the client (or stay as `pre` when `stream-diffs` is absent).
 - Math can render real KaTeX HTML on the server when you provide a synchronous KaTeX loader.
 - Mermaid, D2, and Infographic render readable SSR fallbacks first, then enhance on the client.
 - Scoped custom component overrides, custom node types, and trusted `customHtmlTags` also render on the server.
@@ -145,7 +145,7 @@ pnpm test --run test/ssr-render-to-string.test.ts test/ssr-import.test.ts
 That suite explicitly covers:
 
 - a built-in node matrix for lighter SSR nodes such as headings, paragraphs, inline formatting, links, lists, tables, footnotes, admonitions, and `vmr_container`
-- the standalone `MarkdownCodeBlockNode` shell during SSR
+- the standalone `CodeBlockNode` shell during SSR
 - scoped built-in overrides via `setCustomComponents`
 - direct custom node types rendered through `nodes`
 - trusted custom tags wired through `customHtmlTags`

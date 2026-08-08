@@ -1,4 +1,4 @@
-let monacoModule: any = null
+let streamDiffsModule: any = null
 let importAttempted = false
 let pendingImport: Promise<MonacoRuntimeModule | null> | null = null
 let workersPreloaded = false
@@ -20,7 +20,6 @@ export interface MonacoRuntimeHelpers {
 export interface MonacoRuntimeModule {
   useMonaco: (options?: Record<string, unknown>) => MonacoRuntimeHelpers
   preloadMonacoWorkers?: () => Promise<unknown> | unknown
-  getOrCreateHighlighter?: (...args: unknown[]) => Promise<unknown> | unknown
 }
 
 export function isCodeBlockRuntimeReady() {
@@ -47,66 +46,30 @@ async function preloadWorkers(mod: any) {
     await mod.preloadMonacoWorkers()
 }
 
-async function warmupShikiTokenizer(mod: any) {
-  const getOrCreateHighlighter = mod?.getOrCreateHighlighter
-  if (typeof getOrCreateHighlighter !== 'function')
-    return true
-
-  try {
-    const highlighter = await getOrCreateHighlighter(
-      ['vitesse-dark', 'vitesse-light'],
-      ['plaintext', 'text', 'javascript'],
-    )
-
-    if (highlighter && typeof highlighter.codeToTokens === 'function') {
-      highlighter.codeToTokens('const a = 1', { lang: 'javascript', theme: 'vitesse-dark' })
-    }
-
-    return true
-  }
-  catch (error) {
-    console.warn('[markstream-svelte] Failed to warm up stream-monaco tokenizer.', error)
-    return false
-  }
-}
-
 export async function getUseMonaco(): Promise<MonacoRuntimeModule | null> {
-  if (monacoModule)
-    return monacoModule
+  if (streamDiffsModule)
+    return streamDiffsModule
   if (pendingImport)
     return await pendingImport
   if (importAttempted)
     return null
 
   pendingImport = (async () => {
-    // Prefer `stream-diffs`: smaller runtime without the heavy
-    // `monaco-editor` dependency. `stream-monaco` remains supported as a
-    // fallback for consumers who install it.
-    const candidates = [
-      async () => (await import('stream-diffs')) as any,
-      async () => (await import('stream-monaco')) as any,
-    ]
-
-    for (const load of candidates) {
-      try {
-        const candidate = await load()
-        const resolved = candidate?.default ?? candidate
-        if (typeof resolved?.useMonaco !== 'function')
-          continue
-        monacoModule = resolved
-        await preloadWorkers(monacoModule)
-        codeBlockRuntimeReady = true
-        if (typeof monacoModule?.getOrCreateHighlighter === 'function')
-          void warmupShikiTokenizer(monacoModule)
-        return monacoModule
-      }
-      catch {
-        // Try the next candidate runtime.
-      }
+    // `stream-diffs` is the only supported code-block runtime in 2.0. The
+    // heavy `stream-monaco` / `monaco-editor` fallback has been removed.
+    try {
+      const candidate = await import('stream-diffs')
+      if (typeof (candidate as any)?.useMonaco !== 'function')
+        return null
+      streamDiffsModule = candidate
+      await preloadWorkers(streamDiffsModule)
+      codeBlockRuntimeReady = true
+      return streamDiffsModule
     }
-
-    importAttempted = true
-    return null
+    catch {
+      importAttempted = true
+      return null
+    }
   })()
 
   try {

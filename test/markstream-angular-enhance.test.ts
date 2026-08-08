@@ -130,9 +130,6 @@ describe('markstream-angular enhanceRenderedHtml', () => {
       isDark: true,
       onCopy,
       showTooltips: true,
-      monacoOptions: {
-        unsafeCSS: '[data-file] { --consumer-angular-gutter: 1; }',
-      },
     })
 
     expect(shell.innerHTML).toContain('class="katex"')
@@ -150,9 +147,6 @@ describe('markstream-angular enhanceRenderedHtml', () => {
       disableFileHeader: true,
     })
     expect(monacoUseMonacoOptions[0]?.unsafeCSS).toContain('--diffs-min-number-column-width-default: 4ch !important')
-    expect(monacoUseMonacoOptions[0]?.unsafeCSS).toContain('--consumer-angular-gutter: 1')
-    expect(String(monacoUseMonacoOptions[0]?.unsafeCSS).indexOf('--diffs-min-number-column-width-default'))
-      .toBeLessThan(String(monacoUseMonacoOptions[0]?.unsafeCSS).indexOf('--consumer-angular-gutter'))
     expect(monacoUseMonacoOptions[1]).toMatchObject({
       fontSize: 15,
       lineHeight: 24,

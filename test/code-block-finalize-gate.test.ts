@@ -190,9 +190,6 @@ describe('codeBlockNode final Diffs gate', () => {
         loading: false,
         stream: true,
         showHeader: false,
-        monacoOptions: {
-          unsafeCSS: '[data-file] { --consumer-code-gutter: 1; }',
-        },
       },
     })
 
@@ -207,8 +204,6 @@ describe('codeBlockNode final Diffs gate', () => {
       expect(runtime.useMonaco.mock.calls[0]?.[0]?.stream).toBe(false)
       expect(runtime.useMonaco.mock.calls[0]?.[0]?.disableFileHeader).toBe(true)
       expect(runtime.useMonaco.mock.calls[0]?.[0]?.unsafeCSS).toContain('--diffs-min-number-column-width-default: 4ch !important')
-      expect(runtime.useMonaco.mock.calls[0]?.[0]?.unsafeCSS).toContain('--consumer-code-gutter: 1')
-      expect(runtime.useMonaco.mock.calls[0]?.[0]?.unsafeCSS.indexOf('--diffs-min-number-column-width-default')).toBeLessThan(runtime.useMonaco.mock.calls[0]?.[0]?.unsafeCSS.indexOf('--consumer-code-gutter'))
       expect(wrapper.find('diffs-container').exists()).toBe(true)
       expect(wrapper.find('pre.code-pre-fallback').exists()).toBe(false)
       expect(wrapper.get('[data-markstream-code-block="1"]').attributes('data-markstream-code-block-state')).toBe('settled')
@@ -318,7 +313,6 @@ describe('codeBlockNode final Diffs gate', () => {
         showHeader: false,
         estimatedHeightPx: 36,
         estimatedContentHeightPx: 36,
-        monacoOptions: { fontSize: 13, lineHeight: 20 },
       },
     })
 
@@ -438,7 +432,6 @@ describe('codeBlockNode final Diffs gate', () => {
         loading: true,
         stream: true,
         showHeader: false,
-        monacoOptions: { renderSideBySide: true, diffWordWrap: 'off' },
       },
     })
 
@@ -454,7 +447,6 @@ describe('codeBlockNode final Diffs gate', () => {
     await vi.waitFor(() => {
       expect(runtime.createDiffEditor).toHaveBeenCalledTimes(1)
       expect(runtime.useMonaco.mock.calls[0]?.[0]?.stream).toBe(false)
-      expect(runtime.useMonaco.mock.calls[0]?.[0]?.wordWrap).toBe('off')
       expect(wrapper.find('diffs-container').exists()).toBe(true)
       expect(wrapper.find('pre.code-pre-fallback').exists()).toBe(false)
       expect(wrapper.get('[data-markstream-code-block="1"]').attributes('data-markstream-code-block-state')).toBe('settled')
@@ -462,7 +454,7 @@ describe('codeBlockNode final Diffs gate', () => {
     wrapper.unmount()
   })
 
-  it('recreates a mounted FileDiff surface when its layout changes', async () => {
+  it('keeps a mounted FileDiff surface across theme-only prop changes', async () => {
     const runtime = helpers()
     const diffNode = {
       type: 'code_block' as const,
@@ -480,28 +472,20 @@ describe('codeBlockNode final Diffs gate', () => {
         loading: false,
         stream: true,
         showHeader: false,
-        monacoOptions: { renderSideBySide: true },
       },
     })
 
     await flush()
     observers.at(-1)?.emit()
     await vi.waitFor(() => expect(runtime.createDiffEditor).toHaveBeenCalledTimes(1))
-    expect(runtime.useMonaco.mock.calls[0]?.[0]?.renderSideBySide).toBe(true)
     runtime.safeClean.mockClear()
+    runtime.createDiffEditor.mockClear()
+    runtime.setTheme.mockClear()
 
-    await wrapper.setProps({ monacoOptions: { renderSideBySide: false } })
-    await vi.waitFor(() => {
-      expect(runtime.safeClean).toHaveBeenCalled()
-      expect(runtime.createDiffEditor).toHaveBeenCalledTimes(2)
-    })
-    expect(runtime.useMonaco.mock.calls[0]?.[0]?.renderSideBySide).toBe(false)
-
-    await wrapper.setProps({ monacoOptions: { renderSideBySide: true } })
-    await vi.waitFor(() => {
-      expect(runtime.createDiffEditor).toHaveBeenCalledTimes(3)
-    })
-    expect(runtime.useMonaco.mock.calls[0]?.[0]?.renderSideBySide).toBe(true)
+    await wrapper.setProps({ isDark: true })
+    await vi.waitFor(() => expect(runtime.setTheme).toHaveBeenCalledTimes(1))
+    expect(runtime.safeClean).not.toHaveBeenCalled()
+    expect(runtime.createDiffEditor).not.toHaveBeenCalled()
     wrapper.unmount()
   })
 

@@ -7,8 +7,7 @@
 | `AdmonitionNode` | `AdmonitionNode.svelte` | Markdown admonition block |
 | `BlockquoteNode` | `BlockquoteNode.svelte` | Recursive child rendering |
 | `CheckboxNode` | `CheckboxNode.svelte` | Task-list checkbox |
-| `CodeBlockNode` | `CodeBlockNode.svelte` | Renders a stable `<pre><code>` surface, then uses shared HTML enhancement for Monaco |
-| `MarkdownCodeBlockNode` | `MarkdownCodeBlockNode.svelte` | Plain code block parity export |
+| `CodeBlockNode` | `CodeBlockNode.svelte` | Renders a stable `<pre><code>` surface, then uses shared HTML enhancement for stream-diffs |
 | `MermaidBlockNode` | `MermaidBlockNode.svelte` | Worker-enhanced through `enhanceRenderedHtml` |
 | `D2BlockNode` | `D2BlockNode.svelte` | Optional D2 peer, same loader API |
 | `InfographicBlockNode` | `InfographicBlockNode.svelte` | Optional infographic peer, same render path as Angular enhancement |

@@ -126,31 +126,15 @@ export function Article({ markdown }: { markdown: string }) {
 </Markdown>
 ```
 
-在 `markstream-react` 里，一般选这三条之一：
+在 `markstream-react` 里，一般选这两条之一：
 
-- 继续用默认 `CodeBlockNode`
-- 把 `code_block` 切到 `MarkdownCodeBlockNode`
+- 继续用默认 `CodeBlockNode`（由可选的对等依赖 `stream-diffs` 增强，未安装时回退 `<pre>`）
 - 设置 `renderCodeBlocksAsPre`
 
-下面是 `MarkdownCodeBlockNode` 的例子：
+要使用增强代码块运行时，请安装可选对等依赖：
 
-```tsx
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
-
-setCustomComponents('docs', {
-  code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
-      node={node}
-      isDark={isDark}
-      stream={ctx?.codeBlockStream}
-      {...(ctx?.codeBlockProps || {})}
-    />
-  ),
-})
-
-export function Article({ markdown }: { markdown: string }) {
-  return <MarkdownRender customId="docs" content={markdown} />
-}
+```bash
+pnpm add stream-diffs
 ```
 
 ## 4. `remark-gfm`

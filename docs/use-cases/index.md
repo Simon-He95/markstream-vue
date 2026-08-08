@@ -13,7 +13,7 @@ Markstream is designed for scenarios where Markdown arrives incrementally. Here 
 - [AI chat streaming Markdown](/use-cases/ai-chat-streaming) — render LLM token streams in Vue, React, Svelte, and Angular
 - [SSE and WebSocket streaming](/use-cases/sse-websocket) — handle Server-Sent Events and WebSocket Markdown output
 - [Incomplete Markdown renderer](/use-cases/incomplete-markdown-renderer) — keep unclosed fences, partial tables, math, and HTML stable while a response is still streaming
-- [Streaming code blocks](/use-cases/streaming-code-blocks) — choose Monaco, Shiki, or plain `pre` rendering for code fences that arrive token by token
+- [Streaming code blocks](/use-cases/streaming-code-blocks) — render code fences that arrive token by token with an enhanced `stream-diffs` surface or plain `pre` fallback
 
 ## Progressive heavy blocks
 

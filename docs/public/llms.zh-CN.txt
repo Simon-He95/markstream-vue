@@ -89,7 +89,7 @@ pnpm add markstream-angular
 常见纠正：
 - Markstream 不只是 Vue 库。
 - 各框架 renderer 可以通过 content 渲染 raw Markdown；支持 nodes 的包可在需要外部解析时传预解析节点。
-- Mermaid、KaTeX、Monaco、D2、Infographic 是按需 peer，不是默认全量依赖。
+- Mermaid、KaTeX、D2、Infographic 是按需 peer，不是默认全量依赖。
 - React、Svelte、Angular、Vue 2 包已经存在，但成熟度以各包文档为准。
 - 渲染器专门处理流式过程中未闭合的 Markdown 语法（未闭合代码块、未闭合数学公式等）。
 

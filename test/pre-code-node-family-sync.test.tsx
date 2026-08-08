@@ -127,43 +127,55 @@ describe('pre code node family sync', () => {
     const vue2Source = readFileSync('packages/markstream-vue2/src/components/PreCodeNode/PreCodeNode.vue', 'utf8')
     const reactCss = readFileSync('packages/markstream-react/src/index.css', 'utf8')
 
+    // Shared `--markstream-*` diff-preview contract across vue2/vue3/react.
+    const shared = [
+      '--markstream-pre-diff-gutter-marker-width',
+      '--markstream-pre-diff-gutter-gap',
+      '--markstream-pre-diff-code-gap',
+      '--markstream-pre-diff-code-padding',
+      '--markstream-diff-added-gutter: linear-gradient(',
+      '--markstream-diff-removed-gutter: linear-gradient(',
+      '--markstream-pre-diff-line-number-padding-left',
+      '--markstream-pre-diff-line-number-padding-right',
+      '--markstream-pre-diff-line-number-gap-to-code',
+      '--markstream-pre-diff-line-number-border',
+      'var(--markstream-diff-gutter-guide, hsl(var(--ms-border, 214 32% 91%) / 0.72))',
+      '--markstream-pre-diff-code-fill-left: calc(',
+      '--markstream-pre-diff-code-left: calc(',
+      '+ var(--markstream-pre-diff-line-number-gap-to-code)',
+      'grid-template-columns: minmax(100%, max-content);',
+      'min-width: max-content;',
+      'padding-left: var(--markstream-pre-diff-code-left);',
+      'left: var(--markstream-pre-diff-code-fill-left);',
+      'padding-left: var(--markstream-pre-diff-line-number-padding-left, 15.6px);',
+      'padding-right: var(--markstream-pre-diff-line-number-padding-right, 7.8px);',
+      'box-shadow: inset -1px 0 var(--markstream-pre-diff-line-number-border);',
+      'width: var(--markstream-pre-diff-gutter-marker-width, 4px);',
+      '.markstream-pre__diff-line--added > .markstream-pre__diff-number',
+      '.markstream-pre__diff-line--removed > .markstream-pre__diff-number',
+      '--markstream-pre-diff-content-height',
+      'background: var(--markstream-diff-added-line-fill',
+      'background: var(--markstream-diff-removed-line-fill',
+      'color: var(--markstream-diff-added-fg',
+      'color: var(--markstream-diff-removed-fg',
+      'border-radius: 0;',
+    ]
+
+    const forbidden = [
+      '--stream-monaco-',
+      'markstream-pre--diff-inline .markstream-pre__diff-line::after',
+      'left: var(--markstream-pre-diff-scrollable-left);',
+      'markstream-pre__diff-line--added:not(.markstream-pre__diff-line--empty)',
+      'markstream-pre__diff-line--removed:not(.markstream-pre__diff-line--empty)',
+    ]
+
     for (const source of [vue2Source, reactCss]) {
-      expect(source).toContain('--markstream-pre-diff-gutter-marker-width: var(--stream-monaco-gutter-marker-width, 4px);')
-      expect(source).toContain('--markstream-pre-diff-gutter-gap: var(--stream-monaco-gutter-gap, 8px);')
-      expect(source).toContain('--markstream-pre-diff-code-gap: var(--stream-monaco-diff-code-gap, 7.8px);')
-      expect(source).toContain('--markstream-pre-diff-code-padding: var(--stream-monaco-diff-code-padding, 0px);')
-      expect(source).toContain('--markstream-diff-added-gutter: linear-gradient(')
-      expect(source).toContain('--markstream-diff-removed-gutter: linear-gradient(')
-      expect(source).toContain('var(--stream-monaco-line-number-gap-to-code, var(--markstream-pre-diff-code-gap))')
-      expect(source).toContain('--markstream-pre-diff-line-number-padding-left: var(--stream-monaco-line-number-padding-left, 15.6px);')
-      expect(source).toContain('--markstream-pre-diff-line-number-padding-right: var(--stream-monaco-line-number-padding-right, 7.8px);')
-      expect(source).toContain('--markstream-pre-diff-line-number-border: var(')
-      expect(source).toContain('var(--markstream-diff-gutter-guide, hsl(var(--ms-border, 214 32% 91%) / 0.72))')
-      expect(source).toContain('--markstream-pre-diff-code-fill-left: calc(')
-      expect(source).toContain('--markstream-pre-diff-code-left: calc(')
-      expect(source).toContain('+ var(--markstream-pre-diff-line-number-gap-to-code)')
-      expect(source).toContain('grid-template-columns: minmax(100%, max-content);')
-      expect(source).toContain('min-width: max-content;')
-      expect(source).not.toContain('markstream-pre--diff-inline .markstream-pre__diff-line::after')
-      expect(source).not.toContain('left: var(--markstream-pre-diff-scrollable-left);')
-      expect(source).toContain('padding-left: var(--markstream-pre-diff-code-left);')
-      expect(source).toContain('left: var(--markstream-pre-diff-code-fill-left);')
-      expect(source).toContain('padding-left: var(--markstream-pre-diff-line-number-padding-left, 15.6px);')
-      expect(source).toContain('padding-right: var(--markstream-pre-diff-line-number-padding-right, 7.8px);')
-      expect(source).toContain('box-shadow: inset -1px 0 var(--markstream-pre-diff-line-number-border);')
-      expect(source).toContain('width: var(--markstream-pre-diff-gutter-marker-width, 4px);')
-      expect(source).toContain('.markstream-pre__diff-line--added > .markstream-pre__diff-number')
-      expect(source).toContain('.markstream-pre__diff-line--removed > .markstream-pre__diff-number')
-      expect(source).toContain('--markstream-pre-diff-content-height')
-      expect(source).toContain('background: var(--stream-monaco-added-line-fill, var(--markstream-diff-added-line-fill, transparent));')
-      expect(source).toContain('background: var(--stream-monaco-removed-line-fill, var(--markstream-diff-removed-line-fill, transparent));')
-      expect(source).toContain('color: var(--stream-monaco-added-fg, var(--markstream-diff-added-fg,')
-      expect(source).toContain('color: var(--stream-monaco-removed-fg, var(--markstream-diff-removed-fg,')
+      for (const marker of shared)
+        expect(source).toContain(marker)
+      for (const marker of forbidden)
+        expect(source).not.toContain(marker)
       expect(source).not.toMatch(/markstream-pre__diff-line--added\s*\{\s*color:/)
       expect(source).not.toMatch(/markstream-pre__diff-line--removed\s*\{\s*color:/)
-      expect(source).toContain('border-radius: 0;')
-      expect(source).not.toContain('markstream-pre__diff-line--added:not(.markstream-pre__diff-line--empty)')
-      expect(source).not.toContain('markstream-pre__diff-line--removed:not(.markstream-pre__diff-line--empty)')
     }
   })
 })

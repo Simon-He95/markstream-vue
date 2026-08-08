@@ -18,8 +18,7 @@ description: 快速查阅 MarkdownRender、CodeBlockNode、MermaidBlockNode、Im
 | 组件 | 推荐场景 | 关键 props / 事件 | 额外 CSS / 同伴依赖 | 排障提示 |
 | ---- | -------- | ---------------- | ------------------- | -------- |
 | `MarkdownRender` | 渲染完整 AST（默认导出） | Props：`content` / `nodes`、`custom-id`、`final`、`parse-options`、`custom-html-tags`、`is-dark`、`code-block-props`、`mermaid-props`、`d2-props`、`infographic-props`；事件：`copy-code` 用于代码复制文本、`copy`（已弃用的兼容别名）、`handleArtifactClick`、`click`、`mouseover`、`mouseout` | 在 reset 之后引入 `markstream-vue/index.css`（CSS 已被限定在内部 `.markstream-vue` 容器中），并放入受控 layer | 用 `setCustomComponents(customId, mapping)` + `custom-id` 限定覆盖范围；配合 [CSS 排查清单](/zh/guide/troubleshooting#css-looks-wrong-start-here) |
-| `CodeBlockNode` | 增强 File/FileDiff 代码块 | `node`、`monacoOptions`、`stream`、`loading`；事件：`copy`、`previewCode`；插槽 `header-left` / `header-right`；diff 悬浮操作配置放在 `monacoOptions`（`diffHunkActionsOnHover`、`diffHunkHoverHideDelayMs`、`onDiffHunkAction`） | 安装 `stream-diffs`；不需要 worker plugin 或额外 CSS import | SSR 首包会先给 `<pre><code>` fallback；结束流式输出且进入视口后才挂载增强 surface |
-| `MarkdownCodeBlockNode` | 轻量级高亮（Shiki） | `node`、`stream`、`loading`；插槽 `header-left` / `header-right` | 同伴依赖 `stream-markdown` | SSR/低体积场景优先使用 |
+| `CodeBlockNode` | 增强 File/FileDiff 代码块 | `node`、`stream`、`loading`；事件：`copy`、`previewCode`；插槽 `header-left` / `header-right`；主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 设置 | 安装 `stream-diffs`；不需要 worker plugin 或额外 CSS import | SSR 首包会先给 `<pre><code>` fallback；结束流式输出且进入视口后才挂载增强 surface |
 | `MermaidBlockNode` | 渐进式 Mermaid 图 | `node`、`isDark`、`isStrict`、`maxHeight`、`estimatedPreviewHeightPx`；事件 `copy`、`export`、`openModal`、`toggleMode` | `mermaid` >= 11；无需额外 CSS | SSR 首包先给可读 fallback；异步渲染问题详见 `/zh/guide/mermaid` |
 | `D2BlockNode` | 渐进式 D2 图 | `node`、`isDark`、`maxHeight`、`progressiveRender`、`progressiveIntervalMs`；工具栏开关 | `@terrastruct/d2`；无需额外 CSS | SSR 首包先给 fallback / 源码；缺少依赖时保持 fallback；详见 `/zh/guide/d2` |
 | `MathBlockNode` / `MathInlineNode` | KaTeX 公式 | `node` | 安装 `katex` 并引入 `katex/dist/katex.min.css` | 注册同步 KaTeX loader 后可直接 SSR 出 HTML；否则稳定回退为原文 |
@@ -48,17 +47,11 @@ markdownRenderProps.customId
 markdownRenderProps.isDark
 markdownRenderProps.codeBlockProps?.showHeader
 markdownRenderProps.codeBlockProps?.showTooltips
-markdownRenderProps.codeBlockMonacoOptions
-markdownRenderProps.codeBlockMonacoOptions?.theme
-markdownRenderProps.codeBlockMonacoOptions?.languages
-markdownRenderProps.codeBlockMonacoOptions?.diffHunkActionsOnHover
 markdownRenderProps.themes
 
 markdownRenderCodeBlockProps.showFontSizeButtons
 markdownRenderCodeBlockProps.showCollapseButton
 
-codeBlockProps.monacoOptions
-codeBlockProps.monacoOptions?.MAX_HEIGHT
 codeBlockProps.theme
 ```
 
@@ -109,7 +102,7 @@ setIconTheme('material')
 
 ### 最适合先 hover 的目标
 
-如果你只是想先看组件 props，先 hover 下面这段里的 `:content`、`custom-id`、`:is-dark`、`:code-block-monaco-options`：
+如果你只是想先看组件 props，先 hover 下面这段里的 `:content`、`custom-id`、`:is-dark`、`:code-block-props`：
 
 ```vue twoslash
 <script setup lang="ts">
@@ -120,10 +113,9 @@ type MarkdownRenderProps = InstanceType<typeof MarkdownRender>['$props']
 const content: MarkdownRenderProps['content'] = '# Hello'
 const customId: MarkdownRenderProps['customId'] = 'docs'
 const isDark: MarkdownRenderProps['isDark'] = true
-const monacoOptions: MarkdownRenderProps['codeBlockMonacoOptions'] = {
-  theme: 'vitesse-dark',
-  languages: ['typescript', 'vue'],
-  MAX_HEIGHT: 520,
+const codeBlockProps: MarkdownRenderProps['codeBlockProps'] = {
+  showHeader: true,
+  showTooltips: true,
 }
 </script>
 
@@ -132,7 +124,7 @@ const monacoOptions: MarkdownRenderProps['codeBlockMonacoOptions'] = {
     :content="content"
     :custom-id="customId"
     :is-dark="isDark"
-    :code-block-monaco-options="monacoOptions"
+    :code-block-props="codeBlockProps"
   />
 </template>
 ```
@@ -141,24 +133,16 @@ const monacoOptions: MarkdownRenderProps['codeBlockMonacoOptions'] = {
 
 ```vue twoslash
 <script setup lang="ts">
-import type { CodeBlockMonacoOptions } from 'markstream-vue'
 import MarkdownRender from 'markstream-vue'
 
 const md = '# 你好\n\n使用 custom-id 控制样式。'
-const monacoOptions = {
-  theme: 'vitesse-dark',
-  themes: ['vitesse-dark', 'vitesse-light'],
-  languages: ['typescript', 'vue'],
-  MAX_HEIGHT: 520,
-  diffHunkActionsOnHover: true,
-} satisfies CodeBlockMonacoOptions
 </script>
 
 <template>
   <MarkdownRender
     custom-id="docs"
     :content="md"
-    :code-block-monaco-options="monacoOptions"
+    :code-block-props="{ showHeader: true }"
   />
 </template>
 ```
@@ -188,7 +172,7 @@ setCustomComponents('docs', {
 ### 性能相关 props
 
 - **批量渲染** —— `batchRendering`、`initialRenderBatchSize`、`renderBatchSize`、`renderBatchDelay`、`renderBatchBudgetMs` 控制每一帧有多少节点从占位骨架切换为真实组件。仅在关闭虚拟化（`:max-live-nodes="0"`）时会启用增量骨架模式。
-- **延迟可见节点** —— `deferNodesUntilVisible` 与 `viewportPriority` 默认开启，让 Mermaid、D2、Monaco、KaTeX 等重型节点只有在接近视口时才加载。
+- **延迟可见节点** —— `deferNodesUntilVisible` 与 `viewportPriority` 默认开启，让 Mermaid、D2、KaTeX 等重型节点只有在接近视口时才加载。
 - **虚拟化窗口** —— `maxLiveNodes` 限制 DOM 中最多保留多少个已渲染节点，`liveNodeBuffer` 控制超前/超后范围。详见 [性能指南](/zh/guide/performance)。
 - **代码块降级** —— 通过 `renderCodeBlocksAsPre` 与 `codeBlockStream` 可将普通代码块切换为 `<pre><code>` 或关闭流式更新。
 
@@ -216,37 +200,15 @@ setCustomComponents('docs', {
 > 基于 File/FileDiff surface 的代码块渲染器，支持 diff 和交互式工具栏。
 
 - **适合**：代码审阅、diff 检查、补丁预览、悬浮操作
-- **关键 props**：`node`、`monacoOptions`、`stream`、`loading`
+- **关键 props**：`node`、`stream`、`loading`，以及主题 `theme` / `darkTheme` / `lightTheme` / `themes`
 - **事件**：`copy`、`previewCode`
 - **插槽**：`header-left`、`header-right`
 - **同伴依赖**：`stream-diffs`
 - **常见问题**：增强 surface 会等待代码块结束流式输出并进入视口
 
-如果代码块本身就是产品体验的一部分，用它最合适；如果你只是想高亮代码，优先看 `MarkdownCodeBlockNode`。`stream-diffs` 与框架无关，Vue 的 mount/unmount 决策保留在 `CodeBlockNode`。
+如果代码块本身就是产品体验的一部分，用它最合适。`stream-diffs` 与框架无关，Vue 的 mount/unmount 决策保留在 `CodeBlockNode`。代码与 diff 选项使用 `stream-diffs` 内置默认值。
 
-深入页面： [CodeBlockNode](/zh/guide/code-block-node)、[Monaco](/zh/guide/monaco)
-
-## MarkdownCodeBlockNode
-
-> 基于 Shiki 和 `stream-markdown` 的轻量代码块渲染器。
-
-- **适合**：SSR 友好的文档站、博客页、更小的打包体积
-- **关键 props**：`node`、`stream`、`loading`、`themes`、`langs`
-- **插槽**：`header-left`、`header-right`
-- **同伴依赖**：`stream-markdown`
-- **常见问题**：一直没有高亮时，先确认 `stream-markdown` 已安装，并在实际渲染环境里可用
-
-传入 `langs` 可以限制 `stream-markdown` 为 Shiki 预加载的语言；不传或传空数组时，会保留默认语言预加载行为。
-
-```vue
-<MarkdownCodeBlockNode
-  :node="node"
-  :themes="['vitesse-light', 'vitesse-dark']"
-  :langs="['javascript', 'typescript', 'vue']"
-/>
-```
-
-如果你不需要 Monaco 的编辑面板和 diff 交互，这个通常是更轻的选择。
+深入页面： [CodeBlockNode](/zh/guide/code-block-node)、[Code Block Runtime](/zh/guide/code-block-runtime)
 
 ## MermaidBlockNode
 

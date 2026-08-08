@@ -83,9 +83,9 @@ import 'markstream-vue/index.css'
 - **Two input paths**: `content` for raw Markdown strings and `nodes` for pre-parsed AST
 - **Safe HTML policy**: `safe` by default, `escape` for literal text, `trusted` for trusted content only — no `v-html` required
 - **Progressive Mermaid**: diagrams render incrementally during streaming
-- **Streaming code blocks**: `stream-diffs` File/Diff surfaces or lightweight Shiki rendering
+- **Streaming code blocks**: `stream-diffs` File/Diff surfaces
 - **Virtualized long documents**: bounded live nodes for 1MB+ content
-- **Optional peers**: `stream-diffs`, `stream-markdown`, Mermaid, KaTeX, D2, Infographic — install only what you need
+- **Optional peers**: `stream-diffs`, Mermaid, KaTeX, D2, Infographic — install only what you need
 - **Mobile-ready**: `index.px.css` for apps that scale root font size
 - **SSR-safe**: worker imports and client-only guards for Nuxt/VitePress
 

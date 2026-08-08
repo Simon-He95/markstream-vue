@@ -98,16 +98,12 @@ vi.mock('../src/components/CodeBlockNode', () => ({
   default: { name: 'CodeBlockNodeStub', template: '<div />' },
 }))
 
-vi.mock('../src/components/MarkdownCodeBlockNode', () => ({
-  default: { name: 'MarkdownCodeBlockNodeStub', template: '<div />' },
-}))
-
 vi.mock('../src/components/PreCodeNode', () => ({
   default: { name: 'PreCodeNodeStub', template: '<div />' },
 }))
 
-vi.mock('../src/components/CodeBlockNode/monaco', () => ({
-  getUseMonaco: vi.fn(),
+vi.mock('../src/components/CodeBlockNode/streamDiffs', () => ({
+  getStreamDiffsRuntime: vi.fn(),
 }))
 
 vi.mock('../src/utils/nodeComponents', () => ({

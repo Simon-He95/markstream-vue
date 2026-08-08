@@ -2,7 +2,7 @@
 import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
 import type { SmoothMarkdownStreamOptions } from '../../composables/useSmoothMarkdownStream'
 import type { VisibilityHandle } from '../../composables/viewportPriority'
-import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme, CodeBlockNodeProps, CodeBlockPreviewPayload, D2BlockNodeProps, InfographicBlockNodeProps, MermaidBlockNodeProps, ShikiCodeBlockProps } from '../../types/component-props'
+import type { CodeBlockNodeProps, CodeBlockPreviewPayload, CodeBlockTheme, D2BlockNodeProps, InfographicBlockNodeProps, MermaidBlockNodeProps, ShikiCodeBlockProps } from '../../types/component-props'
 import { normalizeShikiLanguage } from 'markstream-core'
 import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure, resolveCustomHtmlTags } from 'stream-markdown-parser'
 import { h as createVNode } from 'vue'
@@ -52,7 +52,7 @@ import FallbackComponent from './FallbackComponent.vue'
 import LegacyNodesRenderer from './LegacyNodesRenderer.vue'
 
 // 组件接收的 props
-// 增加用于统一设置所有 code_block 主题和 Monaco 选项的外部 API
+// 增加用于统一设置所有 code_block 主题和增强渲染选项的外部 API
 interface IdleDeadlineLike {
   timeRemaining?: () => number
 }
@@ -97,11 +97,9 @@ export interface NodeRendererProps {
    * Default: true
    */
   codeBlockStream?: boolean
-  // 全局传递到每个 CodeBlockNode 的主题（monaco theme 对象）
-  codeBlockDarkTheme?: CodeBlockMonacoTheme
-  codeBlockLightTheme?: CodeBlockMonacoTheme
-  // 传递给 CodeBlockNode 的 monacoOptions（比如 fontSize, MAX_HEIGHT 等）
-  codeBlockMonacoOptions?: CodeBlockMonacoOptions
+  // 全局传递到每个 CodeBlockNode 的主题
+  codeBlockDarkTheme?: CodeBlockTheme
+  codeBlockLightTheme?: CodeBlockTheme
   /** If true, render all `code_block` nodes as plain <pre><code> blocks instead of the full CodeBlockNode */
   renderCodeBlocksAsPre?: boolean
   /** Minimum width forwarded to CodeBlockNode (px or CSS unit) */
@@ -119,16 +117,15 @@ export interface NodeRendererProps {
   /** Global tooltip toggle for link/code-block renderers (default: true) */
   showTooltips?: boolean
   /**
-   * Theme names or theme objects preloaded for Monaco-backed code blocks.
-   * When Shiki code blocks are used, only string theme names are forwarded to
-   * MarkdownCodeBlockNode / stream-markdown; theme objects are ignored.
+   * Theme names or theme objects preloaded for enhanced (stream-diffs) code
+   * blocks. When Shiki code blocks are used, only string theme names are
+   * forwarded to stream-markdown; theme objects are ignored.
    */
-  themes?: CodeBlockMonacoTheme[]
+  themes?: CodeBlockTheme[]
   /**
-   * Shiki language preload list forwarded to MarkdownCodeBlockNode.
+   * Shiki language preload list forwarded to stream-markdown.
    *
-   * Vue2's default code block renderer is Monaco-backed. This prop is used
-   * when a custom `code_block` or language renderer uses MarkdownCodeBlockNode.
+   * Used when a custom `code_block` or language renderer uses stream-markdown.
    */
   langs?: readonly string[]
   isDark?: boolean
@@ -486,7 +483,7 @@ const virtualizationEnabled = computed(() => {
     return false
   return parsedNodes.value.length > maxLiveNodesResolved.value
 })
-// Viewport priority is used to defer heavy work (Monaco/Mermaid/KaTeX) until
+// Viewport priority is used to defer heavy work (stream-diffs/Mermaid/KaTeX) until
 // nodes approach the viewport. Node-level deferral is controlled separately
 // via `deferNodes`.
 const viewportPriorityEnabled = computed(() => {
@@ -1875,7 +1872,6 @@ const codeBlockBindings = computed(() => ({
   stream: props.codeBlockStream,
   darkTheme: props.codeBlockDarkTheme,
   lightTheme: props.codeBlockLightTheme,
-  monacoOptions: props.codeBlockMonacoOptions,
   themes: props.themes,
   minWidth: props.codeBlockMinWidth,
   maxWidth: props.codeBlockMaxWidth,
@@ -1894,24 +1890,19 @@ function countCodeLines(value: unknown) {
 }
 
 function estimateBuiltinCodeBlockHeight(node: ParsedNode) {
-  const raw = (props.codeBlockMonacoOptions || {}) as Record<string, any>
-  const fontSize = parsePositiveNumber(raw.fontSize) ?? 12
-  const lineHeight = parsePositiveNumber(raw.lineHeight) ?? Math.round(fontSize * 1.5)
+  // Fixed default metrics; the codeBlockMonacoOptions prop was removed in 2.0.0.
+  const lineHeight = 18
   const isDiff = Boolean((node as any).diff)
-  const diffInline = isDiff && raw.renderSideBySide === false
+  const diffInline = false
   const lineCount = isDiff
     ? (diffInline
         ? countCodeLines((node as any).originalCode) + countCodeLines((node as any).updatedCode)
         : Math.max(countCodeLines((node as any).originalCode), countCodeLines((node as any).updatedCode)))
     : countCodeLines((node as any).code)
   const defaultPadding = isDiff ? 0 : 8
-  const paddingTop = typeof raw.padding?.top === 'number' && Number.isFinite(raw.padding.top)
-    ? Math.max(0, raw.padding.top)
-    : defaultPadding
-  const paddingBottom = typeof raw.padding?.bottom === 'number' && Number.isFinite(raw.padding.bottom)
-    ? Math.max(0, raw.padding.bottom)
-    : defaultPadding
-  const maxHeight = parsePositiveNumber(raw.MAX_HEIGHT) ?? 500
+  const paddingTop = defaultPadding
+  const paddingBottom = defaultPadding
+  const maxHeight = 500
   const contentHeight = Math.max(1, Math.min(
     maxHeight,
     Math.round(lineCount * lineHeight + paddingTop + paddingBottom),
@@ -2172,7 +2163,7 @@ function getRenderKey(node: ParsedNode, index: number) {
     return base
 
   const type = String((node as any).type || 'unknown')
-  // Keep streaming code blocks on a stable key so Monaco-backed components
+  // Keep streaming code blocks on a stable key so stream-diffs-backed components
   // receive prop updates instead of being torn down and recreated per chunk.
   if (type === 'code_block')
     return base
@@ -2559,7 +2550,6 @@ watch(
       :code-block-stream="props.codeBlockStream"
       :code-block-dark-theme="props.codeBlockDarkTheme"
       :code-block-light-theme="props.codeBlockLightTheme"
-      :code-block-monaco-options="props.codeBlockMonacoOptions"
       :render-code-blocks-as-pre="props.renderCodeBlocksAsPre"
       :code-block-min-width="props.codeBlockMinWidth"
       :code-block-max-width="props.codeBlockMaxWidth"
@@ -2592,7 +2582,7 @@ watch(
           :ref="`node-content-${item.index}`"
           class="node-content"
         >
-          <!-- Skip wrapping code_block nodes in transitions to avoid touching Monaco editor internals -->
+          <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
           <transition
             v-if="!item.isCodeBlock && props.fade !== false"
             name="fade"

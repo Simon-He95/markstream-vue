@@ -1,7 +1,6 @@
 export type { HtmlPreviewFrameProps } from './components/CodeBlockNode/HtmlPreviewFrame.tsrx'
 export type { LinkNodeStyleProps } from './components/LinkNode/LinkNode.tsrx'
 export type { ListItemNodeProps } from './components/ListItemNode/ListItemNode.tsrx'
-export type { MarkdownCodeBlockNodeProps } from './components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.tsrx'
 export type { TooltipPlacement, TooltipProps } from './components/Tooltip/Tooltip.tsrx'
 export {
   clearGlobalCustomComponents,
@@ -46,7 +45,6 @@ export { InsertNode } from './server-renderer/index.tsrx'
 export { LinkNode } from './server-renderer/index.tsrx'
 export { ListItemNode } from './server-renderer/index.tsrx'
 export { ListNode } from './server-renderer/index.tsrx'
-export { MarkdownCodeBlockNode } from './server-renderer/index.tsrx'
 export { MathBlockNode } from './server-renderer/index.tsrx'
 export { MathInlineNode } from './server-renderer/index.tsrx'
 export { MermaidBlockNode } from './server-renderer/index.tsrx'

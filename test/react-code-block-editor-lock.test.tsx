@@ -248,7 +248,7 @@ describe('markstream-react codeBlockNode theme updates', () => {
     })
   })
 
-  it('resyncs diff height after unchanged-region DOM settles', async () => {
+  it('resyncs diff height after a diff update settles', async () => {
     const helpers = getStreamMonacoHelpers()
     const host = document.createElement('div')
     document.body.appendChild(host)
@@ -257,7 +257,7 @@ describe('markstream-react codeBlockNode theme updates', () => {
     let updateDiffListener: (() => void) | null = null
 
     const diffView = {
-      getContentHeight: vi.fn(() => 1200),
+      getContentHeight: vi.fn(() => 300),
       updateOptions: vi.fn(),
       layout: vi.fn(),
       onDidUpdateDiff: vi.fn((callback: () => void) => {
@@ -277,10 +277,10 @@ describe('markstream-react codeBlockNode theme updates', () => {
     helpers.createDiffEditor.mockImplementation(async (el: HTMLElement) => {
       editorHost = el
       setElementRect(el, { top: 0, bottom: 500, height: 500 })
-      const monacoRoot = document.createElement('div')
-      monacoRoot.className = 'monaco-diff-editor'
-      setElementRect(monacoRoot, { top: 0, bottom: 500, height: 500 })
-      el.appendChild(monacoRoot)
+      const shell = document.createElement('div')
+      shell.className = 'stream-diffs-shell'
+      setElementRect(shell, { top: 0, bottom: 300, height: 300 })
+      el.appendChild(shell)
     })
 
     await act(async () => {
@@ -302,33 +302,8 @@ describe('markstream-react codeBlockNode theme updates', () => {
     await waitForCallCount(helpers.createDiffEditor, 1)
     await waitForEditorVisible(() => editorHost)
 
-    expect(editorHost?.style.height).toBe('500px')
-
-    const monacoRoot = editorHost?.querySelector('.monaco-diff-editor')
-    expect(monacoRoot).not.toBeNull()
-
-    const original = document.createElement('div')
-    original.className = 'editor original'
-    const originalLines = document.createElement('div')
-    originalLines.className = 'view-lines'
-    const line = document.createElement('div')
-    line.className = 'view-line'
-    line.textContent = '"version": "0.0.49",'
-    setElementRect(line, { top: 40, bottom: 70, height: 30 })
-    const hidden = document.createElement('div')
-    hidden.className = 'diff-hidden-lines'
-    hidden.textContent = '48 unmodified lines'
-    setElementRect(hidden, { top: 250, bottom: 282, height: 32 })
-    originalLines.appendChild(line)
-    original.append(originalLines, hidden)
-
-    const bridge = document.createElement('div')
-    bridge.className = 'stream-monaco-diff-unchanged-bridge'
-    bridge.textContent = '48 unmodified lines'
-    setElementRect(bridge, { top: 250, bottom: 282, height: 32 })
-
+    // Content height (300) is below the max (500); the host should reflect it.
     await act(async () => {
-      monacoRoot?.append(original, bridge)
       updateDiffListener?.()
       await Promise.resolve()
     })
@@ -343,7 +318,7 @@ describe('markstream-react codeBlockNode theme updates', () => {
     })
   })
 
-  it('renders a two-pane diff fallback with Monaco-aligned metrics before the diff editor is ready', async () => {
+  it('renders a two-pane diff fallback with stream-diffs-aligned metrics before the diff editor is ready', async () => {
     const helpers = getStreamMonacoHelpers()
     const host = document.createElement('div')
     document.body.appendChild(host)
@@ -368,14 +343,6 @@ describe('markstream-react codeBlockNode theme updates', () => {
         loading: false,
         showHeader: false,
         isDark: false,
-        monacoOptions: {
-          fontFamily: 'Menlo',
-          fontSize: 13,
-          lineHeight: 20,
-          padding: { top: 2, bottom: 6 },
-          renderSideBySide: true,
-          tabSize: 2,
-        },
       }))
     })
     await waitForCallCount(helpers.createDiffEditor, 1)
@@ -383,12 +350,11 @@ describe('markstream-react codeBlockNode theme updates', () => {
     const fallback = host.querySelector('pre.code-fallback-plain.markstream-pre--diff-preview') as HTMLElement | null
     expect(fallback).not.toBeNull()
     expect(fallback?.dataset.language).toBe('json')
-    expect(fallback?.style.fontFamily).toBe('Menlo')
-    expect(fallback?.style.fontSize).toBe('13px')
-    expect(fallback?.style.lineHeight).toBe('20px')
-    expect(fallback?.style.paddingTop).toBe('2px')
-    expect(fallback?.style.paddingBottom).toBe('6px')
-    expect(fallback?.style.tabSize).toBe('2')
+    expect(fallback?.style.fontSize).toBe('12px')
+    expect(fallback?.style.lineHeight).toBe('18px')
+    expect(fallback?.style.paddingTop).toBe('0px')
+    expect(fallback?.style.paddingBottom).toBe('0px')
+    expect(fallback?.style.tabSize).toBe('4')
 
     const panes = host.querySelectorAll('.markstream-pre__diff-pane')
     expect(panes).toHaveLength(2)

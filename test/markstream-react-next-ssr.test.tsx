@@ -171,18 +171,6 @@ function createMatrixCases(entry: any, serverEntry: any) {
       }),
     },
     {
-      name: 'MarkdownCodeBlockNode',
-      expected: 'data-ssr-fallback="markdown-code-block"',
-      element: React.createElement(entry.MarkdownCodeBlockNode, {
-        node: {
-          type: 'code_block',
-          language: 'md',
-          code: '# nested markdown',
-          raw: '# nested markdown',
-        },
-      }),
-    },
-    {
       name: 'PreCodeNode',
       expected: 'const fallback = true',
       element: React.createElement(entry.PreCodeNode, {

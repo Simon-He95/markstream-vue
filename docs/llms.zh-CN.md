@@ -82,7 +82,7 @@
 遇到“不渲染/样式不对”，按顺序排：
 
 1) **CSS 顺序/Reset**：先 reset，再 `markstream-vue/index.css`（Tailwind 使用 `@import 'markstream-vue/index.css' layer(components);`）。
-2) **可选 peer 是否安装**（Mermaid/KaTeX/Monaco/Shiki）。
+2) **可选 peer 是否安装**（Mermaid/KaTeX）。
 3) **是否启用 loader**（仅在你手动关闭/覆盖时需要）：`enableMermaid()` / `enableKatex()`。
 4) **peer CSS 是否导入**（需要时）：`katex/dist/katex.min.css`（Mermaid 不需要额外 CSS）。
 5) **单独节点组件 wrapper**：单独用节点组件时，外层需要 `.markstream-vue`。
@@ -165,23 +165,23 @@
 - 文档：`docs/guide/math.md`, `docs/guide/installation.md`
 - 源码：`src/components/MathInlineNode/katex.ts`
 
-### Monaco 代码块没功能/空白
+### 代码块 runtime 不工作/空白
 
-- 表述： “工具栏没了”, “编辑器空白”
+- 表述： “工具栏没了”, “代码块空白”
 - 步骤：
-  - 安装 `stream-monaco` peer
-  - 确认 Monaco workers 已正确打包（Vite plugin），并确保只在浏览器端执行
-  - 如果应用层要提前预热，调用 `markstream-vue` 的 `preloadCodeBlockRuntime()`；不要为了预热 worker 直接 import `stream-monaco`
-- 最小追问： “控制台是否有 worker/Monaco 报错？生产环境是否已打包 Monaco workers？”
-- 文档：`docs/guide/monaco.md`, `docs/guide/components.md`
+  - `CodeBlockNode` 是唯一的代码块渲染器，通过 `stream-diffs` 增强（diff 追踪、code/render 选项）
+  - 如果应用层要提前预热，调用 `markstream-vue` 的 `preloadCodeBlockRuntime()`
+  - 设置 `code-renderer` 为 `'pre'`（纯文本）或 `'stream-diffs'`（增强）；无需额外 peer
+- 最小追问： “控制台是否有报错？你用的 `code-renderer` 值是什么？”
+- 文档：`docs/guide/code-block-runtime.md`, `docs/guide/components.md`
 
-### 想要轻量代码块（不装 Monaco）
+### 想要轻量代码块（不装 diff）
 
 - 表述： “SSR 友好”, “减包体”
 - 步骤：
-  - 用 `MarkdownCodeBlockNode`（Shiki）或开启 `render-code-blocks-as-pre`
-  - 如果用 Shiki：安装 `stream-markdown`
-- 最小追问： “需要语法高亮还是纯文本就行？”
+  - 用 `code-renderer="pre"` 输出纯 `<pre>` 代码块（无 diff 追踪）
+  - 需要 diff 追踪时用 `code-renderer="stream-diffs"` 的 `CodeBlockNode`
+- 最小追问： “需要 diff 追踪还是纯文本就行？”
 - 文档：`docs/guide/code-blocks.md`, `docs/guide/components.md`
 
 ### Markdown 里嵌自定义组件（`&lt;thinking&gt;`）
@@ -198,7 +198,7 @@
 - 表述： “window is not defined”, “SSR crash”
 - 步骤：
   - 用 `&lt;client-only&gt;` 包裹
-  - Mermaid/Monaco/worker 仅浏览器初始化
+  - Mermaid/worker 仅浏览器初始化
 - 最小追问： “Nuxt 版本？报错发生在 build 还是 runtime？安装/启用了哪些 peers？”
 - 文档：`docs/nuxt-ssr.md`
 

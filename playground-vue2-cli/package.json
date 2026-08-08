@@ -9,7 +9,6 @@
     "@vue/composition-api": "^1.7.2",
     "katex": "^0.16.47",
     "markstream-vue2": "workspace:*",
-    "stream-markdown": "latest",
     "vue": "2.6.14",
     "vue-demi": "^0.14.10"
   },

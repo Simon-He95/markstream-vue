@@ -200,7 +200,7 @@ describe('release dependency gates', () => {
 
   it('keeps code block scroll measurement before stateful copy and collapse interactions', () => {
     const webVitalsScript = readFileSync(resolve(process.cwd(), 'scripts/e2e-web-vitals-performance.mjs'), 'utf8')
-    const scrollCapture = webVitalsScript.indexOf('const scrollSnapshot = await captureVitalsSnapshot(page, \'codeblock-scripted-scroll-into-monaco\')')
+    const scrollCapture = webVitalsScript.indexOf('const scrollSnapshot = await captureVitalsSnapshot(page, \'codeblock-scripted-scroll-into-stream-diffs\')')
     const restoreTop = webVitalsScript.indexOf('await scrollPreviewByRatio(page, 0)', scrollCapture)
     const copyInteraction = webVitalsScript.indexOf('interactions.push(await runInteraction(page, \'codeblock-copy\'')
     const collapseInteraction = webVitalsScript.indexOf('interactions.push(await runInteraction(page, \'codeblock-collapse\'')
@@ -242,7 +242,7 @@ describe('release dependency gates', () => {
     expect(webVitalsScript).toContain('function checkpointWebVitalsResult(result)')
     expect(webVitalsScript).toContain('result.warnings = collectResultWarnings(result)')
     expect(webVitalsScript).toContain('result.millionRestore = await runMillionRestoreScenario(browser, port)')
-    expect(webVitalsScript).toContain('result.codeblockMonaco = await runCodeBlockScenario(browser, port)')
+    expect(webVitalsScript).toContain('result.codeblockStreamDiffs = await runCodeBlockScenario(browser, port)')
     const millionRestoreAssignment = webVitalsScript.indexOf('result.millionRestore = await runMillionRestoreScenario(browser, port)')
     const firstCheckpointCall = webVitalsScript.indexOf('checkpointWebVitalsResult(result)', millionRestoreAssignment)
 

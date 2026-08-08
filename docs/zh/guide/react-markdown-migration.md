@@ -26,7 +26,7 @@ description: 从 react-markdown 迁移到 markstream-react，并了解渲染器�
 ## 什么情况下更适合 `markstream-react`
 
 - 你在渲染 AI / 聊天 / SSE 这种“内容边到边显示”的流式输出。
-- 你需要渐进式 Mermaid、D2、KaTeX 或 Monaco 代码块体验。
+- 你需要渐进式 Mermaid、D2、KaTeX 或 `stream-diffs` 增强代码块体验。
 - 你需要针对大文档做视口优先的重节点调度。
 - 你希望从“字符串进、元素出”的模型升级到更适合流式更新的 AST 模型。
 
@@ -216,32 +216,18 @@ export function Article({ markdown }: { markdown: string }) {
 
 很多 `react-markdown` 项目会通过覆盖 `components.code` 接第三方高亮器。
 
-到了 `markstream-react`，一般有三种选择：
+到了 `markstream-react`，默认的 `CodeBlockNode` 由可选的对等依赖 `stream-diffs` 增强（未安装时会回退渲染普通 `<pre>`）。一般有两种选择：
 
-- 继续使用默认 `CodeBlockNode`，拿到 Monaco 驱动的代码块体验。
-- 把 `code_block` 切到 `MarkdownCodeBlockNode`，使用更轻量的 Shiki 方案。
+- 继续使用默认 `CodeBlockNode`，体验由 `stream-diffs` 增强的代码块。
 - 设置 `renderCodeBlocksAsPre`，直接回退到普通 `<pre><code>`。
 
-下面是切到 Shiki 的例子：
+要使用增强代码块运行时，请安装可选对等依赖：
 
-```tsx
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
-
-setCustomComponents('docs', {
-  code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
-      node={node}
-      isDark={isDark}
-      stream={ctx?.codeBlockStream}
-      {...(ctx?.codeBlockProps || {})}
-    />
-  ),
-})
-
-export function Article({ markdown }: { markdown: string }) {
-  return <MarkdownRender customId="docs" content={markdown} />
-}
+```bash
+pnpm add stream-diffs
 ```
+
+主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 控制，代码与 diff 选项使用 `stream-diffs` 内置默认值。
 
 ## 迁移插件逻辑
 

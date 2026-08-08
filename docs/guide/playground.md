@@ -28,7 +28,7 @@ The playground demonstrates:
 
 - Live streaming Markdown input with progressive Mermaid diagrams
 - Custom components mapping and `setCustomComponents`
-- Monaco streaming integration and code block examples
+- stream-diffs streaming integration and code block examples
 
 Example pages (open from the playground):
 

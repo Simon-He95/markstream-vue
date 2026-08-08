@@ -79,16 +79,11 @@ export function resolveNodeRendererCodeRenderer(options: {
   if (options.renderCodeBlocksAsPre === true)
     return 'pre'
 
-  if (
-    options.codeRenderer === 'pre'
-    || options.codeRenderer === 'shiki'
-    || options.codeRenderer === 'monaco'
-  ) {
+  if (options.codeRenderer === 'pre' || options.codeRenderer === 'stream-diffs')
     return options.codeRenderer
-  }
 
   if (options.renderCodeBlocksAsPre === false)
-    return 'monaco'
+    return 'stream-diffs'
 
-  return options.mode === 'docs' ? 'monaco' : 'pre'
+  return options.mode === 'docs' ? 'stream-diffs' : 'pre'
 }

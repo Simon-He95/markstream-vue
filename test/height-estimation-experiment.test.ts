@@ -98,7 +98,7 @@ describe('height estimation experiment internals', () => {
         raw: '```ts\none\n```',
       } as any,
       {
-        rendererKind: 'monaco',
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
@@ -110,7 +110,7 @@ describe('height estimation experiment internals', () => {
         raw: '```ts\none\n```',
       } as any,
       {
-        rendererKind: 'monaco',
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
@@ -122,7 +122,7 @@ describe('height estimation experiment internals', () => {
         raw: '```ts\none\n\n```',
       } as any,
       {
-        rendererKind: 'monaco',
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
@@ -135,7 +135,7 @@ describe('height estimation experiment internals', () => {
         loading: true,
       } as any,
       {
-        rendererKind: 'monaco',
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
@@ -145,7 +145,7 @@ describe('height estimation experiment internals', () => {
     expect(loadingWithTerminalNewline?.contentHeight).toBe(withBlankLine?.contentHeight)
   })
 
-  it('includes the native surface padding in ordinary monaco code block estimates', () => {
+  it('includes the native surface padding in ordinary stream-diffs code block estimates', () => {
     const code = Array.from({ length: 24 }, (_, index) => `line ${index + 1}`).join('\n')
     const estimated = estimateCodeBlockHeight(
       {
@@ -156,10 +156,7 @@ describe('height estimation experiment internals', () => {
         loading: true,
       } as any,
       {
-        rendererKind: 'monaco',
-        monacoOptions: {
-          lineHeight: 18,
-        },
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
@@ -168,7 +165,7 @@ describe('height estimation experiment internals', () => {
     expect(estimated?.height).toBe(448)
   })
 
-  it('estimates split and inline diff rows independently', () => {
+  it('estimates split diff rows', () => {
     const node = {
       type: 'code_block',
       language: 'diff',
@@ -192,54 +189,12 @@ describe('height estimation experiment internals', () => {
     const split = estimateCodeBlockHeight(
       node,
       {
-        rendererKind: 'monaco',
-        monacoOptions: {
-          lineHeight: 18,
-          padding: { top: 0, bottom: 0 },
-        },
-        showHeader: false,
-      },
-    )
-    const inline = estimateCodeBlockHeight(
-      node,
-      {
-        rendererKind: 'monaco',
-        monacoOptions: {
-          lineHeight: 18,
-          padding: { top: 0, bottom: 0 },
-          renderSideBySide: false,
-        },
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
 
     expect(split?.contentHeight).toBe(54)
-    expect(inline?.contentHeight).toBe(72)
-  })
-
-  it('uses the responsive inline layout below the configured breakpoint', () => {
-    const node = {
-      type: 'code_block',
-      language: 'diff',
-      code: 'new',
-      raw: '-old\n+new\n',
-      diff: true,
-      originalCode: 'old\n',
-      updatedCode: 'new\n',
-    } as any
-    const options = {
-      rendererKind: 'monaco' as const,
-      monacoOptions: {
-        lineHeight: 18,
-        padding: { top: 0, bottom: 0 },
-        useInlineViewWhenSpaceIsLimited: true,
-        renderSideBySideInlineBreakpoint: 600,
-      },
-      showHeader: false,
-    }
-
-    expect(estimateCodeBlockHeight(node, { ...options, width: 500 })?.contentHeight).toBe(36)
-    expect(estimateCodeBlockHeight(node, { ...options, width: 700 })?.contentHeight).toBe(18)
   })
 
   it('estimates split patch rows without source pairs', () => {
@@ -252,11 +207,7 @@ describe('height estimation experiment internals', () => {
         diff: true,
       } as any,
       {
-        rendererKind: 'monaco',
-        monacoOptions: {
-          lineHeight: 18,
-          padding: { top: 0, bottom: 0 },
-        },
+        rendererKind: 'stream-diffs',
         showHeader: false,
       },
     )
@@ -264,7 +215,7 @@ describe('height estimation experiment internals', () => {
     expect(estimated?.contentHeight).toBe(18)
   })
 
-  it('caps monaco estimate by max height', () => {
+  it('caps stream-diffs estimate by max height', () => {
     const estimated = estimateCodeBlockHeight(
       {
         type: 'code_block',
@@ -273,17 +224,12 @@ describe('height estimation experiment internals', () => {
         raw: '```ts\n...\n```',
       } as any,
       {
-        rendererKind: 'monaco',
-        monacoOptions: {
-          fontSize: 13,
-          lineHeight: 30,
-          MAX_HEIGHT: 320,
-        },
+        rendererKind: 'stream-diffs',
         showHeader: true,
       },
     )
 
-    expect(estimated?.contentHeight).toBe(320)
-    expect(estimated?.height).toBe(360)
+    expect(estimated?.contentHeight).toBe(500)
+    expect(estimated?.height).toBe(540)
   })
 })

@@ -88,7 +88,7 @@ Start with the [framework overview](https://markstream.simonhe.me/frameworks) if
 
 ## Stability
 
-`markstream-vue` has a stable 1.x API contract. The current npm package may still use beta tags while the 1.0 release gate and cross-framework package family are finalized. The stable surface includes `MarkdownRender`, streaming content rendering, pre-parsed node rendering, the safe HTML policy, optional Mermaid / KaTeX / Monaco / D2 / Infographic integrations, virtual-scroll coordination, CSS exports, worker client subpaths, and SSR imports for Vite / Nuxt / VitePress.
+`markstream-vue` has a stable 1.x API contract. The current npm package may still use beta tags while the 1.0 release gate and cross-framework package family are finalized. The stable surface includes `MarkdownRender`, streaming content rendering, pre-parsed node rendering, the safe HTML policy, optional Mermaid / KaTeX / D2 / Infographic integrations, stream-diffs enhanced code blocks, virtual-scroll coordination, CSS exports, worker client subpaths, and SSR imports for Vite / Nuxt / VitePress.
 
 Cross-framework renderers (`markstream-react`, `markstream-octane`, `markstream-svelte`, `markstream-angular`, `markstream-vue2`) are available and actively developed. Check each package page for API maturity, framework support, and known limitations.
 
@@ -126,7 +126,7 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 
 - Purpose-built for **streaming Markdown** (AI/chat/SSE), designed to minimize flicker and keep memory predictable.
 - **Two render modes**: virtual window for long docs, incremental batching for “typing” effects.
-- **Progressive diagrams** (Mermaid) and **streaming code blocks** (Monaco/Shiki) that keep up with diffs.
+- **Progressive diagrams** (Mermaid) and **streaming code blocks** (stream-diffs) that keep up with diffs.
 - Works with **raw Markdown strings or pre-parsed nodes**, with custom framework components in Vue, React, Octane, Svelte, and Angular.
 - TypeScript-first, ship-ready defaults — import CSS and render.
 
@@ -321,7 +321,7 @@ createApp({
 }).mount('#app')
 ```
 
-Import `markstream-vue/index.css` after your reset (e.g., use `@import 'markstream-vue/index.css' layer(components);` for Tailwind) so renderer styles win over utility classes. Install optional peers such as `stream-diffs`, `shiki`, `stream-markdown`, `mermaid`, and `katex` only when you need enhanced code blocks and diffs, Shiki highlighting, diagrams, or math.
+Import `markstream-vue/index.css` after your reset (e.g., use `@import 'markstream-vue/index.css' layer(components);` for Tailwind) so renderer styles win over utility classes. Install optional peers such as `stream-diffs`, `mermaid`, and `katex` only when you need enhanced code blocks and diffs, diagrams, or math.
 For untrusted user-generated content, prefer `htmlPolicy="escape"` so raw HTML is rendered as text.
 If your app intentionally scales root font size on mobile, use `markstream-vue/index.px.css` to avoid `rem`-based global scaling side effects.
 
@@ -616,7 +616,7 @@ If markstream-vue helps your work, you can support ongoing maintenance with one 
 
 - AI/chat UIs with long-form answers and Markdown tokens arriving over SSE/websocket.
 - Docs, changelogs, and knowledge bases that need instant load but stay responsive as they grow.
-- Streaming diffs and code review panes that benefit from Monaco live updates.
+- Streaming diffs and code review panes that benefit from stream-diffs diff rendering.
 - Diagram-heavy content that should render progressively (Mermaid) without blocking.
 - Embedding Vue components in Markdown-driven surfaces (callouts, widgets, CTA buttons).
 
@@ -624,7 +624,7 @@ If markstream-vue helps your work, you can support ongoing maintenance with one 
 
 - Mermaid/KaTeX not rendering? Install the peer (`mermaid` / `katex`) and pass `:enable-mermaid="true"` / `:enable-katex="true"` or call the loader setters. If you load them via CDN script tags, the library will also pick up `window.mermaid` / `window.katex`.
 - CDN + KaTeX worker: if you don't bundle `katex` but still want off-main-thread rendering, create and inject a worker that loads KaTeX via CDN (UMD) using `createKaTeXWorkerFromCDN()` + `setKaTeXWorker()`.
-- Bundle size: peers are optional and not bundled; import only `markstream-vue/index.css` once; use Shiki (`MarkdownCodeBlockNode`) when Monaco is too heavy. Pass `langs` to request a smaller Shiki language preload set; it is not a rendering allow-list, and languages already available in the shared Shiki registry may still highlight. Infrequent language icons are split into an async chunk and load on demand; call `preloadExtendedLanguageIcons()` during app idle if you want to avoid first-hit icon fallback.
+- Bundle size: peers are optional and not bundled; import only `markstream-vue/index.css` once; enhanced code blocks load the `stream-diffs` runtime on demand only when it is installed. Infrequent language icons are split into an async chunk and load on demand; call `preloadExtendedLanguageIcons()` during app idle if you want to avoid first-hit icon fallback.
 - Custom UI: register components via `setCustomComponents` (global or scoped), then emit markers/placeholders in Markdown and map them to Vue components.
 
 ## 🆚 Why markstream-vue over a typical Markdown renderer?
@@ -632,7 +632,7 @@ If markstream-vue helps your work, you can support ongoing maintenance with one 
 | Needs | Typical Markdown preview | markstream-vue |
 | --- | --- | --- |
 | Streaming input | Re-renders whole tree, flashes | Incremental batches with virtual windowing |
-| Large code blocks | Slow re-highlight | `stream-diffs` File/Diff surface + Shiki option |
+| Large code blocks | Slow re-highlight | `stream-diffs` File/Diff surface |
 | Diagrams | Blocks while parsing | Progressive Mermaid with graceful fallback |
 | Custom UI | Limited slots | Inline Vue components & typed nodes |
 | Long docs | Memory spikes | Configurable live-node cap for steady usage |
@@ -640,7 +640,7 @@ If markstream-vue helps your work, you can support ongoing maintenance with one 
 ## 🗺️ Roadmap (snapshot)
 
 - More “instant start” templates (Vite + Nuxt + Tailwind) and updated StackBlitz.
-- Additional codeblock presets (diff-friendly Shiki themes, Monaco decoration helpers).
+- Additional codeblock presets (stream-diffs diff-friendly themes).
 - Cookbook docs for AI/chat patterns (SSE/WebSocket, retry/resume, markdown mid-states).
 - More showcase examples for embedding Vue components inside Markdown surfaces.
 
@@ -681,7 +681,7 @@ Watch on Bilibili: [Open in Bilibili](https://www.bilibili.com/video/BV17Z4qzpE9
 - 🔄 Real-time updates: supports incremental content without breaking formatting
 - 📦 TypeScript-first: complete type definitions and IntelliSense
 - 🔌 Package defaults: works out of the box in the supported framework entry points
-- 🎨 Flexible code block rendering: choose Monaco editor (`CodeBlockNode`) or lightweight Shiki highlighting (`MarkdownCodeBlockNode`)
+- 🎨 Enhanced code block rendering: `stream-diffs` File/Diff surface (`CodeBlockNode`) or plain `<pre>` fallback without the peer
 - 🧰 Parser toolkit: [`stream-markdown-parser`](./packages/markdown-parser) now documents how to reuse the parser in workers/SSE streams and feed `<MarkdownRender :nodes>` directly, plus APIs for registering global plugins and custom math helpers.
 
 ## 🙌 Contributing & community
@@ -728,10 +728,8 @@ Thanks to all the people who have contributed to this project!
 
 This project uses and benefits from:
 - [stream-diffs](https://github.com/Simon-He95/stream-diffs)
-- [stream-markdown](https://github.com/Simon-He95/stream-markdown)
 - [mermaid](https://mermaid-js.github.io/mermaid)
 - [katex](https://katex.org/)
-- [shiki](https://github.com/shikijs/shiki)
 - [markdown-it-ts](https://github.com/Simon-He95/markdown-it-ts)
 
 Thanks to the authors and contributors of these projects!

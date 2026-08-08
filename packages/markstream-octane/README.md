@@ -1,6 +1,6 @@
 # markstream-octane
 
-Native Octane streaming Markdown renderer for AI chat, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Shiki, and Monaco.
+Native Octane streaming Markdown renderer for AI chat, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, and stream-diffs enhanced code blocks.
 
 `markstream-octane` is compiled with the Octane compiler and runs on the Octane client and server runtimes. It does not require a React root or React compatibility layer. The published package contains precompiled JavaScript, declarations, styles, and workers, so consumers do not need to compile TSRX from `node_modules`.
 
@@ -16,8 +16,7 @@ Optional renderer features are peer dependencies. Install only the features used
 
 | Feature | Package |
 | --- | --- |
-| Shiki code blocks | `stream-markdown` |
-| Monaco editor code blocks | `stream-monaco` |
+| Enhanced code blocks | `stream-diffs` |
 | Mermaid diagrams | `mermaid` |
 | KaTeX math | `katex` |
 | D2 diagrams | `@terrastruct/d2` |

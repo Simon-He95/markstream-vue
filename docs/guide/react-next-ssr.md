@@ -124,7 +124,6 @@ Current SSR acceptance also covers:
 ```tsx
 import type {
   HtmlPreviewFrameProps,
-  MarkdownCodeBlockNodeProps,
   NodeRendererProps,
   TooltipProps,
 } from 'markstream-react/next'

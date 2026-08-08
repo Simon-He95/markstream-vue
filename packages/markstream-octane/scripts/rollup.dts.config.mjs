@@ -15,7 +15,7 @@ export default entryNames.map((entryName) => {
     external: [
       /^node:.*$/,
       /^octane(?:\/.*)?$/,
-      /^(?:katex|mermaid|stream-monaco|stream-markdown)(?:\/.*)?$/,
+      /^(?:katex|mermaid|stream-diffs)(?:\/.*)?$/,
       /^stream-markdown-parser(?:\/.*)?$/,
       /^markstream-core(?:\/.*)?$/,
       /^@antv\/infographic(?:\/.*)?$/,

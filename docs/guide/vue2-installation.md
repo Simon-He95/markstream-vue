@@ -184,14 +184,12 @@ markstream-vue2 supports various features through optional peer dependencies. In
 
 | Feature | Required Packages | Install Command |
 |---------|------------------|-----------------|
-| Shiki code blocks (`MarkdownCodeBlockNode`) | `stream-markdown` | `pnpm add stream-markdown` |
 | Enhanced code blocks (recommended) | `stream-diffs` | `pnpm add stream-diffs` |
-| Monaco Editor code blocks (automatic fallback) | `stream-monaco` | `pnpm add stream-monaco` |
 | Mermaid Diagrams | `mermaid` | `pnpm add mermaid` |
 | D2 Diagrams | `@terrastruct/d2` | `pnpm add @terrastruct/d2` |
 | Math Rendering (KaTeX) | `katex` | `pnpm add katex` |
 
-Enhanced code blocks resolve through a dual-runtime loader: `stream-diffs` is preferred (smaller, no `monaco-editor`), `stream-monaco` is the automatic fallback (through the `stream-monaco/legacy` entry for Webpack 4 / CJS toolchains), and a plain `<pre>` is rendered when neither is installed. Install one of the two; you do not need both.
+Enhanced code blocks use the optional `stream-diffs` peer. When it is not installed, a plain `<pre>` is rendered instead. Code and diff options use `stream-diffs` built-in defaults, and theming is controlled through `theme` / `darkTheme` / `lightTheme` / `themes`.
 
 ## Vue 2.6.x Setup
 
@@ -244,8 +242,6 @@ import 'markstream-vue2/index.css'
 import 'katex/dist/katex.min.css'
 ```
 
-Monaco (`stream-monaco`) does not require a separate CSS import.
-
 Note: `markstream-vue2/index.css` is scoped under an internal `.markstream-vue2` container to reduce global style conflicts. `MarkdownRender` renders inside that container by default. If you render node components standalone, wrap them with `<div class="markstream-vue2">...</div>`.
 
 ## Vue CLI (Webpack 4) Notes
@@ -294,28 +290,28 @@ if (mermaidWorker)
 
 If you want to keep using subpath imports like `markstream-vue2/index.css`, add `resolve.alias` mappings in `vue.config.js` (see `playground-vue2-cli/vue.config.js`).
 
-### Code blocks: prefer stream-markdown override
+### Code blocks: prefer the `stream-diffs` override
 
-In Webpack 4, Monaco integration (`stream-monaco`) is prone to edge cases (worker resolution, ESM entrypoints, service registration, and Shiki/TextMate regex engine init issues). If your goal is “render code blocks with highlighting”, the most reliable approach is:
+The enhanced code block runtime (`stream-diffs`) is the only code block renderer in markstream-vue2. It falls back to a plain `<pre>` when the optional peer is not installed. For Webpack 4, `stream-diffs` is the recommended (and only) code block runtime — there is no Monaco fallback.
 
-1) Install Shiki renderer deps:
+1) Install the optional peer:
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
 
-2) Override `code_block` to use `MarkdownCodeBlockNode` (or your own component):
+2) (Optional) Override `code_block` with your own component using `setCustomComponents` when you need custom behavior:
 
 ```ts
-import { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
+import { setCustomComponents } from 'markstream-vue2'
 
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+setCustomComponents({ code_block: MyCodeBlock })
 ```
 
 3) Webpack config pitfalls:
 
-- If you use `webpack.IgnorePlugin` for optional dependencies, ensure `stream-markdown` is **not** ignored.
-- `stream-markdown` is ESM-only. In a CJS `vue.config.js`, `require.resolve('stream-markdown')` can fail even when installed. Use a filesystem fallback (check `node_modules/stream-markdown`) and alias it to `dist/index.js`. See `playground-vue2-cli/vue.config.js`.
+- If you use `webpack.IgnorePlugin` for optional dependencies, ensure `stream-diffs` is **not** ignored, otherwise code blocks fall back to `<pre>`.
+- `stream-diffs` is ESM-only. In a CJS `vue.config.js`, `require.resolve('stream-diffs')` can fail even when installed. Use a filesystem fallback (check `node_modules/stream-diffs`) and alias it to `dist/index.js`. See `playground-vue2-cli/vue.config.js`.
 
 If you're in a monorepo/workspace (common with pnpm), make sure your app uses a **single Vue 2 runtime instance**. Otherwise you may see runtime warnings like:
 `provide() can only be used inside setup()` / `onMounted is called when there is no active component instance` (caused by duplicated Vue copies and mismatched Composition API context). Fix this by pinning `vue$` to your project's Vue 2 runtime in Webpack (see `playground-vue2-cli/vue.config.js`).
@@ -370,38 +366,30 @@ Fix:
 To enable all features at once:
 
 ```bash
-pnpm add stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+pnpm add stream-diffs mermaid @terrastruct/d2 katex
 # or
-npm install stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+npm install stream-diffs mermaid @terrastruct/d2 katex
 ```
 
 ### Feature Details
 
 #### Code Syntax Highlighting
 
-Requires `stream-markdown`:
+Requires `stream-diffs`:
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
 
-`stream-markdown` bundles the Shiki runtime used by `MarkdownCodeBlockNode`. To use Shiki inside `MarkdownRender`, override the `code_block` renderer (or render `MarkdownCodeBlockNode` directly).
+`stream-diffs` powers the enhanced `CodeBlockNode` runtime with built-in defaults for code and diff options. When it is not installed, code blocks fall back to a plain `<pre>`. You can override the `code_block` renderer via `setCustomComponents` for custom behavior:
 
 ```js
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
+import { setCustomComponents } from 'markstream-vue2'
 
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+setCustomComponents({ code_block: MyCodeBlock })
 ```
 
-#### Monaco Editor
-
-For full code block functionality (copy button, font size controls, expand/collapse):
-
-```bash
-pnpm add stream-monaco
-```
-
-Without `stream-monaco`, code blocks will render but interactive buttons may not work.
+Theming is controlled through the `theme` / `darkTheme` / `lightTheme` / `themes` props.
 
 #### Mermaid Diagrams
 

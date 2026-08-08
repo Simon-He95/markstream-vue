@@ -82,7 +82,7 @@ export function normalizeLanguageIdentifier(lang?: string | null): string {
   return LANGUAGE_ALIAS_MAP[token] ?? token
 }
 
-export function resolveMonacoLanguageId(lang?: string | null): string {
+export function resolveLanguageId(lang?: string | null): string {
   const canonical = normalizeLanguageIdentifier(lang)
   if (!canonical)
     return 'plaintext'

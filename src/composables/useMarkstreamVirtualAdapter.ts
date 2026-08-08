@@ -463,10 +463,10 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
 
   function normalizeMarkdownCodeRenderer(): NodeRendererCodeRenderer {
     const renderer = toValue(options.markdownCodeRenderer)
-    if (renderer === 'pre' || renderer === 'shiki' || renderer === 'monaco')
+    if (renderer === 'pre' || renderer === 'stream-diffs')
       return renderer
 
-    return normalizeMarkdownMode() === 'docs' ? 'monaco' : 'pre'
+    return normalizeMarkdownMode() === 'docs' ? 'stream-diffs' : 'pre'
   }
 
   function normalizeMarkdownMeasurementKey() {

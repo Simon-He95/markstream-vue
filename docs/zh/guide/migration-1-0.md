@@ -11,7 +11,7 @@ description: 从 beta 或 rc 版本迁移到 markstream-vue 1.0 的说明。
 - `MarkdownRender`、`VueRendererMarkdown` 和 `useSmoothMarkdownStream`。
 - 直接传入 `content` 渲染，以及传入预解析 `nodes` 渲染。
 - 默认启用 `htmlPolicy="safe"` 的安全 HTML 渲染。
-- 可选 Mermaid、KaTeX、D2、Infographic 和 Monaco 集成。
+- 可选 Mermaid、KaTeX、D2、Infographic 和 Monaco 集成（Monaco 集成已在 2.0 移除）。
 - CSS exports、Tailwind safelist export、worker client exports、SSR imports，以及 app 作用域的自定义组件。
 
 ## 升级前检查

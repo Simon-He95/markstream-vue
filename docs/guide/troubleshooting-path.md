@@ -5,7 +5,7 @@ keywords:
   - markstream-vue troubleshooting
   - Vue Markdown CSS issues
   - Markdown SSR troubleshooting
-  - missing Mermaid KaTeX Monaco peers
+  - missing Mermaid KaTeX stream-diffs peers
   - AI chat streaming performance
   - VitePress Markdown troubleshooting
 ---
@@ -23,7 +23,7 @@ If you already know the exact subsystem, jump straight to the deeper page linked
 | Styles look broken, spacing is off, or Tailwind wins | [CSS looks wrong? Start here](/guide/troubleshooting#css-looks-wrong-start-here) | [Tailwind Integration & Style Ordering](/guide/tailwind) |
 | A trusted tag like `<thinking>` renders as raw HTML | [Docs Site & VitePress](/guide/vitepress-docs-integration) or [Custom Tags & Advanced Components](/guide/custom-components) | [API Reference](/guide/api) |
 | `window is not defined` or browser-only peers crash during SSR | [Troubleshooting](/guide/troubleshooting) | [Nuxt SSR](/nuxt-ssr) |
-| Mermaid, KaTeX, Monaco, or D2 does not render | [Installation](/guide/installation) | [Renderer & Node Components](/guide/components) |
+| Mermaid, KaTeX, stream-diffs, or D2 does not render | [Installation](/guide/installation) | [Renderer & Node Components](/guide/components) |
 | Chat output feels slow or reparses too much | [AI Chat & Streaming](/guide/ai-chat-streaming) | [Performance](/guide/performance) |
 | A built-in node is the wrong shape for your app | [Override Built-in Components](/guide/component-overrides) | [Renderer & Node Components](/guide/components) |
 
@@ -69,7 +69,7 @@ Best paths:
 Symptoms:
 
 - `window is not defined`
-- Mermaid or Monaco works locally but fails in SSR
+- Mermaid or stream-diffs works locally but fails in SSR
 - hydration differs between server and client
 
 Check in this order:
@@ -89,7 +89,7 @@ Symptoms:
 
 - Mermaid fences stay as source text
 - formulas stay blank
-- Monaco blocks are empty
+- stream-diffs enhanced code blocks fall back to `<pre>`
 - D2 falls back to source
 
 Most of the time, this is not a parser bug. It is one of:

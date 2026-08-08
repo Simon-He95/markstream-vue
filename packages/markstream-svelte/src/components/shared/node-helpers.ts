@@ -1,7 +1,7 @@
 import type { SmoothMarkdownStreamOptions } from 'markstream-core'
 import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
 import type { CustomComponentMap } from '../../customComponents'
-import type { CodeBlockMonacoOptions, CodeBlockMonacoTheme } from '../../types/monaco'
+import type { CodeBlockTheme } from '../../types/monaco'
 import {
   getHtmlTagFromContent,
   getMarkdown,
@@ -32,10 +32,9 @@ export interface CodeBlockPreviewPayload {
 
 export type NodeRendererCodeBlockProps = Partial<{
   stream: boolean
-  darkTheme: CodeBlockMonacoTheme
-  lightTheme: CodeBlockMonacoTheme
-  themes: CodeBlockMonacoTheme[]
-  monacoOptions: CodeBlockMonacoOptions
+  darkTheme: CodeBlockTheme
+  lightTheme: CodeBlockTheme
+  themes: CodeBlockTheme[]
   minWidth: string | number
   maxWidth: string | number
   isShowPreview: boolean
@@ -109,9 +108,8 @@ export interface NodeRendererProps {
   htmlPolicy?: HtmlPolicy
   viewportPriority?: boolean
   codeBlockStream?: boolean
-  codeBlockDarkTheme?: CodeBlockMonacoTheme
-  codeBlockLightTheme?: CodeBlockMonacoTheme
-  codeBlockMonacoOptions?: CodeBlockMonacoOptions
+  codeBlockDarkTheme?: CodeBlockTheme
+  codeBlockLightTheme?: CodeBlockTheme
   renderCodeBlocksAsPre?: boolean
   codeBlockMinWidth?: string | number
   codeBlockMaxWidth?: string | number
@@ -121,7 +119,7 @@ export interface NodeRendererProps {
   infographicProps?: NodeRendererInfographicProps
   customComponents?: CustomComponentMap
   showTooltips?: boolean
-  themes?: CodeBlockMonacoTheme[]
+  themes?: CodeBlockTheme[]
   isDark?: boolean
   customId?: string
   indexKey?: number | string
@@ -164,10 +162,9 @@ export interface SvelteRenderContext {
   infographicProps?: NodeRendererInfographicProps
   customComponents?: CustomComponentMap
   codeBlockThemes?: {
-    themes?: CodeBlockMonacoTheme[]
-    darkTheme?: CodeBlockMonacoTheme
-    lightTheme?: CodeBlockMonacoTheme
-    monacoOptions?: CodeBlockMonacoOptions
+    themes?: CodeBlockTheme[]
+    darkTheme?: CodeBlockTheme
+    lightTheme?: CodeBlockTheme
     minWidth?: string | number
     maxWidth?: string | number
   }
@@ -229,7 +226,6 @@ export function buildRenderContext(
       themes: props.themes,
       darkTheme: props.codeBlockDarkTheme,
       lightTheme: props.codeBlockLightTheme,
-      monacoOptions: props.codeBlockMonacoOptions,
       minWidth: props.codeBlockMinWidth,
       maxWidth: props.codeBlockMaxWidth,
     },

@@ -268,10 +268,6 @@ describe('diff CodeBlockNode fallback height stability', () => {
           raw: '',
           diff: true,
         },
-        monacoOptions: {
-          renderSideBySide: true,
-          useInlineViewWhenSpaceIsLimited: false,
-        },
         loading: false,
         stream: true,
         showHeader: false,
@@ -331,11 +327,6 @@ describe('diff CodeBlockNode fallback height stability', () => {
           code: patch,
           raw: '',
           diff: true,
-        },
-        monacoOptions: {
-          renderSideBySide: true,
-          useInlineViewWhenSpaceIsLimited: false,
-          MAX_HEIGHT: 500,
         },
         loading: false,
         stream: true,

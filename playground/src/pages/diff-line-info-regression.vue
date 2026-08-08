@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import MarkdownRender from '../../../src/components/NodeRenderer'
 
 type Appearance = 'light' | 'dark'
@@ -7,22 +7,6 @@ type Appearance = 'light' | 'dark'
 const isDark = ref(false)
 
 const themes = ['vitesse-dark', 'vitesse-light']
-const codeBlockMonacoOptions = computed(() => ({
-  renderSideBySide: true,
-  useInlineViewWhenSpaceIsLimited: false,
-  maxComputationTime: 0,
-  ignoreTrimWhitespace: false,
-  renderIndicators: true,
-  diffAlgorithm: 'legacy',
-  diffLineStyle: 'background',
-  diffUnchangedRegionStyle: 'line-info',
-  diffHideUnchangedRegions: {
-    enabled: true,
-    contextLineCount: 2,
-    minimumLineCount: 3,
-    revealLineCount: 5,
-  },
-}))
 
 function buildDiffMarkdown() {
   const original = [
@@ -123,7 +107,6 @@ function setAppearance(next: Appearance) {
           :themes="themes"
           code-block-dark-theme="vitesse-dark"
           code-block-light-theme="vitesse-light"
-          :code-block-monaco-options="codeBlockMonacoOptions"
           :code-block-stream="false"
           :viewport-priority="false"
           :batch-rendering="false"

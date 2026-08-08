@@ -8,12 +8,6 @@ export async function preload(m: { preloadMonacoWorkers?: () => Promise<unknown>
     return preloadPromise
 
   const pending = (async () => {
-    const existingEnv = (globalThis as any)?.MonacoEnvironment
-    if (existingEnv && (typeof existingEnv.getWorker === 'function' || typeof existingEnv.getWorkerUrl === 'function')) {
-      isPreloaded = true
-      return
-    }
-
     if (typeof m?.preloadMonacoWorkers !== 'function') {
       isPreloaded = true
       return

@@ -10,7 +10,7 @@ Use these demos when evaluating or presenting `markstream-vue@1.0`. The stable 1
 | --- | --- | --- |
 | AI Chat Streaming | Typewriter pacing, smooth streaming, reverse-flex chat scroll, retry/pause controls. | [Playground](https://markstream-vue.simonhe.me/) |
 | Diagnostic Studio | Shareable repro links, render-mode switching, sample switching, annotations, PDF export, sandbox checks. | [Test Lab](https://markstream-vue.simonhe.me/test) |
-| Code Review / Diff | Monaco diff rendering, MarkdownCodeBlock fallback, streaming code block behavior. | [Test Lab diff sample](https://markstream-vue.simonhe.me/test?sample=diff) |
+| Code Review / Diff | stream-diffs diff rendering, plain `<pre>` fallback, streaming code block behavior. | [Test Lab diff sample](https://markstream-vue.simonhe.me/test?sample=diff) |
 | Diagram Heavy | Progressive Mermaid, D2, Infographic, and heavy-block viewport scheduling. | [Test Lab baseline sample](https://markstream-vue.simonhe.me/test?sample=baseline) |
 | Thinking / Custom Components | Trusted `<thinking>` tags, nested Markdown, and custom components inside Markdown. | [Test Lab thinking sample](https://markstream-vue.simonhe.me/test?sample=thinking) |
 | Safe HTML / Repro Lab | Safe HTML policy, escaped unsafe content, issue-ready reproduction input. | [Test Lab stress sample](https://markstream-vue.simonhe.me/test?sample=stress) |

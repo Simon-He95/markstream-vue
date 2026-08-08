@@ -27,14 +27,11 @@ Docs and usage examples:
 
 Enhanced diff notes:
 
-- `monacoOptions` is typed as `CodeBlockMonacoOptions`
-- diff-friendly options such as `diffHideUnchangedRegions`, `diffLineStyle`, `diffAppearance`, `diffUnchangedRegionStyle`, `diffHunkActionsOnHover`, `diffHunkHoverHideDelayMs`, and `onDiffHunkAction` belong there
-- when `node.diff === true`, `CodeBlockNode` now defaults to:
+- `CodeBlockNode` renders diff blocks through the `stream-diffs` runtime adapter; diff-friendly options (`diffHideUnchangedRegions`, `diffLineStyle`, `diffAppearance`, `diffUnchangedRegionStyle`) are driven by its defaults
+- when `node.diff === true`, `CodeBlockNode` defaults to:
   - `diffHideUnchangedRegions: { enabled: true, contextLineCount: 2, minimumLineCount: 4, revealLineCount: 5 }`
   - `diffLineStyle: 'background'`
   - `diffAppearance: 'auto'`
   - `diffUnchangedRegionStyle: 'line-info'`
-  - `diffHunkActionsOnHover: true`
-  - `diffHunkHoverHideDelayMs: 160`
 - runtime note: `diffAppearance: 'auto'` resolves to the current light/dark surface before it is passed to the `stream-diffs` adapter
 - the header also shows `- / +` line counts for diff blocks

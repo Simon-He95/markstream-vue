@@ -1,6 +1,6 @@
 ---
 title: Install markstream-vue for Vue, Nuxt, and VitePress
-description: Install markstream-vue for Vue, Nuxt, and VitePress with the right peer dependency set for docs sites, AI chat UIs, Mermaid, KaTeX, Monaco, and large documents.
+description: Install markstream-vue for Vue, Nuxt, and VitePress with the right peer dependency set for docs sites, AI chat UIs, Mermaid, KaTeX, and large documents.
 keywords:
   - install markstream-vue
   - Vue Markdown renderer install
@@ -30,22 +30,20 @@ Then continue with [Quick Start](/guide/quick-start) if you only need basic Mark
 
 | Capability | Packages | When you need it |
 |------------|----------|------------------|
-| Lightweight highlighted code blocks | `stream-markdown` | Docs sites, SSR, lower bundle budgets |
 | Enhanced code blocks and diffs (recommended) | `stream-diffs` | Copy/preview/expand controls, syntax highlighting, and File/Diff surfaces |
-| Legacy Monaco code blocks | `stream-monaco` | Automatic fallback when `stream-diffs` is absent |
 | Mermaid diagrams | `mermaid` | Fenced `mermaid` blocks |
 | D2 diagrams | `@terrastruct/d2` | Fenced `d2` or `d2lang` blocks |
 | KaTeX math | `katex` | Inline or block math rendering |
 | Infographic blocks | `@antv/infographic` | Fenced `infographic` blocks; also configure `setInfographicLoader` |
 
-Enhanced code blocks resolve through a dual-runtime loader across all framework packages (vue, vue2, react, svelte, angular): `stream-diffs` is preferred, `stream-monaco` is the automatic fallback, and a plain `<pre>` is rendered when neither is installed. Install one of the two; you do not need both.
+Enhanced code blocks resolve through the same loader across all framework packages (vue, vue2, react, svelte, angular): when `stream-diffs` is installed, the enhanced `stream-diffs` surface is used; otherwise a plain `<pre>` is rendered.
 
 ## 3. Common install recipes
 
 ### Docs site or SSR-first app
 
 ```bash
-pnpm add markstream-vue stream-markdown
+pnpm add markstream-vue
 ```
 
 Then continue with [Docs Site & VitePress](/guide/vitepress-docs-integration) if you are wiring a docs site, content hub, or VitePress theme.
@@ -67,7 +65,7 @@ pnpm add markstream-vue mermaid @terrastruct/d2 katex
 ### Everything enabled
 
 ```bash
-pnpm add markstream-vue stream-markdown stream-diffs mermaid @terrastruct/d2 katex @antv/infographic
+pnpm add markstream-vue stream-diffs mermaid @terrastruct/d2 katex @antv/infographic
 ```
 
 Infographic rendering is explicit opt-in. After installing `@antv/infographic`, follow [AntV Infographic](/guide/infographic) to configure `setInfographicLoader`.

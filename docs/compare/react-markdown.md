@@ -114,7 +114,7 @@ However, for AI chat UIs and streaming surfaces, the streaming features replace 
 3. Change `<ReactMarkdown>{content}</ReactMarkdown>` to `<MarkdownRender content={content} final={true} />`
 4. For streaming: pass `final={isDone}` and consider `fade={false}`
 5. Test with incomplete Markdown states (unclosed code fences, partial tables)
-6. Install optional peers only if your AI output includes Mermaid, KaTeX, or Monaco blocks
+6. Install optional peers only if your AI output includes Mermaid, KaTeX, or stream-diffs enhanced code blocks
 
 For a full migration guide, see [Migrate from react-markdown](/guide/react-markdown-migration).
 

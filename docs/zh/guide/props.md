@@ -21,7 +21,7 @@ description: 通过 MarkdownRender 的 props 精细控制流式渲染、暗色�
 | `html-policy` | `'safe' \| 'escape' \| 'trusted'` | `'safe'` | 控制 `html_block` / `html_inline` 渲染。`safe` 会阻断 active/embed/form 类标签，`escape` 按文本显示 HTML，`trusted` 保留旧的宽 HTML 行为但仍移除脚本和危险属性。 |
 | `mode` | `'docs' \| 'chat' \| 'minimal'` | `'docs'` | 按场景选择预设调优。AI/SSE 输出用 `chat`，富文档页面用 `docs`，非聊天的轻量场景用 `minimal`。 |
 | `dom-mode` | `'full' \| 'minimal'` | `'full'` | 尽力减少 DOM 结构。`minimal` 只会在不需要 per-node `.node-slot` / `.node-content` 包装时跳过它们；遇到 fade、批量渲染、视口延迟、虚拟化、宿主 virtual-scroll、typewriter 或自定义组件时会回退到 `full`。如需稳定 minimal 输出，请显式关闭这些能力。 |
-| `code-renderer` | `'monaco' \| 'shiki' \| 'pre'` | 随 mode 变化 | 选择普通 fenced code block 的渲染器。`docs` 默认使用增强的 `stream-diffs` surface（`'monaco'` 是兼容名称）；`chat` 和 `minimal` 默认使用纯 `<pre><code>`。`'shiki'` 需要 `stream-markdown`。`render-code-blocks-as-pre=true` 优先级更高。 |
+| `code-renderer` | `'pre' \| 'stream-diffs'` | 随 mode 变化 | 选择普通 fenced code block 的渲染器。`docs` 默认使用增强的 `stream-diffs` surface；`chat` 和 `minimal` 默认使用纯 `<pre><code>`。`render-code-blocks-as-pre=true` 优先级更高。 |
 | `custom-markdown-it` | `(md: MarkdownIt) => MarkdownIt` | – | 自定义内部 MarkdownIt 实例（加插件、改配置）。 |
 | `debug-performance` | `boolean` | `false` | 打印解析/渲染耗时、虚拟化统计，以及 `parse(stream)` 的 `streamMode` / `streamDelta` 等信息（仅 dev）。 |
 | `typewriter` | `boolean \| 'simple' \| 'precise'` | `false` | 流式内容增长时显示闪烁打字光标。`true` / `'precise'` 使用基于 Range 的精确定位；`'simple'` 使用轻量 CSS 光标。 |
@@ -153,9 +153,9 @@ flowchart TD
 
 | Flag | 默认值 | 功能 |
 | ---- | ------ | ---- |
-| `render-code-blocks-as-pre` | `false` | 将非 Mermaid/Infographic/D2 的 `code_block` 渲染为 `<pre><code>`，适合仅查看或排查 Monaco/Tailwind 样式问题。Mermaid/infographic/D2 仍会路由到各自组件，除非用 `setCustomComponents` 覆盖。 |
-| `code-block-stream` | `true` | 启用流式代码块更新；关闭后会保持加载态直到完整文本就绪，避免频繁初始化 Monaco。 |
-| `viewport-priority` | `true` | 优先渲染视窗内的 Mermaid/D2/Monaco/KaTeX 等重节点，延迟离屏渲染以提升交互体验。 |
+| `render-code-blocks-as-pre` | `false` | 将非 Mermaid/Infographic/D2 的 `code_block` 渲染为 `<pre><code>`（使用 `PreCodeNode`）。Mermaid/infographic/D2 仍会路由到各自组件，除非用 `setCustomComponents` 覆盖。 |
+| `code-block-stream` | `true` | 启用流式代码块更新；关闭后会保持加载态直到完整文本就绪，避免中间态解析产生问题。 |
+| `viewport-priority` | `true` | 优先渲染视窗内的代码块/Mermaid/D2/KaTeX 等重节点，延迟离屏渲染以提升交互体验。 |
 | `defer-nodes-until-visible` | `true` | 启用后，重节点在接近视口前可先渲染为占位（仅在非虚拟化模式生效）。 |
 
 ## 渲染性能（虚拟化 & 分批渲染）
@@ -176,47 +176,14 @@ flowchart TD
 
 ## 代码块全局选项（由 `MarkdownRender` 下发）
 
-这些 props 会被转发到 `CodeBlockNode` / `MarkdownCodeBlockNode`（但 **不会** 转发到 Mermaid/D2/Infographic 代码块，因为它们会路由到各自组件）：
+这些 props 会被转发到 `CodeBlockNode`（但 **不会** 转发到 Mermaid/D2/Infographic 代码块，因为它们会路由到各自组件）：
 
 - `code-block-dark-theme`, `code-block-light-theme`
-- `code-block-monaco-options`
 - `code-block-min-width`, `code-block-max-width`
 - `code-block-props`（额外代码块 props，例如 `showHeader`、`showFontSizeButtons`、`showTooltips`、`htmlPreviewAllowScripts`、`htmlPreviewSandbox`，同时保留不是渲染器结构字段的自定义透传字段；`node`、`key`、`ref`、`ctx`、`renderNode`、`indexKey`、`__proto__`、`prototype`、`constructor` 不会透传）
-- `themes`（在安装 `stream-diffs` 时，会转发给其 adapter 的主题系统；Shiki 模式只会转发字符串主题名，主题对象会被忽略）
-- `langs`（转发给 `MarkdownCodeBlockNode` 的 Shiki 语言列表；不传或传 `[]` 时使用 `stream-markdown` 默认行为。Vue 3 会在 `code-renderer="shiki"` 时消费它；React/Vue2 需要你的自定义代码块渲染器使用 `MarkdownCodeBlockNode`。）
+- `themes`（在安装 `stream-diffs` 时，会转发给其 adapter 的主题系统）
 
-注意：`code-block-monaco-options` 仅作用于增强版 `CodeBlockNode`（由 `stream-diffs` 驱动，`stream-monaco` 作为回退）。如果你把 `code_block` 覆盖成 `MarkdownCodeBlockNode`，此时 `code-block-dark-theme` / `code-block-light-theme` 应填写 Shiki 主题名，`themes` 为需要预加载的 Shiki 主题列表，`langs` 为需要预加载的 Shiki 语言列表。`htmlPreviewAllowScripts` 和 `htmlPreviewSandbox` 只影响内置 `CodeBlockNode` 的 inline HTML iframe preview；它们不会影响 `previewCode` 事件处理器、`MarkdownCodeBlockNode`，也不会影响外部 artifact renderer。
-
-只有 `ts twoslash` / `vue twoslash` 代码块才会在这个文档站里显示 hover 类型信息。更推荐 hover 下面对象里的字段，或者模板里的 `:code-block-monaco-options`，而不是只 hover 导入的类型名。
-
-```vue twoslash
-<script setup lang="ts">
-import type { CodeBlockMonacoOptions } from 'markstream-vue'
-import MarkdownRender from 'markstream-vue'
-
-const md = '```ts\nconsole.log("hover monaco options")\n```'
-const monacoOptions = {
-  themes: ['vitesse-dark', 'vitesse-light'],
-  languages: ['typescript', 'vue', 'json'],
-  theme: 'vitesse-dark',
-  MAX_HEIGHT: 640,
-  diffHideUnchangedRegions: {
-    enabled: true,
-    contextLineCount: 2,
-  },
-  diffHunkActionsOnHover: true,
-  diffHunkHoverHideDelayMs: 240,
-} satisfies CodeBlockMonacoOptions
-</script>
-
-<template>
-  <MarkdownRender
-    custom-id="docs"
-    :content="md"
-    :code-block-monaco-options="monacoOptions"
-  />
-</template>
-```
+2.0 不再支持按块配置 code/diff 选项，增强版 `CodeBlockNode` 使用 `stream-diffs` 内置默认值。`htmlPreviewAllowScripts` 和 `htmlPreviewSandbox` 只影响内置 `CodeBlockNode` 的 inline HTML iframe preview；它们不会影响 `previewCode` 事件处理器，也不会影响外部 artifact renderer。
 
 `code-block-props` 也可以直接走渲染器公开类型，不需要再退回 `any`：
 
@@ -264,7 +231,7 @@ const codeBlockProps: NonNullable<NodeRendererProps['codeBlockProps']> = {
 
 ## 代码块头部控制
 
-可直接传给 `CodeBlockNode` / `MarkdownCodeBlockNode` / `MermaidBlockNode`，或在 `MarkdownRender` 上用 `code-block-props` 统一下发：
+可直接传给 `CodeBlockNode` / `MermaidBlockNode`，或在 `MarkdownRender` 上用 `code-block-props` 统一下发：
 
 - `show-header`
 - `show-copy-button`

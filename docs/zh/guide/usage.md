@@ -136,8 +136,7 @@ const final = false
 
 完整说明参考 [组件与节点渲染器](/zh/guide/components)：
 
-- `CodeBlockNode` — 增强的 File/FileDiff 代码块（需要安装 `stream-diffs`；公开的 `'monaco'` renderer 名称为兼容性保留）。
-- `MarkdownCodeBlockNode` — 基于 Shiki，适合轻量场景。
+- `CodeBlockNode` — 增强的 File/FileDiff 代码块（需要安装 `stream-diffs`）。
 - `MermaidBlockNode` — 需要 `mermaid` ≥ 11（无需额外 CSS）。
 - `D2BlockNode` — 需要 `@terrastruct/d2`（无需额外 CSS）。
 - `ImageNode` — 通过 `click`/`load`/`error` 事件接管图片预览。

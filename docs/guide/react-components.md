@@ -2,7 +2,7 @@
 
 markstream-react provides the same powerful components as markstream-vue, but built for React. All components support React 18+ with full TypeScript support.
 
-The root `markstream-react`, `markstream-react/next`, and `markstream-react/server` entrypoints all ship declaration files. Shared renderer and component types such as `NodeRendererProps`, `NodeRendererCodeBlockProps`, `NodeComponentProps`, `StreamingComponentMap`, `HtmlComponentMap`, `RenderContext`, `RenderNodeFn`, `CustomComponentMap`, `CodeBlockMonacoOptions`, `MarkdownCodeBlockNodeProps`, `ListItemNodeProps`, `HtmlPreviewFrameProps`, `TooltipProps`, `TooltipPlacement`, and `LinkNodeStyleProps` can be imported directly from the entrypoint you use.
+The root `markstream-react`, `markstream-react/next`, and `markstream-react/server` entrypoints all ship declaration files. Shared renderer and component types such as `NodeRendererProps`, `NodeRendererCodeBlockProps`, `NodeComponentProps`, `StreamingComponentMap`, `HtmlComponentMap`, `RenderContext`, `RenderNodeFn`, `CustomComponentMap`, `ListItemNodeProps`, `HtmlPreviewFrameProps`, `TooltipProps`, `TooltipPlacement`, and `LinkNodeStyleProps` can be imported directly from the entrypoint you use.
 ## Main Component: MarkdownRender
 
 The primary component for rendering markdown content in React.
@@ -40,7 +40,7 @@ The primary component for rendering markdown content in React.
 |------|---------|-------------|
 | `renderCodeBlocksAsPre` | `false` | Render code blocks as `<pre><code>` (Mermaid/D2/Infographic blocks will also fall back) |
 | `codeBlockStream` | `true` | Stream code block updates as content arrives |
-| `viewportPriority` | `true` | Defer heavy work (Monaco/Mermaid/D2/KaTeX) until near viewport |
+| `viewportPriority` | `true` | Defer heavy work (Mermaid/D2/KaTeX) until near viewport |
 | `deferNodesUntilVisible` | `true` | Render heavy nodes as placeholders until visible (non-virtualized mode only) |
 
 #### Performance (virtualization & batching)
@@ -62,16 +62,15 @@ The primary component for rendering markdown content in React.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `codeBlockDarkTheme` | `CodeBlockMonacoTheme` | Monaco dark theme object forwarded to every `CodeBlockNode` |
-| `codeBlockLightTheme` | `CodeBlockMonacoTheme` | Monaco light theme object forwarded to every `CodeBlockNode` |
-| `codeBlockMonacoOptions` | `CodeBlockMonacoOptions` | Options forwarded to `stream-monaco`, including diff hover-action settings like `diffHunkActionsOnHover`, `diffHunkHoverHideDelayMs`, and `onDiffHunkAction` |
+| `codeBlockDarkTheme` | `CodeBlockTheme` | Dark theme object forwarded to every `CodeBlockNode` |
+| `codeBlockLightTheme` | `CodeBlockTheme` | Light theme object forwarded to every `CodeBlockNode` |
 | `codeBlockMinWidth` | `string \| number` | Min width forwarded to `CodeBlockNode` |
 | `codeBlockMaxWidth` | `string \| number` | Max width forwarded to `CodeBlockNode` |
-| `codeBlockProps` | `NodeRendererCodeBlockProps` | Extra props forwarded to every code-block renderer (`CodeBlockNode` / `MarkdownCodeBlockNode`) |
+| `codeBlockProps` | `NodeRendererCodeBlockProps` | Extra props forwarded to every `CodeBlockNode` |
 | `mermaidProps` | `Partial<Omit<MermaidBlockNodeProps, 'node' \| 'loading' \| 'isDark'>>` | Extra props forwarded to Mermaid fences and custom `mermaid` renderers |
 | `d2Props` | `Partial<Omit<D2BlockNodeProps, 'node' \| 'loading' \| 'isDark'>>` | Extra props forwarded to D2 fences and custom `d2` renderers |
 | `infographicProps` | `Partial<Omit<InfographicBlockNodeProps, 'node' \| 'loading' \| 'isDark'>>` | Extra props forwarded to infographic fences and custom `infographic` renderers |
-| `themes` | `CodeBlockMonacoTheme[]` | Theme list forwarded to `stream-monaco` |
+| `themes` | `CodeBlockTheme[]` | Theme list forwarded to `CodeBlockNode` |
 
 #### Heavy renderer prop forwarding
 
@@ -92,7 +91,7 @@ The primary component for rendering markdown content in React.
 ```
 
 Streaming notes:
-- Keep `viewportPriority` enabled to prevent offscreen Mermaid / Monaco / D2 work from running while text is still streaming. Set it to `false` when the whole document must render immediately.
+- Keep `viewportPriority` enabled to prevent offscreen Mermaid / D2 work from running while text is still streaming. Set it to `false` when the whole document must render immediately.
 - For jittery SSE or AI token streams, start with `content` + built-in `smoothStreaming`.
 - Use `nodes` when a worker, store, or custom AST pipeline already owns parsing.
 - Mermaid strict mode is now the default. Set `mermaidProps` to `{ isStrict: false }` only for trusted diagrams that need loose Mermaid HTML-label behavior.
@@ -218,46 +217,14 @@ This API split fixes discoverability and typing around the two component contrac
 
 ## Code Block Components
 
-### MarkdownCodeBlockNode
-
-Lightweight code highlighting using Shiki.
-
-```tsx
-import { MarkdownCodeBlockNode } from 'markstream-react'
-
-function CodeBlock() {
-  const codeNode = {
-    type: 'code_block',
-    language: 'javascript',
-    code: 'const hello = "world"',
-    raw: 'const hello = "world"'
-  }
-
-  const handleCopy = () => {
-    alert('Code copied!')
-  }
-
-  return (
-    <div className="markstream-react">
-      <MarkdownCodeBlockNode
-        node={codeNode}
-        showCopyButton={true}
-        showCollapseButton={false}
-        onCopy={handleCopy}
-      />
-    </div>
-  )
-}
-```
-
 ### CodeBlockNode
 
-Feature-rich Monaco-powered code blocks.
+Feature-rich code blocks enhanced by the optional `stream-diffs` runtime (falls back to a plain `<pre>` when the peer is not installed). Code and diff options use `stream-diffs` built-in defaults.
 
 ```tsx
 import { CodeBlockNode } from 'markstream-react'
 
-function MonacoCodeBlock() {
+function CodeBlock() {
   const codeNode = {
     type: 'code_block',
     language: 'typescript',
@@ -277,7 +244,6 @@ function MonacoCodeBlock() {
     <div className="markstream-react">
       <CodeBlockNode
         node={codeNode}
-        monacoOptions={{ fontSize: 14, theme: 'vs-dark' }}
         stream={true}
         showCollapseButton={false}
         onCopy={handleCopy}

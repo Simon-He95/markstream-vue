@@ -128,29 +128,13 @@ Many `react-markdown` apps override `code` to add syntax highlighting:
 
 In `markstream-react`, choose one of these:
 
-- Keep the default `CodeBlockNode`
-- Switch `code_block` to `MarkdownCodeBlockNode`
+- Keep the default `CodeBlockNode` (enhanced by the optional `stream-diffs` runtime, falling back to `<pre>` when absent)
 - Set `renderCodeBlocksAsPre`
 
-Example with `MarkdownCodeBlockNode`:
+To use the enhanced code block runtime, install the optional peer:
 
-```tsx
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
-
-setCustomComponents('docs', {
-  code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
-      node={node}
-      isDark={isDark}
-      stream={ctx?.codeBlockStream}
-      {...(ctx?.codeBlockProps || {})}
-    />
-  ),
-})
-
-export function Article({ markdown }: { markdown: string }) {
-  return <MarkdownRender customId="docs" content={markdown} />
-}
+```bash
+pnpm add stream-diffs
 ```
 
 ## 4. `remark-gfm`

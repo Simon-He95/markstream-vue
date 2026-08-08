@@ -1,5 +1,4 @@
 import type { ComputedRef } from 'vue'
-import type { CodeBlockMonacoOptions } from '../types/component-props'
 import type { NodeRendererCodeBlockProps } from '../types/node-renderer-props'
 import { inject, provide } from 'vue'
 
@@ -11,7 +10,6 @@ export interface MarkstreamRendererContext {
   codeBlockStream: ComputedRef<boolean | undefined>
   codeBlockDarkTheme: ComputedRef<any | undefined>
   codeBlockLightTheme: ComputedRef<any | undefined>
-  codeBlockMonacoOptions: ComputedRef<CodeBlockMonacoOptions | undefined>
   codeBlockMinWidth: ComputedRef<string | number | undefined>
   codeBlockMaxWidth: ComputedRef<string | number | undefined>
   codeBlockProps: ComputedRef<NodeRendererCodeBlockProps | undefined>

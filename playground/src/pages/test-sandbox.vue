@@ -11,7 +11,6 @@ import {
 import '../../../packages/markstream-angular/src/index.css'
 
 type SandboxStatus = 'idle' | 'loading' | 'ready' | 'error'
-type DiffLayoutMode = 'inline' | 'side-by-side'
 
 const canvasRef = ref<HTMLElement | null>(null)
 const status = ref<SandboxStatus>('idle')
@@ -19,39 +18,12 @@ const selection = ref<SandboxSelection>(parseSandboxSelection(window.location.se
 const markdown = ref(decodeMarkdownHash(window.location.hash || '') ?? '')
 const errorMessage = ref('')
 
-const diffHideUnchangedRegions = {
-  enabled: true,
-  contextLineCount: 2,
-  minimumLineCount: 4,
-  revealLineCount: 0,
-} as const
-
 function resolveSandboxDarkMode(search: string) {
   const value = new URLSearchParams(search).get('dark')
   return value === '1' || value === 'true'
 }
 
-function resolveSandboxDiffLayoutMode(search: string): DiffLayoutMode {
-  return new URLSearchParams(search).get('diffLayout') === 'side-by-side'
-    ? 'side-by-side'
-    : 'inline'
-}
-
 const sandboxIsDark = ref(resolveSandboxDarkMode(window.location.search))
-const sandboxDiffLayoutMode = ref<DiffLayoutMode>(resolveSandboxDiffLayoutMode(window.location.search))
-const sandboxCodeBlockMonacoOptions = computed(() => {
-  const sideBySide = sandboxDiffLayoutMode.value === 'side-by-side'
-  return {
-    renderSideBySide: sideBySide,
-    useInlineViewWhenSpaceIsLimited: !sideBySide,
-    maxComputationTime: 0,
-    ignoreTrimWhitespace: false,
-    renderIndicators: true,
-    diffAlgorithm: 'legacy',
-    diffHideUnchangedRegions,
-    hideUnchangedRegions: diffHideUnchangedRegions,
-  } as const
-})
 
 const statusLabel = computed(() => {
   if (status.value === 'loading')
@@ -269,7 +241,6 @@ async function mountVue3Sandbox(current: SandboxSelection, content: string, moun
         viewportPriority: false,
         codeBlockDarkTheme: 'vitesse-dark',
         codeBlockLightTheme: 'vitesse-light',
-        codeBlockMonacoOptions: sandboxCodeBlockMonacoOptions.value,
       })
     },
   })
@@ -318,7 +289,6 @@ async function mountVue2Sandbox(current: SandboxSelection, content: string, moun
           viewportPriority: false,
           codeBlockDarkTheme: 'vitesse-dark',
           codeBlockLightTheme: 'vitesse-light',
-          codeBlockMonacoOptions: sandboxCodeBlockMonacoOptions.value,
           langs: ['json', 'typescript', 'tsx', 'javascript'],
         },
       })
@@ -372,7 +342,6 @@ async function mountReactSandbox(current: SandboxSelection, content: string, mou
       viewportPriority: false,
       codeBlockDarkTheme: 'vitesse-dark',
       codeBlockLightTheme: 'vitesse-light',
-      codeBlockMonacoOptions: sandboxCodeBlockMonacoOptions.value,
     }),
   )
 
@@ -420,7 +389,6 @@ async function mountAngularSandbox(current: SandboxSelection, content: string, m
   const enhancementHandle = await enhanceRenderedHtml?.(shell, {
     final: true,
     isDark: sandboxIsDark.value,
-    monacoOptions: sandboxCodeBlockMonacoOptions.value,
   })
 
   host.replaceChildren(shell)
@@ -466,7 +434,6 @@ async function mountSvelteSandbox(current: SandboxSelection, content: string, mo
     final: true,
     isDark: sandboxIsDark.value,
     renderCodeBlocksAsPre: true,
-    monacoOptions: sandboxCodeBlockMonacoOptions.value,
   })
 
   host.replaceChildren(shell)
@@ -505,7 +472,6 @@ async function renderSandbox() {
   cleanupRuntime()
   selection.value = parseSandboxSelection(window.location.search, testSandboxFrameworks)
   sandboxIsDark.value = resolveSandboxDarkMode(window.location.search)
-  sandboxDiffLayoutMode.value = resolveSandboxDiffLayoutMode(window.location.search)
   markdown.value = decodeMarkdownHash(window.location.hash || '') ?? ''
   errorMessage.value = ''
   status.value = 'loading'
@@ -699,21 +665,6 @@ onBeforeUnmount(() => {
 .sandbox-canvas__mount :deep(.markstream-vue),
 .sandbox-canvas__mount :deep(.markstream-react) {
   min-height: calc(100vh - 320px);
-}
-
-.sandbox-canvas__mount :deep(.monaco-editor .ime-text-area) {
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  position: absolute;
-  resize: none;
-  border: 0;
-  overflow: hidden;
-  color: transparent;
-  background: transparent;
-  z-index: -10;
-  outline: none !important;
 }
 
 @media (max-width: 720px) {

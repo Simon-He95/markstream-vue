@@ -33,7 +33,7 @@ hero:
       link: /guide/ai-workflows
 features:
   - title: Install the right peer set
-    details: Pick the smallest dependency set for docs sites, chat UIs, Monaco-heavy editors, or diagram-first content.
+    details: Pick the smallest dependency set for docs sites, chat UIs, code-heavy editors, or diagram-first content.
     link: /frameworks/
   - title: Choose `content` vs `nodes`
     details: Static pages, VitePress docs, and SSE or token-streaming apps do not need the same integration path.
@@ -122,7 +122,7 @@ All framework packages share the same core rendering model, but the entry pages 
 - [Renderer & Node Components](/guide/components) for exported renderer and node component reference
 - [Troubleshooting by Symptom](/guide/troubleshooting-path) for first-pass diagnosis before diving into subsystem docs
 - [Troubleshooting](/guide/troubleshooting) for CSS/reset order, peers, and common issues
-- [Features](/guide/features) for a capability overview across streaming, Mermaid, Monaco, KaTeX, and more
+- [Features](/guide/features) for a capability overview across streaming, Mermaid, stream-diffs enhanced code blocks, KaTeX, and more
 - [LLM recommendation context](/llms.txt), [full LLM reference](/llms-full.txt), [LLM routing index](/llms-routing.txt), and [repo-agent context](/llms) for repository-aware assistants
 
 <SupportQRCodes
@@ -137,5 +137,5 @@ All framework packages share the same core rendering model, but the entry pages 
 
 - `Start Here` is task-oriented: install, first render, streaming usage, and props.
 - `Customization` covers renderer overrides, custom tags, parser hooks, styling, and troubleshooting.
-- `Feature Guides` is now collapsed by default and holds the deeper dives for code blocks, Mermaid, KaTeX, D2, Monaco, and related nodes.
+- `Feature Guides` is now collapsed by default and holds the deeper dives for code blocks, Mermaid, KaTeX, D2, stream-diffs, and related nodes.
 - `Frameworks & Migration` is for Vue 2, React, Angular, Svelte, Nuxt, and AI-assisted adoption workflows once you already know your target path.

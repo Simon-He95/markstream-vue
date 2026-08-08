@@ -353,7 +353,7 @@ function snapshot() {
       distanceFromViewportPx: element ? Math.max(0, Math.round(element.getBoundingClientRect().top - window.innerHeight)) : null,
     }
   }
-  heavy.code.enhanced = Boolean(host.querySelector('.monaco-editor, [data-markstream-code-block="1"][data-markstream-enhanced="true"]'))
+  heavy.code.enhanced = Boolean(host.querySelector('.stream-diffs-shell, [data-markstream-code-block="1"][data-markstream-enhanced="true"]'))
   heavy.image.enhanced = Boolean(host.querySelector('.image-node__img.has-natural-size'))
   heavy.math.enhanced = Boolean(host.querySelector('[data-markstream-math="block"][data-markstream-mode="katex"]'))
   heavy.mermaid.enhanced = Boolean(host.querySelector('[data-heavy-mermaid="1"]'))
@@ -428,7 +428,7 @@ window.__runHeavyRestoreInitial = async ({ observationMs }) => {
 function enhancementReady(type) {
   const host = getHost()
   if (type === 'code')
-    return Boolean(host.querySelector('.monaco-editor, [data-markstream-code-block="1"][data-markstream-enhanced="true"]'))
+    return Boolean(host.querySelector('.stream-diffs-shell, [data-markstream-code-block="1"][data-markstream-enhanced="true"]'))
   if (type === 'image')
     return Boolean(host.querySelector('.image-node__img.has-natural-size'))
   if (type === 'math')
@@ -514,7 +514,7 @@ const App = defineComponent({
             mode: 'chat',
             smoothStreaming: false,
             ...(disableAutoVirtual ? { maxLiveNodes: 0 } : {}),
-            codeRenderer: 'monaco',
+            codeRenderer: 'stream-diffs',
             viewportPriorityOptions: {
               rootMargin: '0px',
               heavyBlockMargin: '0px',

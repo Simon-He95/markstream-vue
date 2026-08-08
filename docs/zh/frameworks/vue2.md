@@ -1,6 +1,6 @@
 ---
 title: Vue 2 流式 Markdown 渲染器
-description: 在 Vue 2.6 和 Vue 2.7 存量项目中使用 markstream-vue2，覆盖 AI 聊天流式 Markdown、LLM token 流、SSE/WebSocket 输出、未闭合 Markdown、Mermaid、KaTeX、Shiki 代码块和 Vue 2 组件渲染。
+description: 在 Vue 2.6 和 Vue 2.7 存量项目中使用 markstream-vue2，覆盖 AI 聊天流式 Markdown、LLM token 流、SSE/WebSocket 输出、未闭合 Markdown、Mermaid、KaTeX、增强代码块和 Vue 2 组件渲染。
 keywords:
   - markstream-vue2
   - Vue 2 流式 Markdown 渲染器
@@ -12,7 +12,7 @@ keywords:
   - Vue2 未闭合 Markdown
   - Vue2 Mermaid Markdown
   - Vue2 KaTeX Markdown
-  - Vue2 Shiki 代码块
+  - Vue2 代码块
   - Vue 2 存量项目 Markdown 渲染器
 softwareName: markstream-vue2
 softwarePackage: markstream-vue2
@@ -35,7 +35,7 @@ faq:
 ---
 # Vue 2 流式 Markdown 渲染器
 
-`markstream-vue2` 是 Markstream 家族里的 Vue 2.6 / 2.7 渲染器。它适合必须继续运行在 Vue 2 的 AI 聊天、LLM token 流、SSE/WebSocket 输出、未闭合 Markdown 中间态、Mermaid、KaTeX、Shiki 代码块和 Vue 2 组件渲染场景。
+`markstream-vue2` 是 Markstream 家族里的 Vue 2.6 / 2.7 渲染器。它适合必须继续运行在 Vue 2 的 AI 聊天、LLM token 流、SSE/WebSocket 输出、未闭合 Markdown 中间态、Mermaid、KaTeX、增强代码块和 Vue 2 组件渲染场景。
 
 如果是 Vue 3、Nuxt 3 或新项目，优先看 [`markstream-vue`](/zh/frameworks/vue)。
 
@@ -134,20 +134,10 @@ export default {
 
 ## Mermaid、KaTeX 和代码块
 
-只安装你需要的可选 peer。增强代码块通过双运行时 loader 解析——`stream-diffs` 为推荐项，`stream-monaco` 自动回退，两者都未安装则渲染普通 `<pre>`：
+只安装你需要的可选 peer。增强代码块使用可选的对等依赖 `stream-diffs`，未安装时会回退渲染普通 `<pre>`：
 
 ```bash
 pnpm add stream-diffs
-# 或
-pnpm add stream-markdown
-```
-
-然后启用 Shiki 代码块：
-
-```js
-import { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
-
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
 ```
 
 Mermaid 图表安装 `mermaid`。KaTeX 数学公式安装 `katex`，并导入它的样式：

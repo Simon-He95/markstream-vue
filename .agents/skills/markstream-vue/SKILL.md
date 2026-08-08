@@ -1,6 +1,6 @@
 ---
 name: markstream-vue
-description: Integrate markstream-vue into a Vue 3 app. Use when Codex needs to add the Vue 3 renderer, import CSS in the right order, choose renderer, DOM, and code-block modes, choose between `content` and `nodes`, coordinate long AI timelines with `MarkstreamVirtualTimeline`, `useMarkstreamVirtualAdapter`, or `vue-virtual-scroller`, enable optional peers such as stream-diffs, stream-markdown, Mermaid, KaTeX, D2, or Infographic, or wire scoped custom components in a non-Nuxt Vue repository.
+description: Integrate markstream-vue into a Vue 3 app. Use when Codex needs to add the Vue 3 renderer, import CSS in the right order, choose renderer, DOM, and code-block modes, choose between `content` and `nodes`, coordinate long AI timelines with `MarkstreamVirtualTimeline`, `useMarkstreamVirtualAdapter`, or `vue-virtual-scroller`, enable optional peers such as stream-diffs, Mermaid, KaTeX, D2, or Infographic, or wire scoped custom components in a non-Nuxt Vue repository.
 ---
 
 # Markstream Vue 3
@@ -18,7 +18,7 @@ Use this skill when the host app is plain Vue 3, typically Vite-based, and not N
    - Use `mode="chat"` for AI chat or SSE output. It uses lightweight batches, `<pre>` code rendering by default, `fade=false`, and `max-live-nodes=0`; `smooth-streaming="auto"` paces visible output.
    - Use `mode="docs"` for rich document surfaces. It is the default, enables larger batches, tooltips, fade, and enhanced `stream-diffs` code blocks when the peer is installed.
    - Use `mode="minimal"` when the surface is lightweight but not chat.
-   - Choose regular fenced-code rendering with `code-renderer="monaco" | "shiki" | "pre"`. The compatibility-named `monaco` mode loads `stream-diffs`; `shiki` uses `stream-markdown`; `pre` needs no code peer. `render-code-blocks-as-pre=true` takes precedence.
+   - Choose regular fenced-code rendering with `code-renderer="stream-diffs" | "pre"`. `stream-diffs` renders enhanced File/Diff code blocks; `pre` needs no code peer. `render-code-blocks-as-pre=true` takes precedence.
    - Use `dom-mode="minimal"` only when the surface can also disable wrapper-dependent features such as fade, batching, deferral, virtualization, typewriter, and custom components; otherwise it falls back to full DOM.
    - `typewriter` only controls the blinking cursor and defaults to `false`. Prefer `typewriter="simple"` for high-frequency chat and precise mode for complex inline cursor placement.
    - Set `:smooth-streaming="false"` to preserve raw chunk cadence; set `:smooth-streaming="true"` to force smooth pacing even on first-screen content (may cause hydration mismatch in SSR).
@@ -48,8 +48,8 @@ Use this skill when the host app is plain Vue 3, typically Vite-based, and not N
 - Prefer local component registration unless the repo already uses a shared plugin entry.
 - If a Vue 3 app already virtualizes messages, keep that outer virtualizer in charge and enable `virtual-scroll` only on large Markdown messages.
 - For `vue-virtual-scroller`, keep `sessionKey` tied to content identity (`thread:item:revision`) and `measurementKey` tied to layout identity such as width, theme, font, and density.
-- When enhanced code blocks need app-level preloading, import `preloadCodeBlockRuntime` from `markstream-vue`. Existing `getUseMonaco()` calls remain compatible despite the historical name.
-- Despite the retained `monaco` API names, the Vue 3 enhanced code surface uses `stream-diffs`; do not install `stream-monaco` unless the host directly consumes that package for another reason.
+- When enhanced code blocks need app-level preloading, `preloadCodeBlockRuntime` is still available to preload the runtime. For direct runtime use, `getStreamDiffsRuntime()` is exported from `markstream-vue`.
+- The Vue 3 enhanced code surface uses `stream-diffs` only; do not install `stream-monaco`.
 - Keep `html-policy="safe"` and Mermaid strict mode unless the task is explicitly preserving trusted legacy behavior.
 - If a trusted surface needs pre-hardening behavior, opt out locally with `html-policy="trusted"` and `:mermaid-props="{ isStrict: false }"`, and call out the trust boundary in the final handoff.
 - If the host is actually Nuxt, leave SSR-specific setup to `markstream-nuxt`.

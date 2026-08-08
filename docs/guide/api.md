@@ -130,7 +130,7 @@ Hooks remain useful if you want to reshape the emitted `thinking` node (strip wr
 
 Besides the core renderer and parser helpers, the package exposes:
 
-- `CodeBlockNode`, `MarkdownCodeBlockNode`, `MermaidBlockNode`, `MathBlockNode`, `ImageNode`, etc. — see [Components](/guide/components) for their props and CSS requirements.
+- `CodeBlockNode`, `MermaidBlockNode`, `MathBlockNode`, `ImageNode`, etc. — see [Components](/guide/components) for their props and CSS requirements.
 - `useSmoothMarkdownStream(options?)` — adapts bursty source chunks into a stable `visible` Markdown stream with `final`/`pendingChars` state.
 - `sanitizeImageSrc(value)` — applies the built-in strict image URL policy when custom image components need the same behavior.
 - `VueRendererMarkdown` (global component plugin) and shared type exports (component prop interfaces, parser types).

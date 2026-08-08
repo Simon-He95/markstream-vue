@@ -1,10 +1,10 @@
 <script lang="ts">
   import MarkdownRender, {
+    CodeBlockNode,
     disableKatex,
     disableMermaid,
     enableKatex,
     enableMermaid,
-    MarkdownCodeBlockNode,
     preloadCodeBlockRuntime,
     setCustomComponents,
     setKaTeXWorker,
@@ -46,23 +46,6 @@
     'vitesse-dark',
     'vitesse-light',
   ]
-
-  const diffHideUnchangedRegions = {
-    enabled: true,
-    contextLineCount: 2,
-    minimumLineCount: 4,
-    revealLineCount: 5,
-  } as const
-  const playgroundMonacoOptions = {
-    renderSideBySide: false,
-    useInlineViewWhenSpaceIsLimited: true,
-    maxComputationTime: 0,
-    ignoreTrimWhitespace: false,
-    renderIndicators: true,
-    diffAlgorithm: 'legacy',
-    diffHideUnchangedRegions,
-    hideUnchangedRegions: diffHideUnchangedRegions,
-  } as const
 
   const LINE_NUMBER_HANDOFF_PATH = '/line-number-handoff-check'
   const handoffMarkdown = [
@@ -118,7 +101,7 @@
   let testTimer: number | null = null
   let isTestStreaming = false
   let isTestPaused = false
-  let renderMode = (window.localStorage.getItem('vmr-test-render-mode') || 'monaco') as 'monaco' | 'markdown' | 'pre'
+  let renderMode = (window.localStorage.getItem('vmr-test-render-mode') || 'stream-diffs') as 'stream-diffs' | 'markdown' | 'pre'
   let codeBlockStream = window.localStorage.getItem('vmr-test-code-stream') !== 'false'
   let viewportPriority = window.localStorage.getItem('vmr-test-viewport-priority') !== 'false'
   let batchRendering = window.localStorage.getItem('vmr-test-batch-rendering') !== 'false'
@@ -138,7 +121,7 @@
   let homepageProgrammaticScroll = false
   let homepageAutoScrollFrame: number | null = null
   let homepageAutoScrollFollowupFrame: number | null = null
-  const markdownModeComponents = { code_block: MarkdownCodeBlockNode }
+  const markdownModeComponents = { code_block: CodeBlockNode }
   $: activeSample = TEST_LAB_SAMPLES.find(sample => sample.id === sampleId) || TEST_LAB_SAMPLES[0]
   $: testPreviewContent = isTestStreaming ? testStreamContent : testInput
   $: testStreamProgress = testInput.length ? Math.min(100, Math.round((testPreviewContent.length / testInput.length) * 100)) : 0
@@ -157,8 +140,8 @@
   $: streamChunkRangeLabel = Math.min(chunkSizeMin, chunkSizeMax) + '-' + Math.max(chunkSizeMin, chunkSizeMax)
   $: streamDelayRangeLabel = Math.min(chunkDelayMin, chunkDelayMax) + '-' + Math.max(chunkDelayMin, chunkDelayMax) + 'ms'
   $: currentTitle = currentPath === '/test' ? 'markstream-svelte test lab' : 'markstream-svelte'
-  $: renderModeLabel = renderMode === 'markdown' ? 'MarkdownCodeBlock' : renderMode === 'pre' ? 'PreCodeNode' : 'Monaco'
-  $: activeRenderModeLabel = currentPath === '/test' ? renderModeLabel : 'Monaco'
+  $: renderModeLabel = renderMode === 'markdown' ? 'CodeBlockNode' : renderMode === 'pre' ? 'PreCodeNode' : 'Stream Diffs'
+  $: activeRenderModeLabel = currentPath === '/test' ? renderModeLabel : 'Stream Diffs'
   $: if (currentPath !== '/test' && currentPath !== LINE_NUMBER_HANDOFF_PATH && content.length !== previousContentLength) {
     previousContentLength = content.length
     const shouldStickToBottom = homepagePinnedToBottom || isHomepageAtBottom()
@@ -654,8 +637,8 @@
             <label class="field">
               Render
               <select bind:value={renderMode}>
-                <option value="monaco">Monaco</option>
-                <option value="markdown">MarkdownCodeBlock</option>
+                <option value="stream-diffs">Stream Diffs</option>
+                <option value="markdown">CodeBlockNode</option>
                 <option value="pre">PreCodeNode</option>
               </select>
             </label>
@@ -699,7 +682,6 @@
               codeBlockStream={codeBlockStream}
               codeBlockDarkTheme={selectedTheme}
               codeBlockLightTheme={selectedTheme}
-              codeBlockMonacoOptions={playgroundMonacoOptions}
               renderCodeBlocksAsPre={renderMode === 'pre'}
               customComponents={renderMode === 'markdown' ? markdownModeComponents : undefined}
               {themes}
@@ -774,7 +756,6 @@
             codeBlockStream={true}
             codeBlockDarkTheme={selectedTheme}
             codeBlockLightTheme={selectedTheme}
-            codeBlockMonacoOptions={playgroundMonacoOptions}
             renderCodeBlocksAsPre={false}
             customComponents={undefined}
             {themes}

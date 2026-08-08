@@ -2,7 +2,7 @@
   "name": "markstream-octane",
   "type": "module",
   "version": "0.0.56-beta.4",
-  "description": "Octane streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, Monaco, and custom Octane components.",
+  "description": "Octane streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Octane components.",
   "author": "Simon He",
   "license": "MIT",
   "homepage": "https://markstream.simonhe.me",
@@ -35,9 +35,7 @@
     "streaming-mermaid",
     "katex",
     "streaming-katex",
-    "shiki",
-    "monaco",
-    "monaco-editor",
+    "stream-diffs",
     "streaming-code-blocks",
     "large-documents",
     "safe-html",
@@ -100,8 +98,7 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "octane": "^0.1.21",
-    "stream-markdown": ">=0.0.16",
-    "stream-monaco": ">=0.0.48"
+    "stream-diffs": ">=0.0.2"
   },
   "peerDependenciesMeta": {
     "@antv/infographic": {
@@ -116,10 +113,7 @@
     "mermaid": {
       "optional": true
     },
-    "stream-markdown": {
-      "optional": true
-    },
-    "stream-monaco": {
+    "stream-diffs": {
       "optional": true
     }
   },

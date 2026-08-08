@@ -225,7 +225,7 @@ export function SsrLabPage({
             <nextEntry.CodeBlockNode node={ENHANCED_DEMOS.code as any} />
           </div>
           <div data-ssr-demo="markdown" className="ssr-card">
-            <nextEntry.MarkdownCodeBlockNode node={ENHANCED_DEMOS.markdown as any} />
+            <nextEntry.CodeBlockNode node={ENHANCED_DEMOS.markdown as any} />
           </div>
           <div data-ssr-demo="math" className="ssr-card">
             <nextEntry.MathBlockNode node={ENHANCED_DEMOS.mathBlock as any} />

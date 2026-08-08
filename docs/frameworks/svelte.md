@@ -1,6 +1,6 @@
 ---
 title: 'Svelte 5 streaming Markdown renderer for AI chat'
-description: Use markstream-svelte to render streamed Markdown in Svelte 5 and SvelteKit AI chat, LLM token streams, SSE, WebSocket, incomplete Markdown states, long documents, custom components, Mermaid, KaTeX, and Monaco. Beta API; Svelte 4 is not supported.
+description: Use markstream-svelte to render streamed Markdown in Svelte 5 and SvelteKit AI chat, LLM token streams, SSE, WebSocket, incomplete Markdown states, long documents, custom components, Mermaid, KaTeX, and stream-diffs enhanced code blocks. Beta API; Svelte 4 is not supported.
 keywords:
   - markstream-svelte
   - Svelte 5 streaming Markdown renderer
@@ -91,14 +91,11 @@ pnpm add markstream-svelte svelte@^5
 | --- | --- |
 | `mermaid` | Mermaid diagrams |
 | `katex` | Inline and block math rendering |
-| `stream-diffs` | Enhanced code blocks (recommended; smaller runtime, no `monaco-editor`) |
-| `stream-monaco` | Monaco-powered code blocks (automatic fallback when `stream-diffs` is absent) |
+| `stream-diffs` | Enhanced code blocks (recommended) |
 | `@terrastruct/d2` | D2 diagrams |
 | `@antv/infographic` | Infographic blocks |
 
-Plain Markdown does not require these optional peers. Install them only for the block types you render.
-
-Shiki is not documented for `markstream-svelte` unless you add a supported integration path.
+Plain Markdown does not require these optional peers. Install them only for the block types you render. Enhanced code blocks fall back to a plain `<pre>` when `stream-diffs` is not installed.
 
 ## When not to use this package
 
@@ -114,7 +111,7 @@ Shiki is not documented for `markstream-svelte` unless you add a supported integ
 - **Smooth streaming**: `smoothStreaming="auto"` can pace the raw `content` path for typewriter-style LLM output
 - **Safe HTML policy**: defaults to safe HTML handling and URL/SVG sanitization paths, but you should still review the policy for untrusted content
 - **Custom components**: slot Svelte components into Markdown
-- **Optional peers**: Mermaid, KaTeX, Monaco, D2, Infographic
+- **Optional peers**: Mermaid, KaTeX, stream-diffs enhanced code blocks, D2, Infographic
 - **Worker parity**: same Katex/Mermaid worker setup as Vue/React
 - **Beta status**: check npm and the [Svelte guide](/guide/svelte) for the latest API maturity
 

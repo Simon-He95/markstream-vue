@@ -85,7 +85,7 @@ const result = resolveStreamingTextUpdate({
 
 ### Shiki Highlighting Helpers
 
-`markstream-core` exports shared helpers used by Markstream adapters to normalize Shiki language and theme options before calling `stream-markdown`.
+`markstream-core` exports shared helpers used by Markstream adapters to normalize Shiki language and theme options for the code highlighting runtime.
 
 ```ts
 import {

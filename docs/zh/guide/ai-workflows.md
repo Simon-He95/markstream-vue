@@ -64,7 +64,7 @@ npx skills add git@github.com:Simon-He95/markstream-vue.git
 - 框架和版本，例如 Vue 3、Nuxt 3、React 18、Angular 20、Svelte 5
 - CSS 技术栈，例如 Tailwind、UnoCSS、reset 库、设计系统
 - 渲染模式：静态文章、文档站、SSR，还是流式聊天
-- 需要哪些可选能力：增强 File/Diff 代码块、轻量 Shiki 高亮、Mermaid、D2、KaTeX、Infographic
+- 需要哪些可选能力：增强 File/Diff 代码块、Mermaid、D2、KaTeX、Infographic
 - 组件覆盖是否必须限制在某个业务区域内
 
 少了这些上下文，AI 很容易装错 peer，或者把 CSS 放到错误的顺序里。
@@ -75,7 +75,7 @@ npx skills add git@github.com:Simon-He95/markstream-vue.git
 
 ```text
 把 markstream-vue 接入到这个 Vue 3 项目里。
-只安装满足这些能力所需的最小 peer 依赖：[在这里填写 stream-diffs File/Diff 代码块 / Shiki / Mermaid / D2 / KaTeX / Infographic]。
+只安装满足这些能力所需的最小 peer 依赖：[在这里填写 stream-diffs File/Diff 代码块 / Mermaid / D2 / KaTeX / Infographic]。
 结合我现有的 CSS 技术栈处理样式顺序：[在这里填写 Tailwind / UnoCSS / reset 库]。
 补一个最小可运行示例，并说明我应该用 `content` 还是 `nodes`。
 如果需要覆盖组件，请默认使用带 `custom-id` 的 scoped 方式。

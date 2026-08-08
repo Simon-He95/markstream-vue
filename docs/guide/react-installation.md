@@ -26,14 +26,12 @@ markstream-react supports various features through optional peer dependencies. I
 
 | Feature | Required Packages | Install Command |
 |---------|------------------|-----------------|
-| Shiki code blocks (`MarkdownCodeBlockNode`) | `stream-markdown` | `pnpm add stream-markdown` |
 | Enhanced code blocks (recommended) | `stream-diffs` | `pnpm add stream-diffs` |
-| Monaco Editor code blocks (automatic fallback) | `stream-monaco` | `pnpm add stream-monaco` |
 | Mermaid Diagrams | `mermaid` | `pnpm add mermaid` |
 | D2 Diagrams | `@terrastruct/d2` | `pnpm add @terrastruct/d2` |
 | Math Rendering (KaTeX) | `katex` | `pnpm add katex` |
 
-Enhanced code blocks resolve through a dual-runtime loader: `stream-diffs` is preferred (smaller, no `monaco-editor`), `stream-monaco` is the automatic fallback, and a plain `<pre>` is rendered when neither is installed. Install one of the two; you do not need both.
+Enhanced code blocks use the optional `stream-diffs` peer. When it is not installed, a plain `<pre>` is rendered instead. Code and diff options use `stream-diffs` built-in defaults, and theming is controlled through `theme` / `darkTheme` / `lightTheme` / `themes`.
 
 ## Optional: off-thread workers in Vite / Vite-compatible bundlers
 
@@ -58,8 +56,6 @@ import 'katex/dist/katex.min.css'
 ```
 
 `markstream-react` does not inject renderer styles from its JavaScript entry. Import exactly one Markstream CSS file from your app shell or component entry: `index.css`, `index.px.css`, or `index.tailwind.css`.
-
-Monaco (`stream-monaco`) does not require a separate CSS import.
 
 Note: `markstream-react/index.css` is scoped under an internal `.markstream-react` container to reduce global style conflicts. `MarkdownRender` renders inside that container by default. If you render node components standalone, wrap them with `<div className="markstream-react">...</div>`.
 
@@ -89,29 +85,29 @@ This approach ensures that Tailwind includes all the utility classes used by mar
 To enable all features at once:
 
 ```bash
-pnpm add stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+pnpm add stream-diffs mermaid @terrastruct/d2 katex
 # or
-npm install stream-markdown stream-monaco mermaid @terrastruct/d2 katex
+npm install stream-diffs mermaid @terrastruct/d2 katex
 ```
 
 ### Feature Details
 
 #### Code Syntax Highlighting
 
-Requires `stream-markdown`:
+Requires `stream-diffs`:
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
 
-`stream-markdown` bundles the Shiki runtime used by `MarkdownCodeBlockNode`. To use Shiki inside `MarkdownRender`, override the `code_block` renderer (or render `MarkdownCodeBlockNode` directly).
+`stream-diffs` powers the enhanced `CodeBlockNode` runtime with built-in defaults for code and diff options. When it is not installed, code blocks fall back to a plain `<pre>`. You can override the `code_block` renderer via `setCustomComponents` for custom behavior:
 
 ```tsx
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-react'
+import { setCustomComponents } from 'markstream-react'
 
 setCustomComponents({
   code_block: ({ node, isDark, ctx }: any) => (
-    <MarkdownCodeBlockNode
+    <MyCodeBlock
       node={node}
       isDark={isDark}
       stream={ctx?.codeBlockStream}
@@ -121,15 +117,7 @@ setCustomComponents({
 })
 ```
 
-#### Monaco Editor
-
-For full code block functionality (copy button, font size controls, expand/collapse):
-
-```bash
-pnpm add stream-monaco
-```
-
-Without `stream-monaco`, code blocks will render but interactive buttons may not work.
+Theming is controlled through the `theme` / `darkTheme` / `lightTheme` / `themes` props.
 
 #### Mermaid Diagrams
 

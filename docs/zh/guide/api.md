@@ -110,7 +110,7 @@ const doc = '<thinking>Need a plan</thinking>'
 
 ## 其他导出
 
-- 节点组件：`CodeBlockNode`、`MarkdownCodeBlockNode`、`MermaidBlockNode`、`MathBlockNode`、`ImageNode` 等（详见 [组件与节点渲染器](/zh/guide/components)）。
+- 节点组件：`CodeBlockNode`、`MermaidBlockNode`、`MathBlockNode`、`ImageNode` 等（详见 [组件与节点渲染器](/zh/guide/components)）。
 - `sanitizeImageSrc(value)`：自定义图片组件需要复用内置 strict 图片 URL 策略时可直接使用。
 - 工具：`VueRendererMarkdown`（全局组件插件）与共享类型定义（组件 props/解析器类型；参考 [/zh/guide/parser-api](/zh/guide/parser-api) 或 npm 上的 `stream-markdown-parser` README）。
 

@@ -72,7 +72,7 @@ function timelineItemSource(threadKey: string, itemKey: string, revision?: strin
   }
 }
 
-function timelineMarkdownMeasurementKey(widthBucket = 800, mode = 'docs', codeRenderer = 'monaco') {
+function timelineMarkdownMeasurementKey(widthBucket = 800, mode = 'docs', codeRenderer = 'stream-diffs') {
   return [`:${widthBucket}`, mode, codeRenderer].join('\u0001')
 }
 
@@ -1378,7 +1378,7 @@ describe('virtual timeline restore visual readiness', () => {
                     'data-markstream-enhanced': 'false',
                   }, [
                     h('div', { class: 'code-editor-container is-hidden' }, [
-                      h('div', { class: 'monaco-editor' }),
+                      h('div', { class: 'stream-diffs-shell' }),
                     ]),
                   ]),
                 ]),
@@ -1443,7 +1443,7 @@ describe('virtual timeline restore visual readiness', () => {
                     'data-markstream-enhanced': 'false',
                   }, [
                     h('div', { class: 'code-editor-container is-hidden' }, [
-                      h('div', { class: 'monaco-editor' }),
+                      h('div', { class: 'stream-diffs-shell' }),
                     ]),
                   ]),
                 ]),
@@ -1654,13 +1654,6 @@ describe('virtual timeline restore visual readiness', () => {
         },
         'estimatedHeightPx': 240,
         'estimatedContentHeightPx': 123.2,
-        'monacoOptions': {
-          fontSize: 13,
-          lineHeight: 20,
-          fontFamily: 'Test Mono',
-          tabSize: 3,
-          padding: { top: 5, bottom: 7 },
-        },
         'style': { width: '73%' },
         'data-root-probe': 'outer',
       },
@@ -1677,13 +1670,11 @@ describe('virtual timeline restore visual readiness', () => {
     expect(pre.attributes('style')).not.toMatch(/(?:^|;\s*)min-height: 123px/)
     expect(pre.attributes('style')).toContain('max-height: 124px')
     expect(pre.attributes('style')).toContain('overflow: auto')
-    expect((pre.element as HTMLElement).style.fontSize).toBe('13px')
-    expect((pre.element as HTMLElement).style.lineHeight).toBe('20px')
-    expect((pre.element as HTMLElement).style.fontFamily).toBe('')
-    expect((pre.element as HTMLElement).style.getPropertyValue('--markstream-code-font-family')).toBe('Test Mono')
-    expect((pre.element as HTMLElement).style.tabSize).toBe('3')
-    expect((pre.element as HTMLElement).style.paddingTop).toBe('5px')
-    expect((pre.element as HTMLElement).style.paddingBottom).toBe('7px')
+    expect((pre.element as HTMLElement).style.fontSize).toBe('12px')
+    expect((pre.element as HTMLElement).style.lineHeight).toBe('18px')
+    expect((pre.element as HTMLElement).style.tabSize).toBe('4')
+    expect((pre.element as HTMLElement).style.paddingTop).toBe('8px')
+    expect((pre.element as HTMLElement).style.paddingBottom).toBe('8px')
     expect(wrapper.get('.code-header-title').text()).toBe('src/example.ts')
     expect(wrapper.get('.code-header-caption').text()).toBe('Typescript')
     const headerMain = wrapper.get('.code-header-main').element as HTMLElement
@@ -1766,8 +1757,6 @@ describe('virtual timeline restore visual readiness', () => {
     expect(diff.get('.code-block-container').classes()).toContain('is-diff')
     expect(diff.get('pre.code-pre-fallback').attributes('style')).not.toContain('36px')
     expect(diff.get('pre.code-pre-fallback').classes()).not.toContain('markstream-pre--diff-inline')
-    await diff.setProps({ monacoOptions: { renderSideBySide: false } })
-    expect(diff.get('pre.code-pre-fallback').classes()).toContain('markstream-pre--diff-inline')
     diff.unmount()
   })
 
@@ -1790,7 +1779,6 @@ describe('virtual timeline restore visual readiness', () => {
         isDark: true,
         minWidth: 120,
         maxWidth: '80%',
-        monacoOptions: { lineHeight: 20 },
       },
     })
 
@@ -1800,7 +1788,7 @@ describe('virtual timeline restore visual readiness', () => {
     expect(root.classes()).toContain('is-rendering')
     expect(root.attributes('style')).toContain('min-width: 120px')
     expect(root.attributes('style')).toContain('max-width: 80%')
-    expect(wrapper.get('pre.code-pre-fallback').attributes('style')).toContain('--markstream-pre-diff-line-height: 20px')
+    expect(wrapper.get('pre.code-pre-fallback').attributes('style')).toContain('--markstream-pre-diff-line-height: 18px')
     expect(wrapper.get('.code-block-shell-content').attributes('style')).toContain('display: none')
     expect(wrapper.get('.code-loading-placeholder').attributes('style') ?? '').not.toContain('display: none')
 

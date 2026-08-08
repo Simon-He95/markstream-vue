@@ -1,5 +1,4 @@
 import type { NodeRendererCodeBlockProps, NodeRendererD2Props, NodeRendererInfographicProps, NodeRendererMermaidProps } from './components/shared/node-helpers'
-import type { CodeBlockMonacoOptions } from './types/monaco'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getD2 } from './optional/d2'
 import { getInfographic } from './optional/infographic'
@@ -37,7 +36,7 @@ const DARK_THEME_OVERRIDES: Record<string, string> = {
   AB5: '#F59E0B',
 }
 
-const MONACO_LANGUAGE_ALIASES: Record<string, string> = {
+const LANGUAGE_ALIASES: Record<string, string> = {
   cjs: 'javascript',
   cts: 'typescript',
   d2lang: 'plaintext',
@@ -59,7 +58,6 @@ export interface EnhanceRenderedHtmlOptions {
   final?: boolean
   isDark?: boolean
   renderCodeBlocksAsPre?: boolean
-  monacoOptions?: CodeBlockMonacoOptions
   d2ThemeId?: number | null
   d2DarkThemeId?: number | null
   showTooltips?: boolean
@@ -125,7 +123,7 @@ export async function enhanceRenderedHtml(
       return handle
 
     if (!options.renderCodeBlocksAsPre)
-      await renderMonaco(root, cleanupFns, options, isActive)
+      await renderCodeBlock(root, cleanupFns, options, isActive)
   }
 
   enhanceFootnotes(root, cleanupFns)
@@ -610,14 +608,14 @@ async function renderD2(
   }
 }
 
-async function renderMonaco(
+async function renderCodeBlock(
   root: HTMLElement,
   cleanupFns: Array<() => void>,
   options: EnhanceRenderedHtmlOptions,
   isActive: () => boolean,
 ) {
-  const monacoModule = await getUseMonaco()
-  if (!monacoModule || typeof monacoModule.useMonaco !== 'function' || !isActive())
+  const streamDiffsModule = await getUseMonaco()
+  if (!streamDiffsModule || typeof streamDiffsModule.useMonaco !== 'function' || !isActive())
     return
 
   const preNodes = Array.from(root.querySelectorAll<HTMLElement>('pre[data-markstream-code-block="1"]'))
@@ -636,7 +634,7 @@ async function renderMonaco(
     const source = codeNode.textContent || ''
     const diff = pre.dataset.markstreamDiff === '1'
     const updatedCode = decodeDataPayload(pre.dataset.markstreamUpdated)
-    const monacoLanguage = resolveMonacoLanguage(rawLanguage)
+    const monacoLanguage = resolveLanguage(rawLanguage)
     const renderLanguage = diff ? 'plaintext' : monacoLanguage
     const shell = createEnhancedBlockShell(
       'code',
@@ -651,7 +649,7 @@ async function renderMonaco(
     shell.body.classList.add('markstream-svelte-enhanced-block__body--code')
     shell.body.style.minHeight = `${estimateCodeBlockHeight(diff ? updatedCode || source : source, diff)}px`
     const originalPre = pre.cloneNode(true) as HTMLElement
-    let helpers: ReturnType<typeof monacoModule.useMonaco> | null = null
+    let helpers: ReturnType<typeof streamDiffsModule.useMonaco> | null = null
     let restored = false
     const restoreOriginalPre = () => {
       if (restored)
@@ -668,7 +666,7 @@ async function renderMonaco(
     }
     pre.replaceWith(shell.wrapper)
 
-    helpers = monacoModule.useMonaco({
+    helpers = streamDiffsModule.useMonaco({
       themes: ['vitesse-dark', 'vitesse-light'],
       languages: Array.from(new Set([monacoLanguage, 'plaintext'])),
       readOnly: true,
@@ -678,16 +676,13 @@ async function renderMonaco(
       revealDebounceMs: 75,
       MAX_HEIGHT: 500,
       fontSize: 13,
-      ...(options.monacoOptions || {}),
     })
     cleanupFns.push(restoreOriginalPre)
 
     try {
       // Vue/React wire Monaco diff editors through dedicated components.
-      // Svelte currently enhances static HTML after the fact, and the diff
-      // editor path in stream-monaco can leave an empty shell or raise
-      // "no diff result available" during worker setup. Prefer a stable
-      // single-editor fallback that still preserves the diff source text.
+      // Svelte enhances static HTML after the fact, so a single-editor
+      // surface is used here that still preserves the diff source text.
       await helpers.createEditor(
         shell.body,
         source,
@@ -704,12 +699,12 @@ async function renderMonaco(
         return
       }
       await waitForRenderFrame()
-      if (!hasVisibleMonacoContent(shell.body, source))
-        throw new Error('Monaco editor rendered no visible code content.')
+      if (!hasVisibleCodeContent(shell.body, source))
+        throw new Error('Code editor rendered no visible code content.')
 
-      shell.wrapper.dataset.markstreamMonaco = '1'
+      shell.wrapper.dataset.markstreamEnhanced = '1'
       if (diff)
-        shell.wrapper.dataset.markstreamMonacoDiff = '1'
+        shell.wrapper.dataset.markstreamEnhancedDiff = '1'
     }
     catch {
       restoreOriginalPre()
@@ -744,9 +739,9 @@ function resolveCodeLanguage(pre: HTMLElement, codeNode: HTMLElement) {
   return languageClass ? languageClass.slice('language-'.length) : 'plaintext'
 }
 
-function resolveMonacoLanguage(language: string) {
+function resolveLanguage(language: string) {
   const normalized = language.trim().toLowerCase()
-  return MONACO_LANGUAGE_ALIASES[normalized] || normalized || 'plaintext'
+  return LANGUAGE_ALIASES[normalized] || normalized || 'plaintext'
 }
 
 function estimateCodeBlockHeight(source: string, diff: boolean) {
@@ -756,8 +751,13 @@ function estimateCodeBlockHeight(source: string, diff: boolean) {
   return Math.min(520, base + lineCount * perLine)
 }
 
-function hasVisibleMonacoContent(body: HTMLElement, source: string) {
-  const editor = body.querySelector<HTMLElement>('.monaco-editor')
+function hasVisibleCodeContent(body: HTMLElement, source: string) {
+  // stream-diffs renders its surface inside these containers.
+  const editor = body.querySelector<HTMLElement>([
+    'diffs-container',
+    '.stream-diffs-shell',
+    '[data-stream-diffs-state]',
+  ].join(','))
   if (!editor)
     return false
 

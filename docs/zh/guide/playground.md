@@ -29,7 +29,7 @@ pnpm play
 - 实时流式 Markdown 输入
 - 渐进式 Mermaid
 - 自定义组件映射
-- Monaco 编辑器集成示例
+- stream-diffs 增强代码块集成示例
 
 可直接打开的示例页面：
 

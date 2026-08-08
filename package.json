@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.1.2-beta.2",
   "packageManager": "pnpm@10.34.5",
-  "description": "Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, and Monaco.",
+  "description": "Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, and stream-diffs powered code blocks.",
   "author": "Simon He",
   "license": "MIT",
   "homepage": "https://markstream.simonhe.me/frameworks/vue",
@@ -42,8 +42,7 @@
     "streaming-mermaid",
     "katex",
     "streaming-katex",
-    "shiki",
-    "monaco-editor",
+    "stream-diffs",
     "streaming-code-blocks",
     "large-documents",
     "safe-html",
@@ -288,8 +287,6 @@
     "katex": ">=0.16.22",
     "mermaid": ">=11",
     "stream-diffs": ">=0.0.2",
-    "stream-markdown": ">=0.0.16",
-    "stream-monaco": ">=0.0.48",
     "vue": ">=3.0.0",
     "vue-i18n": ">=9"
   },
@@ -307,12 +304,6 @@
       "optional": true
     },
     "stream-diffs": {
-      "optional": true
-    },
-    "stream-markdown": {
-      "optional": true
-    },
-    "stream-monaco": {
       "optional": true
     },
     "vue-i18n": {
@@ -355,7 +346,6 @@
     "rollup-plugin-dts": "^5.3.1",
     "rollup-plugin-visualizer": "^6.0.11",
     "stream-diffs": "latest",
-    "stream-markdown": "latest",
     "streamdown": "2.5.0",
     "tailwindcss": "^3.4.19",
     "terser": "^5.49.0",

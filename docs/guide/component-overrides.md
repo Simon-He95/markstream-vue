@@ -106,13 +106,16 @@ setCustomComponents('docs', {
 })
 ```
 
-### Example: switch regular code blocks to `MarkdownCodeBlockNode`
+### Example: override regular code blocks
 
 ```ts twoslash
-import { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue'
+import type { Component } from 'vue'
+import { setCustomComponents } from 'markstream-vue'
+
+declare const CustomCodeBlockNode: Component
 
 setCustomComponents('docs', {
-  code_block: MarkdownCodeBlockNode,
+  code_block: CustomCodeBlockNode,
 })
 ```
 
@@ -164,7 +167,7 @@ Every custom renderer receives the basics:
 
 The renderer also forwards feature-specific props:
 
-- regular code block overrides receive `stream`, `theme`, `darkTheme`, `lightTheme`, `monacoOptions`, `themes`, `minWidth`, `maxWidth`, and anything passed through `codeBlockProps` (`theme` is the recommended field; `darkTheme` / `lightTheme` remain for compatibility)
+- regular code block overrides receive `stream`, `theme`, `darkTheme`, `lightTheme`, `themes`, `minWidth`, `maxWidth`, and anything passed through `codeBlockProps` (`theme` is the recommended field; `darkTheme` / `lightTheme` remain for compatibility)
 - Mermaid, D2, and infographic overrides receive the corresponding `mermaidProps`, `d2Props`, or `infographicProps`
 - link and list overrides inherit tooltip and typewriter-related bindings from the parent renderer
 

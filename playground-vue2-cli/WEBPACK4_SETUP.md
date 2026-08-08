@@ -4,7 +4,7 @@ This project demonstrates how to configure `markstream-vue2` to work with Vue CL
 
 ## The Problem
 
-Many modern npm packages (like `@antv/infographic`, `measury`, `shiki`) use the `package.json` `exports` field to define subpath exports. However, **Webpack 4 does not support the `exports` field**, which was introduced in Webpack 5. Additionally, pnpm uses symlinks for dependency management, which can cause additional resolution issues in Webpack 4.
+Many modern npm packages (like `@antv/infographic`, `measury`, `mermaid`) use the `package.json` `exports` field to define subpath exports. However, **Webpack 4 does not support the `exports` field**, which was introduced in Webpack 5. Additionally, pnpm uses symlinks for dependency management, which can cause additional resolution issues in Webpack 4.
 
 ## Solution
 
@@ -29,7 +29,6 @@ module.exports = {
   transpileDependencies: [
     'markstream-vue2',
     'stream-markdown-parser',
-    'stream-monaco',
     '@antv/infographic',
     'measury',
     'mermaid'
@@ -74,7 +73,7 @@ Also, this playground loads Mermaid via a global CDN build (see `public/index.ht
 
 4. **`resolve.symlinks: false`**: This helps Webpack resolve pnpm's symlink structure correctly.
 
-5. **Optional features**: On Webpack 4, some optional integrations can pull in `exports`-heavy or modern syntax graphs (e.g. Shiki languages, Monaco worker helpers). This playground keeps the core renderer usable by ignoring those modules in `vue.config.js` via `IgnorePlugin`.
+5. **Optional features**: On Webpack 4, some optional integrations can pull in `exports`-heavy or modern syntax graphs (e.g. AntV Infographic). This playground keeps the core renderer usable by ignoring those modules in `vue.config.js` via `IgnorePlugin`.
 
 ## Recommended Approach
 

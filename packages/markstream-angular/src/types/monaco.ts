@@ -1,4 +1,4 @@
-export interface CodeBlockMonacoThemeObject {
+export interface CodeBlockThemeObject {
   name: string
   base?: string
   inherit?: boolean
@@ -7,9 +7,7 @@ export interface CodeBlockMonacoThemeObject {
   [key: string]: unknown
 }
 
-export type CodeBlockMonacoTheme = string | CodeBlockMonacoThemeObject
-
-export type CodeBlockMonacoLanguage = string | ((...args: unknown[]) => unknown)
+export type CodeBlockTheme = string | CodeBlockThemeObject
 
 export interface CodeBlockDiffHideUnchangedRegionsOptions {
   enabled?: boolean
@@ -38,41 +36,4 @@ export interface CodeBlockDiffHunkActionContext {
   lineChange: unknown
   originalModel: unknown
   modifiedModel: unknown
-}
-
-export interface CodeBlockMonacoOptions {
-  MAX_HEIGHT?: number | string
-  fontSize?: number
-  lineHeight?: number
-  fontFamily?: string
-  tabSize?: number
-  readOnly?: boolean
-  wordWrap?: 'off' | 'on' | 'wordWrapColumn' | 'bounded' | string
-  wrappingIndent?: 'none' | 'same' | 'indent' | 'deepIndent' | string
-  theme?: string
-  themes?: CodeBlockMonacoTheme[]
-  languages?: CodeBlockMonacoLanguage[]
-  renderSideBySide?: boolean
-  useInlineViewWhenSpaceIsLimited?: boolean
-  enableSplitViewResizing?: boolean
-  ignoreTrimWhitespace?: boolean
-  maxComputationTime?: number
-  diffAlgorithm?: string
-  renderIndicators?: boolean
-  originalEditable?: boolean
-  revealDebounceMs?: number
-  revealStrategy?: 'bottom' | 'centerIfOutside' | 'center'
-  revealBatchOnIdleMs?: number
-  updateThrottleMs?: number
-  diffUpdateThrottleMs?: number
-  diffAutoScroll?: boolean
-  diffHideUnchangedRegions?: CodeBlockDiffHideUnchangedRegions
-  diffLineStyle?: CodeBlockDiffLineStyle
-  diffAppearance?: CodeBlockDiffAppearance
-  diffUnchangedRegionStyle?: CodeBlockDiffUnchangedRegionStyle
-  diffHunkActionsOnHover?: boolean
-  diffHunkHoverHideDelayMs?: number
-  onDiffHunkAction?: (context: CodeBlockDiffHunkActionContext) => void | boolean | Promise<void | boolean>
-  scrollbar?: Record<string, unknown>
-  [key: string]: unknown
 }

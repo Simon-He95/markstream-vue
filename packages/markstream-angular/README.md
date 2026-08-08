@@ -1,6 +1,6 @@
 # markstream-angular — Angular streaming Markdown renderer for AI chat
 
-Angular 20+ standalone component for streaming Markdown: AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown states, long documents, Mermaid, KaTeX, Monaco code blocks, D2, infographic blocks, custom HTML tags, and cross-framework playground parity.
+Angular 20+ standalone component for streaming Markdown: AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown states, long documents, Mermaid, KaTeX, streaming code blocks, D2, infographic blocks, custom HTML tags, and cross-framework playground parity.
 
 ## When to use it
 
@@ -19,14 +19,13 @@ pnpm add markstream-angular @angular/core @angular/common
 
 Optional peer dependencies:
 
-- `stream-diffs` (recommended) for enhanced / streaming code blocks
-- `stream-monaco` for Monaco-powered code blocks (automatic fallback when `stream-diffs` is absent)
+- `stream-diffs` for enhanced / streaming code blocks
 - `mermaid` for Mermaid diagrams
 - `katex` for math rendering
 - `@terrastruct/d2` for D2 diagrams
 - `@antv/infographic` for infographic blocks
 
-Install only the peers your output actually needs. Plain Markdown does not require Mermaid, KaTeX, Monaco, D2, or Infographic.
+Install only the peers your output actually needs. Plain Markdown does not require Mermaid, KaTeX, stream-diffs enhanced code blocks, D2, or Infographic.
 
 Example:
 
@@ -36,10 +35,9 @@ pnpm add stream-diffs mermaid katex @terrastruct/d2 @antv/infographic
 
 ## Enhanced Code Blocks
 
-Code blocks use a dual-runtime loader: `stream-diffs` is preferred, `stream-monaco` is the automatic fallback, and a plain `<pre>` is rendered when neither is installed. Inside `MarkstreamAngularComponent`, code blocks resolve to this runtime automatically; you can also mount the standalone `markstream-angular-code-block-node` component directly:
+Code blocks use `stream-diffs` for enhanced / streaming rendering, with a plain `<pre>` fallback when it is not installed. Inside `MarkstreamAngularComponent`, code blocks resolve to this runtime automatically; you can also mount the standalone `markstream-angular-code-block-node` component directly:
 
 ```ts
-import type { CodeBlockMonacoOptions } from 'markstream-angular'
 import { Component, signal } from '@angular/core'
 import { CodeBlockNode } from 'markstream-angular'
 
@@ -64,21 +62,18 @@ class CodeBlockComponent {
   props = {
     isDark: true,
     showLineNumbers: true,
-    monacoOptions: {
-      fontSize: 14,
-      lineHeight: 21,
-      tabSize: 4,
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-      wordWrap: 'off',
-      theme: 'vitesse-dark',
-      renderSideBySide: true,
-      MAX_HEIGHT: 640,
-    } as CodeBlockMonacoOptions,
+    fontSize: 14,
+    lineHeight: 21,
+    tabSize: 4,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+    wordWrap: 'off',
+    darkTheme: 'vitesse-dark',
+    MAX_HEIGHT: 640,
   }
 }
 ```
 
-Component options go through the `props` input: `isDark`, `showLineNumbers`, `monacoOptions`, `darkTheme` / `lightTheme`, `loading`, `stream`. `monacoOptions` also covers diff blocks (`renderSideBySide`, `diffHunkActionsOnHover`, `onDiffHunkAction`).
+Component options go through the `props` input: `isDark`, `showLineNumbers`, `darkTheme` / `lightTheme`, `loading`, `stream`. Diff blocks are driven by the stream-diffs adapter options (`renderSideBySide`, `diffHunkActionsOnHover`, `onDiffHunkAction`).
 
 ## Quick Start
 
@@ -126,7 +121,6 @@ bootstrapApplication(AppComponent)
 ```ts
 import type {
   AngularRenderContext,
-  CodeBlockMonacoOptions,
   CustomComponentMap,
   MarkstreamAngularComponentProps,
   NodeRendererProps,

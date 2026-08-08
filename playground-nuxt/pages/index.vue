@@ -2,7 +2,7 @@
 import { useRouter } from '#imports'
 import { Icon } from '@iconify/vue'
 import { useDark, useInterval, useLocalStorage, useToggle } from '@vueuse/core'
-import MarkdownRender, { getUseMonaco, setCustomComponents, setKaTeXWorker, setMermaidWorker } from 'markstream-vue'
+import MarkdownRender, { setCustomComponents, setKaTeXWorker, setMermaidWorker } from 'markstream-vue'
 import KatexWorker from 'markstream-vue/workers/katexRenderer.worker?worker&inline'
 import MermaidWorker from 'markstream-vue/workers/mermaidParser.worker?worker&inline'
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
@@ -15,7 +15,7 @@ const streamChunkSize = useLocalStorage<number>('vmr-settings-stream-chunk-size'
 const normalizedChunkSize = computed(() => Math.max(1, Math.floor(streamChunkSize.value) || 1))
 
 if (process.client) {
-  getUseMonaco()
+  import('markstream-vue').then(({ getStreamDiffsRuntime }) => getStreamDiffsRuntime()).catch(() => {})
   setKaTeXWorker(new KatexWorker())
   setMermaidWorker(new MermaidWorker())
 }

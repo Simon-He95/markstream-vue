@@ -24,8 +24,7 @@ import {
 import { useSmoothMarkdownStream } from '../hooks/useSmoothMarkdownStream'
 import { renderNode } from '../renderers/renderNode.tsrx'
 import { normalizeLanguageIdentifier } from '../utils/languageIcon'
-import { getUseMonaco } from './CodeBlockNode/monaco'
-import { setDesiredMonacoTheme } from './CodeBlockNode/monacoThemeRegistry'
+import { getStreamDiffsRuntime } from './CodeBlockNode/monaco'
 
 const DEFAULT_PROPS: Required<Pick<NodeRendererProps, 'codeBlockStream'
   | 'typewriter'
@@ -830,7 +829,6 @@ export function NodeRenderer<
 >(rawProps: NodeRendererProps<TStreamingComponents, THtmlComponents>) {
   const props = { ...DEFAULT_PROPS, ...rawProps } as ResolvedProps
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const desiredThemeKeyRef = useRef<string | null>(null)
   const textStreamStateRef = useRef(new Map<string, string>())
   const streamRenderVersionRef = useRef(0)
   const previousRenderVersionSourceRef = useRef<unknown>(null)
@@ -1248,26 +1246,11 @@ export function NodeRenderer<
       ?? ((id: number) => window.clearTimeout(id))
 
     const id = requestIdle(() => {
-      void getUseMonaco()
+      void getStreamDiffsRuntime()
     }, { timeout: 900 })
 
     return () => cancelIdle(id)
   }, [parsedNodes, props.renderCodeBlocksAsPre])
-
-  useEffect(() => {
-    if (typeof window === 'undefined')
-      return
-    if (props.renderCodeBlocksAsPre)
-      return
-    const theme = props.isDark ? props.codeBlockDarkTheme : props.codeBlockLightTheme
-    const nextKey = typeof theme === 'string'
-      ? theme
-      : (typeof theme === 'object' && theme && 'name' in (theme as any) ? String((theme as any).name) : null)
-    if (nextKey && desiredThemeKeyRef.current !== nextKey) {
-      desiredThemeKeyRef.current = nextKey
-      setDesiredMonacoTheme(theme)
-    }
-  }, [props.codeBlockDarkTheme, props.codeBlockLightTheme, props.isDark, props.renderCodeBlocksAsPre])
 
   const indexPrefix = useMemo(() => {
     return props.indexKey != null ? String(props.indexKey) : 'markdown-renderer'
@@ -1324,7 +1307,6 @@ export function NodeRenderer<
       darkTheme: props.codeBlockDarkTheme,
       lightTheme: props.codeBlockLightTheme,
       langs: props.langs,
-      monacoOptions: props.codeBlockMonacoOptions,
       minWidth: props.codeBlockMinWidth,
       maxWidth: props.codeBlockMaxWidth,
     },
@@ -1352,7 +1334,6 @@ export function NodeRenderer<
     props.codeBlockDarkTheme,
     props.codeBlockLightTheme,
     props.langs,
-    props.codeBlockMonacoOptions,
     props.codeBlockMinWidth,
     props.codeBlockMaxWidth,
     props.onCopy,

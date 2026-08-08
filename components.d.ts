@@ -37,7 +37,6 @@ declare module 'vue' {
     LinkNode: typeof import('./src/components/LinkNode/LinkNode.vue')['default']
     ListItemNode: typeof import('./src/components/ListItemNode/ListItemNode.vue')['default']
     ListNode: typeof import('./src/components/ListNode/ListNode.vue')['default']
-    MarkdownCodeBlockNode: typeof import('./src/components/MarkdownCodeBlockNode/MarkdownCodeBlockNode.vue')['default']
     MarkstreamVirtualTimeline: typeof import('./src/components/MarkstreamVirtualTimeline/MarkstreamVirtualTimeline.vue')['default']
     MathBlockNode: typeof import('./src/components/MathBlockNode/MathBlockNode.vue')['default']
     MathInlineNode: typeof import('./src/components/MathInlineNode/MathInlineNode.vue')['default']

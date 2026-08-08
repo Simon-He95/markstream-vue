@@ -41,7 +41,7 @@ pnpm add markstream-vue
 
 ## SSR-first default
 
-`markstream-vue` can render standard Markdown during Nuxt SSR. Heavy nodes such as Mermaid, D2, Infographic, Monaco-backed code blocks, and worker-backed enhancements upgrade after hydration.
+`markstream-vue` can render standard Markdown during Nuxt SSR. Heavy nodes such as Mermaid, D2, Infographic, stream-diffs enhanced code blocks, and worker-backed enhancements upgrade after hydration.
 
 ```vue
 <!-- pages/index.vue -->

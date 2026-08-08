@@ -58,7 +58,7 @@ Use Markstream when:
 - You get `markdown-it`'s parsing correctness
 - Plus streaming-specific handling for unclosed fences and partial blocks
 - Plus framework-specific component rendering
-- Plus optional heavy block support (Mermaid, KaTeX, Monaco)
+- Plus optional heavy block support (Mermaid, KaTeX, stream-diffs)
 
 ## Streaming: the key difference
 

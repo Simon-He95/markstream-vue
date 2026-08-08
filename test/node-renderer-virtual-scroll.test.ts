@@ -82,7 +82,7 @@ function makeDefaultVirtualMeasurementKey(host = '') {
       'light',
       'code-rich',
       'code-stream',
-      ...Array.from({ length: 16 }, () => ''),
+      ...Array.from({ length: 8 }, () => ''),
     ].join('\u0000'),
   ].join('\u0000')
 }
@@ -2929,7 +2929,7 @@ describe('node renderer virtual-scroll coordination', () => {
     wrapper.unmount()
   })
 
-  it('ignores shiki language options in the virtual layout key for unrelated custom components', async () => {
+  it('ignores code language options in the virtual layout key for unrelated custom components', async () => {
     const ParagraphProbe = defineComponent({
       props: {
         node: { type: Object, required: true },
@@ -2954,7 +2954,6 @@ describe('node renderer virtual-scroll coordination', () => {
         final: true,
         fade: false,
         viewportPriority: false,
-        langs: ['typescript'],
         virtualScroll: {
           enabled: true,
           sessionKey: 'unrelated-custom-layout-key',
@@ -2968,11 +2967,7 @@ describe('node renderer virtual-scroll coordination', () => {
 
     expect(wrapper.get('.virtual-paragraph-probe').exists()).toBe(true)
     const initialKey = (wrapper.vm as any).captureVirtualState()?.measurementKey
-    expect(initialKey).not.toContain('["typescript"]')
 
-    await wrapper.setProps({
-      langs: ['typescript', 'python'],
-    })
     await flushAll()
 
     expect((wrapper.vm as any).captureVirtualState()?.measurementKey).toBe(initialKey)
@@ -2980,7 +2975,7 @@ describe('node renderer virtual-scroll coordination', () => {
     wrapper.unmount()
   })
 
-  it('does not include langs in the virtual layout key for language custom code blocks', async () => {
+  it('does not include theme options in the virtual layout key for language custom code blocks', async () => {
     const LanguageCodeBlockProbe = defineComponent({
       inheritAttrs: false,
       props: {
@@ -2989,7 +2984,7 @@ describe('node renderer virtual-scroll coordination', () => {
       setup(_, { attrs }) {
         return () => h('div', {
           'class': 'virtual-language-code-block-probe',
-          'data-langs': JSON.stringify(attrs.langs ?? null),
+          'data-has-themes': String(Object.prototype.hasOwnProperty.call(attrs, 'themes')),
         })
       },
     })
@@ -3006,7 +3001,7 @@ describe('node renderer virtual-scroll coordination', () => {
         final: true,
         fade: false,
         viewportPriority: false,
-        langs: ['typescript'],
+        themes: ['vitesse-light'],
         virtualScroll: {
           enabled: true,
           sessionKey: 'language-code-block-layout-key',
@@ -3018,107 +3013,12 @@ describe('node renderer virtual-scroll coordination', () => {
 
     await flushAll()
 
-    expect(wrapper.get('.virtual-language-code-block-probe').attributes('data-langs')).toBe('["typescript"]')
+    expect(wrapper.get('.virtual-language-code-block-probe').attributes('data-has-themes')).toBe('true')
     const initialKey = (wrapper.vm as any).captureVirtualState()?.measurementKey
-    expect(initialKey).not.toContain('typescript')
-    expect(initialKey).not.toContain('["typescript"]')
 
-    await wrapper.setProps({
-      langs: ['typescript', 'python'],
-    })
-    await flushAll()
-
-    expect(wrapper.get('.virtual-language-code-block-probe').attributes('data-langs')).toBe('["typescript","python"]')
-    expect((wrapper.vm as any).captureVirtualState()?.measurementKey).toBe(initialKey)
-
-    wrapper.unmount()
-  })
-
-  it('normalizes shiki langs in the virtual layout key for built-in shiki code blocks', async () => {
-    const NodeRenderer = (await import('../src/components/NodeRenderer')).default
-    const wrapper = mount(NodeRenderer, {
-      props: {
-        codeRenderer: 'shiki',
-        nodes: [createCodeBlock(3)],
-        final: true,
-        fade: false,
-        viewportPriority: false,
-        langs: ['ts', 'js'],
-        virtualScroll: {
-          enabled: true,
-          sessionKey: 'normalized-language-code-block-layout-key',
-          settleMode: 'manual',
-          emitIntervalMs: 0,
-        },
-      },
-    })
-
-    await flushAll()
-
-    const initialKey = (wrapper.vm as any).captureVirtualState()?.measurementKey
-    expect(initialKey).toContain('javascript')
-    expect(initialKey).toContain('typescript')
-    expect(initialKey).not.toContain('["ts","js"]')
-
-    await wrapper.setProps({
-      langs: ['javascript', 'typescript'],
-    })
     await flushAll()
 
     expect((wrapper.vm as any).captureVirtualState()?.measurementKey).toBe(initialKey)
-
-    await wrapper.setProps({
-      langs: ['typescript', 'javascript'],
-    })
-    await flushAll()
-
-    expect((wrapper.vm as any).captureVirtualState()?.measurementKey).toBe(initialKey)
-
-    wrapper.unmount()
-  })
-
-  it('normalizes shiki themes in the virtual layout key for built-in shiki code blocks', async () => {
-    const NodeRenderer = (await import('../src/components/NodeRenderer')).default
-    const wrapper = mount(NodeRenderer, {
-      props: {
-        codeRenderer: 'shiki',
-        nodes: [createCodeBlock(3)],
-        final: true,
-        fade: false,
-        viewportPriority: false,
-        themes: [' vitesse-light ', 'vitesse-dark', 'vitesse-light'] as any,
-        virtualScroll: {
-          enabled: true,
-          sessionKey: 'normalized-shiki-theme-layout-key',
-          settleMode: 'manual',
-          emitIntervalMs: 0,
-        },
-      },
-    })
-
-    await flushAll()
-
-    const initialKey = (wrapper.vm as any).captureVirtualState()?.measurementKey
-    expect(initialKey).toContain('vitesse-light')
-    expect(initialKey).toContain('vitesse-dark')
-
-    await wrapper.setProps({
-      themes: ['vitesse-light', 'vitesse-dark'],
-    })
-    await flushAll()
-
-    expect((wrapper.vm as any).captureVirtualState()?.measurementKey).toBe(initialKey)
-
-    await wrapper.setProps({
-      codeBlockProps: {
-        themes: ['github-light'],
-      },
-    })
-    await flushAll()
-
-    const overrideKey = (wrapper.vm as any).captureVirtualState()?.measurementKey
-    expect(overrideKey).toContain('github-light')
-    expect(overrideKey).not.toBe(initialKey)
 
     wrapper.unmount()
   })

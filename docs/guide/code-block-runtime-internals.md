@@ -4,7 +4,7 @@ This legacy route describes how markstream-vue connects `CodeBlockNode` to the f
 
 ## Loading contract
 
-`getUseMonaco()` keeps the historical export name, but dynamically imports `stream-diffs`, not `stream-diffs/vue`. The returned adapter exposes the small editor-compatible surface that `CodeBlockNode` needs: create, update, theme, measure, and dispose.
+`getStreamDiffsRuntime()` is the loader export (renamed from the historical `getUseMonaco` in 2.0). It dynamically imports `stream-diffs`, not `stream-diffs/vue`. The returned adapter exposes the small editor-compatible surface that `CodeBlockNode` needs: create, update, theme, measure, and dispose.
 
 ```text
 CodeBlockNode                 markstream-vue runtime                stream-diffs

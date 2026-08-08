@@ -31,8 +31,6 @@ pnpm add katex mermaid stream-diffs @terrastruct/d2 @antv/infographic
 ```
 
 `stream-diffs` powers the enhanced code blocks (smaller runtime, no `monaco-editor`).
-If you prefer the legacy Monaco-based rendering, install `stream-monaco` instead;
-it is used automatically as a fallback when `stream-diffs` is absent.
 
 ## Enhanced Code Blocks
 
@@ -41,7 +39,6 @@ it is used automatically as a fallback when `stream-diffs` is absent.
 ```svelte
 <script lang="ts">
   import { CodeBlockNode } from 'markstream-svelte'
-  import type { CodeBlockMonacoOptions } from 'markstream-svelte'
 
   const node = {
     type: 'code_block',
@@ -49,25 +46,12 @@ it is used automatically as a fallback when `stream-diffs` is absent.
     code: 'const answer = 42',
     raw: 'const answer = 42',
   }
-
-  // fontSize / lineHeight / tabSize also drive the streaming <pre> fallback so
-  // the enhanced surface swaps in without a visual jump.
-  const monacoOptions: CodeBlockMonacoOptions = {
-    fontSize: 14,
-    lineHeight: 21,
-    tabSize: 4,
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    wordWrap: 'off',
-    theme: 'vitesse-dark',
-    renderSideBySide: true,
-    MAX_HEIGHT: 640,
-  }
 </script>
 
-<CodeBlockNode {node} {monacoOptions} isDark showLineNumbers />
+<CodeBlockNode {node} isDark showLineNumbers showHeader />
 ```
 
-Component-level options: `isDark`, `showLineNumbers` (default `true`), and `monacoOptions` for both single blocks and diff blocks (`renderSideBySide`, `diffHunkActionsOnHover`, `onDiffHunkAction`). When neither `stream-diffs` nor `stream-monaco` is installed, the block renders as a plain `<pre>`.
+Component-level options: `isDark`, `showLineNumbers` (default `true`), `showHeader`. When `stream-diffs` is not installed, the block renders as a plain `<pre>`.
 
 ## Basic Usage
 

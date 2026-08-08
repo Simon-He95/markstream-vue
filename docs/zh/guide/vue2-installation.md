@@ -184,14 +184,12 @@ markstream-vue2 通过可选的对等依赖支持各种功能。只安装你需�
 
 | 功能 | 所需包 | 安装命令 |
 |---------|------------------|-----------------|
-| Shiki 代码块（`MarkdownCodeBlockNode`） | `stream-markdown` | `pnpm add stream-markdown` |
 | 增强代码块（推荐） | `stream-diffs` | `pnpm add stream-diffs` |
-| Monaco 编辑器代码块（自动回退） | `stream-monaco` | `pnpm add stream-monaco` |
 | Mermaid 图表 | `mermaid` | `pnpm add mermaid` |
 | D2 图表 | `@terrastruct/d2` | `pnpm add @terrastruct/d2` |
 | 数学公式渲染（KaTeX） | `katex` | `pnpm add katex` |
 
-增强代码块通过双运行时 loader 解析：优先 `stream-diffs`（更小，不依赖 `monaco-editor`），未安装时自动回退 `stream-monaco`（Webpack 4 / CJS 工具链走 `stream-monaco/legacy` 入口），两者都未安装则渲染普通 `<pre>`。安装其中一个即可，不需要同时装两个。
+增强代码块使用可选的对等依赖 `stream-diffs`。未安装时会回退渲染普通 `<pre>`。代码与 diff 选项使用 `stream-diffs` 内置默认值，主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 控制。
 
 ## Vue 2.6.x 设置
 
@@ -244,8 +242,6 @@ import 'markstream-vue2/index.css'
 import 'katex/dist/katex.min.css'
 ```
 
-Monaco（`stream-monaco`）不需要单独导入 CSS。
-
 注意：`markstream-vue2/index.css` 的样式被限制在内部的 `.markstream-vue2` 容器下，以减少全局样式冲突。`MarkdownRender` 默认在该容器内渲染。如果你单独渲染节点组件，请用 `<div class="markstream-vue2">...</div>` 包裹它们。
 
 ## Vue CLI（Webpack 4）特别说明
@@ -294,28 +290,28 @@ if (mermaidWorker)
 
 如果你希望继续使用 `markstream-vue2/index.css` 这类导入路径，需要在 `vue.config.js` 里做 `resolve.alias` 映射（见 `playground-vue2-cli/vue.config.js`）。
 
-### 代码块：推荐用 stream-markdown 覆盖
+### 代码块：推荐用 `stream-diffs` 覆盖
 
-在 Webpack 4 下，Monaco 集成（`stream-monaco`）很容易踩到边角问题（worker 定位、ESM 入口、service 注册、以及 Shiki/TextMate regex engine 初始化等）。如果你的目标是“让代码块正确高亮渲染”，更稳妥的方案是：
+增强代码块运行时（`stream-diffs`）是 markstream-vue2 中唯一的代码块渲染器。未安装该可选对等依赖时，会回退渲染普通 `<pre>`。对于 Webpack 4，`stream-diffs` 是推荐（也是唯一）的代码块运行时——没有 Monaco 回退。
 
-1) 安装 Shiki 渲染依赖：
+1) 安装可选对等依赖：
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
 
-2) 覆盖 `code_block`，直接使用 `MarkdownCodeBlockNode`（或你自己的组件）：
+2)（可选）需要自定义行为时，可用 `setCustomComponents` 覆盖 `code_block`：
 
 ```ts
-import { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
+import { setCustomComponents } from 'markstream-vue2'
 
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+setCustomComponents({ code_block: MyCodeBlock })
 ```
 
 3) Webpack 配置踩坑：
 
-- 如果你使用 `webpack.IgnorePlugin` 忽略可选依赖，确保不要把 `stream-markdown` 忽略掉。
-- `stream-markdown` 是 ESM-only 包，在 CJS 的 `vue.config.js` 里即便已安装，`require.resolve('stream-markdown')` 也可能失败；建议用文件系统兜底定位 `node_modules/stream-markdown` 并 alias 到 `dist/index.js`。可参考 `playground-vue2-cli/vue.config.js`。
+- 如果你使用 `webpack.IgnorePlugin` 忽略可选依赖，确保不要把 `stream-diffs` 忽略掉，否则代码块会回退为 `<pre>`。
+- `stream-diffs` 是 ESM-only 包，在 CJS 的 `vue.config.js` 里即便已安装，`require.resolve('stream-diffs')` 也可能失败；建议用文件系统兜底定位 `node_modules/stream-diffs` 并 alias 到 `dist/index.js`。可参考 `playground-vue2-cli/vue.config.js`。
 
 另外，如果你的项目是 monorepo/workspace（pnpm 常见），请确保整个应用只使用 **同一份 Vue 2 runtime**。否则会出现类似：
 `provide() can only be used inside setup()` / `onMounted is called when there is no active component instance` 的运行时警告（本质是重复 Vue 实例导致 Composition API 上下文不一致）。解决方式是在 Webpack 中固定 `vue$` 指向项目内的 Vue 2 runtime（见 `playground-vue2-cli/vue.config.js`）。
@@ -370,38 +366,30 @@ module.exports = {
 一次性启用所有功能：
 
 ```bash
-pnpm add stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+pnpm add stream-diffs mermaid @terrastruct/d2 katex
 # 或
-npm install stream-markdown stream-diffs mermaid @terrastruct/d2 katex
+npm install stream-diffs mermaid @terrastruct/d2 katex
 ```
 
 ### 功能详情
 
 #### 代码语法高亮
 
-需要安装 `stream-markdown`：
+需要安装 `stream-diffs`：
 
 ```bash
-pnpm add stream-markdown
+pnpm add stream-diffs
 ```
 
-`stream-markdown` 已内置 `MarkdownCodeBlockNode` 所需的 Shiki runtime。若要在 `MarkdownRender` 中使用 Shiki，请覆盖 `code_block` 渲染器（或直接使用 `MarkdownCodeBlockNode`）。
+`stream-diffs` 为增强的 `CodeBlockNode` 运行时提供代码与 diff 的默认配置。未安装时会回退渲染普通 `<pre>`。需要自定义行为时，可通过 `setCustomComponents` 覆盖 `code_block` 渲染器：
 
 ```js
-import MarkdownRender, { MarkdownCodeBlockNode, setCustomComponents } from 'markstream-vue2'
+import { setCustomComponents } from 'markstream-vue2'
 
-setCustomComponents({ code_block: MarkdownCodeBlockNode })
+setCustomComponents({ code_block: MyCodeBlock })
 ```
 
-#### Monaco 编辑器
-
-完整的代码块功能（复制按钮、字体大小控制、展开/折叠）：
-
-```bash
-pnpm add stream-monaco
-```
-
-如果不安装 `stream-monaco`，代码块仍会渲染，但交互式按钮可能无法工作。
+主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 属性控制。
 
 #### Mermaid 图表
 

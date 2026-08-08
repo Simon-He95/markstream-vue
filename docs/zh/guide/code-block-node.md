@@ -5,8 +5,7 @@
 ## 快速概览
 
 - 增强模式（安装 `stream-diffs`）— 结束态 File/FileDiff surface，支持语法高亮与 diff 交互
-- 降级模式 — `stream-diffs` 与 `stream-monaco` 都未安装时回退为纯 `<pre><code>` 渲染
-- 如果你希望使用 Shiki，请使用 `MarkdownCodeBlockNode`（同伴依赖：`stream-markdown`）
+- 降级模式 — 未安装 `stream-diffs` 时回退为纯 `<pre><code>` 渲染
 
 ## Props
 
@@ -14,8 +13,7 @@
 
 - `node` — code_block 节点（必需）
 - `loading`、`stream`、`isShowPreview`
-- `monacoOptions` — 为兼容已有 API，类型仍为 `CodeBlockMonacoOptions`，会透传给 `stream-diffs` adapter
-  - `diffHideUnchangedRegions`、`diffLineStyle`、`diffAppearance`、`diffUnchangedRegionStyle`、`diffHunkActionsOnHover`、`diffHunkHoverHideDelayMs`、`onDiffHunkAction` 这类 diff 配置都应该放这里
+- 2.0 不再支持按块（per-block）配置 code/diff 选项，增强 surface 使用 `stream-diffs` 内置默认值。主题通过 `theme` / `darkTheme` / `lightTheme` / `themes` 设置。
 - 头部控制：`showHeader`、`showCollapseButton`、`showCopyButton`、`showExpandButton`、`showPreviewButton`、`showFontSizeButtons`、`showTooltips`
 - HTML preview sandbox：`htmlPreviewAllowScripts` 默认 `false`，`htmlPreviewSandbox` 可直接覆盖 iframe sandbox token
 
@@ -30,8 +28,8 @@
 - `diffHunkActionsOnHover: true`
 - `diffHunkHoverHideDelayMs: 160`
 
-你可以通过 `monacoOptions` 覆盖这些默认值。
-当 preset 使用 `diffAppearance: 'auto'` 时，`CodeBlockNode` 会先根据当前明暗外观解析成实际的 light/dark，再传给自身的 `stream-diffs` adapter。
+这些是 `stream-diffs` 的内置默认值；2.0 不再提供按块覆盖的 prop。
+当使用 `diffAppearance: 'auto'` 时，`CodeBlockNode` 会先根据当前明暗外观解析成实际的 light/dark，再传给自身的 `stream-diffs` adapter。
 
 Diff 代码块的内置 header 现在也会显示 `- / +` 行数统计。
 
@@ -238,7 +236,7 @@ const themes = [
 
 使用 `{ light, dark }` 配对时，组件根据 `isDark` prop 自动切换。
 
-`themes` prop 用于注册可用主题，以便 Monaco 可以按需懒加载它们。
+`themes` prop 用于注册可用主题，以便运行时可以按需懒加载它们。
 
 > **向后兼容：** `darkTheme` / `lightTheme` props 仍然可用但已废弃。推荐使用统一的 `theme` prop。
 

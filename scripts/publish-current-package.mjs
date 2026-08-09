@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { resolveDistTag, resolvePublishedDistTag } from './resolve-dist-tag.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '..')
@@ -55,12 +56,6 @@ function packageVersionExists(name, version) {
   return result.status === 0 && result.stdout.trim() === version
 }
 
-// npm 11+ refuses to publish a prerelease version as `latest`; publish those
-// under the `next` dist-tag so the guard is satisfied and `latest` stays clean.
-function isPrerelease(version) {
-  return typeof version === 'string' && version.includes('-')
-}
-
 function gitCommit(ref) {
   const result = spawnSync('git', ['rev-parse', `${ref}^{}`], {
     cwd: repoRoot,
@@ -91,9 +86,12 @@ const packageDir = path.dirname(packageJsonPath)
 const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'))
 const dryRunPublishArgs = args.dryRun ? ['--dry-run', '--ignore-scripts'] : []
 const pnpmDryRunPublishArgs = args.dryRun ? [...dryRunPublishArgs, '--no-git-checks'] : []
-const prereleaseTagArgs = isPrerelease(packageJson.version) ? ['--tag', 'next'] : []
+const distTag = args.dryRun
+  ? resolveDistTag(packageJson.version)
+  : resolvePublishedDistTag(packageJson.name, packageJson.version)
+const distTagArgs = ['--tag', distTag]
 
-console.log(`[publish-current] ${packageJson.name}@${packageJson.version}${prereleaseTagArgs.length ? ` (${prereleaseTagArgs.join(' ')})` : ''}`)
+console.log(`[publish-current] ${packageJson.name}@${packageJson.version} (${distTagArgs.join(' ')})`)
 run('pnpm', ['-C', packageDir, 'run', 'build'])
 run('npm', ['config', 'get', 'registry'], packageDir)
 const published = !args.dryRun && packageVersionExists(packageJson.name, packageJson.version)
@@ -105,8 +103,8 @@ else {
   if (!args.dryRun)
     run('npm', ['whoami'], packageDir)
   if (packageDir === repoRoot)
-    run('pnpm', ['publish', '--access', 'public', ...prereleaseTagArgs, ...pnpmDryRunPublishArgs], packageDir)
+    run('pnpm', ['publish', '--access', 'public', ...distTagArgs, ...pnpmDryRunPublishArgs], packageDir)
   else
-    run('npm', ['publish', '--access', 'public', ...prereleaseTagArgs, ...dryRunPublishArgs], packageDir)
+    run('npm', ['publish', '--access', 'public', ...distTagArgs, ...dryRunPublishArgs], packageDir)
   run('node', ['scripts/tag-package.mjs', '--package-json', path.relative(repoRoot, packageJsonPath), ...(args.dryRun ? ['--dry-run', '--allow-dirty'] : ['--push'])])
 }

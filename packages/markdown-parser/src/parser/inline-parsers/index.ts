@@ -30,8 +30,8 @@ const ESCAPABLE_PUNCTUATION = new Set(['\\', '(', ')', '[', ']', '`', '$', '|', 
 const WHITESPACE_RE = /\s/u
 const ASCII_PUNCTUATION_RE = /[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/
 const UNICODE_PUNCTUATION_RE = /\p{P}/u
-const CJK_OPENING_PUNCTUATION_RE = /^[《「『【〔〖〘〚〈（［｛“‘﹁﹃﹙﹛﹝]$/u
-const CJK_CLOSING_PUNCTUATION_RE = /^[》」』】〕〗〙〛〉）］｝”’﹂﹄﹚﹜﹞]$/u
+const CJK_OPENING_PUNCTUATION_RE = /^[\x22\x27《「『【〔〖〘〚〈（［｛“‘﹁﹃﹙﹛﹝]$/u
+const CJK_CLOSING_PUNCTUATION_RE = /^[\x22\x27》」』】〕〗〙〛〉）］｝”’﹂﹄﹚﹜﹞]$/u
 
 // Helper: detect likely URLs/hrefs (autolinks). Extracted so the
 // detection logic is easy to tweak and test.

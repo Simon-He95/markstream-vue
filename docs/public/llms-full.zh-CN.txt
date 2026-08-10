@@ -6,7 +6,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-vue
 - 包名：markstream-vue
-- 版本：1.1.2-beta.2
+- 版本：1.1.2-beta.3
 - 成熟度标签：稳定
 - 框架/运行时：Vue 3、Nuxt 3、VitePress
 - 描述：Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, and Monaco.

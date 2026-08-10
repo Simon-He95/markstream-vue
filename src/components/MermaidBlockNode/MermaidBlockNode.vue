@@ -1019,7 +1019,10 @@ function updateContainerHeight(newContainerWidth?: number, options?: { force?: b
     const containerWidth
       = newContainerWidth ?? mermaidContainer.value.clientWidth
     const renderedSvgWidth = svgElement.getBoundingClientRect().width
-    const effectiveWidth = renderedSvgWidth > 0 ? renderedSvgWidth : containerWidth
+    // getBoundingClientRect() 会受 CSS transform(scale) 影响返回缩放后的视觉宽度，
+    // 在 zoom != 1 时（缩放/拖拽后折叠再展开、或渲染完成）会导致高度被错误压缩，
+    // 因此这里除以 zoom 还原为未缩放的布局宽度再计算高度。
+    const effectiveWidth = renderedSvgWidth > 0 ? renderedSvgWidth / Math.max(0.01, zoom.value) : containerWidth
     const maxHeight = resolveMaxContainerHeight()
     const newHeight = effectiveWidth * aspectRatio
     const resolvedHeight = maxHeight == null ? newHeight : Math.min(newHeight, maxHeight)

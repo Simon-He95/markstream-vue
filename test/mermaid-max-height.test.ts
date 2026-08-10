@@ -120,4 +120,53 @@ describe('mermaid block max height', () => {
 
     wrapper.unmount()
   })
+
+  it('keeps the unscaled height when zoomed out (getBoundingClientRect is transform-affected)', async () => {
+    const wrapper = mount(MermaidBlockNode as any, {
+      props: {
+        node: {
+          type: 'code_block',
+          language: 'mermaid',
+          code: 'graph LR\nA-->B\n',
+          raw: '```mermaid\ngraph LR\nA-->B\n```',
+        },
+        loading: false,
+      },
+      attachTo: document.body,
+    })
+
+    ;(wrapper.vm as any).mermaidAvailable = true
+    ;(wrapper.vm as any).showSource = false
+    await nextTick()
+
+    const content = wrapper.get('div._mermaid').element as HTMLElement
+    content.innerHTML = '<svg viewBox="0 0 100 2000"></svg>'
+    const svg = content.querySelector('svg') as SVGElement
+
+    const wrapperEl = wrapper.get('[data-mermaid-wrapper]').element as HTMLElement
+    const container = wrapperEl.parentElement as HTMLElement
+    Object.defineProperty(container, 'clientWidth', {
+      configurable: true,
+      value: 1000,
+    })
+
+    const setupState = (wrapper.vm as any).$?.setupState
+    // Simulate zoom = 0.5: browsers return the *scaled* visual width from
+    // getBoundingClientRect() (jsdom itself always reports 0, so stub it).
+    setupState.zoom = 0.5
+    Object.defineProperty(svg, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ width: 50, height: 1000 }),
+    })
+
+    setupState.updateContainerHeight()
+    await nextTick()
+
+    // Unscaled width is 50 / 0.5 = 100 -> height = 100 * (2000 / 100) = 2000px.
+    // Regression: the scaled width (50) was used directly, shrinking the
+    // content height to 1000px and cropping the diagram after collapse/expand.
+    expect(content.style.height).toBe('2000px')
+
+    wrapper.unmount()
+  })
 })

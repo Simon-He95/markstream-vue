@@ -1,3 +1,12 @@
+---
+title: ECharts integration
+description: Render ECharts charts in markstream-vue via custom components, streaming chart options progressively for AI-generated content.
+keywords:
+  - echarts integration
+  - custom components vue
+  - streaming charts
+  - ai generated charts
+---
 # ECharts integration
 
 `markstream-vue` supports rendering ECharts charts through custom components. This page covers three recommended approaches, from simplest to most advanced.

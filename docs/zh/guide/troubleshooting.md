@@ -1,3 +1,12 @@
+---
+title: 排查问题
+description: 汇总 markstream-vue 常见问题的排查方案，覆盖 CSS 顺序、peer 依赖、SSR 边界、自定义标签与流式性能等故障。
+keywords:
+  - 问题排查
+  - CSS 样式
+  - SSR 排障
+---
+
 # 排查问题
 
 如果你还不知道问题到底属于 CSS、peer 依赖、SSR，还是自定义标签接法，建议先看 [按症状排查](/zh/guide/troubleshooting-path)。

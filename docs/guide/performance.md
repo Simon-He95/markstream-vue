@@ -1,7 +1,7 @@
 ---
 title: Streaming Markdown performance tuning
 description: Improve markstream-vue performance for streaming chat UIs, large documents, enhanced code blocks, and heavy Mermaid or KaTeX content.
-ogImage: /og/performance.svg
+ogImage: /og/performance.png
 ogImageAlt: Streaming Markdown performance tuning for Markstream
 keywords:
   - streaming Markdown performance

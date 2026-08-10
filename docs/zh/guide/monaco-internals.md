@@ -1,3 +1,12 @@
+---
+title: 代码块 Runtime 内部实现
+description: 介绍 markstream-vue 代码块 Runtime 的内部实现，说明 CodeBlockNode 如何接入 stream-diffs 根 runtime 的加载与释放契约。
+keywords:
+  - 代码块 Runtime
+  - stream-diffs
+  - CodeBlockNode
+---
+
 # 代码块 Runtime 内部实现
 
 这个保留的旧 URL 说明 markstream-vue 如何把 `CodeBlockNode` 接到与框架无关的 `stream-diffs` 根 runtime。

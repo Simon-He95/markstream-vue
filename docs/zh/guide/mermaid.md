@@ -1,3 +1,12 @@
+---
+title: Mermaid 快速上手
+description: 在 markstream-vue 中快速上手 Mermaid，介绍安装与样式导入、流式渐进渲染示例以及常见问题的排障方法。
+keywords:
+  - Mermaid 快速上手
+  - 流式渲染
+  - Markdown 图表
+---
+
 # Mermaid 快速上手
 
 `markstream-vue` 支持渐进式 Mermaid 渲染：一旦语法合法就立即生成图表，后续 token 会继续完善图。以下内容介绍安装、流式示例以及常见排障。

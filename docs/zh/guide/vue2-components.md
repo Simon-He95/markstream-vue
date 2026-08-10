@@ -1,3 +1,12 @@
+---
+title: Vue 2 组件与 API
+description: 介绍 markstream-vue2 的组件与 API，涵盖 MarkdownRender、节点组件与类型导出在 Vue 2.6+ 与 2.7+ 中的用法。
+keywords:
+  - Vue 2
+  - markstream-vue2
+  - Markdown 组件
+---
+
 # Vue 2 组件与 API
 
 markstream-vue2 提供与 markstream-vue 相同强大的组件，但专为 Vue 2 构建。所有组件都兼容 Vue 2.6+（配合 `@vue/composition-api`）和 Vue 2.7+。

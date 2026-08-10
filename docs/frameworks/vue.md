@@ -1,7 +1,7 @@
 ---
 title: 'Vue streaming Markdown renderer for AI chat, SSE, WebSocket, and Nuxt'
 description: Use markstream-vue to render LLM token streams, SSE/WebSocket Markdown, incomplete code fences, Mermaid, KaTeX, and long AI responses in Vue 3, Nuxt, and VitePress.
-ogImage: /og/vue-streaming.svg
+ogImage: /og/vue-streaming.png
 ogImageAlt: Vue streaming Markdown renderer for AI chat, SSE, WebSocket, and Nuxt
 keywords:
   - markstream-vue

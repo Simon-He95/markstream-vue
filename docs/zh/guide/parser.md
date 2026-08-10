@@ -1,3 +1,12 @@
+---
+title: 解析器与 API
+description: 介绍 markstream-vue 基于 markdown-it-ts 的解析器与 API，涵盖 getMarkdown、parseMarkdownToStructure 与 token 变换钩子。
+keywords:
+  - 解析器 API
+  - markdown-it
+  - token 钩子
+---
+
 # 解析器与 API
 
 本项目基于 `markdown-it-ts`，提供了适用于流式渲染的解析器与钩子：

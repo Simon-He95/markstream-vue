@@ -1,3 +1,12 @@
+---
+title: AntV Infographic
+description: Render AntV Infographic charts in markstream-vue through custom components for streaming data-driven visualizations.
+keywords:
+  - antv infographic
+  - chart rendering markdown
+  - infographic quick start
+  - custom chart components
+---
 # AntV Infographic
 
 `markstream-vue` supports rendering [AntV Infographic](https://infographic.antv.vision/) charts.

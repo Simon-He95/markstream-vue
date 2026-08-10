@@ -1,5 +1,10 @@
 ---
+title: 指南总览
 description: 按任务组织的 markstream-vue 指南，帮助你在安装、流式渲染、VitePress 文档站、组件覆盖和迁移之间快速找到正确入口。
+keywords:
+  - 使用指南
+  - markstream-vue
+  - 文档导航
 ---
 
 # 指南

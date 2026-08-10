@@ -1,3 +1,13 @@
+---
+title: Troubleshooting
+description: Common fixes for markstream-vue covering CSS ordering, missing peer dependencies, SSR client-only wrapping, and Mermaid or KaTeX loaders.
+keywords:
+  - markdown troubleshooting
+  - css ordering issues
+  - missing peer dependencies
+  - ssr client only
+  - mermaid katex loaders
+---
 # Troubleshooting
 
 If you do not yet know whether the issue is CSS, peers, SSR, or custom-tag wiring, start with [Troubleshooting by Symptom](/guide/troubleshooting-path) first.

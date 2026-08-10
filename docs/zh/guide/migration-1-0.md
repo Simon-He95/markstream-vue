@@ -1,5 +1,10 @@
 ---
-description: 从 beta 或 rc 版本迁移到 markstream-vue 1.0 的说明。
+title: 迁移到 1.0
+description: 从 beta 或 rc 版本迁移到 markstream-vue 1.0 的说明，涵盖稳定 API 范围、CSS 引入与安全默认值升级。
+keywords:
+  - 迁移指南
+  - 1.0 升级
+  - API 更新
 ---
 
 # 迁移到 1.0

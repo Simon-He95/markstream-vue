@@ -1,3 +1,12 @@
+---
+title: AntV Infographic 图表集成
+description: 在 markstream-vue 中接入 AntV Infographic 图表，介绍安装依赖、loader 配置与流式 infographic 代码块的渲染方式。
+keywords:
+  - AntV Infographic
+  - 图表渲染
+  - 流式图表
+---
+
 # AntV Infographic
 
 `markstream-vue` 支持渲染 [AntV Infographic](https://infographic.antv.vision/) 图表。

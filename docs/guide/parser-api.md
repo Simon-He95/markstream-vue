@@ -1,5 +1,11 @@
 ---
+title: Parser API Deep Dive
 description: Use the parser API to hook into tokens, AST transforms, and markdown-it customization before markstream-vue renders nodes.
+keywords:
+  - markdown parser api
+  - ast transforms
+  - token hooks
+  - markdown-it customization
 ---
 
 # Parser — API Deep Dive

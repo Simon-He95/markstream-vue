@@ -1,6 +1,10 @@
 ---
 title: 多框架快速开始
 description: 为 Vue、React、Svelte 或 Angular 安装正确的 Markstream 渲染器，并渲染第一段流式 Markdown。
+keywords:
+  - 快速开始
+  - 多框架
+  - 流式 Markdown
 ---
 
 # 多框架快速开始

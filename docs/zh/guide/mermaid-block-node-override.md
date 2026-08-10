@@ -1,3 +1,12 @@
+---
+title: 覆盖 MermaidBlockNode
+description: 通过 setCustomComponents 在 MarkdownRender 中覆盖 MermaidBlockNode，演示拦截 export、copy 事件并自定义 mermaid 渲染器行为。
+keywords:
+  - MermaidBlockNode
+  - 自定义组件
+  - 组件覆盖
+---
+
 # 在 MarkdownRender 中覆盖 MermaidBlockNode（示例）
 
 如果你想在 `MarkdownRender` 中完全替换 `mermaid` 渲染器（例如在 `playground-demo`），可以使用 `setCustomComponents`，为 `mermaid` 提供一个 programmatic 的渲染函数，并传入自定义事件处理器来拦截组件的默认行为。

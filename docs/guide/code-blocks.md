@@ -1,3 +1,12 @@
+---
+title: Code Block Rendering
+description: How markstream-vue renders code blocks — enhanced diff surface, Shiki highlighting, or plain pre/code fallback depending on installed peers.
+keywords:
+  - code block rendering
+  - streaming code blocks
+  - shiki highlighting
+  - markdown code renderer
+---
 # Code Block Rendering
 
 ## Overview

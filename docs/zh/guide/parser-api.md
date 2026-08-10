@@ -1,5 +1,10 @@
 ---
+title: 解析器 API 详解
 description: 使用解析器 API 在 markstream-vue 渲染节点之前接入 token 钩子、AST 变换与 markdown-it 定制。
+keywords:
+  - 解析器 API
+  - token 钩子
+  - AST 变换
 ---
 
 # 解析器 — API 详解

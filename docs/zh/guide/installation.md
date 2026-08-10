@@ -1,5 +1,10 @@
 ---
+title: 安装
 description: 按文档站、AI 聊天、Mermaid、KaTeX、Monaco 和大文档场景选择正确的 markstream-vue 安装与 peer 依赖组合。
+keywords:
+  - 安装
+  - peer 依赖
+  - markstream-vue
 ---
 
 # 安装

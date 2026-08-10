@@ -1,5 +1,11 @@
 ---
+title: Custom Tags & Advanced Components
 description: Add trusted custom tags such as thinking and map them to advanced markstream-vue components without rewriting the parser.
+keywords:
+  - custom markdown tags
+  - custom components
+  - trusted parsing tags
+  - vue markdown components
 ---
 
 # Custom Tags & Advanced Components

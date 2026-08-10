@@ -1,5 +1,10 @@
 ---
+title: VitePress 集成
 description: 将 markstream-vue 接入 VitePress 与文档站，覆盖 content 模式、enhanceApp 注册、可信标签接法与 CSS 顺序。
+keywords:
+  - VitePress
+  - 文档站
+  - CSS 顺序
 ---
 
 # 文档站与 VitePress 集成

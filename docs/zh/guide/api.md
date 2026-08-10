@@ -1,5 +1,10 @@
 ---
+title: API 参考
 description: 查阅 markstream-vue 的底层 API，包括解析器工具、渲染流程选择、作用域覆盖与 AST 级接入能力。
+keywords:
+  - API 参考
+  - 解析器 API
+  - AST 接入
 ---
 
 # API 参考

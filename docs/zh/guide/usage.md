@@ -1,5 +1,10 @@
 ---
+title: 使用示例与 API
 description: 在 content 与 nodes 之间做出正确选择，并理解 markstream-vue 在 Vite、VitePress、Nuxt 与流式界面中的接入方式。
+keywords:
+  - 使用示例
+  - 接入方式
+  - content 与 nodes
 ---
 
 # 使用示例与 API

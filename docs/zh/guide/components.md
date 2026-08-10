@@ -1,5 +1,10 @@
 ---
+title: 渲染器与节点组件
 description: 快速查阅 MarkdownRender、CodeBlockNode、MermaidBlockNode、ImageNode、LinkNode 等 markstream-vue 导出组件。
+keywords:
+  - MarkdownRender
+  - 节点组件
+  - 组件参考
 ---
 
 # 渲染器与节点组件

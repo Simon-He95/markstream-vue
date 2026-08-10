@@ -1,3 +1,13 @@
+---
+title: 高级解析与低层自定义
+description: 深入了解 markstream-vue 的高级解析能力与低层自定义，涵盖 token 钩子、AST 变换、markdown-it 定制与解析器 API。
+keywords:
+  - 高级解析
+  - 低层自定义
+  - markdown-it 定制
+  - AST 变换
+---
+
 # 高级解析与低层自定义
 
 这页面向更底层的解析定制：token 变换、AST 后处理，以及自定义节点管线。

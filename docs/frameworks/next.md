@@ -1,6 +1,12 @@
 ---
 title: 'Next.js streaming Markdown renderer for AI chat'
 description: Use markstream-react in Next.js App Router or Pages Router for AI chat streaming Markdown, SSE/WebSocket output, SSR-first rendering, and server-only Markdown rendering.
+keywords:
+  - next.js streaming markdown
+  - next.js ai chat markdown
+  - app router markdown
+  - pages router markdown
+  - server side rendering markdown
 softwareName: markstream-react
 softwarePackage: markstream-react
 npmPackage: markstream-react

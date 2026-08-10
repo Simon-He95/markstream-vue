@@ -1,4 +1,10 @@
+---
+title: Nuxt 3 SSR 用法示例
 description: 在 Nuxt 3 SSR 中使用 markstream-vue，获得服务端 HTML、稳定 fallback，以及重节点的客户端增强。
+keywords:
+  - Nuxt 3 SSR
+  - 服务端渲染
+  - 流式 Markdown
 ---
 
 # Nuxt 3 SSR 用法示例

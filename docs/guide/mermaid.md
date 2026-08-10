@@ -1,3 +1,12 @@
+---
+title: Mermaid quick start
+description: Stream progressive Mermaid diagrams in markstream-vue with setup, a streaming example, and common fixes for diagram rendering.
+keywords:
+  - mermaid quick start
+  - progressive mermaid diagrams
+  - mermaid markdown streaming
+  - mermaid rendering fixes
+---
 # Mermaid quick start
 
 Mermaid diagrams stream progressively in `markstream-vue`: as soon as the syntax becomes valid the chart renders, then refines as more tokens arrive. This page covers setup, a streaming example, and common fixes.

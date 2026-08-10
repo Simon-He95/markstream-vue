@@ -1,7 +1,7 @@
 ---
 title: AI chat streaming Markdown — use cases and patterns
 description: Render streaming Markdown from LLMs in AI chat UIs using Markstream. Patterns for token-by-token output, SSE, WebSocket, and batched rendering across Vue, React, Svelte, and Angular.
-ogImage: /og/ai-chat-streaming.svg
+ogImage: /og/ai-chat-streaming.png
 ogImageAlt: AI chat streaming Markdown patterns for LLM token output
 keywords:
   - AI chat streaming Markdown

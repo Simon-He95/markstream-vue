@@ -1,5 +1,11 @@
 ---
+title: Migrating to 1.0
 description: Migration notes for moving from beta or rc releases to markstream-vue 1.0.
+keywords:
+  - markstream 1.0 migration
+  - beta to 1.0 upgrade
+  - vue renderer migration
+  - breaking changes
 ---
 
 # Migrating to 1.0

@@ -1,5 +1,12 @@
 ---
+title: Showcase
 description: Showcase demos for markstream-vue 1.0 across streaming chat, long documents, code review, diagrams, custom components, and safe repro workflows.
+keywords:
+  - markstream showcase
+  - streaming chat demo
+  - long document rendering
+  - custom component demo
+  - code review markdown
 ---
 
 # Showcase

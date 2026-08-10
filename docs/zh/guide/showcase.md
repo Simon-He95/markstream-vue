@@ -1,5 +1,10 @@
 ---
+title: Showcase 展示
 description: markstream-vue 1.0 展示入口，覆盖流式聊天、长文档、代码评审、图表、自定义组件和安全复现工作流。
+keywords:
+  - Showcase
+  - 示例展示
+  - 流式聊天
 ---
 
 # Showcase

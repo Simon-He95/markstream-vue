@@ -1,3 +1,12 @@
+---
+title: 示例
+description: Markstream 中文文档的使用示例合集，展示流式 Markdown、代码块、图表与自定义组件在各种场景中的实际接入方式。
+keywords:
+  - Markdown 示例
+  - 流式渲染示例
+  - 组件用例
+---
+
 # 示例
 
 简明示例；交互演示请查看 `playground`。以下为中文示例并附带注释：

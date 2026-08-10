@@ -1,5 +1,11 @@
 ---
+title: Tailwind Integration & Style Ordering
 description: Fix Tailwind, shadcn, and CSS ordering issues when importing markstream-vue styles into a controlled layer.
+keywords:
+  - tailwind integration markdown
+  - css ordering
+  - shadcn styling
+  - controlled style layers
 ---
 
 # Tailwind Integration & Style Ordering

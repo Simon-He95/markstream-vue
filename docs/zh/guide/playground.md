@@ -1,5 +1,10 @@
 ---
+title: Playground 示例
 description: 使用本地和在线 playground 快速复现 markstream-vue 渲染问题、对比框架接入，并验证修复结果。
+keywords:
+  - Playground
+  - 示例演示
+  - 本地调试
 ---
 
 # Playground（示例演示）

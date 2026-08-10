@@ -1,3 +1,12 @@
+---
+title: Legacy Builds & iOS Compatibility
+description: How to ship markstream-vue legacy builds for older browsers and iOS Safari, covering Vite plugin-legacy, Webpack dual builds, polyfills, and RegExp engine limits that polyfills cannot fix.
+keywords:
+  - legacy builds markstream
+  - iOS Safari compatibility
+  - Vite plugin-legacy
+  - Webpack polyfills
+---
 # Legacy build & compatibility guide (Vite / Webpack)
 
 Purpose

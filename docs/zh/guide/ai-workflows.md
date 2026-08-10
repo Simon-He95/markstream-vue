@@ -1,3 +1,12 @@
+---
+title: AI / Skills 工作流
+description: 介绍 markstream-vue 在 AI 应用与 Skills 工作流中的定位，说明如何利用流式 Markdown 渲染处理 AI 工具输出与结构化内容。
+keywords:
+  - AI 工作流
+  - Skills
+  - 流式 Markdown 渲染
+---
+
 # AI / Skills 工作流
 
 如果你会用 Codex、Cursor、Claude Code、ChatGPT 之类的编码助手来接入 markstream，这页的目标就是帮你把任务描述得更准确，少走弯路。

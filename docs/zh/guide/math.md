@@ -1,3 +1,12 @@
+---
+title: 数学公式（KaTeX）
+description: 在 markstream-vue 中使用 KaTeX 渲染数学公式，介绍安装 katex、导入样式以及 CDN 全局对象与 worker 的配置方法。
+keywords:
+  - KaTeX
+  - 数学公式
+  - 流式渲染
+---
+
 # 数学公式（KaTeX）
 
 `markstream-vue` 在检测到 `katex` 时使用 KaTeX 渲染数学。KaTeX 为可选 peer 依赖，需单独安装。

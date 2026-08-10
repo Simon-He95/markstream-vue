@@ -1,3 +1,12 @@
+---
+title: Why use markstream-vue
+description: Reasons to choose markstream-vue for real-time, AI-driven, and large-document scenarios where static Markdown pipelines cause lag.
+keywords:
+  - why markstream
+  - progressive mermaid
+  - streaming diff code blocks
+  - large document rendering
+---
 # Why use markstream-vue
 
 - Progressive Mermaid: diagrams render incrementally so users see results earlier.

@@ -1,3 +1,12 @@
+---
+title: Legacy 构建与兼容性指南
+description: 说明如何使用 legacy 构建提升 markstream-vue 在旧浏览器（如较低版本 iOS、Safari）中的兼容性及源码层的修复策略。
+keywords:
+  - legacy 构建
+  - 浏览器兼容
+  - Vite 兼容
+---
+
 # Legacy 构建与兼容性指南（Vite / Webpack）
 
 目的

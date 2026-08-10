@@ -1,5 +1,12 @@
 ---
+title: Guide
 description: Task-first guide for choosing the right Markstream path across framework entry points, installation, streaming usage, component overrides, and migration.
+keywords:
+  - markstream guide
+  - markdown installation
+  - streaming markdown usage
+  - component overrides
+  - framework entry points
 ---
 
 # Guide

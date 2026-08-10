@@ -1,5 +1,10 @@
 ---
+title: 覆盖内置组件
 description: 用带作用域的方式覆盖 markstream-vue 的 image、code_block、mermaid、link 等内置组件，避免污染全局渲染。
+keywords:
+  - 组件覆盖
+  - setCustomComponents
+  - 作用域隔离
 ---
 
 # 覆盖内置组件

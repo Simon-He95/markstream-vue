@@ -1,5 +1,11 @@
 ---
+title: Nuxt 3 SSR usage for streaming Markdown
 description: Use markstream-vue in Nuxt SSR with server-rendered HTML, stable fallbacks, and client enhancement for rich nodes.
+keywords:
+  - nuxt 3 ssr markdown
+  - server rendered markdown
+  - client enhancement nuxt
+  - markdown ssr fallback
 ---
 
 # Nuxt 3 SSR usage (example)

@@ -1,6 +1,12 @@
 ---
 title: Markstream vs marked and markdown-it for AI streaming Markdown
 description: Compare Markstream with marked and markdown-it for streaming AI Markdown. Traditional parsers are best for static content — Markstream is designed for LLM token streams and progressive rendering.
+keywords:
+  - marked vs markstream
+  - markdown-it vs markstream
+  - streaming ai markdown
+  - traditional markdown parser
+  - llm token stream rendering
 lastVerified: '2026-06-12'
 faq:
   - question: Is Markstream a replacement for marked or markdown-it?

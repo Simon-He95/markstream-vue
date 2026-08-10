@@ -18,6 +18,10 @@ faq:
     answer: 支持。在 client-side 流式区域传入 content、final 和流式渲染选项即可。
   - question: Nuxt worker 初始化应该放在哪里？
     answer: Mermaid 和 KaTeX worker 应放在 client plugin 或其它浏览器边界里配置。
+keywords:
+  - Nuxt
+  - SSR Markdown
+  - AI 聊天流式
 ---
 
 # Nuxt 流式 Markdown 渲染器

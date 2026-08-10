@@ -1,5 +1,11 @@
 ---
+title: 2.0.0 Roadmap
 description: markstream-vue 2.0.0 roadmap and task checklist. Tracks the breaking changes, release validation, runtime verification, and leftover cleanup planned for 2.0.
+keywords:
+  - markstream 2.0 roadmap
+  - breaking changes
+  - run-time verification
+  - release validation
 ---
 
 # 2.0.0 Roadmap

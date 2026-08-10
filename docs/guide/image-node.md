@@ -1,3 +1,12 @@
+---
+title: ImageNode custom preview
+description: Handle image preview and lightbox behavior in markstream-vue using the ImageNode click event without replacing the whole renderer.
+keywords:
+  - imagenode component
+  - image preview
+  - lightbox markdown
+  - image click event
+---
 # ImageNode — Custom preview handling
 
 `ImageNode` renders images and emits events for user interactions. We expose a `click` event on images so you can take over the click behavior (for example to open a custom image preview / lightbox) without replacing the whole renderer.

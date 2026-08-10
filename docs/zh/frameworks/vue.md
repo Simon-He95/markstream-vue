@@ -1,7 +1,7 @@
 ---
 title: Vue 流式 Markdown 渲染器
 description: 使用 markstream-vue 在 Vue 3、Nuxt、VitePress 和 AI 聊天界面中渲染流式 Markdown、SSE/WebSocket 输出、Mermaid、KaTeX 和长文档。
-ogImage: /og/vue-streaming.svg
+ogImage: /og/vue-streaming.png
 ogImageAlt: Vue 流式 Markdown 渲染器，适用于 AI 聊天、SSE、WebSocket 和 Nuxt
 keywords:
   - markstream-vue

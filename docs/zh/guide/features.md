@@ -1,3 +1,12 @@
+---
+title: 特性
+description: 概览 markstream-vue 的核心特性，包括渐进式 Mermaid、流式 diff 代码块、大文档优化与多框架支持等能力。
+keywords:
+  - 特性
+  - 流式 Markdown
+  - 渐进式渲染
+---
+
 # 特性
 
 - ⚡ **超高性能**：针对流式场景优化，最小化重渲染和 DOM 更新

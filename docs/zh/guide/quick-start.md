@@ -1,5 +1,10 @@
 ---
+title: Vue 快速开始
 description: 用最小 Vue 示例快速跑起 markstream-vue，并理解显式 CSS 引入与下一步该看哪些页面。
+keywords:
+  - Vue 快速开始
+  - markstream-vue
+  - 安装
 ---
 
 # Vue 快速开始

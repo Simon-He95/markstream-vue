@@ -1,3 +1,12 @@
+---
+title: Compared to traditional Markdown renderers
+description: How Markstream's streaming-first rendering differs from classic static Markdown renderers for AI outputs, progressive diagrams, and diff views.
+keywords:
+  - traditional markdown renderer
+  - streaming-first rendering
+  - progressive diagrams
+  - markdown diff views
+---
 # Compared to traditional Markdown renderers
 
 Traditional Markdown renderers typically convert a finished Markdown string into a static HTML tree. This library is designed for streaming and interactive workflows and therefore provides capabilities you won't find in a classic renderer:

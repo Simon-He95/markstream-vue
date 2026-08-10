@@ -338,7 +338,7 @@ export function PreCodeNode({ node, className, diffInline, showLineNumbers, styl
   const lineNumberLayoutStyle = useMemo<OctaneStyle | undefined>(() => {
     if (showLineNumbers !== true || isDiffPreview)
       return undefined
-    const width = `${Math.max(4, String(codeLineCount).length)}ch`
+    const width = `${Math.max(2, String(codeLineCount).length)}ch`
     return {
       '--markstream-pre-line-number-width': width,
       '--markstream-code-padding-left': 'calc(var(--markstream-pre-line-number-padding-left, 2ch) + var(--markstream-pre-line-number-width, 2ch) + var(--markstream-pre-line-number-padding-right, 1ch) + var(--markstream-pre-line-number-separator-width, 2px) + var(--markstream-pre-line-number-gap-to-code, 1ch))',

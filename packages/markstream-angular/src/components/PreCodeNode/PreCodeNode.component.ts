@@ -106,7 +106,7 @@ export class PreCodeNodeComponent {
       return null
 
     const maximumLineNumber = this.codeLineCount
-    const width = `${Math.max(4, String(maximumLineNumber).length)}ch`
+    const width = `${Math.max(2, String(maximumLineNumber).length)}ch`
     return {
       '--markstream-pre-line-number-width': width,
       '--markstream-pre-diff-line-number-width': width,

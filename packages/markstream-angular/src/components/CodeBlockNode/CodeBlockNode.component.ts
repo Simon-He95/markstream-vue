@@ -735,7 +735,7 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
         // The Angular shell already owns the language/file header. Keep the
         // enhanced surface headerless so it matches the Vue 3 handoff contract.
         disableFileHeader: true,
-        unsafeCSS: `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }
+unsafeCSS: `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }
 ${configuredUnsafeCSS}`.trim(),
       }
 

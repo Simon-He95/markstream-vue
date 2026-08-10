@@ -30,7 +30,7 @@
   let lineNumbersText = $derived(buildLineNumbersText(lineCount))
   let lineNumberLayoutStyle = $derived(
     showLineGutter
-      ? `--markstream-pre-line-number-width: ${Math.max(4, String(lineCount).length)}ch; --markstream-pre-diff-line-number-width: ${Math.max(4, String(lineCount).length)}ch; --markstream-code-padding-left: calc(var(--markstream-pre-line-number-padding-left, 2ch) + var(--markstream-pre-line-number-width, 2ch) + var(--markstream-pre-line-number-padding-right, 1ch) + var(--markstream-pre-line-number-separator-width, 2px) + var(--markstream-pre-line-number-gap-to-code, 1ch));`
+      ? `--markstream-pre-line-number-width: ${Math.max(2, String(lineCount).length)}ch; --markstream-pre-diff-line-number-width: ${Math.max(2, String(lineCount).length)}ch; --markstream-code-padding-left: calc(var(--markstream-pre-line-number-padding-left, 2ch) + var(--markstream-pre-line-number-width, 2ch) + var(--markstream-pre-line-number-padding-right, 1ch) + var(--markstream-pre-line-number-separator-width, 2px) + var(--markstream-pre-line-number-gap-to-code, 1ch));`
       : '',
   )
   let mergedStyle = $derived([lineNumberLayoutStyle, style].filter(Boolean).join(' '))

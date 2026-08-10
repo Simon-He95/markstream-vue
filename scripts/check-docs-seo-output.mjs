@@ -10,7 +10,7 @@ const distDir = resolve(docsDir, '.vitepress/dist')
 const newHost = 'https://markstream.simonhe.me'
 const oldHost = 'https://markstream-vue-docs.simonhe.me'
 const oldHostRedirect = `${oldHost}/*  ${newHost}/:splat  301`
-const docsOgImageUrl = docsAssetUrl('/og-image.svg')
+const docsOgImageUrl = docsAssetUrl('/og-image.png')
 const docsOgImageAlt = 'Markstream streaming Markdown renderer documentation overview'
 const isMain = process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 
@@ -619,6 +619,9 @@ if (isMain) {
 
     if (ogImage && !ogImageAlt)
       failures.push(`${relativePath} has ogImage but is missing ogImageAlt`)
+
+    if (ogImage && ogImage.toLowerCase().endsWith('.svg'))
+      failures.push(`${relativePath} ogImage must be a raster image (PNG/JPG/WebP) — SVG is not supported by social crawlers: ${ogImage}`)
 
     if (hasFrontmatterKey(frontmatter, 'faq')) {
       checks.push(['FAQPage', 'structured data'])

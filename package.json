@@ -191,6 +191,7 @@
     "docs:sync-zh": "node scripts/sync-zh-docs.mjs",
     "docs:check-zh": "node scripts/check-zh-parity.mjs",
     "docs:seo:source": "node scripts/check-docs-frontmatter.mjs",
+    "docs:og:render": "node scripts/render-og-images.mjs",
     "docs:llms:generate": "node scripts/generate-llms-full.mjs",
     "docs:llms:check": "pnpm run docs:llms:generate && git diff --exit-code -- docs/public/llms.txt docs/public/llms.zh-CN.txt docs/public/llms-full.txt docs/public/llms-full.zh-CN.txt docs/public/llms-routing.txt",
     "docs:generate-llms": "pnpm run docs:llms:generate",

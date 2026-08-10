@@ -644,7 +644,7 @@ async function renderMonaco(
     const originalPre = pre.cloneNode(true) as HTMLElement
     pre.replaceWith(shell.wrapper)
 
-const configuredUnsafeCSS = typeof options.monacoOptions?.unsafeCSS === 'string'
+    const configuredUnsafeCSS = typeof options.monacoOptions?.unsafeCSS === 'string'
       ? options.monacoOptions.unsafeCSS
       : ''
     const runtimeUnsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }

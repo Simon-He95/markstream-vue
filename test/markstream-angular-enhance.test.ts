@@ -149,7 +149,7 @@ describe('markstream-angular enhanceRenderedHtml', () => {
     expect(monacoUseMonacoOptions[0]).toMatchObject({
       disableFileHeader: true,
     })
-    expect(monacoUseMonacoOptions[0]?.unsafeCSS).toContain('--diffs-min-number-column-width-default: 4ch !important')
+    expect(monacoUseMonacoOptions[0]?.unsafeCSS).toContain('--diffs-min-number-column-width-default: 2ch !important')
     expect(monacoUseMonacoOptions[0]?.unsafeCSS).toContain('--consumer-angular-gutter: 1')
     expect(String(monacoUseMonacoOptions[0]?.unsafeCSS).indexOf('--diffs-min-number-column-width-default'))
       .toBeLessThan(String(monacoUseMonacoOptions[0]?.unsafeCSS).indexOf('--consumer-angular-gutter'))

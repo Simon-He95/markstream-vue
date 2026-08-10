@@ -3663,7 +3663,7 @@ function buildStreamDiffsRuntimeOptions() {
   const configuredUnsafeCSS = typeof nextOptions.unsafeCSS === 'string'
     ? nextOptions.unsafeCSS
     : ''
-  nextOptions.unsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }
+  nextOptions.unsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }
 ${configuredUnsafeCSS}`.trim()
 
   if (isDiff.value) {

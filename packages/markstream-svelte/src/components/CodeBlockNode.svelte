@@ -371,7 +371,7 @@
     }
     const padding = getCodePadding()
     const configuredUnsafeCSS = typeof raw.unsafeCSS === 'string' ? raw.unsafeCSS : ''
-    const unsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }
+    const unsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }
 ${configuredUnsafeCSS}`.trim()
     const finalOptions = {
       MAX_HEIGHT: maxHeight,

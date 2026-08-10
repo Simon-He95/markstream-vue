@@ -95,7 +95,7 @@ const lineNumberLayoutStyle = computed(() => {
   if (props.showLineNumbers !== true || isDiffPreview.value)
     return undefined
   const maximumLineNumber = codeLineCount.value
-  const width = `${Math.max(4, String(maximumLineNumber).length)}ch`
+  const width = `${Math.max(2, String(maximumLineNumber).length)}ch`
   return {
     '--markstream-pre-line-number-width': width,
     '--markstream-code-padding-left': 'calc(var(--markstream-pre-line-number-padding-left, 2ch) + var(--markstream-pre-line-number-width, 2ch) + var(--markstream-pre-line-number-padding-right, 1ch) + var(--markstream-pre-line-number-separator-width, 2px) + var(--markstream-pre-line-number-gap-to-code, 1ch))',

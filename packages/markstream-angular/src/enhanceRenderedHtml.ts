@@ -642,7 +642,7 @@ async function renderCodeBlocks(
     const originalPre = pre.cloneNode(true) as HTMLElement
     pre.replaceWith(shell.wrapper)
 
-    const runtimeUnsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 4ch !important; }`
+    const runtimeUnsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }`
     const helpers = monacoModule.useMonaco({
       themes: ['vitesse-dark', 'vitesse-light'],
       languages: Array.from(new Set([language, 'plaintext'])),

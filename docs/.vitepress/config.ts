@@ -6,7 +6,7 @@ import { transformerTwoslash } from '@shikijs/vitepress-twoslash'
 import { defineConfig } from 'vitepress'
 
 const docsSiteUrl = process.env.VITEPRESS_SITE_URL || 'https://markstream.simonhe.me'
-const docsOgImageUrl = getDocsAbsoluteAssetUrl('/og-image.svg')
+const docsOgImageUrl = getDocsAbsoluteAssetUrl('/og-image.png')
 const docsOgImageAlt = 'Markstream streaming Markdown renderer documentation overview'
 const docsDefaultDescription = 'Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nuxt, and Next.js'
 const githubRepoUrl = 'https://github.com/Simon-He95/markstream-vue'
@@ -270,6 +270,19 @@ const chineseGuideSidebar = [
       { text: 'react-markdown 对比', link: '/zh/compare/react-markdown' },
       { text: 'Streamdown 对比', link: '/zh/compare/streamdown' },
       { text: 'marked / markdown-it 对比', link: '/zh/compare/marked-markdown-it' },
+    ],
+  },
+  {
+    text: '使用场景',
+    collapsed: true,
+    items: [
+      { text: '使用场景总览', link: '/zh/use-cases/' },
+      { text: 'Vue AI 聊天 Markdown', link: '/zh/use-cases/vue-ai-chat-markdown-renderer' },
+      { text: 'LLM token 流 Markdown', link: '/zh/use-cases/llm-token-stream-markdown' },
+      { text: '未闭合 Markdown 渲染', link: '/zh/use-cases/incomplete-markdown-renderer' },
+      { text: '流式代码块', link: '/zh/use-cases/streaming-code-blocks' },
+      { text: '流式 Mermaid 与 KaTeX', link: '/zh/use-cases/streaming-mermaid-katex' },
+      { text: '长 AI 回答渲染', link: '/zh/use-cases/long-ai-responses' },
     ],
   },
   {

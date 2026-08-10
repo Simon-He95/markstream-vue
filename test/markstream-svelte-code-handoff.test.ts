@@ -20,8 +20,8 @@ describe('markstream-svelte code block handoff geometry', () => {
     expect(codeBlockSource).toContain('fontFamily: getCodeFontFamily()')
   })
 
-  it('reserves the fallback four-character line-number column in stream-diffs', () => {
-    const gutterRule = '--diffs-min-number-column-width-default: 4ch !important'
+  it('reserves the fallback two-character line-number column in stream-diffs', () => {
+    const gutterRule = '--diffs-min-number-column-width-default: 2ch !important'
     expect(codeBlockSource).toContain(gutterRule)
     expect(codeBlockSource.indexOf(gutterRule)).toBeLessThan(
       codeBlockSource.lastIndexOf('configuredUnsafeCSS'),

@@ -1,3 +1,12 @@
+---
+title: ECharts 集成
+description: 介绍如何在 markstream-vue 中集成 ECharts 图表，包括通过自定义 CodeBlock 组件解析 JSON 配置并渲染图表的方法。
+keywords:
+  - ECharts
+  - 自定义组件
+  - 图表渲染
+---
+
 # ECharts 集成
 
 `markstream-vue` 支持通过自定义组件渲染 ECharts 图表。本文介绍三种推荐方案，从最简单到最高级。

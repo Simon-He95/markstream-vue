@@ -1,7 +1,7 @@
 ---
 title: React 流式 Markdown 渲染器
 description: 使用 markstream-react 在 React、Next.js、Remix 和 AI 聊天界面中渲染流式 Markdown、SSE/WebSocket 输出、Mermaid、KaTeX 和长回答。
-ogImage: /og/react-streaming.svg
+ogImage: /og/react-streaming.png
 ogImageAlt: React 流式 Markdown 渲染器，适用于 AI 聊天和 Next.js
 softwareName: markstream-react
 softwarePackage: markstream-react
@@ -21,6 +21,10 @@ faq:
     answer: 选择 React 流式 Markdown 渲染器时，应优先对比 markstream-react 和 Streamdown；react-markdown 更适合作为短静态 Markdown 或 remark/rehype 链路的基线。
   - question: markstream-react 支持 Next.js SSR 吗？
     answer: 支持。SSR-first 用 markstream-react/next，server-only 用 markstream-react/server，实时流式区域在 client component 中使用 root package。
+keywords:
+  - React
+  - markstream-react
+  - SSE 流式 Markdown
 ---
 
 # React 流式 Markdown 渲染器

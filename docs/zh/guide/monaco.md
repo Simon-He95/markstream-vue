@@ -1,3 +1,12 @@
+---
+title: 代码块 Runtime
+description: 说明 markstream-vue 的代码块 Runtime，介绍 CodeBlockNode 使用的可选 stream-diffs runtime 及 stream-monaco 自动回退机制。
+keywords:
+  - 代码块 Runtime
+  - stream-diffs
+  - Monaco
+---
+
 # 代码块 Runtime
 
 这个保留的旧 URL 现在说明 `CodeBlockNode` 使用的可选 `stream-diffs` runtime。公共 option 的 TypeScript 名称仍保留 `Monaco`，用于兼容已有接入；默认增强 surface 已不再是 Monaco editor。

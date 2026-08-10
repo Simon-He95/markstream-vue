@@ -1,5 +1,10 @@
 ---
+title: 自定义标签与高级组件
 description: 为 thinking 等可信标签接入自定义组件，在不改解析器的前提下扩展 markstream-vue 的高级渲染能力。
+keywords:
+  - 自定义组件
+  - thinking 标签
+  - 高级渲染
 ---
 
 # 自定义标签与高级组件

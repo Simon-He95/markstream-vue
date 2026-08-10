@@ -1,5 +1,12 @@
 ---
+title: API Reference
 description: Reference the low-level markstream-vue API for parser helpers, render-pipeline decisions, scoped overrides, and AST-aware integration points.
+keywords:
+  - markstream api reference
+  - parser helpers
+  - render pipeline
+  - scoped overrides
+  - ast transforms
 ---
 
 # API Reference

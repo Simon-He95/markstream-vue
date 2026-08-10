@@ -1,3 +1,12 @@
+---
+title: Mermaid export demo
+description: A runnable playground demo showing how to intercept the Mermaid export event and upload the serialized SVG from MermaidBlockNode.
+keywords:
+  - mermaid export demo
+  - intercept export event
+  - svg upload
+  - mermaidblocknode export
+---
 # Mermaid export demo
 
 This repository includes a runnable playground demo that shows how to intercept the export event from `MermaidBlockNode` and upload the serialized SVG (ev.svgString).

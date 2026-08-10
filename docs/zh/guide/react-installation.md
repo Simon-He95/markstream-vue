@@ -1,3 +1,12 @@
+---
+title: React 安装
+description: 在 React 应用中安装 markstream-react，介绍通过 pnpm、npm 与 yarn 的安装方式，以及 Shiki 等可选 peer 依赖的配置。
+keywords:
+  - React 安装
+  - markstream-react
+  - 依赖安装
+---
+
 # React 安装
 
 使用 pnpm、npm 或 yarn 安装 markstream-react。

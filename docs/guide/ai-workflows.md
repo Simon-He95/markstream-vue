@@ -1,3 +1,12 @@
+---
+title: AI / Skills Workflows
+description: Copyable prompts, rollout checklists, and repository skills for adopting markstream faster with Codex, Cursor, Claude Code, or ChatGPT.
+keywords:
+  - ai workflows markdown
+  - coding assistant prompts
+  - copyable prompts
+  - markstream skill checklist
+---
 # AI / Skills Workflows
 
 If you use Codex, Cursor, Claude Code, ChatGPT, or another coding assistant to adopt markstream, the fastest way to get useful output is to give the tool the right constraints up front.

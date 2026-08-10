@@ -1,5 +1,10 @@
 ---
+title: Props 与选项
 description: 通过 MarkdownRender 的 props 精细控制流式渲染、暗色主题、自定义标签、解析选项与重节点行为。
+keywords:
+  - Props
+  - 渲染选项
+  - MarkdownRender
 ---
 
 # 组件 Props 与选项

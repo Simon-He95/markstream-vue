@@ -1,3 +1,12 @@
+---
+title: react-markdown 迁移 Cookbook
+description: react-markdown 迁移 Cookbook，提供 code 组件替换、remark-gfm、rehype-raw 与 urlTransform 等常见场景的 before/after 示例。
+keywords:
+  - react-markdown 迁移
+  - Markdown 迁移
+  - 迁移示例
+---
+
 # react-markdown 迁移 Cookbook
 
 这一页是对主迁移指南 [从 react-markdown 迁移](/zh/guide/react-markdown-migration) 的补充，专门放常见场景的 before / after 示例。

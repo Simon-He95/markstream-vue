@@ -1,3 +1,12 @@
+---
+title: Parser & API
+description: Overview of the markstream-vue streaming-friendly parser built on markdown-it-ts, covering getMarkdown and parseMarkdownToStructure helpers.
+keywords:
+  - markdown parser
+  - markdown-it-ts
+  - parse markdown to structure
+  - getmarkdown helper
+---
 # Parser & API
 
 markstream-vue builds on top of `markdown-it-ts` and exposes a streaming-friendly parser.

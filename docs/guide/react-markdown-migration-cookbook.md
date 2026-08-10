@@ -1,3 +1,12 @@
+---
+title: react-markdown Migration Cookbook
+description: Focused before/after examples for migrating react-markdown apps to markstream-react, covering components.code and remark-gfm changes.
+keywords:
+  - react-markdown migration
+  - migration cookbook
+  - before after examples
+  - remark-gfm replacement
+---
 # react-markdown Migration Cookbook
 
 This page complements the main [migration guide](/guide/react-markdown-migration) with focused before/after examples.

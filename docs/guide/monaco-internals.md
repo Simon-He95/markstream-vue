@@ -1,3 +1,12 @@
+---
+title: Code Block Runtime Internals
+description: How markstream-vue connects CodeBlockNode to the framework-agnostic stream-diffs root runtime through cached dynamic imports.
+keywords:
+  - code block internals
+  - stream-diffs runtime
+  - dynamic import adapter
+  - framework-agnostic surface
+---
 # Code Block Runtime Internals
 
 This legacy route describes how markstream-vue connects `CodeBlockNode` to the framework-agnostic `stream-diffs` root runtime.

@@ -1,3 +1,12 @@
+---
+title: CodeBlockNode 组件
+description: 详解 markstream-vue 的 CodeBlockNode 组件，包括语法高亮、diff 视图、复制按钮、代码块头部与流式渲染的相关配置。
+keywords:
+  - CodeBlockNode
+  - 代码块渲染
+  - 语法高亮
+---
+
 # CodeBlockNode 组件
 
 `CodeBlockNode` 是库中用于渲染富交互代码块的组件。对于需要高亮、File/Diff surface 与交互的场景，推荐安装 `stream-diffs`。Vue 组件负责流式结束、可见性和卸载；`stream-diffs` 根 runtime 只负责与框架无关的 DOM surface。

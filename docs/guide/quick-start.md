@@ -1,5 +1,11 @@
 ---
+title: Vue Quick Start
 description: Start rendering Markdown with markstream-vue in the smallest possible Vue example, including the explicit renderer CSS import and next steps.
+keywords:
+  - vue markdown quick start
+  - markstream vue example
+  - renderer css import
+  - first vue render
 ---
 
 # Vue Quick Start

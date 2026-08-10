@@ -1,3 +1,12 @@
+---
+title: 安全
+description: 介绍 markstream-vue 的安全模型，涵盖 htmlPolicy 的 safe、escape 与 trusted 三种策略，以及 AI 输出场景下的 HTML 清理。
+keywords:
+  - 安全
+  - HTML 策略
+  - XSS 防护
+---
+
 # 安全
 
 `MarkdownRender` 默认使用 `htmlPolicy="safe"`。这个默认值适合 AI 输出，以及需要保留少量安全 HTML 的内容面。

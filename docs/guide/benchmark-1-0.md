@@ -1,5 +1,11 @@
 ---
+title: 1.0 Benchmark Report
 description: Generate the 1.0 benchmark report for markstream-vue with environment disclosure and playground performance metrics.
+keywords:
+  - markstream benchmark report
+  - performance metrics
+  - environment disclosure
+  - playground benchmarks
 ---
 
 # 1.0 Benchmark Report

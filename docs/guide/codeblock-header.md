@@ -1,3 +1,12 @@
+---
+title: Code block header customization
+description: Customize the code block header via named slots and toolbar toggles for collapse, copy, expand, preview, and font-size controls.
+keywords:
+  - code block header
+  - header slots
+  - toolbar buttons
+  - copy collapse expand
+---
 # Code block header customization
 
 The code block component exposes a flexible header API to adapt the header to your app UX:

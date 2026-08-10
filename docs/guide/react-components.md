@@ -1,3 +1,12 @@
+---
+title: React Components & API
+description: Reference for markstream-react components and entry points, including MarkdownRender and node renderers for React 18+.
+keywords:
+  - react components markdown
+  - markstream-react api
+  - react markdown renderer
+  - react entry points
+---
 # React Components & API
 
 markstream-react provides the same powerful components as markstream-vue, but built for React. All components support React 18+ with full TypeScript support.

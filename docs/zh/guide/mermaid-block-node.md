@@ -1,3 +1,12 @@
+---
+title: MermaidBlockNode 组件
+description: 详解 markstream-vue 的 MermaidBlockNode 组件，支持渐进式渲染、源码与预览切换、导出 SVG 与伪全屏查看等能力。
+keywords:
+  - MermaidBlockNode
+  - mermaid 渲染
+  - 渐进式渲染
+---
+
 # MermaidBlockNode (Component)
 
 `MermaidBlockNode` 提供一个易于使用且可扩展的 Mermaid 渲染器，适用于需要在文档中内嵌交互式 Mermaid 图的场景。组件支持渐进式渲染、源码/预览切换、复制源码、导出 SVG，以及伪全屏查看（带缩放与拖拽）。

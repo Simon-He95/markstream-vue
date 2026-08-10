@@ -1,5 +1,10 @@
 ---
+title: Frontmatter 处理
 description: 在渲染前提取 YAML front matter，或先转换成可信自定义标签再进入 Markdown 渲染流程。
+keywords:
+  - front matter
+  - YAML 解析
+  - 自定义标签
 ---
 
 # YAML front matter Cookbook

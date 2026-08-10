@@ -1,5 +1,10 @@
 ---
+title: 按症状排查
 description: 按症状定位 markstream-vue 的 CSS 顺序、peer 依赖、SSR、自定义标签与流式性能问题。
+keywords:
+  - 问题排查
+  - 症状导向
+  - 排障
 ---
 
 # 按症状排查

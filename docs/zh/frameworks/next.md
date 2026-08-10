@@ -18,6 +18,10 @@ faq:
     answer: 在 app/layout.tsx 或 pages/_app.tsx 导入一次 markstream-react/index.css；需要移动端 px 或 Tailwind 方案时换成对应 CSS 入口。
   - question: Next.js 应该选哪个入口？
     answer: 实时 client streaming 用 root package，SSR-first 用 markstream-react/next，server-only Markdown 用 markstream-react/server。
+keywords:
+  - Next.js
+  - markstream-react
+  - SSE 流式渲染
 ---
 
 # Next.js 流式 Markdown 渲染器

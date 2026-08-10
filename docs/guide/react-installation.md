@@ -1,3 +1,12 @@
+---
+title: React Installation
+description: Install markstream-react with pnpm, npm, or yarn, plus next steps for migrating from react-markdown in a React project.
+keywords:
+  - react installation
+  - markstream-react install
+  - pnpm npm yarn
+  - react-markdown migration
+---
 # React Installation
 
 Install markstream-react with pnpm, npm or yarn.

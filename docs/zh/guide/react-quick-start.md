@@ -1,3 +1,12 @@
+---
+title: React 快速开始
+description: 在 React 项目中快速上手 markstream-react，覆盖安装、导入样式与渲染第一段流式 Markdown 的基础流程。
+keywords:
+  - React 快速开始
+  - markstream-react
+  - 流式 Markdown
+---
+
 # React 快速开始
 
 在你的 React 项目中开始使用 markstream-react。

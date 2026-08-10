@@ -1,3 +1,12 @@
+---
+title: Mermaid 导出示例
+description: 提供可运行的 Mermaid 导出示例，展示如何拦截 MermaidBlockNode 的 export 事件并上传序列化 SVG 到服务端。
+keywords:
+  - Mermaid 导出
+  - SVG 上传
+  - 示例
+---
+
 # Mermaid 导出示例
 
 仓库包含一个可运行的 playground 示例，展示如何拦截 `MermaidBlockNode` 的 `export` 事件并上传序列化的 SVG（`ev.svgString`）。

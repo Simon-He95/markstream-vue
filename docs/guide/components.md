@@ -1,5 +1,12 @@
 ---
+title: Renderer & Node Components
 description: Look up MarkdownRender, CodeBlockNode, MermaidBlockNode, ImageNode, LinkNode, and other exported markstream-vue renderer components.
+keywords:
+  - markdownrender component
+  - codeblocknode
+  - mermaidblocknode
+  - imagemode
+  - vue renderer components
 ---
 
 # Renderer & Node Components

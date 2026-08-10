@@ -1,6 +1,11 @@
 ---
 title: Multi-framework Quick Start
 description: Install the right Markstream renderer for Vue, React, Svelte, or Angular and render the first streaming Markdown message.
+keywords:
+  - multi-framework quick start
+  - vue react svelte angular markdown
+  - install stream renderer
+  - first streaming markdown render
 ---
 
 # Multi-framework Quick Start

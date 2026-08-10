@@ -1,3 +1,12 @@
+---
+title: React 组件与 API
+description: 介绍 markstream-react 的组件与 API，包括 MarkdownRender、NodeRendererProps 与各类节点组件在 React 18+ 中的用法。
+keywords:
+  - React 组件
+  - markstream-react
+  - NodeRendererProps
+---
+
 # React 组件与 API
 
 markstream-react 提供与 markstream-vue 相同强大的组件，但专为 React 构建。所有组件都支持 React 18+ 并包含完整的 TypeScript 支持。

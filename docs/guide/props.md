@@ -1,5 +1,12 @@
 ---
+title: Component props & options
 description: Fine-tune markstream-vue with MarkdownRender props for streaming, dark mode, custom tags, parser options, and heavy-node control.
+keywords:
+  - markdownrender props
+  - streaming options
+  - custom tags vue
+  - heavy node control
+  - dark mode markdown
 ---
 
 # Component props & options

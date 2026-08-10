@@ -1,3 +1,12 @@
+---
+title: Contributing
+description: Development commands and contribution guidance for the markstream-vue monorepo, including testing, linting, and building the library.
+keywords:
+  - contribute markstream
+  - development commands
+  - build test lint
+  - monorepo contribution
+---
 # Contributing
 
 Thanks for wanting to contribute!

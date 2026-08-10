@@ -1,7 +1,13 @@
 ---
 title: 'React streaming Markdown renderer for AI chat'
 description: Use markstream-react to render token-by-token or chunked Markdown in React, Next.js, Remix, SSE, WebSocket, and AI chat UIs with optional Mermaid, KaTeX, Shiki, and Monaco.
-ogImage: /og/react-streaming.svg
+keywords:
+  - react streaming markdown
+  - react ai chat markdown
+  - react token stream
+  - react sse websocket markdown
+  - react markdown renderer
+ogImage: /og/react-streaming.png
 ogImageAlt: React streaming Markdown renderer for AI chat and Next.js
 softwareName: markstream-react
 softwarePackage: markstream-react

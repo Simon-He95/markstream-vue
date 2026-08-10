@@ -1,3 +1,12 @@
+---
+title: Override MermaidBlockNode in MarkdownRender
+description: Replace the default mermaid renderer in MarkdownRender using setCustomComponents to mount MermaidBlockNode with custom event handlers.
+keywords:
+  - override mermaid renderer
+  - setcustomcomponents
+  - markdownrender mermaid
+  - custom event handlers
+---
 # Override MermaidBlockNode in MarkdownRender
 
 If you want to completely replace the `mermaid` renderer used by `MarkdownRender` (for example in the `playground-demo`), you can use `setCustomComponents` and provide a programmatic renderer that mounts `MermaidBlockNode` with custom event handlers.

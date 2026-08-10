@@ -1,3 +1,12 @@
+---
+title: Advanced parser hooks
+description: Low-level parser work in markstream-vue including token transforms, AST reshaping, and custom node pipelines.
+keywords:
+  - parser hooks
+  - ast reshaping
+  - token transforms
+  - custom node pipelines
+---
 # Advanced parser hooks & low-level customization
 
 This page is for low-level parser work: token transforms, AST reshaping, and custom node pipelines.

@@ -1,5 +1,10 @@
 ---
-description: markstream-vue 1.0 稳定范围、发布门禁、性能报告和发布前检查清单。
+title: 1.0 发布
+description: markstream-vue 1.0 稳定范围的说明，涵盖发布门禁、性能报告与发布前检查清单，帮助确认生产可用。
+keywords:
+  - 1.0 发布
+  - 稳定范围
+  - 发布门禁
 ---
 
 # 1.0 发布就绪

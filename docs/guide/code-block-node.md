@@ -1,3 +1,12 @@
+---
+title: CodeBlockNode (Component)
+description: Reference for the CodeBlockNode Vue component that renders rich interactive code blocks with syntax highlighting and diff views.
+keywords:
+  - codeblocknode component
+  - interactive code blocks
+  - syntax highlighting
+  - streaming diff code blocks
+---
 # CodeBlockNode (Component)
 
 `CodeBlockNode` 是库中用于渲染富交互代码块的组件。对于需要高亮、File/Diff surface 与交互的场景，推荐安装 `stream-diffs`。Vue 组件负责流式结束、可见性和卸载；`stream-diffs` 根 runtime 只负责 framework-agnostic DOM surface。

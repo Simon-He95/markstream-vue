@@ -1,3 +1,12 @@
+---
+title: React Next SSR
+description: 在 Next.js 中使用 markstream-react 的 Next SSR 入口，介绍 App Router 与 Pages Router 的服务端渲染与客户端增强策略。
+keywords:
+  - Next.js SSR
+  - markstream-react
+  - 服务端渲染
+---
+
 # React Next SSR
 
 `markstream-react` 现在提供两条明确的 Next.js SSR 入口：

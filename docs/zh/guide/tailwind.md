@@ -1,5 +1,10 @@
 ---
+title: Tailwind 集成
 description: 解决 markstream-vue 与 Tailwind、shadcn 以及 CSS layer 顺序相关的样式覆盖问题。
+keywords:
+  - Tailwind
+  - 样式顺序
+  - CSS layer
 ---
 
 # Tailwind 集成与样式顺序

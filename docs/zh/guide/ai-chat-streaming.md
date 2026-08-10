@@ -1,5 +1,11 @@
 ---
+title: AI 聊天与流式输出
 description: 使用 content 与内置 smooth streaming 构建 AI 聊天与流式 Markdown 界面，并掌握性能、可信标签与 SSR 安全接入方式。
+keywords:
+  - AI 聊天
+  - SSE 流式
+  - smooth streaming
+  - 流式 Markdown
 ---
 
 # AI 聊天与流式输出

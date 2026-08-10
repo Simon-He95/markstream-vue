@@ -1,3 +1,12 @@
+---
+title: Code Block Runtime
+description: How the optional stream-diffs runtime powers CodeBlockNode with minimal installation, replacing the historical Monaco editor surface.
+keywords:
+  - code block runtime
+  - stream-diffs runtime
+  - monaco compatibility
+  - code editor surface
+---
 # Code Block Runtime
 
 This legacy route now documents the optional `stream-diffs` runtime used by `CodeBlockNode`. The public option names retain `Monaco` for compatibility, but the default enhanced surface is no longer a Monaco editor.

@@ -1,5 +1,10 @@
 ---
+title: 从 react-markdown 迁移
 description: 从 react-markdown 迁移到 markstream-react，并了解渲染器替换、插件审计与非 1:1 定制差异。
+keywords:
+  - react-markdown 迁移
+  - 插件审计
+  - 渲染器替换
 ---
 
 # 从 react-markdown 迁移

@@ -1,3 +1,12 @@
+---
+title: 搜索
+description: 介绍本站 VitePress 本地搜索的用法，包括通过搜索框搜索文档内容、快捷键，以及按语言定位中英文文档的提示。
+keywords:
+  - 本地搜索
+  - VitePress 搜索
+  - 文档搜索
+---
+
 # 搜索
 
 本站点启用了 VitePress 的本地搜索（Local Search）。

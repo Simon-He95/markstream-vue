@@ -1,5 +1,11 @@
 ---
+title: 1.0 Release Readiness
 description: Define the markstream-vue 1.0 stable scope, API tiers, package validation, security commitments, and release checklist.
+keywords:
+  - markstream 1.0 release
+  - stable api scope
+  - release checklist
+  - production ready markdown
 ---
 
 # 1.0 Release Readiness

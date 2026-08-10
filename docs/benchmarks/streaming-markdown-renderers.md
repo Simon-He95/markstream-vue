@@ -1,6 +1,11 @@
 ---
 title: Streaming Markdown benchmark methodology
 description: Benchmark scenarios and methodology for measuring Markdown streaming renderer performance. Describes test fixtures, chunk patterns, and measurement approaches used or planned for Markstream benchmarks.
+keywords:
+  - streaming markdown benchmark
+  - renderer performance measurement
+  - streaming renderer test fixtures
+  - chunk pattern benchmarks
 ---
 # Streaming Markdown benchmark methodology
 

@@ -1,3 +1,12 @@
+---
+title: Vue 2 Components & API
+description: Reference for markstream-vue2 components and typed props, compatible with Vue 2.6 with composition-api and Vue 2.7.
+keywords:
+  - vue 2 components
+  - markstream-vue2 api
+  - vue 2.7 typescript
+  - composition api vue 2
+---
 # Vue 2 Components & API
 
 markstream-vue2 provides the same powerful components as markstream-vue, but built for Vue 2. All components are compatible with Vue 2.6+ (with `@vue/composition-api`) and Vue 2.7+.

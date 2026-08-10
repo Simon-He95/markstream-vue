@@ -1,7 +1,7 @@
 ---
 title: markstream-react 与 react-markdown 静态基线对比
 description: 对比 markstream-react 和 react-markdown 在静态 React Markdown、remark/rehype 插件链、迁移成本，以及流式 AI 聊天是否需要流式优先渲染器中的取舍。
-ogImage: /og/comparison.svg
+ogImage: /og/comparison.png
 ogImageAlt: markstream-react 与 react-markdown 对比
 lastVerified: '2026-06-12'
 faq:
@@ -11,6 +11,10 @@ faq:
     answer: 不一样。markstream-react 使用 Markstream 的渲染器和 parser 模型，不是 react-markdown 的 remark/rehype 插件管线。
   - question: react-markdown 仍然值得用吗？
     answer: 值得。对于静态 React Markdown 和成熟插件生态，react-markdown 仍然是合适选择。
+keywords:
+  - react-markdown 对比
+  - 静态渲染
+  - 流式 AI 聊天
 ---
 
 # markstream-react 与 react-markdown 静态基线对比

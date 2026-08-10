@@ -1,6 +1,12 @@
 ---
 title: Static Markdown rendering vs streaming Markdown rendering
 description: Compare static Markdown rendering with streaming Markdown rendering for LLM output, SSE, WebSockets, incomplete syntax, heavy blocks, and long responses.
+keywords:
+  - static markdown rendering
+  - streaming markdown rendering
+  - incomplete markdown syntax
+  - llm token stream output
+  - sse websocket markdown
 lastVerified: '2026-06-12'
 ---
 # Static Markdown rendering vs streaming Markdown rendering

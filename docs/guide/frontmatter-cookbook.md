@@ -1,5 +1,11 @@
 ---
+title: YAML front matter cookbook
 description: Extract YAML front matter before rendering, or turn it into a trusted custom tag when metadata should render in the Markdown flow.
+keywords:
+  - yaml front matter
+  - extract front matter markdown
+  - trusted custom tag
+  - markdown metadata
 ---
 
 # YAML front matter cookbook

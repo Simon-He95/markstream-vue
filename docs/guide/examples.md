@@ -1,3 +1,12 @@
+---
+title: Examples
+description: Short runnable examples for streaming Markdown in markstream-vue, demonstrating progressive rendering in Vue playground demos.
+keywords:
+  - markdown examples
+  - streaming markdown demo
+  - vue renderer examples
+  - progressive rendering
+---
 # Examples
 
 Short examples; see `playground` for interactive demos.

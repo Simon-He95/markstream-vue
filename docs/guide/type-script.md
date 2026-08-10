@@ -1,3 +1,12 @@
+---
+title: TypeScript Usage
+description: Use the TypeScript-first exports of markstream-vue, including BaseNode types and type-safe configuration for advanced integrations.
+keywords:
+  - typescript usage markdown
+  - basenode types
+  - type safe markdown
+  - typescript first api
+---
 # TypeScript Usage
 
 This library is TypeScript-first and exports types for the public API. Use `import type` to get node definitions in your code for advanced manipulations.

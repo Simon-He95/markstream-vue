@@ -1,3 +1,12 @@
+---
+title: 与其他库对比
+description: 对比 markstream-vue 与其他流式 Markdown 库、静态解析器和前端 Markdown 库在 AI 流式渲染场景中的差异与选择依据。
+keywords:
+  - Markdown 库对比
+  - 流式渲染对比
+  - AI Markdown 渲染
+---
+
 # 对比
 
 将 `markstream-vue` 与常用选项进行对比：

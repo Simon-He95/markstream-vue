@@ -1,7 +1,12 @@
 ---
+title: 性能优化
 description: 优化 markstream-vue 在流式聊天、大文档、增强代码块以及 Mermaid 和 KaTeX 重内容场景下的性能表现。
-ogImage: /og/performance.svg
+ogImage: /og/performance.png
 ogImageAlt: Markstream 流式 Markdown 性能调优
+keywords:
+  - 性能优化
+  - 流式渲染
+  - 大文档
 ---
 
 # 性能特性与建议

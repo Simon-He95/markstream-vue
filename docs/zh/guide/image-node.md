@@ -1,3 +1,12 @@
+---
+title: ImageNode 自定义图片预览
+description: 介绍 markstream-vue 的 ImageNode 组件，说明如何自定义图片预览、懒加载、放大查看与图片相关处理行为。
+keywords:
+  - ImageNode
+  - 自定义图片预览
+  - 图片组件
+---
+
 # ImageNode — 自定义图片预览
 
 `ImageNode` 在内部渲染图片并在用户交互时发出事件。我们为图片点击暴露了一个事件，因此你可以接手点击行为（例如打开自定义图片预览/Lightbox），而无需替换整个渲染器。

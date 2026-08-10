@@ -1,5 +1,11 @@
 ---
+title: Playground
 description: Explore local and online markstream-vue playgrounds to reproduce rendering issues, compare frameworks, and verify fixes quickly.
+keywords:
+  - markstream playground
+  - reproduce rendering issues
+  - online playground
+  - compare frameworks
 ---
 
 # Playground

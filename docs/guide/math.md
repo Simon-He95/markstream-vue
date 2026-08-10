@@ -1,3 +1,12 @@
+---
+title: Math rendering with KaTeX
+description: Enable math rendering in markstream-vue by installing KaTeX and importing its stylesheet into your app entry file.
+keywords:
+  - katex math rendering
+  - markdown math
+  - math typesetting
+  - katex installation
+---
 # Math Rendering Options (KaTeX)
 
 This project uses KaTeX for math rendering when available. KaTeX is a peer dependency and must be installed separately.

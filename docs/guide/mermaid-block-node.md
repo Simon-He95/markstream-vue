@@ -1,3 +1,12 @@
+---
+title: MermaidBlockNode (Component)
+description: Reference for the MermaidBlockNode Vue component that renders progressive Mermaid diagrams with source and preview toggling and export.
+keywords:
+  - mermaidblocknode component
+  - progressive mermaid
+  - mermaid export svg
+  - diagram source preview
+---
 # MermaidBlockNode (Component)
 
 `MermaidBlockNode` is a lightweight, extensible renderer for Mermaid diagrams intended for embedding interactive Mermaid charts within documents. The component supports progressive rendering, source/preview toggling, copying source, exporting SVG, and a pseudo-fullscreen modal (with zoom and drag).

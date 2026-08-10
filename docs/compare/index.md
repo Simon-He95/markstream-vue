@@ -1,6 +1,12 @@
 ---
 title: Compare Markstream with other Markdown renderers
 description: Compare Markstream with Streamdown, react-markdown, marked, markdown-it, and static Markdown renderers for AI streaming scenarios.
+keywords:
+  - markstream comparison
+  - streaming markdown renderer
+  - react-markdown vs markstream
+  - marked markdown-it compared
+  - static vs streaming markdown
 ---
 # Compare Markstream
 

@@ -1,22 +1,47 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import process from 'node:process'
 
 const root = process.cwd()
-const docsDefaultDescription = 'Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nuxt, and Next.js'
+const docsDir = resolve(root, 'docs')
 
-const requiredGuideRoutes = [
-  '/guide/react-next-ssr',
-  '/guide/vitepress-docs-integration',
-  '/guide/ai-chat-streaming',
-  '/guide/performance',
-  '/guide/security',
-  '/guide/troubleshooting-path',
-  '/guide/react-markdown-migration',
-  '/guide/installation',
-  '/guide/usage',
-  '/guide/component-overrides',
-]
+const docsDefaultDescriptions = new Set([
+  'Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nuxt, and Next.js',
+  '适用于 AI 应用的多框架流式 Markdown 渲染器家族',
+])
+
+// Must stay in sync with `seoExcludedDocsPaths` + the `.zh-CN` suffix rule in
+// docs/.vitepress/config.ts (isDocsSeoExcluded).
+const seoExcludedDocsPaths = new Set([
+  '/404',
+  '/LEGACY-BUILDS',
+  '/e2e-testing-report',
+  '/zh/e2e-testing-report',
+  '/guide/docs-style',
+  '/zh/guide/docs-style',
+  '/guide/e2e-testing-report',
+  '/zh/guide/e2e-testing-report',
+  '/guide/katex-worker-performance-analysis',
+  '/zh/guide/katex-worker-performance-analysis',
+  '/guide/monorepo-migration',
+  '/zh/guide/monorepo-migration',
+  '/guide/thanks',
+  '/zh/guide/thanks',
+  '/guide/translation',
+  '/zh/guide/translation',
+  '/katex-cache-analysis',
+  '/zh/katex-cache-analysis',
+  '/katex-worker-performance-analysis',
+  '/zh/katex-worker-performance-analysis',
+  '/llms',
+  '/llms.zh-CN',
+  '/monorepo-migration',
+  '/zh/monorepo-migration',
+  '/nuxt-ssr.zh-CN',
+])
+
+const minDescriptionLength = 50
+const minKeywordsCount = 2
 
 const failures = []
 
@@ -24,15 +49,32 @@ function repoRelative(filePath) {
   return relative(root, filePath).replace(/\\/g, '/')
 }
 
-function markdownFileForRoute(route) {
-  if (route === '/')
-    return resolve(root, 'docs/index.md')
+function docsRoutePath(filePath) {
+  let route = `/${relative(docsDir, filePath).replace(/\\/g, '/').replace(/\.md$/, '')}`
+  route = route.replace(/\/index$/, '/')
+  return route === '/' ? '/' : route.replace(/\/$/, '')
+}
 
-  const directFile = resolve(root, `docs${route}.md`)
-  if (existsSync(directFile))
-    return directFile
+function isDocsSeoExcluded(routePath) {
+  return seoExcludedDocsPaths.has(routePath) || routePath.endsWith('.zh-CN')
+}
 
-  return resolve(root, `docs${route}/index.md`)
+function walkMarkdownFiles(dir) {
+  const files = []
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === '.vitepress' || entry.name === 'node_modules')
+      continue
+
+    const absolutePath = resolve(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...walkMarkdownFiles(absolutePath))
+    }
+    else if (entry.isFile() && entry.name.endsWith('.md')) {
+      files.push(absolutePath)
+    }
+  }
+
+  return files
 }
 
 function parseFrontmatter(filePath) {
@@ -67,21 +109,28 @@ function frontmatterStringValue(frontmatter, key) {
   return value || null
 }
 
-function hasFrontmatterList(frontmatter, key) {
+function frontmatterListItems(frontmatter, key) {
   const lines = frontmatter.split('\n')
   const startIndex = lines.findIndex(line => line === `${key}:`)
   if (startIndex === -1)
-    return false
+    return []
 
+  const items = []
   for (const line of lines.slice(startIndex + 1)) {
     if (/^\S[^:]*:/.test(line))
-      return false
+      break
 
-    if (/^\s+-\s+\S/.test(line))
-      return true
+    const trimmedLine = line.trim()
+    const match = /^- (.+)$/.exec(trimmedLine)
+    if (match) {
+      items.push(match[1].replace(/^['"]|['"]$/g, ''))
+    }
+    else if (!/^\s*$/.test(line)) {
+      break
+    }
   }
 
-  return false
+  return items.filter(item => item.length > 0)
 }
 
 function stripFencedCodeBlocks(markdown) {
@@ -117,31 +166,36 @@ function countH1(body) {
     .length
 }
 
-function rememberUnique(seenValues, value, route, label) {
+function rememberUnique(seenValues, value, filePath, label) {
   const normalizedValue = value.toLowerCase()
-  const existingRoute = seenValues.get(normalizedValue)
-  if (existingRoute) {
-    failures.push(`${route} duplicates ${label} from ${existingRoute}: ${value}`)
+  const existingFile = seenValues.get(normalizedValue)
+  if (existingFile) {
+    failures.push(`${repoRelative(filePath)} duplicates ${label} from ${repoRelative(existingFile)}: ${value}`)
     return
   }
 
-  seenValues.set(normalizedValue, route)
+  seenValues.set(normalizedValue, filePath)
 }
 
 const titles = new Map()
 const descriptions = new Map()
 
-for (const route of requiredGuideRoutes) {
-  const filePath = markdownFileForRoute(route)
-  if (!existsSync(filePath)) {
-    failures.push(`${route} is missing source Markdown file`)
+for (const filePath of walkMarkdownFiles(docsDir)) {
+  const routePath = docsRoutePath(filePath)
+  if (isDocsSeoExcluded(routePath))
     continue
-  }
 
   const { raw, body } = parseFrontmatter(filePath)
   const relativePath = repoRelative(filePath)
   const title = frontmatterStringValue(raw, 'title')
   const description = frontmatterStringValue(raw, 'description')
+  const keywords = frontmatterListItems(raw, 'keywords')
+  const isHomeLayout = /^layout:\s*home\s*$/m.test(raw)
+
+  if (!raw) {
+    failures.push(`${relativePath} is missing frontmatter (title, description, keywords)`)
+    continue
+  }
 
   if (!title) {
     failures.push(`${relativePath} is missing frontmatter title`)
@@ -150,24 +204,27 @@ for (const route of requiredGuideRoutes) {
     if (title === 'Markstream')
       failures.push(`${relativePath} title must not be the generic site title`)
 
-    rememberUnique(titles, title, route, 'title')
+    rememberUnique(titles, title, filePath, 'title')
   }
 
   if (!description) {
     failures.push(`${relativePath} is missing frontmatter description`)
   }
   else {
-    if (description === docsDefaultDescription)
+    if (docsDefaultDescriptions.has(description))
       failures.push(`${relativePath} must not reuse the default docs description`)
 
-    rememberUnique(descriptions, description, route, 'description')
+    if (description.length < minDescriptionLength)
+      failures.push(`${relativePath} description is too short (${description.length} chars, min ${minDescriptionLength})`)
+
+    rememberUnique(descriptions, description, filePath, 'description')
   }
 
-  if (!hasFrontmatterList(raw, 'keywords'))
-    failures.push(`${relativePath} is missing frontmatter keywords list`)
+  if (keywords.length < minKeywordsCount)
+    failures.push(`${relativePath} is missing frontmatter keywords list (need at least ${minKeywordsCount})`)
 
   const h1Count = countH1(body)
-  if (h1Count !== 1)
+  if (!isHomeLayout && h1Count !== 1)
     failures.push(`${relativePath} must have exactly one visible H1; found ${h1Count}`)
 }
 

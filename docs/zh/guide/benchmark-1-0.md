@@ -1,5 +1,10 @@
 ---
+title: 1.0 Benchmark 报告
 description: 生成 markstream-vue 1.0 benchmark 报告，包含环境披露和 playground 性能指标。
+keywords:
+  - benchmark
+  - 性能报告
+  - 1.0 基准
 ---
 
 # 1.0 Benchmark 报告

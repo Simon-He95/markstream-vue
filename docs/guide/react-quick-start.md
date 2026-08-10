@@ -1,3 +1,12 @@
+---
+title: React Quick Start
+description: Get started with markstream-react in a React project, including installation and first setup for streaming Markdown rendering.
+keywords:
+  - react quick start
+  - markstream-react setup
+  - first react render
+  - react markdown streaming
+---
 # React Quick Start
 
 Get started with markstream-react in your React project.

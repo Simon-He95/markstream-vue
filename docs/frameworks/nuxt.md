@@ -1,6 +1,12 @@
 ---
 title: 'Nuxt streaming Markdown renderer for AI chat'
 description: Use markstream-vue in Nuxt 3 for AI chat streaming Markdown, SSE/WebSocket output, SSR-first rendering, client-only peer setup, and worker setup.
+keywords:
+  - nuxt streaming markdown
+  - nuxt ai chat markdown
+  - nuxt ssr markdown
+  - client only peers nuxt
+  - markdown worker setup nuxt
 softwareName: markstream-vue
 softwarePackage: markstream-vue
 npmPackage: markstream-vue

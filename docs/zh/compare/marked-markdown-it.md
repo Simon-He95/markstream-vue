@@ -9,6 +9,10 @@ faq:
     answer: Markstream 渲染器使用 stream-markdown-parser，它基于 markdown-it-ts 并增加流式中间态处理。
   - question: 什么时候不应该用 Markstream？
     answer: 只需要静态 HTML 输出、非 JavaScript 运行时，或首要目标是最小 Markdown parser 时，不应优先选 Markstream。
+keywords:
+  - marked 对比
+  - markdown-it 对比
+  - AI 流式 Markdown
 ---
 
 # Markstream 与 marked、markdown-it 对比

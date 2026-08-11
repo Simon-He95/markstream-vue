@@ -52,7 +52,7 @@ const DOMPURIFY_CONFIG = {
   USE_PROFILES: { svg: true },
   FORBID_TAGS: ['script'],
   FORBID_ATTR: [/^on/i],
-  ADD_TAGS: ['style'],
+  ADD_TAGS: ['style', 'br'],
   ADD_ATTR: ['style'],
   SAFE_FOR_TEMPLATES: true,
 } as const
@@ -66,6 +66,7 @@ const mermaidInitConfig = computed(() => ({
   startOnLoad: false,
   securityLevel: mermaidSecurityLevel.value,
   dompurifyConfig: mermaidSecurityLevel.value === 'strict' ? DOMPURIFY_CONFIG : undefined,
+  htmlLabels: mermaidSecurityLevel.value === 'strict' ? false : undefined,
   flowchart: mermaidSecurityLevel.value === 'strict' ? { htmlLabels: false } : undefined,
 }))
 
@@ -263,8 +264,10 @@ function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
   const baseCode = code
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const initConfig: Record<string, unknown> = { theme: themeValue }
-  if (mermaidSecurityLevel.value === 'strict')
+  if (mermaidSecurityLevel.value === 'strict') {
+    initConfig.htmlLabels = false
     initConfig.flowchart = { htmlLabels: false }
+  }
   const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
   if (baseCode.trim().startsWith('%%{')) {
     return baseCode
@@ -675,8 +678,10 @@ function onCopyHover(e: Event) {
 function applyThemeTo(code: string, theme: 'light' | 'dark') {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const initConfig: Record<string, unknown> = { theme: themeValue }
-  if (mermaidSecurityLevel.value === 'strict')
+  if (mermaidSecurityLevel.value === 'strict') {
+    initConfig.htmlLabels = false
     initConfig.flowchart = { htmlLabels: false }
+  }
   const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
   const trimmed = code.trimStart()
   if (trimmed.startsWith('%%{'))

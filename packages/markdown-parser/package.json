@@ -1,7 +1,7 @@
 {
   "name": "stream-markdown-parser",
   "type": "module",
-  "version": "1.2.3",
+  "version": "1.2.5",
   "packageManager": "pnpm@10.34.5",
   "description": "Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.",
   "author": "Simon He",

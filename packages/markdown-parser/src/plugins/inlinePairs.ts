@@ -1,35 +1,26 @@
 import type { MarkdownIt, Token } from '../markdown-it-types'
 
-// Guarded inline pair rules for `~sub~`, `^sup^`, `==mark==` and `++ins++`.
+// Guarded inline pair rule for `~sub~` only.
 //
-// The upstream markdown-it-sub/sup/mark/ins plugins pair the first marker with
-// the *next* marker in the paragraph regardless of distance, as long as there
+// The upstream markdown-it-sub plugin pairs the first `~` marker with the
+// *next* `~` marker in the paragraph regardless of distance, as long as there
 // is no unescaped space in between. That assumption is safe for
 // space-delimited languages, but CJK text has no spaces: a Chinese number
 // range like `60万~100万元` pairs with a *later* `~` somewhere else in the
 // same paragraph, silently swallowing a long chunk as subscript.
 //
-// These rules keep the upstream pairing behaviour for legitimate short ASCII
-// subscript/superscript/highlight/insert spans while refusing pairs whose
-// content is CJK (sub/sup) or contains sentence punctuation (mark/ins), or
-// that span more than MAX_PAIR_CONTENT_LEN characters.
+// This rule keeps the upstream pairing behaviour for legitimate subscripts
+// while refusing pairs whose content contains CJK characters (`60万~100万元`
+// must never become a subscript) or whose open marker sits between two digits
+// (`26~43年`, `1~2~3`, mirroring the legacy "wave" rule).
 //
-// Sub additionally refuses pairs when the open marker sits between two digits
-// (`26~43年`, `1~2~3`), mirroring the legacy "wave" guard that this parser
-// used to register before markdown-it-sub. Note this is narrower than the
-// previous PR's heuristic: `价格~5元，其他~6元` is rejected by the CJK content
-// check, while `值~max~` (an ASCII subscript after a Han char) keeps working.
-
-const MAX_PAIR_CONTENT_LEN = 24
-const MAX_DELIMITER_PAIR_CONTENT_LEN = 64
+// `^sup^`, `==mark==` and `++ins++` intentionally keep the upstream
+// markdown-it-sup/mark/ins plugins: their semantics are unchanged.
 
 const UNESCAPE_RE = /\\([ \\!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-])/g
 
 const DIGIT_RE = /\d/u
 const HAN_RE = /\p{Script=Han}/u
-// Sentence punctuation used to reject accidental mark/ins pairings in CJK
-// text (e.g. `价格==5元，其他==6元` must stay plain text).
-const SENTENCE_PUNCT_RE = /[，。、；：？！,.;:!?（）()]/u
 
 interface PairScanState {
   pos: number
@@ -53,7 +44,7 @@ function createScanPairRule(
   openType: string,
   closeType: string,
   tag: string,
-  opts: { refuseDigitRange?: boolean } = {},
+  opts: { refuseDigitRange?: boolean, refuseHanContent?: boolean } = {},
 ) {
   const markerCode = markerChar.charCodeAt(0)
 
@@ -69,13 +60,11 @@ function createScanPairRule(
     if (opts.refuseDigitRange && isDigitRangeBefore(s))
       return false
 
-    // Scan for a closing marker within a bounded distance.
+    // Scan for the closing marker — same unbounded pairing as upstream.
     let pos = start + 1
     while (pos < max) {
       if (s.src.charCodeAt(pos) === markerCode)
         break
-      if (pos - start > MAX_PAIR_CONTENT_LEN)
-        return false
       pos++
     }
     if (pos >= max)
@@ -90,7 +79,7 @@ function createScanPairRule(
       return false
 
     // Refuse CJK content: `60万~100万元` should never become a subscript.
-    if (HAN_RE.test(content))
+    if (opts.refuseHanContent && HAN_RE.test(content))
       return false
 
     const open = s.push(openType, tag, 1)
@@ -107,225 +96,13 @@ function createScanPairRule(
   }
 }
 
-// Delimiter-based rules for `==mark==` / `++ins++`, copied from
-// markdown-it-mark / markdown-it-ins so that nested inline markup inside the
-// pair keeps working, but with a guard in postProcess that refuses pairings
-// whose content is too long or contains sentence punctuation.
-
-interface DelimiterPluginState {
-  tokens: Token[]
-}
-
-interface PairDelimiter {
-  marker: number
-  token: number
-  end: number
-}
-
-function createDelimiterPairPlugin(
-  markerCode: number,
-  markup: string,
-  openType: string,
-  closeType: string,
-  tag: string,
-) {
-  const markerChar = String.fromCharCode(markerCode)
-
-  const tokenize = (state: unknown, silent?: boolean) => {
-    const s = state as unknown as {
-      pos: number
-      src: string
-      push: (type: string, content: string, nesting?: number) => Token
-      delimiters: Array<{
-        marker: number
-        length: number
-        jump: number
-        token: number
-        end: number
-        open: boolean
-        close: boolean
-      }>
-      scanDelims: (pos: number, last?: boolean) => { length: number, can_open: boolean, can_close: boolean }
-      tokens: Token[]
-    }
-    const start = s.pos
-
-    if (silent)
-      return false
-
-    if (s.src.charCodeAt(start) !== markerCode)
-      return false
-
-    const scanned = s.scanDelims(s.pos, true)
-    let len = scanned.length
-    const ch = markerChar
-
-    if (len < 2)
-      return false
-
-    if (len % 2) {
-      const token = s.push('text', '', 0)
-      token.content = ch
-      len--
-    }
-
-    for (let i = 0; i < len; i += 2) {
-      const token = s.push('text', '', 0)
-      token.content = ch + ch
-
-      if (!scanned.can_open && !scanned.can_close)
-        continue
-
-      s.delimiters.push({
-        marker: markerCode,
-        length: 0, // disable "rule of 3" length checks meant for emphasis
-        jump: i / 2, // 1 delimiter = 2 characters
-        token: s.tokens.length - 1,
-        end: -1,
-        open: scanned.can_open,
-        close: scanned.can_close,
-      })
-    }
-
-    s.pos += scanned.length
-
-    return true
-  }
-
-  const isPairLegal = (state: unknown, startDelim: PairDelimiter, endDelim: PairDelimiter) => {
-    const s = state as DelimiterPluginState
-
-    // Collect the content between the open and close marker tokens.
-    let content = ''
-    for (let i = startDelim.token + 1; i < endDelim.token; i++) {
-      const t = s.tokens[i]
-      content += t.content ?? ''
-      if (t.type === 'softbreak' || t.type === 'hardbreak')
-        return false
-    }
-
-    if (!content)
-      return false
-    if (content.length > MAX_DELIMITER_PAIR_CONTENT_LEN)
-      return false
-    if (SENTENCE_PUNCT_RE.test(content))
-      return false
-    return true
-  }
-
-  const postProcess = (state: unknown, delimiters: PairDelimiter[]) => {
-    const s = state as DelimiterPluginState
-    const loneMarkers: number[] = []
-    const max = delimiters.length
-
-    for (let i = 0; i < max; i++) {
-      const startDelim = delimiters[i]
-
-      if (startDelim.marker !== markerCode)
-        continue
-
-      if (startDelim.end === -1)
-        continue
-
-      const endDelim = delimiters[startDelim.end]
-
-      // Guard: refuse pairings that span too far / contain sentence
-      // punctuation / contain line breaks.
-      if (!isPairLegal(state, startDelim, endDelim))
-        continue
-
-      let token = s.tokens[startDelim.token]
-      token.type = openType
-      token.tag = tag
-      token.nesting = 1
-      token.markup = markup
-      token.content = ''
-
-      token = s.tokens[endDelim.token]
-      token.type = closeType
-      token.tag = tag
-      token.nesting = -1
-      token.markup = markup
-      token.content = ''
-
-      if (s.tokens[endDelim.token - 1].type === 'text'
-        && s.tokens[endDelim.token - 1].content === markerChar) {
-        loneMarkers.push(endDelim.token - 1)
-      }
-    }
-
-    // If a marker sequence has an odd number of characters, it's split
-    // like this: `~~~~~` -> `~` + `~~` + `~~`, leaving one marker at the
-    // start of the sequence. Move those markers after subsequent close tags.
-    while (loneMarkers.length) {
-      const i = loneMarkers.pop()!
-      let j = i + 1
-
-      while (j < s.tokens.length && s.tokens[j].type === closeType)
-        j++
-
-      j--
-
-      if (i !== j) {
-        const token = s.tokens[j]
-        s.tokens[j] = s.tokens[i]
-        s.tokens[i] = token
-      }
-    }
-  }
-
-  return {
-    tokenize,
-    postProcess,
-  }
-}
-
 export function applyInlinePairs(md: MarkdownIt) {
-  // `~sub~` / `^sup^` — scan-based rules, same registration points as the
-  // upstream plugins (after `emphasis`).
+  // `~sub~` — scan-based rule, same registration point as the upstream plugin
+  // (after `emphasis`). `^sup^`/`==mark==`/`++ins++` use the upstream plugins.
   const subRule = createScanPairRule('~', '~', 'sub_open', 'sub_close', 'sub', {
     refuseDigitRange: true,
+    refuseHanContent: true,
   })
-  const supRule = createScanPairRule('^', '^', 'sup_open', 'sup_close', 'sup')
 
   md.inline.ruler.after('emphasis', 'sub', subRule)
-  md.inline.ruler.after('emphasis', 'sup', supRule)
-
-  // `==mark==` / `++ins++` — delimiter-based rules, same registration points
-  // as the upstream plugins (before `emphasis` in both ruler and ruler2).
-  const mark = createDelimiterPairPlugin(0x3D, '==', 'mark_open', 'mark_close', 'mark')
-  const ins = createDelimiterPairPlugin(0x2B, '++', 'ins_open', 'ins_close', 'ins')
-
-  md.inline.ruler.before('emphasis', 'mark', mark.tokenize)
-  md.inline.ruler.before('emphasis', 'ins', ins.tokenize)
-
-  md.inline.ruler2.before('emphasis', 'mark', (state: unknown) => {
-    const s = state as unknown as {
-      delimiters: PairDelimiter[]
-      tokens_meta?: Array<{ delimiters?: PairDelimiter[] } | null>
-    }
-    mark.postProcess(state, s.delimiters)
-
-    const max = (s.tokens_meta || []).length
-    for (let curr = 0; curr < max; curr++) {
-      const metaDelimiters = s.tokens_meta?.[curr]?.delimiters
-      if (metaDelimiters)
-        mark.postProcess(state, metaDelimiters)
-    }
-  })
-
-  md.inline.ruler2.before('emphasis', 'ins', (state: unknown) => {
-    const s = state as unknown as {
-      delimiters: PairDelimiter[]
-      tokens_meta?: Array<{ delimiters?: PairDelimiter[] } | null>
-    }
-    ins.postProcess(state, s.delimiters)
-
-    const max = (s.tokens_meta || []).length
-    for (let curr = 0; curr < max; curr++) {
-      const metaDelimiters = s.tokens_meta?.[curr]?.delimiters
-      if (metaDelimiters)
-        ins.postProcess(state, metaDelimiters)
-    }
-  })
 }

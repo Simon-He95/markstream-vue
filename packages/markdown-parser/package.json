@@ -56,6 +56,9 @@
   "dependencies": {
     "markdown-it-container": "^4.0.0",
     "markdown-it-footnote": "^4.0.0",
+    "markdown-it-ins": "^4.0.0",
+    "markdown-it-mark": "^4.0.0",
+    "markdown-it-sup": "^2.0.0",
     "markdown-it-task-checkbox": "^1.0.6",
     "markdown-it-ts": "^1.0.7"
   },

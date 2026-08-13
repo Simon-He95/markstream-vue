@@ -93,10 +93,12 @@ describe('issue 679: tilde in Chinese number ranges', () => {
     expect(JSON.stringify(nodes)).not.toContain('"type":"subscript"')
   })
 
-  it('keeps sup caret ranges plain in Chinese text', () => {
-    const src = '型号A^2，型号B^3'
-    expect(JSON.stringify(parse(src))).not.toContain('"type":"superscript"')
-    expect(rawText(src)).toBe(src)
+  it('keeps upstream sup pairing for Chinese text (第^二^章)', () => {
+    // Upstream markdown-it-sup semantics: explicit ^ pairs always pair.
+    const raws = childrenOf('第^二^章')
+      .filter((c: any) => c.type === 'superscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['^二^'])
   })
 
   it('still parses ASCII superscripts (x^2^, 10^23^)', () => {
@@ -106,10 +108,16 @@ describe('issue 679: tilde in Chinese number ranges', () => {
     expect(raws).toEqual(['^2^', '^23^'])
   })
 
-  it('keeps mark== pairs with Chinese ranges plain (==5元，其他==)', () => {
-    const src = '价格==5元，其他==6元'
-    expect(JSON.stringify(parse(src))).not.toContain('"type":"highlight"')
-    expect(rawText(src)).toBe(src)
+  it('keeps upstream mark pairing (==important, really!==, ==非常重要，而且明确==)', () => {
+    const raws1 = childrenOf('==important, really!==')
+      .filter((c: any) => c.type === 'highlight')
+      .map((c: any) => c.raw)
+    expect(raws1).toEqual(['==important, really!=='])
+
+    const raws2 = childrenOf('==非常重要，而且明确==')
+      .filter((c: any) => c.type === 'highlight')
+      .map((c: any) => c.raw)
+    expect(raws2).toEqual(['==非常重要，而且明确=='])
   })
 
   it('still parses short explicit ==mark== highlight', () => {
@@ -124,10 +132,11 @@ describe('issue 679: tilde in Chinese number ranges', () => {
     expect(JSON.stringify(nodes)).toContain('"type":"highlight"')
   })
 
-  it('keeps ins++ with Chinese range plain (++5元，其他++)', () => {
-    const src = '价格++5元，其他++6元'
-    expect(JSON.stringify(parse(src))).not.toContain('"type":"insert"')
-    expect(rawText(src)).toBe(src)
+  it('keeps upstream ins pairing (++corrected (final)++)', () => {
+    const raws = childrenOf('++corrected (final)++')
+      .filter((c: any) => c.type === 'insert')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['++corrected (final)++'])
   })
 
   it('still parses short explicit ++ins++ insert', () => {
@@ -135,6 +144,18 @@ describe('issue 679: tilde in Chinese number ranges', () => {
       .filter((c: any) => c.type === 'insert')
       .map((c: any) => c.raw)
     expect(raws).toEqual(['++5元++', '++6元++'])
+  })
+
+  // Review regressions: no length caps, no punctuation/Han bans for the
+  // upstream plugin semantics.
+  it.each([
+    ['x^1234567890123456789012345^', 'superscript', '^1234567890123456789012345^'],
+    ['H~abcdefghijklmnopqrstuvwxy~O', 'subscript', '~abcdefghijklmnopqrstuvwxy~'],
+  ])('parses long %s as %s', (src, type, raw) => {
+    const raws = childrenOf(src)
+      .filter((c: any) => c.type === type)
+      .map((c: any) => c.raw)
+    expect(raws).toEqual([raw])
   })
 
   it('keeps inline hash tags plain (#1方案和#2方案)', () => {

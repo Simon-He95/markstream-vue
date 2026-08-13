@@ -459,12 +459,12 @@ The parser exports various node types representing different markdown elements:
 
 This package comes with the following markdown-it plugins pre-configured:
 
-- Subscript support (`H~2~O`) - built-in guarded pair rule (replaces `markdown-it-sub`)
-- Superscript support (`x^2^`) - built-in guarded pair rule (replaces `markdown-it-sup`)
-- Highlight/mark support (`==highlighted==`) - built-in guarded pair rule (replaces `markdown-it-mark`)
-- Task list support (`- [ ] Todo`) via `markdown-it-task-checkbox`
-- Insert tag support (`++inserted++`) - built-in guarded pair rule (replaces `markdown-it-ins`)
-- Footnote support via `markdown-it-footnote`
+- Subscript support (`H~2~O`) - built-in guarded pair rule, numeric-range aware (replaces `markdown-it-sub`)
+- `markdown-it-sup` - Superscript support (`x^2^`)
+- `markdown-it-mark` - Highlight/mark support (`==highlighted==`)
+- `markdown-it-task-checkbox` - Task list support (`- [ ] Todo`)
+- `markdown-it-ins` - Insert tag support (`++inserted++`)
+- `markdown-it-footnote` - Footnote support
 - `markdown-it-container` - Custom container support (`::: warning`, `::: tip`, etc.)
 - Math support - LaTeX math rendering with `$...$` and `$$...$$`
 

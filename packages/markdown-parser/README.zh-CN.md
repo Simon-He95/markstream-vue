@@ -457,12 +457,12 @@ import type {
 
 该包预配置了以下 markdown-it 插件：
 
-- 下标支持（`H~2~O`）- 内置受限配对规则（替代 `markdown-it-sub`）
-- 上标支持（`x^2^`）- 内置受限配对规则（替代 `markdown-it-sup`）
-- 高亮/标记支持（`==highlighted==`）- 内置受限配对规则（替代 `markdown-it-mark`）
-- 任务列表支持（`- [ ] Todo`）- 基于 `markdown-it-task-checkbox`
-- 插入标签支持（`++inserted++`）- 内置受限配对规则（替代 `markdown-it-ins`）
-- 脚注支持 - 基于 `markdown-it-footnote`
+- 下标支持（`H~2~O`）- 内置受限配对规则，感知数字区间（替代 `markdown-it-sub`）
+- `markdown-it-sup` - 上标支持（`x^2^`）
+- `markdown-it-mark` - 高亮/标记支持（`==highlighted==`）
+- `markdown-it-task-checkbox` - 任务列表支持（`- [ ] Todo`）
+- `markdown-it-ins` - 插入标签支持（`++inserted++`）
+- `markdown-it-footnote` - 脚注支持
 - `markdown-it-container` - 自定义容器支持（`::: warning`, `::: tip` 等）
 - 数学公式支持 - 使用 `$...$` 和 `$$...$$` 渲染 LaTeX 数学公式
 

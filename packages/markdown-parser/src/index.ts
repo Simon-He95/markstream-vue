@@ -6,6 +6,9 @@ import type {
 } from './markdown-it-types'
 import type { MarkdownToken } from './types'
 import markdownItFootnote from 'markdown-it-footnote'
+import markdownItIns from 'markdown-it-ins'
+import markdownItMark from 'markdown-it-mark'
+import markdownItSup from 'markdown-it-sup'
 
 import * as markdownItCheckbox from 'markdown-it-task-checkbox'
 import { factory } from './factory'
@@ -160,14 +163,18 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
   }
 
   // Re-apply a few project specific plugins that were previously always enabled
-  // Guarded inline pair rules for `~sub~`, `^sup^`, `==mark==` and `++ins++`
-  // (replaces markdown-it-sub/sup/mark/ins; see plugins/inlinePairs.ts).
+  // `~sub~` uses a guarded built-in rule (numeric-range aware, see
+  // plugins/inlinePairs.ts); `^sup^`/`==mark==`/`++ins++` keep the upstream
+  // markdown-it plugins unchanged.
   md.use(applyInlinePairs)
+  md.use(markdownItSup)
+  md.use(markdownItMark)
   // Safely resolve default export or the module itself for checkbox plugin
   type CheckboxPluginFn = (md: MarkdownIt, opts?: unknown) => void
   const checkboxModule = markdownItCheckbox as unknown as { default?: CheckboxPluginFn } & CheckboxPluginFn
   const markdownItCheckboxPlugin = checkboxModule.default ?? checkboxModule
   md.use(markdownItCheckboxPlugin)
+  md.use(markdownItIns)
   md.use(markdownItFootnote)
 
   // Annotate fence tokens with unclosed meta using a lightweight line check

@@ -49,10 +49,17 @@ describe('issue 679: tilde in Chinese number ranges', () => {
     '电话~123456，分机~654321',
     '第~1章讲原理，第~2章讲实现',
     '价格~5元，其他~6元，还有~7元',
-    '模型~A~与模型~B对比',
   ])('keeps %s as plain text', (src) => {
     expect(JSON.stringify(parse(src))).not.toContain('"type":"subscript"')
     expect(rawText(src)).toBe(src)
+  })
+
+  it('parses ASCII subscripts after Han chars (值~max~, 空格~x~)', () => {
+    const src = '速度~max~值，空格~x~ 测试~y~'
+    const raws = childrenOf(src)
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~max~', '~x~', '~y~'])
   })
 
   it('parses plain ASCII subscripts (H~2~O, P~1~, x~n~)', () => {

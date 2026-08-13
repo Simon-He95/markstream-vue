@@ -14,16 +14,18 @@ import type { MarkdownIt, Token } from '../markdown-it-types'
 // content is CJK (sub/sup) or contains sentence punctuation (mark/ins), or
 // that span more than MAX_PAIR_CONTENT_LEN characters.
 //
-// For sub specifically we also refuse a pair when the open marker directly
-// follows an ASCII digit or a Han character (`26~43年`, `第~1章`), mirroring
-// the legacy "wave" guard that the previous fix relied on. Sup keeps that
-// freedom so `10^23^` (scientific notation) keeps working.
+// Sub additionally refuses pairs when the open marker sits between two digits
+// (`26~43年`, `1~2~3`), mirroring the legacy "wave" guard that this parser
+// used to register before markdown-it-sub. Note this is narrower than the
+// previous PR's heuristic: `价格~5元，其他~6元` is rejected by the CJK content
+// check, while `值~max~` (an ASCII subscript after a Han char) keeps working.
 
 const MAX_PAIR_CONTENT_LEN = 24
+const MAX_DELIMITER_PAIR_CONTENT_LEN = 64
 
 const UNESCAPE_RE = /\\([ \\!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-])/g
 
-const HAN_OR_DIGIT_RE = /[\p{Script=Han}0-9]/u
+const DIGIT_RE = /\d/u
 const HAN_RE = /\p{Script=Han}/u
 // Sentence punctuation used to reject accidental mark/ins pairings in CJK
 // text (e.g. `价格==5元，其他==6元` must stay plain text).
@@ -36,8 +38,13 @@ interface PairScanState {
   push: (type: string, tag?: string, nesting?: number) => Token
 }
 
-function isHanOrDigitBefore(state: PairScanState): boolean {
-  return state.pos > 0 && HAN_OR_DIGIT_RE.test(state.src[state.pos - 1])
+// `~` surrounded by digits on both sides reads as a numeric range
+// (`26~43年`, `1~2~3`), mirroring the legacy wave rule.
+function isDigitRangeBefore(state: PairScanState): boolean {
+  return state.pos > 0
+    && state.pos + 1 < state.posMax
+    && DIGIT_RE.test(state.src[state.pos - 1])
+    && DIGIT_RE.test(state.src[state.pos + 1])
 }
 
 function createScanPairRule(
@@ -46,7 +53,7 @@ function createScanPairRule(
   openType: string,
   closeType: string,
   tag: string,
-  opts: { refuseAfterHanOrDigit?: boolean } = {},
+  opts: { refuseDigitRange?: boolean } = {},
 ) {
   const markerCode = markerChar.charCodeAt(0)
 
@@ -59,7 +66,7 @@ function createScanPairRule(
       return false
     if (silent)
       return false
-    if (opts.refuseAfterHanOrDigit && isHanOrDigitBefore(s))
+    if (opts.refuseDigitRange && isDigitRangeBefore(s))
       return false
 
     // Scan for a closing marker within a bounded distance.
@@ -199,7 +206,7 @@ function createDelimiterPairPlugin(
 
     if (!content)
       return false
-    if (content.length > MAX_PAIR_CONTENT_LEN)
+    if (content.length > MAX_DELIMITER_PAIR_CONTENT_LEN)
       return false
     if (SENTENCE_PUNCT_RE.test(content))
       return false
@@ -277,7 +284,7 @@ export function applyInlinePairs(md: MarkdownIt) {
   // `~sub~` / `^sup^` — scan-based rules, same registration points as the
   // upstream plugins (after `emphasis`).
   const subRule = createScanPairRule('~', '~', 'sub_open', 'sub_close', 'sub', {
-    refuseAfterHanOrDigit: true,
+    refuseDigitRange: true,
   })
   const supRule = createScanPairRule('^', '^', 'sup_open', 'sup_close', 'sup')
 

@@ -459,7 +459,7 @@ The parser exports various node types representing different markdown elements:
 
 This package comes with the following markdown-it plugins pre-configured:
 
-- `markdown-it-sub` - Subscript support (`H~2~O`)
+- Subscript support (`H~2~O`) - built-in guarded pair rule, numeric-range aware (replaces `markdown-it-sub`)
 - `markdown-it-sup` - Superscript support (`x^2^`)
 - `markdown-it-mark` - Highlight/mark support (`==highlighted==`)
 - `markdown-it-task-checkbox` - Task list support (`- [ ] Todo`)

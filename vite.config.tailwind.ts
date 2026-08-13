@@ -49,7 +49,6 @@ export default defineConfig({
         'markdown-it-footnote',
         'markdown-it-ins',
         'markdown-it-mark',
-        'markdown-it-sub',
         'markdown-it-sup',
         'markdown-it-task-checkbox',
         'mermaid',

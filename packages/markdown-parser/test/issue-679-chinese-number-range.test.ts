@@ -1,0 +1,215 @@
+import { describe, expect, it } from 'vitest'
+import { getMarkdown, parseMarkdownToStructure } from '../src'
+
+const ISSUE_SAMPLE = '**农村家庭**为儿子娶媳妇：普遍 **60万~100万元**，按2024年收入算，**要不吃不喝工作26~43年**'
+
+function parse(src: string, final = true) {
+  return parseMarkdownToStructure(src, getMarkdown(`issue-679-${Math.random()}`), { final })
+}
+
+function childrenOf(src: string, final = true) {
+  return parse(src, final)[0].children as any[]
+}
+
+function rawText(src: string, final = true): string {
+  return childrenOf(src, final).map((c: any) => c.raw ?? c.content ?? '').join('')
+}
+
+describe('issue 679: tilde in Chinese number ranges', () => {
+  it.each([true, false])('keeps range tildes as text when final=%s', (final) => {
+    const nodes = parseMarkdownToStructure(ISSUE_SAMPLE, getMarkdown(`issue-679-${final}`), { final })
+    const children = nodes[0].children as any[]
+
+    expect(JSON.stringify(nodes)).not.toContain('"type":"subscript"')
+    expect(children.filter(child => child.type === 'strong')).toMatchObject([
+      { raw: '**农村家庭**' },
+      { raw: '**60万~100万元**' },
+      { raw: '**要不吃不喝工作26~43年**' },
+    ])
+  })
+
+  it.each([true, false])('still parses explicit subscript markup when final=%s', (final) => {
+    const nodes = parseMarkdownToStructure('Chemical formula H~2~O', getMarkdown('issue-679-subscript'), { final })
+
+    expect(nodes[0].children).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'subscript', raw: '~2~' }),
+    ]))
+  })
+
+  it.each([true, false])('keeps Chinese digits+ranges intact when final=%s', (final) => {
+    expect(rawText('规模在1.5亿~2亿之间', final)).toBe('规模在1.5亿~2亿之间')
+    expect(rawText('运营26~43年', final)).toBe('运营26~43年')
+  })
+
+  // Regression guard for the "next ~ pairs with a far-away ~" family of bugs:
+  // the first marker must not swallow text just because another marker exists
+  // later in the same paragraph.
+  it.each([
+    '价格~5元，其他~6元',
+    '价格~5元,其他~6元',
+    '电话~123456，分机~654321',
+    '第~1章讲原理，第~2章讲实现',
+    '价格~5元，其他~6元，还有~7元',
+    '预算60万~100万元至追加5万元~6万元',
+    '从1亿~2亿元增加到3亿~4亿元',
+  ])('keeps %s as plain text', (src) => {
+    for (const final of [true, false]) {
+      expect(JSON.stringify(parse(src, final))).not.toContain('"type":"subscript"')
+      expect(rawText(src, final)).toBe(src)
+    }
+  })
+
+  it('parses ASCII subscripts after Han chars (值~max~, 空格~x~)', () => {
+    const src = '速度~max~值，空格~x~ 测试~y~'
+    const raws = childrenOf(src)
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~max~', '~x~', '~y~'])
+  })
+
+  it('parses plain ASCII subscripts (H~2~O, P~1~, x~n~)', () => {
+    const nodes = parse('H~2~O, P~1~, x~n~+y~n~')
+    const types = JSON.stringify(nodes)
+    expect(types).toContain('"type":"subscript"')
+    const raws = childrenOf('H~2~O, P~1~, x~n~+y~n~')
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~2~', '~1~', '~n~', '~n~'])
+  })
+
+  it('does not break explicit ASCII subscript after letters (C~2~H~5~OH)', () => {
+    // ASCII subscripts directly after a letter keep working; digits before
+    // `~` read as number ranges and stay plain text (see 1~2~3 case).
+    const raws = childrenOf('C~2~H~5~OH')
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~2~', '~5~'])
+  })
+
+  it('keeps digit-led ~ pairs plain (10~23~)', () => {
+    // `10~23~` reads like a numeric range chain, not a subscript.
+    const nodes = parse('10~23~')
+    expect(JSON.stringify(nodes)).not.toContain('"type":"subscript"')
+  })
+
+  it('does not parse ~ pairs spanning ASCII digits as subscript (1~2~3)', () => {
+    // `1~2~3` reads like a numeric range chain, not a subscript.
+    const nodes = parse('1~2~3')
+    expect(JSON.stringify(nodes)).not.toContain('"type":"subscript"')
+  })
+
+  it('keeps upstream sup pairing for Chinese text (第^二^章)', () => {
+    // Upstream markdown-it-sup semantics: explicit ^ pairs always pair.
+    const raws = childrenOf('第^二^章')
+      .filter((c: any) => c.type === 'superscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['^二^'])
+  })
+
+  it('still parses ASCII superscripts (x^2^, 10^23^)', () => {
+    const raws = childrenOf('x^2^+10^23^')
+      .filter((c: any) => c.type === 'superscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['^2^', '^23^'])
+  })
+
+  it('keeps upstream mark pairing (==important, really!==, ==非常重要，而且明确==)', () => {
+    const raws1 = childrenOf('==important, really!==')
+      .filter((c: any) => c.type === 'highlight')
+      .map((c: any) => c.raw)
+    expect(raws1).toEqual(['==important, really!=='])
+
+    const raws2 = childrenOf('==非常重要，而且明确==')
+      .filter((c: any) => c.type === 'highlight')
+      .map((c: any) => c.raw)
+    expect(raws2).toEqual(['==非常重要，而且明确=='])
+  })
+
+  it('still parses short explicit ==mark== highlight', () => {
+    const raws = childrenOf('价格==5元==，其他==6元==')
+      .filter((c: any) => c.type === 'highlight')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['==5元==', '==6元=='])
+  })
+
+  it('still parses Chinese ==高亮== highlight', () => {
+    const nodes = parse('这是==重要==内容')
+    expect(JSON.stringify(nodes)).toContain('"type":"highlight"')
+  })
+
+  it('keeps upstream ins pairing (++corrected (final)++)', () => {
+    const raws = childrenOf('++corrected (final)++')
+      .filter((c: any) => c.type === 'insert')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['++corrected (final)++'])
+  })
+
+  it('still parses short explicit ++ins++ insert', () => {
+    const raws = childrenOf('价格++5元++，其他++6元++')
+      .filter((c: any) => c.type === 'insert')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['++5元++', '++6元++'])
+  })
+
+  // Review regressions: no length caps, no punctuation/Han bans for the
+  // upstream plugin semantics.
+  it.each([
+    ['x^1234567890123456789012345^', 'superscript', '^1234567890123456789012345^'],
+    ['H~abcdefghijklmnopqrstuvwxy~O', 'subscript', '~abcdefghijklmnopqrstuvwxy~'],
+  ])('parses long %s as %s', (src, type, raw) => {
+    const raws = childrenOf(src)
+      .filter((c: any) => c.type === type)
+      .map((c: any) => c.raw)
+    expect(raws).toEqual([raw])
+  })
+
+  // Review regressions (round 2): token-aware closing-marker scan and
+  // explicit Chinese subscripts.
+  it('parses escaped tilde inside subscript (H~foo\\~bar~O)', () => {
+    const raws = childrenOf('H~foo\\~bar~O')
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~foo~bar~'])
+    // unescaped content in the token
+    const sub = childrenOf('H~foo\\~bar~O').find((c: any) => c.type === 'subscript') as any
+    expect(sub?.children?.map((t: any) => t.content ?? '').join('') ?? sub?.raw).toContain('foo~bar')
+  })
+
+  it('parses explicit Chinese subscript (变量~索引~)', () => {
+    const raws = childrenOf('变量~索引~')
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~索引~'])
+  })
+
+  it.each([
+    ['x~i，j~', '~i，j~'],
+    ['H~foo：bar~O', '~foo：bar~'],
+  ])('parses explicit subscript containing Chinese punctuation (%s)', (src, raw) => {
+    for (const final of [true, false]) {
+      const raws = childrenOf(src, final)
+        .filter((c: any) => c.type === 'subscript')
+        .map((c: any) => c.raw)
+      expect(raws).toEqual([raw])
+    }
+  })
+
+  // Review regressions (round 3): explicit Chinese subscripts containing
+  // digits must keep pairing.
+  it.each([
+    ['变量~第2项~', '~第2项~'],
+    ['H~2号~O', '~2号~'],
+    ['x~版本2~', '~版本2~'],
+  ])('parses explicit Chinese subscript with digits (%s)', (src, raw) => {
+    const raws = childrenOf(src)
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual([raw])
+  })
+
+  it('keeps inline hash tags plain (#1方案和#2方案)', () => {
+    const src = '我们支持#1方案和#2方案'
+    expect(JSON.stringify(parse(src))).not.toContain('"type":"heading"')
+    expect(rawText(src)).toBe(src)
+  })
+})

@@ -8,9 +8,8 @@ import type { MarkdownToken } from './types'
 import markdownItFootnote from 'markdown-it-footnote'
 import markdownItIns from 'markdown-it-ins'
 import markdownItMark from 'markdown-it-mark'
-import markdownItSub from 'markdown-it-sub'
-
 import markdownItSup from 'markdown-it-sup'
+
 import * as markdownItCheckbox from 'markdown-it-task-checkbox'
 import { factory } from './factory'
 import {
@@ -18,6 +17,7 @@ import {
   parseMarkdownToStructure,
   processTokens,
 } from './parser'
+import { applyInlinePairs } from './plugins/inlinePairs'
 
 // Module-level registry for callers that want to add plugins to every
 // `getMarkdown()` instance without modifying call sites. Useful for tests
@@ -163,7 +163,10 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
   }
 
   // Re-apply a few project specific plugins that were previously always enabled
-  md.use(markdownItSub)
+  // `~sub~` uses a guarded built-in rule (numeric-range aware, see
+  // plugins/inlinePairs.ts); `^sup^`/`==mark==`/`++ins++` keep the upstream
+  // markdown-it plugins unchanged.
+  md.use(applyInlinePairs)
   md.use(markdownItSup)
   md.use(markdownItMark)
   // Safely resolve default export or the module itself for checkbox plugin
@@ -209,27 +212,6 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
       ; (tokenShape.meta as Record<string, unknown>).closed = !!closed
     }
   })
-
-  // wave rule (legacy)
-  const waveRule = (state: unknown, silent?: boolean) => {
-    const s = state as unknown as { pos: number, src: string, push: (type: string, tag?: string, nesting?: number) => MarkdownToken }
-    const start = s.pos
-    if (s.src[start] !== '~')
-      return false
-    const prevChar = s.src[start - 1]
-    const nextChar = s.src[start + 1]
-    if (/\d/.test(prevChar) && /\d/.test(nextChar)) {
-      if (!silent) {
-        const token = s.push('text', '', 0)
-        token.content = '~'
-      }
-      s.pos += 1
-      return true
-    }
-    return false
-  }
-
-  md.inline.ruler.before('sub', 'wave', waveRule)
 
   // custom fence that uses msgId for unique ids
   md.renderer.rules.fence = (tokens: unknown, idx: number) => {

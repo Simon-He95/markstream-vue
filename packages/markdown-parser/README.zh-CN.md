@@ -457,7 +457,7 @@ import type {
 
 该包预配置了以下 markdown-it 插件：
 
-- `markdown-it-sub` - 下标支持（`H~2~O`）
+- 下标支持（`H~2~O`）- 内置受限配对规则，感知数字区间（替代 `markdown-it-sub`）
 - `markdown-it-sup` - 上标支持（`x^2^`）
 - `markdown-it-mark` - 高亮/标记支持（`==highlighted==`）
 - `markdown-it-task-checkbox` - 任务列表支持（`- [ ] Todo`）

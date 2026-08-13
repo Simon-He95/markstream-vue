@@ -201,7 +201,7 @@ function main() {
   run('npm', ['publish', '--access', 'public', '--tag', EXPECTED_DIST_TAG], PARSER_DIR, { stdio: 'inherit' })
 
   log(`push git tag ${PACKAGE_NAME}@${p.target}`)
-  run('node', ['../scripts/tag-package.mjs', '--package-json', 'package.json', '--push'], PARSER_DIR, { stdio: 'inherit' })
+  run('node', ['../../scripts/tag-package.mjs', '--package-json', 'package.json', '--push'], PARSER_DIR, { stdio: 'inherit' })
 
   if (!args.parserOnly) {
     log('release:family — publish all downstream markstream packages on this branch')

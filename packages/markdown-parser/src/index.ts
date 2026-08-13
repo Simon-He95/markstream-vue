@@ -6,11 +6,7 @@ import type {
 } from './markdown-it-types'
 import type { MarkdownToken } from './types'
 import markdownItFootnote from 'markdown-it-footnote'
-import markdownItIns from 'markdown-it-ins'
-import markdownItMark from 'markdown-it-mark'
-import markdownItSub from 'markdown-it-sub'
 
-import markdownItSup from 'markdown-it-sup'
 import * as markdownItCheckbox from 'markdown-it-task-checkbox'
 import { factory } from './factory'
 import {
@@ -18,6 +14,7 @@ import {
   parseMarkdownToStructure,
   processTokens,
 } from './parser'
+import { applyInlinePairs } from './plugins/inlinePairs'
 
 // Module-level registry for callers that want to add plugins to every
 // `getMarkdown()` instance without modifying call sites. Useful for tests
@@ -163,15 +160,14 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
   }
 
   // Re-apply a few project specific plugins that were previously always enabled
-  md.use(markdownItSub)
-  md.use(markdownItSup)
-  md.use(markdownItMark)
+  // Guarded inline pair rules for `~sub~`, `^sup^`, `==mark==` and `++ins++`
+  // (replaces markdown-it-sub/sup/mark/ins; see plugins/inlinePairs.ts).
+  md.use(applyInlinePairs)
   // Safely resolve default export or the module itself for checkbox plugin
   type CheckboxPluginFn = (md: MarkdownIt, opts?: unknown) => void
   const checkboxModule = markdownItCheckbox as unknown as { default?: CheckboxPluginFn } & CheckboxPluginFn
   const markdownItCheckboxPlugin = checkboxModule.default ?? checkboxModule
   md.use(markdownItCheckboxPlugin)
-  md.use(markdownItIns)
   md.use(markdownItFootnote)
 
   // Annotate fence tokens with unclosed meta using a lightweight line check
@@ -209,27 +205,6 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
       ; (tokenShape.meta as Record<string, unknown>).closed = !!closed
     }
   })
-
-  // wave rule (legacy)
-  const waveRule = (state: unknown, silent?: boolean) => {
-    const s = state as unknown as { pos: number, src: string, push: (type: string, tag?: string, nesting?: number) => MarkdownToken }
-    const start = s.pos
-    if (s.src[start] !== '~')
-      return false
-    const before = s.src.slice(0, start)
-    const nextChar = s.src[start + 1]
-    if (/\d\p{Script=Han}{0,3}$/u.test(before) && /\d/.test(nextChar)) {
-      if (!silent) {
-        const token = s.push('text', '', 0)
-        token.content = '~'
-      }
-      s.pos += 1
-      return true
-    }
-    return false
-  }
-
-  md.inline.ruler.before('sub', 'wave', waveRule)
 
   // custom fence that uses msgId for unique ids
   md.renderer.rules.fence = (tokens: unknown, idx: number) => {

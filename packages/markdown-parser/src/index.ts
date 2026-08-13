@@ -216,9 +216,9 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
     const start = s.pos
     if (s.src[start] !== '~')
       return false
-    const prevChar = s.src[start - 1]
+    const before = s.src.slice(0, start)
     const nextChar = s.src[start + 1]
-    if (/\d/.test(prevChar) && /\d/.test(nextChar)) {
+    if (/\d\p{Script=Han}{0,3}$/u.test(before) && /\d/.test(nextChar)) {
       if (!silent) {
         const token = s.push('text', '', 0)
         token.content = '~'

@@ -14,9 +14,11 @@ import type { MarkdownIt, Token } from '../markdown-it-types'
 //
 // - the open marker sits between two digits (`26~43年`, `1~2~3`), mirroring
 //   the legacy "wave" rule, or
-// - the paired content looks like a range fragment: digits combined with CJK
-//   characters (`60万~100万元` → content `100万元...`). Explicit Chinese
-//   subscripts without digits (`变量~索引~`) keep working.
+// - the paired content crosses CJK sentence punctuation (`60万~100万元，...`)
+//   or chains into another digit-led range (`...工作26~43年`). The guards
+//   look at the marker's surrounding structure, so explicit Chinese
+//   subscripts with digits (`变量~第2项~`, `H~2号~O`, `x~版本2~`) still
+//   pair.
 //
 // `^sup^`, `==mark==` and `++ins++` intentionally keep the upstream
 // markdown-it-sup/mark/ins plugins: their semantics are unchanged.
@@ -24,7 +26,9 @@ import type { MarkdownIt, Token } from '../markdown-it-types'
 const UNESCAPE_RE = /\\([ \\!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-])/g
 
 const DIGIT_RE = /\d/u
-const HAN_RE = /\p{Script=Han}/u
+// CJK sentence punctuation marks a structural boundary: a subscript whose
+// content crosses one is an accidental range cross-pairing.
+const CJK_SENTENCE_PUNCT_RE = /[，。；、！？：]/u
 
 interface PairScanState {
   pos: number
@@ -53,7 +57,7 @@ function createScanPairRule(
   openType: string,
   closeType: string,
   tag: string,
-  opts: { refuseDigitRange?: boolean, refuseRangeLikeContent?: boolean } = {},
+  opts: { refuseDigitRange?: boolean } = {},
 ) {
   const markerCode = markerChar.charCodeAt(0)
 
@@ -98,10 +102,27 @@ function createScanPairRule(
       return false
     }
 
-    // Refuse range-like cross-pairings (`60万~100万元`): the accidental
-    // content combines digits with CJK characters. Explicit Chinese
-    // subscripts without digits (`变量~索引~`) still pair.
-    if (opts.refuseRangeLikeContent && DIGIT_RE.test(content) && HAN_RE.test(content)) {
+    // Accidental cross-pairing guards, based on the marker's surrounding
+    // structure rather than the content's character class:
+    //
+    // 1. content crossing CJK sentence punctuation (`60万~100万元，...~`)
+    //    is a range cross-pairing — a real subscript never spans it;
+    // 2. content ending with a digit while the close marker is directly
+    //    followed by another digit (`...工作26~43年`) means the close
+    //    marker is itself a range separator chained after the content.
+    //
+    // Explicit Chinese subscripts with digits (`变量~第2项~`, `H~2号~O`,
+    // `x~版本2~`) still pair.
+    const closeNext = s.src[s.pos + 1]
+    if (CJK_SENTENCE_PUNCT_RE.test(content)) {
+      s.pos = start
+      return false
+    }
+    if (
+      DIGIT_RE.test(content[content.length - 1])
+      && closeNext !== undefined
+      && DIGIT_RE.test(closeNext)
+    ) {
       s.pos = start
       return false
     }
@@ -125,7 +146,6 @@ export function applyInlinePairs(md: MarkdownIt) {
   // (after `emphasis`). `^sup^`/`==mark==`/`++ins++` use the upstream plugins.
   const subRule = createScanPairRule('~', '~', 'sub_open', 'sub_close', 'sub', {
     refuseDigitRange: true,
-    refuseRangeLikeContent: true,
   })
 
   md.inline.ruler.after('emphasis', 'sub', subRule)

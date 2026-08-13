@@ -177,6 +177,19 @@ describe('issue 679: tilde in Chinese number ranges', () => {
     expect(raws).toEqual(['~索引~'])
   })
 
+  // Review regressions (round 3): explicit Chinese subscripts containing
+  // digits must keep pairing.
+  it.each([
+    ['变量~第2项~', '~第2项~'],
+    ['H~2号~O', '~2号~'],
+    ['x~版本2~', '~版本2~'],
+  ])('parses explicit Chinese subscript with digits (%s)', (src, raw) => {
+    const raws = childrenOf(src)
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual([raw])
+  })
+
   it('keeps inline hash tags plain (#1方案和#2方案)', () => {
     const src = '我们支持#1方案和#2方案'
     expect(JSON.stringify(parse(src))).not.toContain('"type":"heading"')

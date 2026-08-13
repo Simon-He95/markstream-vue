@@ -43,7 +43,7 @@ describe('mermaid block max height', () => {
   it('caps preview height unless maxHeight is none', async () => {
     const capped = await renderWithMaxHeight('500px')
     expect(capped.container.style.height).toBe('500px')
-    expect(capped.content.style.height).toBe('2000px')
+    expect(capped.content.style.height).toBe('500px')
     capped.wrapper.unmount()
 
     const uncapped = await renderWithMaxHeight('none')
@@ -86,21 +86,22 @@ describe('mermaid block max height', () => {
     await nextTick()
 
     expect(container.style.height).toBe('360px')
-    expect(content.style.height).toBe('2000px')
+    expect(content.style.height).toBe('360px')
 
     await wrapper.setProps({ loading: false })
     setupState.updateContainerHeight(undefined, { force: true })
     await nextTick()
 
     expect(container.style.height).toBe('360px')
+    expect(content.style.height).toBe('360px')
     wrapper.unmount()
   })
 
-  it('sizes capped preview content to the full SVG height', async () => {
+  it('sizes capped preview content to the preview height', async () => {
     const { wrapper } = await renderWithMaxHeight('500px')
     const content = wrapper.get('div._mermaid').element as HTMLElement
 
-    expect(content.style.height).toBe('2000px')
+    expect(content.style.height).toBe('500px')
 
     wrapper.unmount()
   })
@@ -114,7 +115,7 @@ describe('mermaid block max height', () => {
     await nextTick()
 
     const modalContent = document.body.querySelector<HTMLElement>('[data-mermaid-modal-clone="1"] ._mermaid')
-    expect(modalContent?.style.height).toBe('2000px')
+    expect(modalContent?.style.height).toBe('500px')
     expect(modalContent?.style.contain).toBe('none')
     expect(modalContent?.style.contentVisibility).toBe('visible')
 
@@ -131,6 +132,7 @@ describe('mermaid block max height', () => {
           raw: '```mermaid\ngraph LR\nA-->B\n```',
         },
         loading: false,
+        maxHeight: 'none',
       },
       attachTo: document.body,
     })

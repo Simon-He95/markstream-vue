@@ -1032,9 +1032,9 @@ function updateContainerHeight(newContainerWidth?: number, options?: { force?: b
     const newHeight = effectiveWidth * aspectRatio
     const resolvedHeight = maxHeight == null ? newHeight : Math.min(newHeight, maxHeight)
     const previewHeight = Math.max(resolvedHeight, resolveEstimatedPreviewHeight())
-    contentHeight.value = `${Math.max(newHeight, previewHeight)}px`
     if (!freezePreviewHeight && !hasExternalPreviewHeightEstimate())
       containerHeight.value = `${previewHeight}px`
+    contentHeight.value = containerHeight.value
   }
 }
 
@@ -1530,9 +1530,9 @@ async function initMermaid(request = createMermaidRenderRequest()) {
       const bindFunctions = res?.bindFunctions ?? null
       lastMermaidBindFunctions = bindFunctions
       bindMermaidInteractions(rendered.bindTarget)
+      safeRaf(() => updateContainerHeight())
       // Successful full render clears Partial preview state
       if (!hasRenderedOnce.value && !isThemeRendering.value) {
-        safeRaf(() => updateContainerHeight())
         hasRenderedOnce.value = true
         savedTransformState.value = {
           zoom: zoom.value,
@@ -2673,7 +2673,12 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
 ._mermaid :deep(svg) {
   width: 100%;
   height: auto;
+  max-height: 100%;
   display: block;
+}
+
+.fullscreen ._mermaid :deep(svg) {
+  max-height: none;
 }
 
 .fullscreen {

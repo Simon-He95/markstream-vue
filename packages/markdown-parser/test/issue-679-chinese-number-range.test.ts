@@ -46,12 +46,17 @@ describe('issue 679: tilde in Chinese number ranges', () => {
   // later in the same paragraph.
   it.each([
     '价格~5元，其他~6元',
+    '价格~5元,其他~6元',
     '电话~123456，分机~654321',
     '第~1章讲原理，第~2章讲实现',
     '价格~5元，其他~6元，还有~7元',
+    '预算60万~100万元至追加5万元~6万元',
+    '从1亿~2亿元增加到3亿~4亿元',
   ])('keeps %s as plain text', (src) => {
-    expect(JSON.stringify(parse(src))).not.toContain('"type":"subscript"')
-    expect(rawText(src)).toBe(src)
+    for (const final of [true, false]) {
+      expect(JSON.stringify(parse(src, final))).not.toContain('"type":"subscript"')
+      expect(rawText(src, final)).toBe(src)
+    }
   })
 
   it('parses ASCII subscripts after Han chars (值~max~, 空格~x~)', () => {
@@ -175,6 +180,18 @@ describe('issue 679: tilde in Chinese number ranges', () => {
       .filter((c: any) => c.type === 'subscript')
       .map((c: any) => c.raw)
     expect(raws).toEqual(['~索引~'])
+  })
+
+  it.each([
+    ['x~i，j~', '~i，j~'],
+    ['H~foo：bar~O', '~foo：bar~'],
+  ])('parses explicit subscript containing Chinese punctuation (%s)', (src, raw) => {
+    for (const final of [true, false]) {
+      const raws = childrenOf(src, final)
+        .filter((c: any) => c.type === 'subscript')
+        .map((c: any) => c.raw)
+      expect(raws).toEqual([raw])
+    }
   })
 
   // Review regressions (round 3): explicit Chinese subscripts containing

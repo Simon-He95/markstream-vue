@@ -26,9 +26,8 @@ import type { MarkdownIt, Token } from '../markdown-it-types'
 const UNESCAPE_RE = /\\([ \\!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-])/g
 
 const DIGIT_RE = /\d/u
-// CJK sentence punctuation marks a structural boundary: a subscript whose
-// content crosses one is an accidental range cross-pairing.
-const CJK_SENTENCE_PUNCT_RE = /[，。；、！？：]/u
+const RANGE_BOUNDARY_RE = /[,.!?;:，。；、！？：]/u
+const HAN_SUFFIXED_NUMBER_RE = /\d\p{Script=Han}{1,3}$/u
 
 interface PairScanState {
   pos: number
@@ -105,23 +104,27 @@ function createScanPairRule(
     // Accidental cross-pairing guards, based on the marker's surrounding
     // structure rather than the content's character class:
     //
-    // 1. content crossing CJK sentence punctuation (`60万~100万元，...~`)
-    //    is a range cross-pairing — a real subscript never spans it;
-    // 2. content ending with a digit while the close marker is directly
-    //    followed by another digit (`...工作26~43年`) means the close
-    //    marker is itself a range separator chained after the content.
+    // 1. the opening marker follows a number with a short Han suffix
+    //    (`60万~100万元...5万元~6万元`);
+    // 2. numeric content crosses sentence punctuation
+    //    (`价格~5元，其他~6元`);
+    // 3. numeric content ends with a digit and the close marker is directly
+    //    followed by another digit (`...工作26~43年`).
     //
     // Explicit Chinese subscripts with digits (`变量~第2项~`, `H~2号~O`,
-    // `x~版本2~`) still pair.
+    // `x~版本2~`) and subscripts containing punctuation (`x~i，j~`) still
+    // pair.
     const closeNext = s.src[s.pos + 1]
-    if (CJK_SENTENCE_PUNCT_RE.test(content)) {
-      s.pos = start
-      return false
-    }
+    const startsWithDigit = DIGIT_RE.test(content[0])
+    const closeFollowedByDigit = closeNext !== undefined && DIGIT_RE.test(closeNext)
     if (
-      DIGIT_RE.test(content[content.length - 1])
-      && closeNext !== undefined
-      && DIGIT_RE.test(closeNext)
+      startsWithDigit
+      && closeFollowedByDigit
+      && (
+        HAN_SUFFIXED_NUMBER_RE.test(s.src.slice(0, start))
+        || RANGE_BOUNDARY_RE.test(content)
+        || DIGIT_RE.test(content[content.length - 1])
+      )
     ) {
       s.pos = start
       return false

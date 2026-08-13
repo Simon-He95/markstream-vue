@@ -158,6 +158,25 @@ describe('issue 679: tilde in Chinese number ranges', () => {
     expect(raws).toEqual([raw])
   })
 
+  // Review regressions (round 2): token-aware closing-marker scan and
+  // explicit Chinese subscripts.
+  it('parses escaped tilde inside subscript (H~foo\\~bar~O)', () => {
+    const raws = childrenOf('H~foo\\~bar~O')
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~foo~bar~'])
+    // unescaped content in the token
+    const sub = childrenOf('H~foo\\~bar~O').find((c: any) => c.type === 'subscript') as any
+    expect(sub?.children?.map((t: any) => t.content ?? '').join('') ?? sub?.raw).toContain('foo~bar')
+  })
+
+  it('parses explicit Chinese subscript (变量~索引~)', () => {
+    const raws = childrenOf('变量~索引~')
+      .filter((c: any) => c.type === 'subscript')
+      .map((c: any) => c.raw)
+    expect(raws).toEqual(['~索引~'])
+  })
+
   it('keeps inline hash tags plain (#1方案和#2方案)', () => {
     const src = '我们支持#1方案和#2方案'
     expect(JSON.stringify(parse(src))).not.toContain('"type":"heading"')

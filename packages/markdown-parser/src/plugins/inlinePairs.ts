@@ -10,9 +10,13 @@ import type { MarkdownIt, Token } from '../markdown-it-types'
 // same paragraph, silently swallowing a long chunk as subscript.
 //
 // This rule keeps the upstream pairing behaviour for legitimate subscripts
-// while refusing pairs whose content contains CJK characters (`60万~100万元`
-// must never become a subscript) or whose open marker sits between two digits
-// (`26~43年`, `1~2~3`, mirroring the legacy "wave" rule).
+// while refusing accidental numeric-range cross-pairings:
+//
+// - the open marker sits between two digits (`26~43年`, `1~2~3`), mirroring
+//   the legacy "wave" rule, or
+// - the paired content looks like a range fragment: digits combined with CJK
+//   characters (`60万~100万元` → content `100万元...`). Explicit Chinese
+//   subscripts without digits (`变量~索引~`) keep working.
 //
 // `^sup^`, `==mark==` and `++ins++` intentionally keep the upstream
 // markdown-it-sup/mark/ins plugins: their semantics are unchanged.
@@ -27,6 +31,11 @@ interface PairScanState {
   posMax: number
   src: string
   push: (type: string, tag?: string, nesting?: number) => Token
+  md: {
+    inline: {
+      skipToken: (state: PairScanState) => number
+    }
+  }
 }
 
 // `~` surrounded by digits on both sides reads as a numeric range
@@ -44,7 +53,7 @@ function createScanPairRule(
   openType: string,
   closeType: string,
   tag: string,
-  opts: { refuseDigitRange?: boolean, refuseHanContent?: boolean } = {},
+  opts: { refuseDigitRange?: boolean, refuseRangeLikeContent?: boolean } = {},
 ) {
   const markerCode = markerChar.charCodeAt(0)
 
@@ -60,27 +69,42 @@ function createScanPairRule(
     if (opts.refuseDigitRange && isDigitRangeBefore(s))
       return false
 
-    // Scan for the closing marker — same unbounded pairing as upstream.
-    let pos = start + 1
-    while (pos < max) {
-      if (s.src.charCodeAt(pos) === markerCode)
+    // Scan for the closing marker with the same token-aware skipping as
+    // upstream markdown-it-sub: escaped characters (`\~`) and inline tokens
+    // (code spans) are skipped instead of treated as closers.
+    s.pos = start + 1
+    let found = false
+    while (s.pos < max) {
+      if (s.src.charCodeAt(s.pos) === markerCode) {
+        found = true
         break
-      pos++
+      }
+      s.md.inline.skipToken(s)
     }
-    if (pos >= max)
+    if (!found || start + 1 === s.pos) {
+      s.pos = start
       return false
+    }
 
-    const content = s.src.slice(start + 1, pos)
-    if (!content)
+    const content = s.src.slice(start + 1, s.pos)
+    if (!content) {
+      s.pos = start
       return false
+    }
 
     // Keep the upstream "no unescaped space/newline inside" rule.
-    if (content.match(/(^|[^\\])(\\\\)*\s/))
+    if (content.match(/(^|[^\\])(\\\\)*\s/)) {
+      s.pos = start
       return false
+    }
 
-    // Refuse CJK content: `60万~100万元` should never become a subscript.
-    if (opts.refuseHanContent && HAN_RE.test(content))
+    // Refuse range-like cross-pairings (`60万~100万元`): the accidental
+    // content combines digits with CJK characters. Explicit Chinese
+    // subscripts without digits (`变量~索引~`) still pair.
+    if (opts.refuseRangeLikeContent && DIGIT_RE.test(content) && HAN_RE.test(content)) {
+      s.pos = start
       return false
+    }
 
     const open = s.push(openType, tag, 1)
     open.markup = markup
@@ -91,7 +115,7 @@ function createScanPairRule(
     const close = s.push(closeType, tag, -1)
     close.markup = markup
 
-    s.pos = pos + 1
+    s.pos = s.pos + 1
     return true
   }
 }
@@ -101,7 +125,7 @@ export function applyInlinePairs(md: MarkdownIt) {
   // (after `emphasis`). `^sup^`/`==mark==`/`++ins++` use the upstream plugins.
   const subRule = createScanPairRule('~', '~', 'sub_open', 'sub_close', 'sub', {
     refuseDigitRange: true,
-    refuseHanContent: true,
+    refuseRangeLikeContent: true,
   })
 
   md.inline.ruler.after('emphasis', 'sub', subRule)

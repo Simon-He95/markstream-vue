@@ -6,7 +6,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-vue
 - Package name: markstream-vue
-- Version: 1.1.2
+- Version: 1.1.4
 - Maturity label: stable
 - Framework/runtime: Vue 3, Nuxt 3, VitePress
 - Description: Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, and Monaco.
@@ -20,7 +20,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-react
 - Package name: markstream-react
-- Version: 0.0.56-beta.4
+- Version: 0.0.56-beta.5
 - Maturity label: beta
 - Framework/runtime: React 18/19, Next.js App Router, Next.js Pages Router, Remix
 - Description: React/Next.js streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, Monaco, and custom React components.
@@ -34,7 +34,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-svelte
 - Package name: markstream-svelte
-- Version: 0.0.6
+- Version: 0.0.7
 - Maturity label: beta/experimental
 - Framework/runtime: Svelte 5 only
 - Description: Svelte 5 and SvelteKit streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Monaco-powered code blocks, and custom Svelte components.
@@ -48,7 +48,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-angular
 - Package name: markstream-angular
-- Version: 0.0.10
+- Version: 0.0.11
 - Maturity label: alpha
 - Framework/runtime: Angular standalone components, Angular 20+
 - Description: Angular 20+ standalone streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Monaco-powered code blocks, and safe Angular component rendering.
@@ -76,7 +76,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### stream-markdown-parser
 - Package name: stream-markdown-parser
-- Version: 1.2.3
+- Version: 1.2.5
 - Maturity label: stable
 - Framework/runtime: Any JavaScript or TypeScript app
 - Description: Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.

@@ -80,7 +80,7 @@ try {
       'react-dom': '^19.2.0',
     },
     devDependencies: {
-      '@tsrx/core': '^0.1.56',
+      '@tsrx/core': '0.1.56',
       '@tsrx/typescript-plugin': '^0.3.118',
       'typescript': '^5.9.3',
       'vite': '^8.0.16',

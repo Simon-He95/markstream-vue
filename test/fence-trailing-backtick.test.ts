@@ -49,7 +49,7 @@ describe('fence parser trailing fence cleanup', () => {
     expect((node as any).code).toBe('a\n```')
   })
 
-  it('does not strip a shorter marker run than the opening fence', () => {
+  it('withholds a shorter marker run until a longer opening fence is resolved', () => {
     const token: any = {
       type: 'fence',
       info: 'text',
@@ -58,8 +58,12 @@ describe('fence parser trailing fence cleanup', () => {
       map: [0, 3],
       meta: { closed: false },
     }
-    const node = parseFenceToken(token as any)
-    expect((node as any).code).toBe('```\nline\n```')
+    const pendingNode = parseFenceToken(token as any)
+    expect((pendingNode as any).code).toBe('```\nline')
+
+    token.meta.closed = true
+    const finalNode = parseFenceToken(token as any)
+    expect((finalNode as any).code).toBe('```\nline\n```')
   })
 
   it('keeps legitimate content that contains backticks not on their own line', () => {

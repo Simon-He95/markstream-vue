@@ -101,6 +101,16 @@ For mobile WebViews or conservative bundles, use plain `pre` rendering:
 - Diff fences with added and removed lines
 - Code followed by tables, Mermaid, or math before the close fence arrives
 
+A marker-only line at the streaming tail is ambiguous until more input arrives. For example, the first one or two backticks of a three-backtick closing fence must stay pending instead of entering the rendered code content:
+
+```text
+code line                         code line
+code line                         code line
+` or ``                  ->       (pending tail hidden)
+```
+
+If a non-marker character or another line arrives, the pending text is released as literal code. When `final` is true, EOF is authoritative and literal marker-only content is preserved. This rule belongs to the parser output contract so plain `pre` and every framework adapter receive the same stable `code_block.code` value.
+
 ## Performance notes
 
 - Batch token updates before rendering; do not commit every byte from an SSE or WebSocket stream.

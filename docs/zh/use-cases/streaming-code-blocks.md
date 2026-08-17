@@ -101,6 +101,16 @@ setCustomComponents('chat-code-blocks', {
 - 含新增和删除行的 diff fence
 - 在闭合 fence 到达之前，代码后跟着表格、Mermaid 或数学公式
 
+流式尾部仅由 marker 组成的独占行，在更多输入到达前具有歧义。例如，三反引号闭合 fence 的前一个或两个反引号必须保持 pending，不能进入已渲染的代码内容：
+
+```text
+代码行                           代码行
+代码行                           代码行
+` 或 ``                 ->       （隐藏 pending 尾部）
+```
+
+如果随后到达非 marker 字符或新的一行，pending 文本会作为字面代码恢复。当 `final` 为 true 时，EOF 具有最终决定权，必须保留字面意义的 marker-only 内容。这条规则属于 parser 输出 contract，因此 plain `pre` 和所有 framework adapter 都会收到相同且稳定的 `code_block.code`。
+
 ## 性能说明
 
 - 在渲染前批处理 token 更新；不要提交 SSE 或 WebSocket 流中的每个字节。

@@ -1,9 +1,11 @@
 import type { CodeBlockNode, MarkdownToken } from '../../types'
 
-// A trailing line made of the fence's own marker character that is long
-// enough to be a valid closing fence for it.
-function TRAILING_OWN_FENCE_LINE_RE(marker: string, minLen: number) {
-  return new RegExp(`\r?\n[ \\t]*${marker}{${minLen},}[ \\t]*$`)
+// A trailing line made only of the fence's own marker character is
+// ambiguous while streaming: one or two backticks may be the prefix of a
+// three-backtick closing fence. Withhold that line until the parser can prove
+// whether it is a close or literal code so the prefix does not flash in <pre>.
+function TRAILING_OWN_FENCE_CANDIDATE_LINE_RE(marker: string) {
+  return new RegExp(`(?:^|\\r\\n|\\n|\\r) {0,3}${marker}+[ \\t]*$`)
 }
 
 // Unified diff metadata/header line prefixes to skip when splitting a diff
@@ -121,22 +123,19 @@ export function parseFenceToken(token: MarkdownToken): CodeBlockNode {
       })()
     : info
 
-  // Defensive sanitization: sometimes a closing fence line (e.g. ``` or ``)
-  // can accidentally end up inside `token.content` (for example when
-  // the parser/mapping is confused during streaming). This cleanup is ONLY
-  // valid for the streaming/unclosed case, and ONLY when the trailing line
-  // could actually be the fence's own closing marker (same character, at
-  // least as long as the opening run). A closed fence carries authoritative
-  // content and must never be altered: a nested fence inside a 4-backtick
-  // outer block legitimately ends with a ``` line, and a ``` fence whose
-  // code ends in a backtick-only line keeps it.
+  // In an unclosed streaming fence, a trailing marker-only source line is
+  // ambiguous until another character arrives. It may be literal code, but it
+  // is also the prefix of the closing fence. Do not expose that pending prefix
+  // through `node.code`; otherwise the pre fallback paints ` / `` and removes
+  // it one frame later when the closing run becomes complete. A closed or
+  // final fence carries authoritative content and must never be altered, so a
+  // shorter nested fence inside a longer outer fence remains valid code.
   let content = String(token.content ?? '')
   if (!closed && token.markup) {
     const marker = token.markup[0]
-    const minLen = token.markup.length
-    const trailingFenceLineRe = TRAILING_OWN_FENCE_LINE_RE(marker, minLen)
-    if (trailingFenceLineRe.test(content))
-      content = content.replace(trailingFenceLineRe, '')
+    const trailingFenceCandidateLineRe = TRAILING_OWN_FENCE_CANDIDATE_LINE_RE(marker)
+    if (trailingFenceCandidateLineRe.test(content))
+      content = content.replace(trailingFenceCandidateLineRe, '')
   }
 
   if (diff) {

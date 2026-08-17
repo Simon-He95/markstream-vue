@@ -477,6 +477,12 @@ export interface InternalParseOptions extends ParseOptions {
    *  same accumulated context a full parse would have.
    */
   __linkifyDemotionSeed?: string[]
+  /**
+   * Number of reused (stable) prefix nodes when the last top-level
+   * processTopLevelTokensWithReuse call actually reused nodes; undefined
+   * otherwise. Lets the details stitching pass gate its per-opener cache.
+   */
+  __structuredReuseTailStart?: number
   __markdownIt?: MarkdownIt
   __sourceLineMapper?: (line: number) => MarkdownNodeSourceMap
   __sourceMarkdown?: string

@@ -70,12 +70,15 @@ function parseArgs(argv) {
       if (!args.patch)
         throw new Error('--patch requires a value')
     }
-    else if (arg === '--parser-only')
+    else if (arg === '--parser-only') {
       args.parserOnly = true
-    else if (arg === '--skip-verify')
+    }
+    else if (arg === '--skip-verify') {
       args.skipVerify = true
-    else if (arg === '--dry-run')
+    }
+    else if (arg === '--dry-run') {
       args.dryRun = true
+    }
     else if (arg === '--help' || arg === '-h') {
       console.log(`Usage: node scripts/release-parser.mjs [--patch <version>] [--parser-only] [--skip-verify] [--dry-run]
 

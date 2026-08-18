@@ -1,7 +1,7 @@
 {
   "name": "markstream-react",
   "type": "module",
-  "version": "1.1.5",
+  "version": "0.0.56-beta.6",
   "description": "React/Next.js streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, Shiki, Monaco, and custom React components.",
   "author": "Simon He",
   "license": "MIT",

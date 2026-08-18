@@ -1,7 +1,7 @@
 {
   "name": "markstream-svelte",
   "type": "module",
-  "version": "1.1.5",
+  "version": "0.0.8",
   "description": "Svelte 5 and SvelteKit streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, Monaco-powered code blocks, and custom Svelte components.",
   "author": "Simon He",
   "license": "MIT",

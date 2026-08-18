@@ -5464,7 +5464,7 @@ function buildRenderedItemSignature(index: number) {
   return [
     index,
     estimatedHeight,
-    resolvedRenderCodeBlocksAsPre.value,
+    resolvedCodeRenderer.value === 'pre',
     customComponentsMap.value,
     effectiveCustomHtmlTagsSet.value,
     resolvedHtmlPolicy.value,

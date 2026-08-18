@@ -162,6 +162,56 @@ describe('useHeightMeasurements', () => {
     expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 4)).toBe(3)
   })
 
+  it('grows Fenwick trees incrementally while preserving prefix sums', () => {
+    const h = useHeightMeasurements()
+
+    h.recordNodeHeight(0, 10)
+    h.recordNodeHeight(2, 30)
+    h.syncHeightTreeSize(5)
+
+    expect(h.heightTreeSize.value).toBe(5)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 5)).toBe(40)
+    expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 5)).toBe(2)
+
+    // Streaming append: grow by one, existing prefix sums must stay intact.
+    h.syncHeightTreeSize(6)
+    expect(h.heightTreeSize.value).toBe(6)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 6)).toBe(40)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 5)).toBe(40)
+    expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 6)).toBe(2)
+
+    // A new node measured after the growth lands in the tree correctly.
+    h.recordNodeHeight(5, 70)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 6)).toBe(110)
+    expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 6)).toBe(3)
+
+    // Growing again keeps the updated values.
+    h.syncHeightTreeSize(8)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 8)).toBe(110)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 5, 8)).toBe(70)
+    expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 8)).toBe(3)
+  })
+
+  it('syncHeightTreeSize rebuilds on shrink and treats same size as no-op', () => {
+    const h = useHeightMeasurements()
+
+    h.recordNodeHeight(0, 10)
+    h.recordNodeHeight(2, 30)
+    h.syncHeightTreeSize(4)
+    expect(h.heightTreeSize.value).toBe(4)
+
+    // Same size: no-op, trees untouched.
+    h.syncHeightTreeSize(4)
+    expect(h.heightTreeSize.value).toBe(4)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 4)).toBe(40)
+
+    // Shrink: full rebuild bound to the smaller size.
+    h.syncHeightTreeSize(2)
+    expect(h.heightTreeSize.value).toBe(2)
+    expect(h.fenwickRangeSum(h.heightSumTree.value, 0, 2)).toBe(10)
+    expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 2)).toBe(1)
+  })
+
   it('removes measured heights from stats and Fenwick trees', () => {
     const onHeightRecorded = vi.fn()
     const h = useHeightMeasurements({ onHeightRecorded })

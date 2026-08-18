@@ -317,6 +317,11 @@ export function useBatchRenderingScheduler(
       const currentDatasetKey = datasetKey.value
       const datasetKeyChanged = !Object.is(currentDatasetKey, prevCtx.key)
       const lengthChanged = total !== prevCtx.total
+      // Streaming append growth (same content identity, node count grew from a
+      // non-empty dataset) is NOT a dataset replacement: the adaptive batch
+      // size should keep adapting instead of being reset every commit.
+      const isPureAppendGrowth
+        = lengthChanged && total > prevCtx.total && prevCtx.total > 0 && !datasetKeyChanged
       const datasetChanged = datasetKeyChanged || lengthChanged
       previousRenderContext.value = { key: currentDatasetKey, total }
 
@@ -337,11 +342,20 @@ export function useBatchRenderingScheduler(
 
       if (datasetKeyChanged)
         onDatasetKeyChanged(total)
+      // NOTE: keep the per-dataset-change cleanup (including pure append
+      // growth). Cancelling + rescheduling the in-flight batch also keeps a
+      // fresh batch RAF in the queue; removing it measurably changes streaming
+      // reveal pacing under interleaved frame queues, so the reschedule cost is
+      // intentional.
       if (datasetChanged || batchConfigChanged || !incrementalRenderingActive.value)
         cleanupBatchScheduler()
-      if (datasetChanged || batchConfigChanged)
+      // Pure append growth is not a dataset replacement: keep the adaptive
+      // batch size adapting (it was previously reset to max on every commit,
+      // which made adjustAdaptiveBatchSize dead code) and skip the dataset
+      // focus-sync callback.
+      if ((datasetChanged && !isPureAppendGrowth) || batchConfigChanged)
         adaptiveBatchSize.value = Math.max(1, resolvedBatchSize.value || 1)
-      if (datasetChanged)
+      if (datasetChanged && !isPureAppendGrowth)
         onDatasetChanged()
 
       const targetCount = desiredRenderedCount.value

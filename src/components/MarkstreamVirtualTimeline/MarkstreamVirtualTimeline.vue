@@ -923,7 +923,11 @@ function updateScrollMetrics(options: { remember?: boolean } = {}) {
     options.remember === true
     || (options.remember !== false && !restoringThread.value)
   ) {
-    rememberThreadState()
+    // Throttle the implicit path (scroll handler / ResizeObserver) to at most
+    // once per THREAD_STATE_REMEMBER_DELAY_MS: `captureThreadStateForKey` is
+    // O(records) and emits `thread-state-change`. Explicit programmatic
+    // scrolls pass `remember: true` and stay synchronous.
+    scheduleThreadStateRemember()
   }
 }
 

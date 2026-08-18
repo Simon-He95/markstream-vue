@@ -20,6 +20,7 @@ export interface HeightMeasurements {
   resetHeightMeasurements: () => void
   pruneHeightMeasurements: (size: number) => void
   rebuildHeightTrees: (size: number) => void
+  syncHeightTreeSize: (size: number) => void
   recordNodeHeight: (index: number, height: number, options?: { allowShrink?: boolean }) => void
   removeNodeHeight: (index: number, options?: { notify?: boolean }) => boolean
   removeNodeHeights: (indices: Iterable<number>, options?: { notify?: boolean }) => number
@@ -129,6 +130,62 @@ export function useHeightMeasurements(
 
     heightSumTree.value = sumTree
     heightKnownTree.value = countTree
+  }
+
+  /**
+   * Bring the Fenwick trees in sync with a new total node count.
+   *
+   * Growing the dataset (streaming append) extends the trees in place: Fenwick
+   * entries are indexed by node position, so existing prefix sums stay valid
+   * and only the new slots need zeroing. This avoids the O(measured)-per-commit
+   * full rebuild that previously ran on every append. Shrinks and the first
+   * build still do a full rebuild (rare paths).
+   */
+  function syncHeightTreeSize(size: number) {
+    const prevSize = heightTreeSize.value
+    if (size === prevSize)
+      return
+
+    if (size < prevSize || prevSize === 0) {
+      rebuildHeightTrees(size)
+      return
+    }
+
+    const sumTree = heightSumTree.value
+    const countTree = heightKnownTree.value
+
+    sumTree.length = size + 1
+    countTree.length = size + 1
+    for (let i = prevSize + 1; i <= size; i++) {
+      sumTree[i] = 0
+      countTree[i] = 0
+    }
+
+    // A Fenwick update path that previously stopped at the old array boundary
+    // now extends into the newly added slots. Re-apply the tail of every
+    // measured node's update path so range sums over the grown portion (and
+    // queries that land on the new boundary slots) see the full values.
+    const oldBound = prevSize + 1
+    for (const [rawIndex, rawHeight] of Object.entries(nodeHeights)) {
+      const index = Number(rawIndex)
+      const height = Number(rawHeight)
+
+      if (!Number.isFinite(index) || index < 0 || index >= size)
+        continue
+
+      if (!Number.isFinite(height) || height <= 0)
+        continue
+
+      let i = index + 1
+      while (i < oldBound)
+        i += i & -i
+      for (; i <= size; i += i & -i) {
+        sumTree[i] += height
+        countTree[i] += 1
+      }
+    }
+
+    heightTreeSize.value = size
   }
 
   function recomputeHeightStats() {
@@ -342,6 +399,7 @@ export function useHeightMeasurements(
     resetHeightMeasurements,
     pruneHeightMeasurements,
     rebuildHeightTrees,
+    syncHeightTreeSize,
     recordNodeHeight,
     removeNodeHeight,
     removeNodeHeights,

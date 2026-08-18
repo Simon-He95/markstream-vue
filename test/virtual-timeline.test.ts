@@ -181,6 +181,77 @@ describe('virtual timeline API', () => {
     vi.restoreAllMocks()
   })
 
+  it('throttles thread-state remembers to one per window during scroll bursts', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(480)
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(48)
+    vi.stubGlobal('ResizeObserver', class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    })
+
+    const wrapper = mount(MarkstreamVirtualTimeline, {
+      attachTo: document.body,
+      props: {
+        items: [
+          { kind: 'assistant-markdown', id: 'a1', content: '# A', final: true },
+          { kind: 'assistant-markdown', id: 'a2', content: '# B', final: true },
+          { kind: 'assistant-markdown', id: 'a3', content: '# C', final: true },
+        ],
+        threadKey: 'thread-throttle',
+        overscan: 10,
+        stickToBottom: false,
+      },
+      slots: {
+        default(props: any) {
+          return h('div', { 'ref': props.measureRef, 'data-kind': props.kind }, props.markdownProps.content)
+        },
+      },
+    })
+
+    await flushAll()
+    await nextTick()
+
+    const root = wrapper.find('.markstream-virtual-timeline').element as HTMLElement
+    expect(root).toBeTruthy()
+
+    // Mount-time initial positioning synchronously remembers once (intended).
+    // Wait out any mount-time throttled remember timers (real timers) before
+    // switching to fake timers so the burst below starts with no pending timer.
+    await new Promise(resolve => setTimeout(resolve, 100))
+    const initialEmitCount = wrapper.emitted('thread-state-change')?.length ?? 0
+
+    vi.useFakeTimers()
+    try {
+      // A scroll burst: many scroll events within one 80ms remember window.
+      // Each event previously captured the full thread state (O(records))
+      // synchronously; the throttled path must coalesce them.
+      for (let i = 0; i < 10; i++) {
+        Object.defineProperty(root, 'scrollTop', { value: 10 + i * 3, configurable: true })
+        await wrapper.find('.markstream-virtual-timeline').trigger('scroll')
+      }
+
+      expect((wrapper.emitted('thread-state-change')?.length ?? 0) - initialEmitCount).toBe(0)
+
+      vi.advanceTimersByTime(80)
+
+      // The 10-event burst coalesces into exactly one remember + emit.
+      expect((wrapper.emitted('thread-state-change')?.length ?? 0) - initialEmitCount).toBe(1)
+
+      // A second burst after the window produces a second emit.
+      for (let i = 0; i < 5; i++) {
+        Object.defineProperty(root, 'scrollTop', { value: 100 + i, configurable: true })
+        await wrapper.find('.markstream-virtual-timeline').trigger('scroll')
+      }
+      vi.advanceTimersByTime(80)
+      expect((wrapper.emitted('thread-state-change')?.length ?? 0) - initialEmitCount).toBe(2)
+    }
+    finally {
+      vi.useRealTimers()
+      wrapper.unmount()
+    }
+  })
+
   it('renders a mixed timeline and provides markdown virtual props to the slot', async () => {
     vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(480)
     vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(48)

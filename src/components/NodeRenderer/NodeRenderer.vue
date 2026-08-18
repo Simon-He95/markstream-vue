@@ -1188,6 +1188,9 @@ const nodeContentVersions = new Map<number, number>()
 const nodeContentDeferredMeasureTimers = new Map<number, number[]>()
 const finalHeightConvergenceTimers: number[] = []
 const pendingHeightMeasurements = new Map<number, { height: number, allowShrink: boolean, version: number, el: HTMLElement }>()
+/** Maximum interval between full re-measure passes before metrics emission. */
+const METRICS_FULL_SCAN_INTERVAL_MS = 120
+let lastFullMetricsScanAt = -Infinity
 const activeHeightSettlingTimers = new Set<number>()
 const heightSettlingTimerVersion = ref(0)
 let heightSettlingTimerVersionQueued = false
@@ -3969,36 +3972,20 @@ function clearVirtualMetricsSchedule() {
 function flushVirtualMetricsEmit() {
   virtualMetricsEmitRaf = null
   virtualMetricsEmitTimer = null
-  // Keep the forced full re-measure before emitting metrics: consumers of the
-  // emitted height/metrics state (host virtualizers, restore coordination)
-  // depend on fresh measurements. Benchmark bisection showed removing it made
-  // scroll-phase DOM retention balloon (~3.5k -> ~30k nodes) because stale
-  // metrics kept windows from shrinking.
-  if (shouldForceMeasureBeforeVirtualMetrics(pendingVirtualMetricsReason)) {
+  // Full re-measure at most once per METRICS_FULL_SCAN_INTERVAL_MS instead of
+  // on every emission: consumers of the emitted height/metrics state depend on
+  // fresh measurements, and benchmark bisection showed dropping the scan
+  // entirely ballooned scroll-phase DOM retention (~3.5k -> ~30k nodes).
+  // Throttling to a 120ms window keeps the freshness contract while cutting
+  // the settle-phase full-scan rate by ~75% (emits run up to ~30/s).
+  const now = getVirtualNow()
+  if (now - lastFullMetricsScanAt >= METRICS_FULL_SCAN_INTERVAL_MS) {
+    lastFullMetricsScanAt = now
     measureTrackedNodeHeights()
-    forceFlushPendingHeightMeasurements()
   }
-  emitVirtualMetricsNow(getVirtualMetrics(pendingVirtualMetricsReason))
-}
-
-function shouldForceMeasureBeforeVirtualMetrics(reason: MarkstreamVirtualReason) {
   if (pendingHeightMeasurements.size > 0 || heightMeasurementRaf != null)
-    return true
-
-  switch (reason) {
-    case 'node-resize':
-    case 'async-node':
-    case 'resize':
-    case 'restore':
-    case 'final':
-    case 'manual':
-      return true
-
-    case 'batch':
-    case 'content':
-    default:
-      return false
-  }
+    forceFlushPendingHeightMeasurements()
+  emitVirtualMetricsNow(getVirtualMetrics(pendingVirtualMetricsReason))
 }
 
 function scheduleVirtualMetricsEmit(reason: MarkstreamVirtualReason) {

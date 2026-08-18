@@ -140,8 +140,18 @@ interface ParseTimingMetrics {
 
 interface StructuredStreamCacheEntry {
   groupBoundaries: StructuredStreamGroupBoundary[]
+  /** Absolute token indices where each reusable group starts. */
+  groupStarts: number[]
+  /** Number of top-level tokens when this cache was written. */
+  tokenCount: number
+  /** Reference to the token array from the parse that produced this cache. */
+  tokens: MarkdownToken[]
+  /** Whether any top-level group is a single-token (non-paired) reusable type. */
+  mixed: boolean
   source: string
   nodes: ParsedNode[]
+  /** Cached prefix node raws for incremental linkify demotion seeding. */
+  seed: string[]
   stableGroupCount: number
   requireClosingStrong: boolean | undefined
   validateLink: ParseOptions['validateLink']
@@ -160,6 +170,20 @@ interface ReusableTopLevelTokenGroups {
 
 const structuredStreamCache = new WeakMap<object, StructuredStreamCacheEntry>()
 const topLevelStreamParseMode = new WeakMap<object, string>()
+/**
+ * Stitched `<details>` output cache keyed by md instance, then by the pre-pass
+ * details opener html_block node. Reused prefix details keep the same opener
+ * object across appends, so combineStructuredDetailsHtmlBlocks can skip
+ * re-parsing + re-rendering the (unchanged) middle of closed details on every
+ * append. Entries are written only when the top-level parse reused nodes.
+ */
+const detailsStitchCache = new WeakMap<object, WeakMap<object, {
+  openRaw: string
+  explicitClose: boolean
+  closeSliceEnd: number
+  middleSource: string
+  node: ParsedNode
+}>>()
 const REUSABLE_INLINE_TOKEN_TYPES = new Set([
   'code_inline',
   'em_close',
@@ -315,10 +339,11 @@ function getReusableTopLevelPairedCloseType(tokenType: string) {
 function getReusableTopLevelTokenGroups(
   tokens: MarkdownToken[],
   validateLink: ParseOptions['validateLink'],
+  startIndex = 0,
 ): ReusableTopLevelTokenGroups | null {
   const groupStarts: number[] = []
   let mixed = false
-  let index = 0
+  let index = startIndex
 
   while (index < tokens.length) {
     const token = tokens[index]
@@ -421,8 +446,13 @@ function updateStructuredStreamCache(
 
   structuredStreamCache.set(md as unknown as object, {
     groupBoundaries,
+    groupStarts,
+    tokenCount: tokens.length,
+    tokens,
+    mixed: groups.mixed,
     source,
     nodes,
+    seed: nodes.map(node => String((node as Record<string, unknown>).raw ?? '')),
     stableGroupCount: groups.mixed
       ? Math.max(0, groupStarts.length - 1)
       : sourceEndsWithBlankLine(source) ? groupStarts.length : Math.max(0, groupStarts.length - 1),
@@ -437,6 +467,12 @@ function hasStableStructuredStreamGroupBoundaries(
   groupStarts: number[],
   stableGroupCount: number,
 ) {
+  // Fast path: markdown-it-ts returns the SAME cached token array across
+  // append/tail parses, so array identity proves the entire prefix (including
+  // every group boundary) is byte-for-byte unchanged — O(1) instead of O(groups).
+  if (previous.tokens === tokens)
+    return true
+
   const lastGroupIndex = groupStarts.length - 1
   for (let index = 0; index < stableGroupCount; index++) {
     const start = groupStarts[index]
@@ -493,15 +529,39 @@ function processTopLevelTokensWithReuse(
   if (structuredReuseDisabled)
     return processTokensWithTiming(tokens, options, timing)
 
-  const groups = getReusableTopLevelTokenGroups(tokens, options.validateLink)
+  const previous = structuredStreamCache.get(owner)
+  const mode = topLevelStreamParseMode.get(owner)
+  // markdown-it-ts returns the SAME cached token array (with the same prefix
+  // token objects) across append/tail parses, so identity proves the prefix is
+  // unchanged without re-scanning any prefix token.
+  const prefixUnchanged = !!previous
+    && (mode === 'append' || mode === 'tail')
+    && previous.tokenCount !== undefined
+    && previous.tokenCount <= tokens.length
+    && tokens === previous.tokens
+
+  let groups: ReusableTopLevelTokenGroups | null
+  if (prefixUnchanged) {
+    // Incremental scan: prefix groups were validated on the previous call and
+    // the token array identity guarantees they are unchanged, so only the new
+    // tail tokens need scanning.
+    const tailGroups = getReusableTopLevelTokenGroups(tokens, options.validateLink, previous.tokenCount)
+    groups = tailGroups
+      ? {
+          starts: previous.groupStarts.concat(tailGroups.starts),
+          mixed: previous.mixed || tailGroups.mixed,
+        }
+      : getReusableTopLevelTokenGroups(tokens, options.validateLink)
+  }
+  else {
+    groups = getReusableTopLevelTokenGroups(tokens, options.validateLink)
+  }
   if (!groups) {
     structuredStreamCache.delete(owner)
     return processTokensWithTiming(tokens, options, timing)
   }
 
   const groupStarts = groups.starts
-  const previous = structuredStreamCache.get(owner)
-  const mode = topLevelStreamParseMode.get(owner)
   const stableGroupCount = previous && groups.mixed
     ? Math.min(previous.stableGroupCount, Math.max(0, previous.groupBoundaries.length - 1))
     : previous?.stableGroupCount ?? 0
@@ -518,17 +578,15 @@ function processTopLevelTokensWithReuse(
     const tailStart = groupStarts[stableGroupCount] ?? tokens.length
     const tailNodes = processTokensWithTiming(tokens.slice(tailStart), {
       ...options,
-      // Replay the reused prefix node raws into the tail's linkify demotion
-      // tracker so tail linkify decisions see the same accumulated context a
-      // full parse would have produced.
-      __linkifyDemotionSeed: previous.nodes
-        .slice(0, stableGroupCount)
-        .map(node => String((node as Record<string, unknown>).raw ?? '')),
+      // Prefix raws are cached and append-only: reuse the stored seed instead
+      // of re-slicing + re-stringifying every prefix node on each append.
+      __linkifyDemotionSeed: previous.seed.slice(0, stableGroupCount),
     } as InternalParseOptions, timing)
     const expectedTailNodes = groupStarts.length - stableGroupCount
 
     if (tailNodes.length === expectedTailNodes) {
       const result = previous.nodes.slice(0, stableGroupCount).concat(tailNodes)
+      options.__structuredReuseTailStart = stableGroupCount
       addTiming(timing, 'processTokensReusedTopLevelNodes', stableGroupCount)
       updateStructuredStreamCache(md, source, tokens, groups, result, options)
       return result
@@ -2568,23 +2626,6 @@ function combineStructuredDetailsHtmlBlocks(
         })()
       : openRaw
 
-    const middleNodes = selfContained
-      ? []
-      : closeIndex === -1 ? nodes.slice(i + 1) : nodes.slice(i + 1, closeIndex)
-    const [children] = combineStructuredDetailsHtmlBlocks(
-      middleNodes,
-      source,
-      md,
-      options,
-      final,
-      openStart + openRaw.length,
-    )
-    const prefixChildren = buildDetailsPrefixChildren(
-      effectiveOpenRaw,
-      md,
-      buildDetailsChildParseOptions(options, final),
-    )
-
     const closeRaw = closeIndex === -1
       ? '</details>'
       : String(nodes[closeIndex].raw ?? getMergeableNodeRaw(nodes[closeIndex]) ?? '</details>')
@@ -2597,16 +2638,16 @@ function combineStructuredDetailsHtmlBlocks(
         })()
       : source.length
     const openTagEndIndex = findTagCloseIndexOutsideQuotes(openRaw)
-    const middleSourceStart = selfContained && openTagEndIndex !== -1
+    // Derive the content boundaries from the source open tag rather than the
+    // cached fragment raw: the stream can commit the `<details>` opener as a
+    // stable group before its `<summary>` arrives, freezing a partial fragment
+    // (`<details open>\n`). Only the source is authoritative for where the
+    // opener ends and the rendered middle begins, so a full parse and the
+    // split-fragment stream produce identical content.
+    const middleSourceStart = openTagEndIndex !== -1
       ? openStart + openTagEndIndex + 1
       : openStart + openRaw.length
     const middleSource = source.slice(middleSourceStart, closeStart === -1 ? source.length : closeStart)
-    const middleTokens = md.parse(middleSource, { __markstreamFinal: final }) as unknown as MarkdownToken[]
-    const renderedMiddle = md.renderer.render(
-      middleTokens as unknown as Token[],
-      md.options,
-      { __markstreamFinal: final },
-    )
     const closeMarkupEnd = closeStart + trimmedCloseRaw.length
     const closeSliceEnd = explicitClose
       ? Math.max(closeStart + closeRaw.length, extendHtmlBlockCloseToLineEnding(source, closeMarkupEnd))
@@ -2618,8 +2659,99 @@ function combineStructuredDetailsHtmlBlocks(
       ? source.slice(openStart, closeSliceEnd)
       : source.slice(openStart)
 
-    const contentPrefix = selfContained && openTagEndIndex !== -1
-      ? openRaw.slice(0, openTagEndIndex + 1)
+    // Cached path: a reused (stable-prefix) details opener keeps the same node
+    // identity across appends, and its middle source is unchanged, so the
+    // stitched output from a previous append can be reused instead of
+    // re-parsing + re-rendering the whole (unchanged) middle on every commit.
+    // Only consulted when the current top-level parse actually reused nodes;
+    // on full-reparse commits the opener objects are fresh, so a cache lookup
+    // would be pure overhead.
+    const reuseActive = (options as InternalParseOptions).__structuredReuseTailStart !== undefined
+      && (options as InternalParseOptions).__structuredReuseTailStart! > 0
+    const perMdStitchCache = reuseActive
+      ? (detailsStitchCache.get(md as unknown as object) ?? (() => {
+          const inner = new WeakMap<object, { openRaw: string, explicitClose: boolean, closeSliceEnd: number, middleSource: string, node: ParsedNode }>()
+          detailsStitchCache.set(md as unknown as object, inner)
+          return inner
+        })())
+      : undefined
+    const cachedDetails = perMdStitchCache?.get(node)
+    if (cachedDetails
+      && cachedDetails.openRaw === openRaw
+      && cachedDetails.explicitClose === explicitClose
+      && cachedDetails.closeSliceEnd === closeSliceEnd
+      && cachedDetails.middleSource === middleSource) {
+      merged.push(cachedDetails.node)
+      cursor = explicitClose ? closeSliceEnd : source.length
+      if (closeIndex === -1 && !selfContained)
+        break
+      if (closeIndex !== -1)
+        i = closeIndex
+      continue
+    }
+
+    const middleNodes = selfContained
+      ? []
+      : closeIndex === -1 ? nodes.slice(i + 1) : nodes.slice(i + 1, closeIndex)
+    const [children] = combineStructuredDetailsHtmlBlocks(
+      middleNodes,
+      source,
+      md,
+      options,
+      final,
+      openStart + openRaw.length,
+    )
+    let prefixChildren = buildDetailsPrefixChildren(
+      effectiveOpenRaw,
+      md,
+      buildDetailsChildParseOptions(options, final),
+    )
+
+    // The stream can commit the `<details>` opener as a stable group before its
+    // `<summary>` arrives, freezing a partial fragment that contains no summary
+    // (and, depending on the split, the summary may or may not have its own
+    // node in the array). A full parse always structures the summary, so
+    // recover it here to keep the streamed output identical to the cold parse:
+    // - if the summary is a leading raw middle fragment, structure it in place;
+    // - otherwise reconstruct it from the source and prepend it to the prefix.
+    let structuredChildren = children
+    const leadingChild = children[0] as ParsedNodeWithFields | undefined
+    const hasPrefixSummary = prefixChildren.some((child) => {
+      const fields = child as ParsedNodeWithFields
+      return fields?.type === 'html_block' && String(fields.tag ?? '').toLowerCase() === 'summary'
+    })
+    if (!hasPrefixSummary) {
+      if (leadingChild?.type === 'html_block'
+        && String(leadingChild.tag ?? '').toLowerCase() === 'summary'
+        && !Array.isArray(leadingChild.children)) {
+        structuredChildren = [
+          buildStructuredSummaryNode(String(leadingChild.raw ?? leadingChild.content ?? ''), md, buildDetailsChildParseOptions(options, final)),
+          ...children.slice(1),
+        ]
+      }
+      else if (openTagEndIndex !== -1) {
+        const summaryBlock = findNextHtmlBlockFromSource(source, 'summary', openStart + openTagEndIndex + 1)
+        if (summaryBlock && summaryBlock.closed) {
+          const gap = source.slice(openStart + openTagEndIndex + 1, summaryBlock.start)
+          if (/^[\t \r\n]*$/.test(gap)) {
+            prefixChildren = [
+              buildStructuredSummaryNode(summaryBlock.raw, md, buildDetailsChildParseOptions(options, final)),
+              ...prefixChildren,
+            ]
+          }
+        }
+      }
+    }
+
+    const middleTokens = md.parse(middleSource, { __markstreamFinal: final }) as unknown as MarkdownToken[]
+    const renderedMiddle = md.renderer.render(
+      middleTokens as unknown as Token[],
+      md.options,
+      { __markstreamFinal: final },
+    )
+
+    const contentPrefix = openTagEndIndex !== -1
+      ? source.slice(openStart, openStart + openTagEndIndex + 1)
       : openRaw
 
     const detailsNode = {
@@ -2628,12 +2760,18 @@ function combineStructuredDetailsHtmlBlocks(
       attrs: parseTagAttrs(openRaw.slice(0, openTagEndIndex + 1)),
       raw: mergedRaw,
       content: `${contentPrefix}${renderedMiddle}${renderedCloseRaw}`,
-      children: [...prefixChildren, ...children],
+      children: [...prefixChildren, ...structuredChildren],
       loading: !final && !explicitClose,
     } as ParsedNode
 
     if (options.includeSourceMap)
       detailsNode.sourceMap = createSourceMapFromOffsets(source, openStart, explicitClose ? closeSliceEnd : source.length, options)
+
+    // Only closed details are cached: an open details grows every append, so
+    // caching it would return a stale (still-loading) node once its close
+    // arrives (the open-to-closed transition can share the same middleSource).
+    if (perMdStitchCache && explicitClose)
+      perMdStitchCache.set(node, { openRaw, explicitClose, closeSliceEnd, middleSource, node: detailsNode })
 
     merged.push(detailsNode)
 
@@ -4276,6 +4414,7 @@ export function parseMarkdownToStructure(
     // a final auto-parse ends that session, so drop the retained source +
     // transform (the next stream parse starts a fresh document).
     safeMarkdownCache.delete(md as unknown as object)
+    detailsStitchCache.delete(md as unknown as object)
   }
 
   const safeMarkdown = getSafeMarkdown(md, sourceMarkdown, isFinal, options)

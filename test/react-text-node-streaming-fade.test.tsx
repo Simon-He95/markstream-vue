@@ -176,6 +176,44 @@ describe('markstream-react text streaming fade', () => {
     })
   })
 
+  it('does not replay enter fade on existing nodes when a top-level node is appended', async () => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    const renderMarkdown = (content: string) =>
+      React.createElement(NodeRenderer as any, {
+        content,
+        batchRendering: false,
+        deferNodesUntilVisible: false,
+        viewportPriority: false,
+        smoothStreaming: false,
+      })
+
+    await act(async () => {
+      root.render(renderMarkdown('# Heading\n\nParagraph'))
+    })
+    await flushReact()
+
+    const headingContent = host.querySelector('[data-node-index="0"] .node-content')
+    const paragraphContent = host.querySelector('[data-node-index="1"] .node-content')
+
+    await act(async () => {
+      root.render(renderMarkdown('# Heading\n\nParagraph\n\n## Next'))
+    })
+    await flushReact()
+
+    expect(host.querySelector('[data-node-index="0"] .node-content')).toBe(headingContent)
+    expect(host.querySelector('[data-node-index="1"] .node-content')).toBe(paragraphContent)
+    expect(headingContent?.classList.contains('fade-node')).toBe(false)
+    expect(paragraphContent?.classList.contains('fade-node')).toBe(false)
+
+    await act(async () => {
+      root.unmount()
+    })
+  })
+
   it('settles a finished strong-node delta when following sibling text keeps streaming', async () => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
 

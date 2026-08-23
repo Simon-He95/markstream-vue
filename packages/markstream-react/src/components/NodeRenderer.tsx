@@ -446,6 +446,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     const datasetChanged = datasetKey !== undefined
       ? datasetKey !== prevCtx.key
       : total !== prevCtx.total
+    const datasetIdentityChanged = datasetKey !== prevCtx.key
     previousDatasetRef.current = { key: datasetKey, total }
     const prevBatch = previousBatchConfigRef.current
     const currentDelay = props.renderBatchDelay ?? 16
@@ -463,10 +464,10 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
 
     if (datasetChanged || batchConfigChanged || !incrementalRenderingActive)
       cancelBatchTimers()
-    if (datasetChanged || batchConfigChanged) {
+    if (datasetChanged || batchConfigChanged)
       adaptiveBatchSizeRef.current = Math.max(1, resolvedBatchSize || 1)
+    if (datasetIdentityChanged)
       nodeSeenRef.current.clear()
-    }
 
     if (!total) {
       renderedCountRef.current = 0

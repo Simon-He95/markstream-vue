@@ -262,6 +262,7 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     key: props.indexKey,
     total: parsedNodes.length,
   })
+  const previousParsedNodesRef = useRef(parsedNodes)
   const previousBatchConfigRef = useRef({
     batchSize: resolvedBatchSize,
     initial: resolvedInitialBatch,
@@ -446,7 +447,15 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     const datasetChanged = datasetKey !== undefined
       ? datasetKey !== prevCtx.key
       : total !== prevCtx.total
-    const datasetIdentityChanged = datasetKey !== prevCtx.key
+    const previousParsedNodes = previousParsedNodesRef.current
+    const sharedNodeCount = Math.min(previousParsedNodes.length, parsedNodes.length)
+    let stablePrefixLength = 0
+    while (
+      stablePrefixLength < sharedNodeCount
+      && previousParsedNodes[stablePrefixLength] === parsedNodes[stablePrefixLength]
+    ) {
+      stablePrefixLength += 1
+    }
     previousDatasetRef.current = { key: datasetKey, total }
     const prevBatch = previousBatchConfigRef.current
     const currentDelay = props.renderBatchDelay ?? 16
@@ -466,8 +475,15 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
       cancelBatchTimers()
     if (datasetChanged || batchConfigChanged)
       adaptiveBatchSizeRef.current = Math.max(1, resolvedBatchSize || 1)
-    if (datasetIdentityChanged)
+    if (datasetKey !== prevCtx.key) {
       nodeSeenRef.current.clear()
+    }
+    else if (datasetChanged) {
+      for (const index of nodeSeenRef.current) {
+        if (index >= stablePrefixLength)
+          nodeSeenRef.current.delete(index)
+      }
+    }
 
     if (!total) {
       renderedCountRef.current = 0
@@ -510,6 +526,10 @@ const NodeRendererInner: React.FC<NodeRendererInnerProps> = ({
     resolvedInitialBatch,
     scheduleBatch,
   ])
+
+  useEffect(() => {
+    previousParsedNodesRef.current = parsedNodes
+  }, [parsedNodes])
 
   useEffect(() => {
     if (!virtualizationEnabled) {

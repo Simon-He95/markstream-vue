@@ -214,6 +214,40 @@ describe('markstream-react text streaming fade', () => {
     })
   })
 
+  it('replays enter fade for a non-append document replacement', async () => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+
+    const host = document.createElement('div')
+    document.body.appendChild(host)
+    const root = createRoot(host)
+    const renderMarkdown = (content: string) =>
+      React.createElement(NodeRenderer as any, {
+        content,
+        batchRendering: false,
+        deferNodesUntilVisible: false,
+        viewportPriority: false,
+        smoothStreaming: false,
+      })
+
+    await act(async () => {
+      root.render(renderMarkdown('# First\n\nParagraph'))
+    })
+    await flushReact()
+
+    await act(async () => {
+      root.render(renderMarkdown('## Replacement\n\nSecond paragraph\n\n---'))
+    })
+    await flushReact()
+
+    const replacedNodes = Array.from(host.querySelector('.markdown-renderer')?.querySelectorAll(':scope > .node-slot > .node-content') ?? [])
+    expect(replacedNodes).toHaveLength(3)
+    expect(replacedNodes.every(node => node.classList.contains('fade-node'))).toBe(true)
+
+    await act(async () => {
+      root.unmount()
+    })
+  })
+
   it('settles a finished strong-node delta when following sibling text keeps streaming', async () => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
 

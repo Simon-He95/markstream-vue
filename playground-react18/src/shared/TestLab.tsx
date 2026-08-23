@@ -4,7 +4,7 @@ import type { TestPageViewMode } from '../../../playground-shared/testPageState'
 import type { StreamPresetId } from './streamPresets'
 import type { StreamSliceMode, StreamTransportMode } from './useStreamSimulator'
 import { NodeRenderer } from 'markstream-react'
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { resolveMarkdownTextareaPaste } from '../../../playground-shared/markdownPaste'
 import { TEST_LAB_FRAMEWORKS, TEST_LAB_SAMPLES } from '../../../playground-shared/testLabFixtures'
 import { buildTestPageHref, decodeMarkdownHash, resolveFrameworkTestHref, resolveTestPageViewMode } from '../../../playground-shared/testPageState'
@@ -90,7 +90,6 @@ export function TestLab({ frameworkLabel, onGoHome }: TestLabProps) {
     transportMode: streamTransportMode,
   })
   const previewContent = isStreaming ? streamContent : input
-  const deferredPreview = useDeferredValue(previewContent)
   const progress = input.length ? Math.min(100, Math.round((previewContent.length / input.length) * 100)) : 0
   const charCount = input.length
   const lineCount = input ? input.split('\n').length : 0
@@ -547,7 +546,7 @@ export function TestLab({ frameworkLabel, onGoHome }: TestLabProps) {
 
               <div className="preview-surface">
                 <NodeRenderer
-                  content={deferredPreview}
+                  content={previewContent}
                   typewriter={false}
                   codeBlockStream
                   isDark={isDark}
@@ -561,7 +560,7 @@ export function TestLab({ frameworkLabel, onGoHome }: TestLabProps) {
               {!isSharePreviewMode && (
                 <footer className="workspace-card__foot">
                   <span>
-                    {deferredPreview.length}
+                    {previewContent.length}
                     {' '}
                     /
                     {' '}

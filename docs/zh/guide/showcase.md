@@ -1,3 +1,11 @@
+---
+title: Showcase（占位）
+description: markstream 流式 Markdown 渲染器的示例与场景演示占位页，覆盖流式对话、长文档、代码评审、图表、自定义组件与安全复现流程，等待与英文版同步。
+keywords:
+  - markstream showcase
+  - 流式 markdown 演示
+---
+
 # Showcase（中文占位）
 
 > 原文节选（仅供翻译参考）：

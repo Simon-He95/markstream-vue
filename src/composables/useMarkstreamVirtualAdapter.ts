@@ -240,6 +240,10 @@ export interface MarkstreamVirtualAdapterController<T = MarkstreamTimelineItem> 
   isMarkdownItem: (item: T, index: number) => boolean
   isRestoringThread: () => boolean
   measureItem: (item: T, index: number, el: Element | { $el?: Element | null } | null | undefined) => void
+  /** Release the measurement bookkeeping (DOM ref + ResizeObserver) of one item key. */
+  unobserveItem: (key: string) => void
+  /** Drop measurement bookkeeping for entries whose element left the DOM. Returns the released count. */
+  releaseDetached: () => number
   markdownProps: (item: T, index: number) => MarkstreamVirtualMarkdownProps
   captureThreadState: () => MarkstreamThreadVirtualState
   preloadThreadState: (state: MarkstreamThreadVirtualState | null | undefined) => void
@@ -774,6 +778,21 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
     measuredElements.delete(key)
   }
 
+  function unobserveItem(key: string) {
+    cleanupMeasuredElement(key)
+  }
+
+  function releaseDetached() {
+    let released = 0
+    for (const [key, element] of measuredElements) {
+      if (!element.isConnected) {
+        cleanupMeasuredElement(key)
+        released++
+      }
+    }
+    return released
+  }
+
   function getMeasuredItemHeight(key: string) {
     return readElementOuterHeight(measuredElements.get(key), recordLayoutRead)
   }
@@ -890,6 +909,14 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
     const element = resolveElement(el)
     const previous = measuredElements.get(key)
 
+    // A null element means the row left the DOM (virtual recycle, host
+    // deflation, unmount): drop its DOM reference and ResizeObserver so the
+    // detached row subtree stays collectable while the adapter is alive.
+    // Detached-but-present elements keep measuring normally — hosts re-measure
+    // the same element after content changes and KeepAlive reactivates
+    // offscreen subtrees; release of stale detached entries is covered by the
+    // replacement-element cleanup below, the ResizeObserver disconnect guard,
+    // and releaseDetached().
     if (!element) {
       cleanupMeasuredElement(key)
       return
@@ -910,6 +937,10 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
       return
 
     const observer = new ResizeObserver(() => {
+      if (!element.isConnected) {
+        cleanupMeasuredElement(key)
+        return
+      }
       options.virtualizer.measureElement?.(key, element)
       reconcileItemSize(key)
     })
@@ -1282,6 +1313,8 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
     isMarkdownItem,
     isRestoringThread: () => restoringThread.value,
     measureItem,
+    unobserveItem,
+    releaseDetached,
     markdownProps,
     captureThreadState,
     preloadThreadState,

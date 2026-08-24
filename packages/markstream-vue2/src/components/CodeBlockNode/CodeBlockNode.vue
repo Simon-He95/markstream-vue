@@ -1948,11 +1948,21 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
   );
 }
 
-.code-block-container.is-rendering .code-height-placeholder{
-  background-size: 400% 100%;
-  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
+.code-block-container.is-rendering .code-height-placeholder {
+  position: relative;
+  overflow: hidden;
   min-height: 120px;
+  background: rgba(0,0,0,0.04);
+}
+
+.code-block-container.is-rendering .code-height-placeholder::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -300%;
+  width: 400%;
   background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 37%, rgba(0,0,0,0.04) 63%);
+  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
 /* Loading placeholder styles */
@@ -1968,16 +1978,29 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
 }
 
 .skeleton-line {
+  position: relative;
+  overflow: hidden;
   height: 1rem;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
-  background-size: 400% 100%;
-  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
   border-radius: 0.25rem;
+  background: rgba(0,0,0,0.06);
+}
+
+.skeleton-line::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -300%;
+  width: 400%;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
+  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
 .code-block-container.is-dark .skeleton-line {
+  background: rgba(255,255,255,0.06);
+}
+
+.code-block-container.is-dark .skeleton-line::before {
   background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 37%, rgba(255,255,255,0.06) 63%);
-  background-size: 400% 100%;
 }
 
 .skeleton-line.short {
@@ -1985,8 +2008,15 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
 }
 
 @keyframes code-skeleton-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: 0 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(75%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-block-container.is-rendering .code-height-placeholder::before,
+  .skeleton-line::before {
+    animation: none !important;
+  }
 }
 
 .code-action-btn {

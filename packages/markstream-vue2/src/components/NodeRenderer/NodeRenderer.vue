@@ -2667,12 +2667,23 @@ watch(
 }
 
 .node-placeholder {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   min-height: 1rem;
   margin: 0.25rem 0;
   border-radius: 0.5rem;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
-  background-size: 200% 100%;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.node-placeholder::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 500%;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
+  background-size: 40% 100%;
   animation: node-placeholder-shimmer 1.1s ease-in-out infinite;
 }
 
@@ -2681,11 +2692,13 @@ watch(
 }
 
 @keyframes node-placeholder-shimmer {
-  from {
-    background-position: 200% 0%;
-  }
-  to {
-    background-position: -200% 0%;
+  from { transform: translateX(0); }
+  to { transform: translateX(80%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .node-placeholder::before {
+    animation: none !important;
   }
 }
 

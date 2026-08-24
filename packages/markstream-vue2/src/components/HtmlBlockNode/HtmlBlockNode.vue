@@ -204,20 +204,33 @@ onBeforeUnmount(() => {
   padding: 0.5rem 0;
 }
 .html-block-node__placeholder-bar {
+  position: relative;
+  overflow: hidden;
   display: block;
   height: 0.8rem;
   border-radius: 9999px;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.35));
-  background-size: 200% 100%;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.html-block-node__placeholder-bar::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 300%;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.35));
+  background-size: 66.6667% 100%;
   animation: html-block-node-shimmer 1.2s ease infinite;
 }
 
 @keyframes html-block-node-shimmer {
-  0% {
-    background-position: 0% 0%;
-  }
-  100% {
-    background-position: 200% 0%;
+  from { transform: translateX(0); }
+  to { transform: translateX(-66.6667%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .html-block-node__placeholder-bar::before {
+    animation: none !important;
   }
 }
 </style>

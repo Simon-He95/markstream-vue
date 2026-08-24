@@ -293,6 +293,7 @@ onBeforeUnmount(stopColumnResize)
 .table-node--loading tbody td {
   position: relative;
   overflow: hidden;
+  border-radius: 0.25rem;
 }
 
 .table-node--loading tbody td > * {
@@ -302,7 +303,9 @@ onBeforeUnmount(stopColumnResize)
 .table-node--loading tbody td::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset-block: 0;
+  left: 0;
+  width: 300%;
   border-radius: 0.25rem;
   background: linear-gradient(
     90deg,
@@ -310,9 +313,8 @@ onBeforeUnmount(stopColumnResize)
     rgba(148, 163, 184, 0.28) 50%,
     rgba(148, 163, 184, 0.16) 75%
   );
-  background-size: 200% 100%;
+  background-size: 66.6667% 100%;
   animation: table-node-shimmer 1.2s linear infinite;
-  will-change: background-position;
 }
 
 .table-node__loading {
@@ -373,14 +375,13 @@ onBeforeUnmount(stopColumnResize)
 }
 
 @keyframes table-node-shimmer {
-  0% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: 200% 0%;
+  from { transform: translateX(0); }
+  to { transform: translateX(-66.6667%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .table-node--loading tbody td::after {
+    animation: none !important;
   }
 }
 

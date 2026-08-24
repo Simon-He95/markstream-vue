@@ -128,12 +128,23 @@ markstream-svelte {
 }
 
 .markstream-svelte .node-placeholder {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   min-height: 1rem;
   margin: 0.25rem 0;
   border-radius: 0.5rem;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
-  background-size: 200% 100%;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+.markstream-svelte .node-placeholder::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 500%;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
+  background-size: 40% 100%;
   animation: node-placeholder-shimmer 1.1s ease-in-out infinite;
 }
 
@@ -145,7 +156,6 @@ markstream-svelte {
 .markstream-svelte .fade-node {
   opacity: 0;
   animation: typewriter-fade var(--fade-duration, var(--typewriter-fade-duration, 280ms)) var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))) both;
-  will-change: opacity;
 }
 
 .markstream-svelte .markstream-svelte-text-node {
@@ -166,7 +176,6 @@ markstream-svelte {
   animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
   animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
   animation-fill-mode: both;
-  will-change: opacity;
 }
 
 .markstream-svelte .markstream-svelte-text__stream-delta--a {
@@ -270,7 +279,6 @@ markstream-svelte {
   bottom: var(--underline-bottom, -3px);
   background: currentColor;
   border-radius: 999px;
-  will-change: opacity;
   opacity: var(--underline-rest-opacity, 0.18);
   animation: markstream-svelte-link-loading-pulse var(--underline-duration, 1.6s) var(--underline-timing, ease-in-out) var(--underline-iteration, infinite);
 }
@@ -314,6 +322,10 @@ markstream-svelte {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .markstream-svelte .node-placeholder::before {
+    animation: none !important;
+  }
+
   .markstream-svelte .link-loading-indicator {
     animation: none !important;
     opacity: var(--underline-rest-opacity, 0.18);
@@ -512,17 +524,29 @@ markstream-svelte {
 }
 
 .markstream-svelte .image-shimmer {
+  position: relative;
+  overflow: hidden;
   display: block;
   width: 100%;
   height: 100%;
   min-height: 8rem;
+  background: hsl(var(--ms-muted));
+}
+
+.markstream-svelte .image-shimmer::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 300%;
   background: linear-gradient(
     90deg,
     hsl(var(--ms-muted)) 0%,
     hsl(var(--ms-muted-foreground) / 0.06) 50%,
     hsl(var(--ms-muted)) 100%
   );
-  background-size: 200% 100%;
+  background-position: 100% 0;
+  background-size: 66.6667% 100%;
   animation: markstream-svelte-image-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -546,12 +570,12 @@ markstream-svelte {
 }
 
 @keyframes markstream-svelte-image-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(66.6667%); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .markstream-svelte .image-shimmer {
+  .markstream-svelte .image-shimmer::before {
     animation: none !important;
   }
 
@@ -1450,13 +1474,8 @@ body > div[id^="dmermaid-"] {
 }
 
 @keyframes node-placeholder-shimmer {
-  from {
-    background-position: 200% 0%;
-  }
-
-  to {
-    background-position: -200% 0%;
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(80%); }
 }
 
 @keyframes spin {

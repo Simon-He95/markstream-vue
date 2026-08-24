@@ -165,7 +165,6 @@ watch(
   animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
   animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
   animation-fill-mode: both;
-  will-change: opacity;
 }
 .inline-code-stream-delta--a {
   animation-name: inline-code-stream-update-fade-a;

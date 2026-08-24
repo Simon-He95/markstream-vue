@@ -301,7 +301,6 @@ onBeforeUnmount(() => {
   bottom: var(--underline-bottom, -3px);
   background: currentColor;
   border-radius: 999px;
-  will-change: opacity;
   opacity: var(--underline-rest-opacity, 0.18);
   animation: underlinePulse var(--underline-duration, 1.6s) var(--underline-timing, ease-in-out) var(--underline-iteration, infinite);
 }

@@ -84,12 +84,23 @@
 }
 
 :where(.markstream-react) .node-placeholder {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   min-height: 1rem;
   margin: 0.25rem 0;
   border-radius: 0.5rem;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
-  background-size: 200% 100%;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+:where(.markstream-react) .node-placeholder::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 500%;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
+  background-size: 40% 100%;
   animation: markstream-react-node-placeholder-shimmer 1.1s ease-in-out infinite;
 }
 
@@ -131,7 +142,6 @@
   animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
   animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
   animation-fill-mode: both;
-  will-change: opacity;
 }
 
 :where(.markstream-react) .text-node-stream-delta--a {
@@ -239,7 +249,6 @@
   bottom: var(--underline-bottom, -3px);
   background: currentColor;
   border-radius: 999px;
-  will-change: opacity;
   opacity: var(--underline-rest-opacity, 0.18);
   animation: markstream-react-link-loading-pulse var(--underline-duration, 1.6s) var(--underline-timing, ease-in-out) var(--underline-iteration, infinite);
 }
@@ -278,6 +287,13 @@
   :where(.markstream-react) .typewriter-cursor {
     animation: none !important;
     opacity: 1;
+  }
+
+  :where(.markstream-react) .node-placeholder::before,
+  :where(.markstream-react) .table-node--loading tbody td::after,
+  :where(.markstream-react) .html-block-node__placeholder-bar::before,
+  :where(.markstream-react) .skeleton-line::before {
+    animation: none !important;
   }
 }
 
@@ -466,6 +482,7 @@
 :where(.markstream-react) .table-node--loading tbody td {
   position: relative;
   overflow: hidden;
+  border-radius: 0.25rem;
 }
 
 :where(.markstream-react) .table-node--loading tbody td > * {
@@ -475,7 +492,9 @@
 :where(.markstream-react) .table-node--loading tbody td::after {
   content: '';
   position: absolute;
-  inset: 0;
+  inset-block: 0;
+  left: 0;
+  width: 300%;
   border-radius: 0.25rem;
   background: linear-gradient(
     90deg,
@@ -483,9 +502,8 @@
     rgba(148, 163, 184, 0.28) 50%,
     rgba(148, 163, 184, 0.16) 75%
   );
-  background-size: 200% 100%;
+  background-size: 66.6667% 100%;
   animation: markstream-react-table-node-shimmer 1.2s linear infinite;
-  will-change: background-position;
 }
 
 :where(.markstream-react) .table-node__loading {
@@ -529,15 +547,8 @@
 }
 
 @keyframes markstream-react-table-node-shimmer {
-  0% {
-    background-position: 0% 0%;
-  }
-  50% {
-    background-position: 100% 0%;
-  }
-  100% {
-    background-position: 200% 0%;
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(-66.6667%); }
 }
 
 :where(.markstream-react) .hr + .table-node-wrapper {
@@ -1047,21 +1058,28 @@
 }
 
 :where(.markstream-react) .html-block-node__placeholder-bar {
+  position: relative;
+  overflow: hidden;
   display: block;
   height: 0.8rem;
   border-radius: 9999px;
-  background-image: linear-gradient(90deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.35));
-  background-size: 200% 100%;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+:where(.markstream-react) .html-block-node__placeholder-bar::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: 300%;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.35), rgba(148, 163, 184, 0.1), rgba(148, 163, 184, 0.35));
+  background-size: 66.6667% 100%;
   animation: markstream-react-html-block-node-shimmer 1.2s ease infinite;
 }
 
 @keyframes markstream-react-html-block-node-shimmer {
-  0% {
-    background-position: 0% 0%;
-  }
-  100% {
-    background-position: 200% 0%;
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(-66.6667%); }
 }
 
 :where(.markstream-react) .vmr-container {
@@ -1738,16 +1756,29 @@
 }
 
 :where(.markstream-react) .skeleton-line {
+  position: relative;
+  overflow: hidden;
   height: 1rem;
-  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
-  background-size: 400% 100%;
-  animation: markstream-react-code-skeleton-shimmer 1.2s ease-in-out infinite;
   border-radius: 0.25rem;
+  background: rgba(0,0,0,0.06);
+}
+
+:where(.markstream-react) .skeleton-line::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -300%;
+  width: 400%;
+  background: linear-gradient(90deg, rgba(0,0,0,0.06) 25%, rgba(0,0,0,0.12) 37%, rgba(0,0,0,0.06) 63%);
+  animation: markstream-react-code-skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
 :where(.markstream-react) .code-block-container.is-dark .skeleton-line {
+  background: rgba(255,255,255,0.06);
+}
+
+:where(.markstream-react) .code-block-container.is-dark .skeleton-line::before {
   background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 37%, rgba(255,255,255,0.06) 63%);
-  background-size: 400% 100%;
 }
 
 :where(.markstream-react) .skeleton-line.short {
@@ -1755,8 +1786,8 @@
 }
 
 @keyframes markstream-react-code-skeleton-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: 0 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(75%); }
 }
 
 .markstream-react pre[class^='language-'],
@@ -1911,12 +1942,8 @@
 }
 
 @keyframes markstream-react-node-placeholder-shimmer {
-  from {
-    background-position: 200% 0%;
-  }
-  to {
-    background-position: -200% 0%;
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(80%); }
 }
 
 @keyframes markstream-react-node-enter-fade {

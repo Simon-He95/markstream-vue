@@ -998,6 +998,76 @@ describe('virtual timeline API', () => {
     scope.stop()
   })
 
+  it('keeps observing a temporarily detached adapter item until it is released', () => {
+    let notify!: ResizeObserverCallback
+    const disconnect = vi.fn()
+
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) {
+        notify = callback
+      }
+
+      observe() {}
+      unobserve() {}
+      disconnect() {
+        disconnect()
+      }
+    })
+
+    const item = { kind: 'user-message', id: 'u1', text: 'hello' }
+    const sizes = new Map<string, number>()
+    const root = document.createElement('div')
+    const adapter = {
+      getScrollElement: () => root,
+      getScrollTop: () => 0,
+      setScrollTop: vi.fn(),
+      getViewportHeight: () => 400,
+      getTotalHeight: () => sizes.get('u1') ?? 0,
+      getItemOffset: () => 0,
+      getItemSize: (key: string) => sizes.get(key) ?? 0,
+      setItemSize: (key: string, size: number) => {
+        sizes.set(key, size)
+      },
+      getVisibleRange: () => ({ start: 0, end: 1 }),
+      scrollToOffset: vi.fn(),
+      scrollToIndex: vi.fn(),
+      measureElement: vi.fn(),
+    }
+
+    const scope = effectScope()
+    const controller = scope.run(() => useMarkstreamVirtualAdapter({
+      items: [item],
+      threadKey: 'thread-a',
+      virtualizer: adapter,
+    }))!
+
+    let height = 56
+    const element = document.createElement('div')
+    Object.defineProperty(element, 'offsetHeight', {
+      configurable: true,
+      get: () => height,
+    })
+    document.body.appendChild(element)
+
+    controller.measureItem(item, 0, element)
+    expect(sizes.get('u1')).toBe(56)
+
+    element.remove()
+    notify([], {} as ResizeObserver)
+    expect(disconnect).not.toHaveBeenCalled()
+
+    height = 72
+    document.body.appendChild(element)
+    notify([], {} as ResizeObserver)
+    expect(sizes.get('u1')).toBe(72)
+
+    element.remove()
+    expect(controller.releaseDetached()).toBe(1)
+    expect(disconnect).toHaveBeenCalledOnce()
+
+    scope.stop()
+  })
+
   it('passes markdown mode and the plain pre fallback through useMarkstreamVirtualAdapter', () => {
     const item = {
       kind: 'assistant-markdown',

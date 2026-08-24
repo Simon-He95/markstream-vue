@@ -912,11 +912,9 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
     // A null element means the row left the DOM (virtual recycle, host
     // deflation, unmount): drop its DOM reference and ResizeObserver so the
     // detached row subtree stays collectable while the adapter is alive.
-    // Detached-but-present elements keep measuring normally — hosts re-measure
-    // the same element after content changes and KeepAlive reactivates
-    // offscreen subtrees; release of stale detached entries is covered by the
-    // replacement-element cleanup below, the ResizeObserver disconnect guard,
-    // and releaseDetached().
+    // Detached-but-present elements stay observed so KeepAlive can reactivate
+    // them; release of stale detached entries is covered by replacement-element
+    // cleanup and releaseDetached().
     if (!element) {
       cleanupMeasuredElement(key)
       return
@@ -937,10 +935,8 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(
       return
 
     const observer = new ResizeObserver(() => {
-      if (!element.isConnected) {
-        cleanupMeasuredElement(key)
+      if (!element.isConnected)
         return
-      }
       options.virtualizer.measureElement?.(key, element)
       reconcileItemSize(key)
     })

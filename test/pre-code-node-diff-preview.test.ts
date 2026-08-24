@@ -825,7 +825,7 @@ describe('pre code node diff preview', () => {
     expect(source).not.toContain('linear-gradient(\n      var(--markstream-diff-removed-line-fill')
     expect(source).toContain('--markstream-pre-diff-line-number-bg: var(')
     expect(source).toContain('background: var(--markstream-pre-diff-line-number-bg);')
-    expect(source).toContain('border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--code-bg);')
+    expect(source).toContain('border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--markstream-diff-editor-bg, var(--code-bg));')
     expect(source).toContain('--markstream-pre-diff-content-height')
     for (const selector of [
       'pre.markstream-pre--diff-preview .markstream-pre__diff-line::before',
@@ -913,7 +913,7 @@ describe('pre code node diff preview', () => {
     expect(source).toContain('padding-left: var(--markstream-pre-diff-line-number-padding-left, 2ch);')
     expect(source).toContain('padding-right: var(--markstream-pre-diff-line-number-padding-right, 1ch);')
     expect(source).toContain('min-width: var(--markstream-pre-diff-line-number-width);')
-    expect(source).toContain('border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--code-bg);')
+    expect(source).toContain('border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--markstream-diff-editor-bg, var(--code-bg));')
     expect(source).toContain('width: var(--markstream-pre-diff-gutter-marker-width, 4px);')
   })
 

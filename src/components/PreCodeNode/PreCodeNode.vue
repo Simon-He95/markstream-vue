@@ -680,7 +680,7 @@ function getDiffLineStyle(index: number, side: 'original' | 'modified') {
   box-shadow: none;
   padding-left: var(--markstream-pre-diff-line-number-padding-left, 2ch);
   padding-right: var(--markstream-pre-diff-line-number-padding-right, 1ch);
-  border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--code-bg);
+  border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--markstream-diff-editor-bg, var(--code-bg));
   color: var(--code-line-number);
   font-variant-numeric: tabular-nums;
   line-height: var(--markstream-pre-diff-line-height, 18px);

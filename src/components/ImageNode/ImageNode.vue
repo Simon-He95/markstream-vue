@@ -402,27 +402,39 @@ onBeforeUnmount(() => {
 }
 
 .image-shimmer {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
   min-height: 8rem;
+  overflow: hidden;
+  background: hsl(var(--ms-muted));
+}
+
+.image-shimmer::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 300%;
   background: linear-gradient(
     90deg,
     hsl(var(--ms-muted)) 0%,
     hsl(var(--ms-muted-foreground) / 0.06) 50%,
     hsl(var(--ms-muted)) 100%
   );
-  background-size: 200% 100%;
+  background-position: 100% 0;
+  background-size: 66.6667% 100%;
   animation: image-shimmer 1.5s ease-in-out infinite;
 }
 
-.image-node-container[data-markstream-viewport-pending='true'] .image-shimmer {
+.image-node-container[data-markstream-viewport-pending='true'] .image-shimmer::before {
   animation: none;
 }
 
 @keyframes image-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(66.6667%); }
 }
 
 .image-error {
@@ -445,6 +457,6 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .image-shimmer { animation: none !important; }
+  .image-shimmer::before { animation: none !important; }
 }
 </style>

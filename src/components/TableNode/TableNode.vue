@@ -421,15 +421,7 @@ onBeforeUnmount(stopColumnResize)
   position: absolute;
   inset: 0;
   border-radius: calc(var(--ms-radius) * 0.5);
-  background: linear-gradient(
-    90deg,
-    var(--loading-shimmer) 25%,
-    var(--loading-shimmer) 50%,
-    var(--loading-shimmer) 75%
-  );
-  background-size: 200% 100%;
-  animation: table-node-shimmer 1.2s linear infinite;
-  will-change: background-position;
+  background: var(--loading-shimmer);
 }
 
 .table-node__loading {
@@ -480,12 +472,6 @@ onBeforeUnmount(stopColumnResize)
   overflow-wrap: inherit;
   word-break: inherit;
   max-width: none;
-}
-
-@keyframes table-node-shimmer {
-  0% { background-position: 0% 0%; }
-  50% { background-position: 100% 0%; }
-  100% { background-position: 200% 0%; }
 }
 
 .hr + .table-node-wrapper {

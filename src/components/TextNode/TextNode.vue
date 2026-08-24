@@ -53,10 +53,50 @@ let stopStreamVersionWatch: (() => void) | undefined
 // The settled node is therefore written ONCE and never touched again: each
 // delta settle appends the increment as a NEW sibling text node, so existing
 // nodes keep their identity and content forever.
+//
+// Coalesce appended increments unless doing so would disturb a selection.
 const settledTextEl = ref<HTMLElement | null>(null)
 const settledAppendsEl = ref<HTMLElement | null>(null)
+const streamedDeltaEl = ref<HTMLElement | null>(null)
 let frozenSettledText = ''
 let settledTextNode: Text | null = null
+let pendingSelectedContent: string | null = null
+let settleAfterSelection = false
+let watchedSelectionDocument: Document | undefined
+
+const SETTLED_APPENDS_COALESCE_THRESHOLD = 4
+
+function selectionTouches(element: Element) {
+  const selection = document.getSelection?.()
+  if (!selection || selection.rangeCount === 0)
+    return false
+  const { anchorNode, focusNode } = selection
+  return (anchorNode != null && element.contains(anchorNode))
+    || (focusNode != null && element.contains(focusNode))
+}
+
+function activeSelectionIntersects(element: Element) {
+  const selection = document.getSelection?.()
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
+    return false
+  for (let index = 0; index < selection.rangeCount; index++) {
+    if (selection.getRangeAt(index).intersectsNode(element))
+      return true
+  }
+  return false
+}
+
+function coalesceSettledAppends(appendsEl: HTMLElement) {
+  if (appendsEl.childNodes.length <= SETTLED_APPENDS_COALESCE_THRESHOLD)
+    return
+  if (selectionTouches(appendsEl))
+    return
+  let merged = ''
+  for (let index = 0; index < appendsEl.childNodes.length; index++)
+    merged += appendsEl.childNodes[index]?.textContent ?? ''
+  appendsEl.textContent = merged
+}
+
 function syncSettledText() {
   const el = settledTextEl.value
   if (!el)
@@ -94,6 +134,7 @@ function syncSettledText() {
     // Growth: never touch the frozen node — append a new sibling text node.
     appendsEl.appendChild(document.createTextNode(text.slice(frozenSettledText.length)))
     frozenSettledText = text
+    coalesceSettledAppends(appendsEl)
   }
 }
 
@@ -109,6 +150,12 @@ function stopWatchingStreamVersion() {
 }
 
 function settleStreamedDelta() {
+  if (streamedDeltaEl.value && activeSelectionIntersects(streamedDeltaEl.value)) {
+    settleAfterSelection = true
+    watchSelectionRelease()
+    return
+  }
+  settleAfterSelection = false
   stopWatchingStreamVersion()
   if (!streamedDelta.value)
     return
@@ -131,35 +178,76 @@ function watchStreamVersionWhileDeltaActive() {
   )
 }
 
+function applyStreamingUpdate(normalized: string) {
+  const key = streamStateKey.value
+  const result = resolveStreamingTextUpdate({
+    nextContent: normalized,
+    persistedContent: key ? inheritedTextStreamState?.get(key) : undefined,
+    currentState: { settledContent: settledContent.value, streamedDelta: streamedDelta.value },
+    typewriterEnabled: fadeEnabled.value,
+  })
+
+  settledContent.value = result.settledContent
+  streamedDelta.value = result.streamedDelta
+  if (result.appended) {
+    streamFadeVersion.value += 1
+    watchStreamVersionWhileDeltaActive()
+  }
+  else if (!streamedDelta.value) {
+    stopWatchingStreamVersion()
+  }
+
+  if (key)
+    inheritedTextStreamState?.set(key, normalized)
+}
+
 watch(
   [() => props.node.content, streamStateKey, fadeEnabled],
   ([next]) => {
     const normalized = String(next ?? '')
-    const key = streamStateKey.value
-    const result = resolveStreamingTextUpdate({
-      nextContent: normalized,
-      persistedContent: key ? inheritedTextStreamState?.get(key) : undefined,
-      currentState: { settledContent: settledContent.value, streamedDelta: streamedDelta.value },
-      typewriterEnabled: fadeEnabled.value,
-    })
-
-    settledContent.value = result.settledContent
-    streamedDelta.value = result.streamedDelta
-    if (result.appended) {
-      streamFadeVersion.value += 1
-      watchStreamVersionWhileDeltaActive()
+    if (streamedDeltaEl.value && activeSelectionIntersects(streamedDeltaEl.value)) {
+      pendingSelectedContent = normalized
+      watchSelectionRelease()
+      return
     }
-    else if (!streamedDelta.value) {
-      stopWatchingStreamVersion()
-    }
-
-    if (key)
-      inheritedTextStreamState?.set(key, normalized)
+    pendingSelectedContent = null
+    settleAfterSelection = false
+    applyStreamingUpdate(normalized)
   },
   { immediate: true },
 )
 
-onScopeDispose(stopWatchingStreamVersion)
+function handleSelectionChange() {
+  if (streamedDeltaEl.value && activeSelectionIntersects(streamedDeltaEl.value))
+    return
+  stopWatchingSelectionRelease()
+  if (pendingSelectedContent != null) {
+    const pending = pendingSelectedContent
+    pendingSelectedContent = null
+    settleAfterSelection = false
+    applyStreamingUpdate(pending)
+  }
+  else if (settleAfterSelection) {
+    settleStreamedDelta()
+  }
+}
+
+function watchSelectionRelease() {
+  if (watchedSelectionDocument)
+    return
+  watchedSelectionDocument = document
+  watchedSelectionDocument.addEventListener('selectionchange', handleSelectionChange)
+}
+
+function stopWatchingSelectionRelease() {
+  watchedSelectionDocument?.removeEventListener('selectionchange', handleSelectionChange)
+  watchedSelectionDocument = undefined
+}
+
+onScopeDispose(() => {
+  stopWatchingStreamVersion()
+  stopWatchingSelectionRelease()
+})
 
 const streamedDeltaClass = computed(() => (
   streamFadeVersion.value % 2 === 0
@@ -183,6 +271,7 @@ const streamedDeltaClass = computed(() => (
     />
     <span
       v-if="streamedDelta"
+      ref="streamedDeltaEl"
       class="text-node-stream-delta" :class="[streamedDeltaClass]"
       @animationend="settleStreamedDelta"
     >
@@ -206,7 +295,6 @@ const streamedDeltaClass = computed(() => (
   animation-duration: var(--stream-update-fade-duration, var(--fade-duration, 280ms));
   animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.33, 0, 0.67, 1)));
   animation-fill-mode: both;
-  will-change: opacity;
 }
 .text-node-stream-delta--a {
   animation-name: text-node-stream-update-fade-a;

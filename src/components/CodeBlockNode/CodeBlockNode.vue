@@ -4226,11 +4226,21 @@ onUnmounted(() => {
   }
 }
 
-.code-block-container.is-rendering .code-height-placeholder{
-  background-size: 400% 100%;
-  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
+.code-block-container.is-rendering .code-height-placeholder {
+  position: relative;
+  overflow: hidden;
   min-height: var(--ms-size-skeleton-min-height);
+  background: var(--loading-shimmer);
+}
+
+.code-block-container.is-rendering .code-height-placeholder::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -300%;
+  width: 400%;
   background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted) / 0.7) 37%, var(--loading-shimmer) 63%);
+  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
 /* Loading placeholder styles */
@@ -4246,24 +4256,44 @@ onUnmounted(() => {
 }
 
 .skeleton-line {
+  position: relative;
+  overflow: hidden;
   height: 1rem;
-  background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted) / 0.7) 37%, var(--loading-shimmer) 63%);
-  background-size: 400% 100%;
-  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
   border-radius: calc(var(--ms-radius) * 0.5);
+  background: var(--loading-shimmer);
+}
+
+.skeleton-line::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -300%;
+  width: 400%;
+  background: linear-gradient(90deg, var(--loading-shimmer) 25%, hsl(var(--ms-muted) / 0.7) 37%, var(--loading-shimmer) 63%);
+}
+
+.code-block-container.is-rendering .skeleton-line::before {
+  animation: code-skeleton-shimmer 1.2s ease-in-out infinite;
 }
 
 .skeleton-line.short {
   width: 60%;
 }
 
-.code-block-container[data-markstream-viewport-pending='true'] .code-height-placeholder,
-.code-block-container[data-markstream-viewport-pending='true'] .skeleton-line {
+.code-block-container[data-markstream-viewport-pending='true'] .code-height-placeholder::before,
+.code-block-container[data-markstream-viewport-pending='true'] .skeleton-line::before {
   animation: none;
 }
 
 @keyframes code-skeleton-shimmer {
-  0% { background-position: 100% 0; }
-  100% { background-position: 0 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(75%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-block-container.is-rendering .code-height-placeholder::before,
+  .skeleton-line::before {
+    animation: none;
+  }
 }
 </style>

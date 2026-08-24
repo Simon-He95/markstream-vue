@@ -114,4 +114,77 @@ describe('text node streaming selection', () => {
       wrapper.unmount()
     }
   })
+
+  it('coalesces settled append nodes during long streams', async () => {
+    const wrapper = mountRenderer('base')
+    try {
+      for (let index = 1; index <= 12; index++) {
+        await wrapper.setProps({ content: `base${'x'.repeat(index)}` })
+        await flushAll()
+      }
+
+      const appends = wrapper.find('.text-node > span:nth-child(2)').element
+      expect(appends.childNodes.length).toBeLessThanOrEqual(4)
+      expect(wrapper.find('.text-node').element.textContent).toBe('basexxxxxxxxxxxx')
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('does not coalesce append nodes that contain the selection', async () => {
+    const wrapper = mountRenderer('base')
+    try {
+      const content = 'base123456789'
+      await wrapper.setProps({ content: 'base1' })
+      await flushAll()
+      await wrapper.setProps({ content: 'base12' })
+      await flushAll()
+
+      const appends = wrapper.find('.text-node > span:nth-child(2)').element
+      const selectedNode = appends.firstChild as Text
+      expect(selectText(selectedNode, 0, 1)).toBe('1')
+
+      for (let index = 3; index <= 9; index++) {
+        await wrapper.setProps({ content: content.slice(0, 4 + index) })
+        await flushAll()
+      }
+
+      expect(appends.childNodes.length).toBeGreaterThan(4)
+      expect(appends.firstChild).toBe(selectedNode)
+      expect(document.getSelection()?.toString()).toBe('1')
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('keeps an active delta selection until the selection is released', async () => {
+    const wrapper = mountRenderer('base')
+    try {
+      await wrapper.setProps({ content: 'base tail' })
+      await flushAll()
+
+      const delta = wrapper.find('.text-node-stream-delta')
+      const selectedNode = delta.element.firstChild as Text
+      const selectedBefore = selectText(selectedNode, 1, 4)
+      expect(selectedBefore).toBe('tai')
+
+      await wrapper.setProps({ content: 'base tail more' })
+      await flushAll()
+
+      expect(document.getSelection()?.toString()).toBe(selectedBefore)
+      expect(selectedNode.isConnected).toBe(true)
+      expect(wrapper.find('.text-node').element.textContent).toBe('base tail')
+
+      document.getSelection()?.removeAllRanges()
+      document.dispatchEvent(new Event('selectionchange'))
+      await flushAll()
+
+      expect(wrapper.find('.text-node').element.textContent).toBe('base tail more')
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
 })

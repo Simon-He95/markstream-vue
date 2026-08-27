@@ -641,25 +641,41 @@ function shouldIgnoreEstimatedPlainHeight() {
     || streamingLocalPreFallbackHeightActive.value
 }
 
+// Prefix-incremental line counting state (same approach as PreCodeNode):
+// streaming appends only re-scan the appended tail, while non-prefix
+// replacements (rewrites, diff switches) naturally fall back to a full scan
+// via `startsWith`. The resulting count is identical to counting every char.
+let preFallbackCountedCode = ''
+let preFallbackCountedLines = 1
+
 const preFallbackLocalMinHeight = computed(() => {
-  const countLines = (source: unknown) => {
-    const value = String(source ?? '')
-    if (!value)
-      return 1
-    let count = 1
-    for (let i = 0; i < value.length; i++) {
-      if (value[i] === '\n') {
-        count++
-      }
-      else if (value[i] === '\r') {
-        count++
-        if (value[i + 1] === '\n') {
-          i++
-        }
+  const value = displayCode.value
+  let start = 0
+  let count = 1
+
+  if (preFallbackCountedCode && value.startsWith(preFallbackCountedCode)) {
+    start = preFallbackCountedCode.length
+    count = preFallbackCountedLines
+    // A `\r\n` pair split across the previous/append boundary counts once.
+    if (start > 0 && value[start - 1] === '\r' && value[start] === '\n')
+      start++
+  }
+
+  for (let i = start; i < value.length; i++) {
+    const char = value[i]
+    if (char === '\n') {
+      count++
+    }
+    else if (char === '\r') {
+      count++
+      if (value[i + 1] === '\n') {
+        i++
       }
     }
-    return count
   }
+
+  preFallbackCountedCode = value
+  preFallbackCountedLines = count
 
   if (isDiff.value)
     return null
@@ -672,7 +688,7 @@ const preFallbackLocalMinHeight = computed(() => {
   }
 
   return Math.ceil(
-    countLines(displayCode.value) * preFallbackEffectiveLineHeight.value
+    count * preFallbackEffectiveLineHeight.value
     + PIXEL_EPSILON,
   )
 })

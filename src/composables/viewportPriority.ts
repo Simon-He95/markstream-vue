@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { MarkstreamViewportPriorityOptions } from '../types/node-renderer-props'
-import { computed, inject, provide, ref, watch } from 'vue'
+import { computed, getCurrentScope, inject, onScopeDispose, provide, ref, watch } from 'vue'
 
 // Injection key for viewport-priority registration
 const ViewportPriorityKey = Symbol('ViewportPriority') as InjectionKey<RegisterFn>
@@ -201,18 +201,46 @@ export function provideViewportPriority(
     { flush: 'sync' },
   )
 
-  function scheduleIdleDrain() {
-    if ((window as any).__MARKSTREAM_DISABLE_VIEWPORT_PRIORITY_IDLE_DRAIN__ === true)
-      return
-    if (!requestIdle || idleJob != null || !idleQueue.size)
-      return
-    idleJob = requestIdle(() => {
-      idleJob = null
+  function drainIdleQueue(deadline: IdleDeadlineLike | null) {
+    const realDeadline = Boolean(
+      deadline
+      && !deadline.didTimeout
+      && typeof deadline.timeRemaining === 'function',
+    )
+
+    // With a real requestIdleCallback deadline, spend the whole idle slice
+    // settling targets; previously each callback settled exactly one target
+    // and re-queued, producing long chains of trivial callbacks for large
+    // batches. The setTimeout fallback keeps the original one-per-tick pace:
+    // its cadence (16ms) is part of the observed trickle behavior, and tests
+    // rely on targets staying queued across a couple of macrotasks.
+    if (!realDeadline) {
       const next = idleQueue.values().next().value as Element | undefined
       if (!next)
         return
       idleQueue.delete(next)
       settleTarget(next)
+      return
+    }
+
+    for (const next of idleQueue) {
+      idleQueue.delete(next)
+      settleTarget(next)
+      if (deadline!.timeRemaining() <= 1)
+        break
+    }
+  }
+
+  function scheduleIdleDrain() {
+    if ((window as any).__MARKSTREAM_DISABLE_VIEWPORT_PRIORITY_IDLE_DRAIN__ === true)
+      return
+    if (!requestIdle || idleJob != null || !idleQueue.size)
+      return
+    idleJob = requestIdle((deadline) => {
+      idleJob = null
+      if (!idleQueue.size)
+        return
+      drainIdleQueue(deadline ?? null)
       if (idleQueue.size)
         scheduleIdleDrain()
     }, { timeout: 1200 })
@@ -290,6 +318,18 @@ export function provideViewportPriority(
     refreshFrame = window.requestAnimationFrame(() => {
       refreshFrame = null
       refreshTargets()
+    })
+  }
+
+  // Cancel a pending target-refresh frame on teardown: the callback re-observes
+  // elements into IntersectionObserver buckets after the provider scope is gone.
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      if (refreshFrame != null) {
+        if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function')
+          window.cancelAnimationFrame(refreshFrame)
+        refreshFrame = null
+      }
     })
   }
 
@@ -450,13 +490,35 @@ export function useViewportPriority() {
       return
     if (!requestIdle || localIdleJob != null || !localIdleQueue.size)
       return
-    localIdleJob = requestIdle(() => {
+    localIdleJob = requestIdle((deadline) => {
       localIdleJob = null
-      const next = localIdleQueue.values().next().value as Element | undefined
-      if (!next)
+      if (!localIdleQueue.size)
         return
-      localIdleQueue.delete(next)
-      settleLocalTarget(next)
+
+      // With a real deadline, spend the whole idle slice settling targets;
+      // the setTimeout fallback keeps the original one-per-tick trickle pace.
+      const realDeadline = Boolean(
+        deadline
+        && !deadline.didTimeout
+        && typeof deadline.timeRemaining === 'function',
+      )
+
+      if (!realDeadline) {
+        const next = localIdleQueue.values().next().value as Element | undefined
+        if (next) {
+          localIdleQueue.delete(next)
+          settleLocalTarget(next)
+        }
+      }
+      else {
+        for (const next of localIdleQueue) {
+          localIdleQueue.delete(next)
+          settleLocalTarget(next)
+          if (deadline.timeRemaining() <= 1)
+            break
+        }
+      }
+
       if (localIdleQueue.size)
         scheduleLocalIdleDrain()
     }, { timeout: 1200 })

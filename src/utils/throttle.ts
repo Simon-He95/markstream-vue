@@ -4,18 +4,25 @@
  * Optimized to reduce setTimeout calls.
  */
 
+export interface ThrottledFunction<T extends (...args: any[]) => any> {
+  (...args: Parameters<T>): void
+  cancel: () => void
+}
+
 /**
  * Creates a throttled version of the provided function.
  * The throttled function will invoke the original function at most once per `wait` milliseconds.
  *
  * @param fn - The function to throttle
  * @param wait - The minimum time in milliseconds between invocations
- * @returns A throttled version of the function
+ * @returns A throttled version of the function with a `cancel()` method that
+ * drops any pending trailing call and clears the scheduled timeout (useful on
+ * unmount so a late timer cannot fire after teardown).
  */
 export function throttle<T extends (...args: any[]) => any>(
   fn: T,
   wait: number,
-): (...args: Parameters<T>) => void {
+): ThrottledFunction<T> {
   let lastCall = 0
   let timeout: ReturnType<typeof setTimeout> | null = null
   let pendingArgs: Parameters<T> | null = null
@@ -31,7 +38,7 @@ export function throttle<T extends (...args: any[]) => any>(
     }
   }
 
-  return function throttled(...args: Parameters<T>) {
+  const throttled = (...args: Parameters<T>) => {
     const now = Date.now()
     const remaining = wait - (now - lastCall)
 
@@ -54,4 +61,14 @@ export function throttle<T extends (...args: any[]) => any>(
     }
     // else: timeout already scheduled, will use latest pendingArgs
   }
+
+  throttled.cancel = () => {
+    if (timeout) {
+      clearTimeout(timeout)
+      timeout = null
+    }
+    pendingArgs = null
+  }
+
+  return throttled
 }

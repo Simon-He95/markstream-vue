@@ -4551,14 +4551,6 @@ const throttledScheduleMetricsForBatch = throttle(
   16,
 )
 
-// Drop pending trailing emits on teardown so a late timer cannot fire after
-// the component's scope has been disposed (downstream guards currently cover
-// this, but cancelling removes the scheduled callback outright).
-onBeforeUnmount(() => {
-  throttledScheduleMetricsForContent.cancel()
-  throttledScheduleMetricsForBatch.cancel()
-})
-
 watch(
   [() => parsedNodes.value.length, () => renderedCount.value],
   () => {

@@ -38,11 +38,6 @@ export function useStickToBottom(
     const root = scrollRoot.value
     if (!root)
       return
-    // Reading scrollHeight forces layout; skip both the read and the write
-    // (and the redundant scroll event it feeds back into onScroll) when the
-    // container is already at the bottom.
-    if (root.scrollHeight - root.clientHeight - root.scrollTop <= 0)
-      return
     root.scrollTo({ top: root.scrollHeight, behavior: 'auto' })
   }
 

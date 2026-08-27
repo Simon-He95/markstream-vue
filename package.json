@@ -197,7 +197,7 @@
     "build": "pnpm run build:parser && pnpm run build:core && vite build --mode npm && node scripts/cleanup-style-entry.mjs && node scripts/write-tailwind-types.mjs && vite build --config vite.config.tailwind.ts --mode npm && node scripts/copy-tailwind-css.mjs && node scripts/generate-px-css.mjs && pnpm run build:dts",
     "build:pack": "pnpm run build:core && vite build --mode npm && node scripts/cleanup-style-entry.mjs && node scripts/write-tailwind-types.mjs && vite build --config vite.config.tailwind.ts --mode npm && node scripts/copy-tailwind-css.mjs && node scripts/generate-px-css.mjs && pnpm run build:dts:pack",
     "build:analyze": "ANALYZE=true pnpm build",
-    "size:check": "MAX_DIST_BYTES=1003520 MAX_JS_CHUNK_BYTES=294912 MAX_PACK_TGZ_BYTES=286720 MAX_PACK_UNPACKED_BYTES=1105920 node scripts/check-package-size.mjs",
+    "size:check": "MAX_DIST_BYTES=1003520 MAX_JS_CHUNK_BYTES=289792 MAX_PACK_TGZ_BYTES=286720 MAX_PACK_UNPACKED_BYTES=1105920 node scripts/check-package-size.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:sync-zh": "node scripts/sync-zh-docs.mjs",
     "docs:check-zh": "node scripts/check-zh-parity.mjs",

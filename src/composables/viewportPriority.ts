@@ -202,11 +202,9 @@ export function provideViewportPriority(
   )
 
   function drainIdleQueue(deadline: IdleDeadlineLike | null) {
-    const realDeadline = Boolean(
-      deadline
+    const realDeadline = Boolean(deadline
       && !deadline.didTimeout
-      && typeof deadline.timeRemaining === 'function',
-    )
+      && typeof deadline.timeRemaining === 'function')
 
     // With a real requestIdleCallback deadline, spend the whole idle slice
     // settling targets; previously each callback settled exactly one target
@@ -216,10 +214,10 @@ export function provideViewportPriority(
     // rely on targets staying queued across a couple of macrotasks.
     if (!realDeadline) {
       const next = idleQueue.values().next().value as Element | undefined
-      if (!next)
-        return
-      idleQueue.delete(next)
-      settleTarget(next)
+      if (next) {
+        idleQueue.delete(next)
+        settleTarget(next)
+      }
       return
     }
 
@@ -238,11 +236,11 @@ export function provideViewportPriority(
       return
     idleJob = requestIdle((deadline) => {
       idleJob = null
-      if (!idleQueue.size)
-        return
-      drainIdleQueue(deadline ?? null)
-      if (idleQueue.size)
-        scheduleIdleDrain()
+      if (idleQueue.size) {
+        drainIdleQueue(deadline ?? null)
+        if (idleQueue.size)
+          scheduleIdleDrain()
+      }
     }, { timeout: 1200 })
   }
 
@@ -497,11 +495,9 @@ export function useViewportPriority() {
 
       // With a real deadline, spend the whole idle slice settling targets;
       // the setTimeout fallback keeps the original one-per-tick trickle pace.
-      const realDeadline = Boolean(
-        deadline
+      const realDeadline = Boolean(deadline
         && !deadline.didTimeout
-        && typeof deadline.timeRemaining === 'function',
-      )
+        && typeof deadline.timeRemaining === 'function')
 
       if (!realDeadline) {
         const next = localIdleQueue.values().next().value as Element | undefined

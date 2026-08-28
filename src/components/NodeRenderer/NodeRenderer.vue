@@ -4101,7 +4101,19 @@ function flushVirtualMetricsEmit() {
   // the settle-phase full-scan rate by ~75% (emits run up to ~30/s).
   const now = getVirtualNow()
   let measuredVisibleDomHeight: number | undefined
-  if (now - lastFullMetricsScanAt >= METRICS_FULL_SCAN_INTERVAL_MS) {
+  const layoutQuiet = isLayoutSettled() && activeHeightSettlingTimers.size === 0
+  if (layoutQuiet) {
+    // Quiet mode must also bypass the getVisibleDomHeight(undefined) fallback,
+    // which would otherwise sweep every tracked element's offsetHeight and
+    // reintroduce the forced layout this path exists to avoid. The recorded
+    // node heights are the authoritative settled values (the resize observer
+    // keeps them current), so their cached sum is used instead.
+    let total = 0
+    for (const index of nodeContentElements.keys())
+      total += nodeHeights[index] ?? 0
+    measuredVisibleDomHeight = total
+  }
+  else if (now - lastFullMetricsScanAt >= METRICS_FULL_SCAN_INTERVAL_MS) {
     lastFullMetricsScanAt = now
     // One physical pass feeds both the height model and the emitted
     // visibleDomHeight, instead of measureTrackedNodeHeights() plus a second
@@ -4557,14 +4569,45 @@ watch(
   { immediate: true },
 )
 
+let idlePrefetchScheduled = false
+
 watch(
   effectiveFinal,
   (final) => {
-    if (final)
+    if (final) {
       scheduleFinalHeightConvergence()
+      scheduleHeavyRuntimeIdlePrefetch()
+    }
     scheduleVirtualMetricsEmit(final ? 'final' : 'content')
   },
+  // `immediate` covers the history-restore case where the renderer mounts
+  // with `final: true` already set (and content changes that keep final
+  // true re-enter through the parsedNodes watcher below).
+  { immediate: true },
 )
+
+function scheduleHeavyRuntimeIdlePrefetch() {
+  if (idlePrefetchScheduled || !isClient || !hasIdleCallback)
+    return
+  if (typeof window === 'undefined' || !window.requestIdleCallback)
+    return
+  // Prefetch the stream-diffs runtime once per renderer lifetime when the
+  // final document contains code blocks that will need it on scroll. This
+  // moves the chunk fetch + module evaluation off the scroll path (where the
+  // first code block currently pays it) into an idle slice after the restore
+  // settles. The preload is a no-op when the runtime is already cached or the
+  // optional peer is absent.
+  const hasEnhancedCodeBlock = parsedNodes.value.some(node => node.type === 'code_block')
+  if (!hasEnhancedCodeBlock)
+    return
+  idlePrefetchScheduled = true
+  window.requestIdleCallback(() => {
+    idlePrefetchScheduled = false
+    void import('../CodeBlockNode/streamDiffs')
+      .then(mod => mod.preloadCodeBlockRuntime())
+      .catch(() => {})
+  }, { timeout: 2000 })
+}
 
 // Throttled version of scheduleVirtualMetricsEmit for high-frequency watchers
 // This prevents excessive metric emission during rapid state changes

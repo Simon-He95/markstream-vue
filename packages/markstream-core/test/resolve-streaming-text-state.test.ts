@@ -178,4 +178,42 @@ describe('resolveStreamingTextUpdate', () => {
       appended: true,
     })
   })
+
+  it('preserves an active delta without concatenating rendered content on replay', () => {
+    const result = resolveStreamingTextUpdate({
+      nextContent: `${'x'.repeat(10_000)}tail`,
+      currentState: { settledContent: 'x'.repeat(10_000), streamedDelta: 'tail' },
+      typewriterEnabled: true,
+      streamRenderVersionChanged: false,
+    })
+
+    expect(result).toEqual({
+      settledContent: 'x'.repeat(10_000),
+      streamedDelta: 'tail',
+      appended: false,
+    })
+  })
+
+  it.each([
+    ['empty delta', { settledContent: 'hello', streamedDelta: '' }, 'hello'],
+    ['replacement', { settledContent: 'hello', streamedDelta: ' world' }, 'goodbye'],
+    ['same-length replacement', { settledContent: 'hello', streamedDelta: '!' }, 'hello!'],
+  ] as const)('keeps update semantics for %s', (_, currentState, nextContent) => {
+    const result = resolveStreamingTextUpdate({
+      nextContent,
+      currentState,
+      typewriterEnabled: true,
+      streamRenderVersionChanged: false,
+    })
+
+    expect(result).toEqual(
+      currentState.streamedDelta && nextContent === `${currentState.settledContent}${currentState.streamedDelta}`
+        ? { ...currentState, appended: false }
+        : resolveStreamingTextState({
+            nextContent,
+            previousContent: currentState.settledContent + currentState.streamedDelta,
+            typewriterEnabled: true,
+          }),
+    )
+  })
 })

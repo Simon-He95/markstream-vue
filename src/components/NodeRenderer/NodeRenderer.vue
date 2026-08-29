@@ -6249,6 +6249,8 @@ const minimalDomActive = computed(() => {
 let typewriterCursorTimeout: ReturnType<typeof setTimeout> | undefined
 let typewriterCursorRaf: number | null = null
 let typewriterCursorRafVersion = 0
+let typewriterCursorSyncPending = false
+let typewriterCursorSyncVersion = 0
 let lastTypewriterContentLength = 0
 let lastTypewriterVisibleLength = 0
 const TYPEWRITER_SIMPLE_CURSOR_TARGET_CLASS = 'typewriter-simple-cursor-target'
@@ -6335,7 +6337,13 @@ function clearTypewriterCursorRaf() {
   typewriterCursorRaf = null
 }
 
+function invalidateTypewriterCursorSync() {
+  typewriterCursorSyncVersion += 1
+  typewriterCursorSyncPending = false
+}
+
 function hideTypewriterCursorElement() {
+  invalidateTypewriterCursorSync()
   clearTypewriterCursorRaf()
   clearSimpleTypewriterCursorTarget()
   if (typewriterCursorRef.value)
@@ -6461,7 +6469,7 @@ function updateTypewriterCursorPosition() {
     range.setStart(lastText, Math.max(0, end - 1))
     range.setEnd(lastText, end)
     const rects = typeof range.getClientRects === 'function'
-      ? range.getClientRects()
+      ? readLayout('typewriterCursor.range.getClientRects', () => range.getClientRects())
       : undefined
     const rect = rects?.[rects.length - 1] ?? lastText.parentElement?.getBoundingClientRect()
 
@@ -6507,9 +6515,35 @@ function scheduleTypewriterCursorPositionUpdate() {
   run()
 }
 
+function scheduleTypewriterCursorSync() {
+  if (!isClient || renderAsFragment.value || !ownsTypewriterCursor.value || !showTypewriterCursor.value)
+    return
+  if (typewriterCursorSyncPending)
+    return
+
+  typewriterCursorSyncPending = true
+  const version = typewriterCursorSyncVersion
+  void nextTick(() => {
+    if (version !== typewriterCursorSyncVersion)
+      return
+    typewriterCursorSyncPending = false
+    if (!showTypewriterCursor.value)
+      return
+
+    if (resolvedTypewriterCursorMode.value === 'simple') {
+      updateSimpleTypewriterCursorTarget()
+      return
+    }
+
+    clearSimpleTypewriterCursorTarget()
+    if (resolvedTypewriterCursorMode.value === 'precise')
+      scheduleTypewriterCursorPositionUpdate()
+  })
+}
+
 watch(
   [renderContent, () => props.content, () => props.nodes, () => rendererProps.typewriter, effectiveFinal],
-  async () => {
+  () => {
     if (!isClient || renderAsFragment.value || !ownsTypewriterCursor.value)
       return
 
@@ -6573,14 +6607,7 @@ watch(
     if (resolvedTypewriterCursorMode.value === 'precise' && typewriterCursorRef.value)
       typewriterCursorRef.value.style.visibility = 'hidden'
     clearTypewriterCursorTimeout()
-    await nextTick()
-    if (resolvedTypewriterCursorMode.value === 'simple') {
-      updateSimpleTypewriterCursorTarget()
-    }
-    else {
-      clearSimpleTypewriterCursorTarget()
-      scheduleTypewriterCursorPositionUpdate()
-    }
+    scheduleTypewriterCursorSync()
     typewriterCursorTimeout = setTimeout(() => {
       typewriterCursorTimeout = undefined
       showTypewriterCursor.value = false
@@ -6591,39 +6618,31 @@ watch(
 
 watch(
   showTypewriterCursor,
-  async (visible) => {
+  (visible) => {
     if (!visible) {
       hideTypewriterCursorElement()
       return
     }
-    await nextTick()
-    if (resolvedTypewriterCursorMode.value === 'simple') {
-      updateSimpleTypewriterCursorTarget()
-      return
-    }
-    clearSimpleTypewriterCursorTarget()
-    if (resolvedTypewriterCursorMode.value === 'precise')
-      scheduleTypewriterCursorPositionUpdate()
+    scheduleTypewriterCursorSync()
   },
   { flush: 'post' },
 )
 
 watch(
   resolvedTypewriterCursorMode,
-  async () => {
+  () => {
     if (!isClient || renderAsFragment.value || !ownsTypewriterCursor.value || !showTypewriterCursor.value)
       return
 
-    await nextTick()
     if (resolvedTypewriterCursorMode.value === 'simple') {
       clearTypewriterCursorRaf()
-      updateSimpleTypewriterCursorTarget()
+      scheduleTypewriterCursorSync()
       return
     }
 
     clearSimpleTypewriterCursorTarget()
     if (resolvedTypewriterCursorMode.value === 'precise') {
-      scheduleTypewriterCursorPositionUpdate()
+      scheduleTypewriterCursorSync()
       return
     }
 
@@ -6634,23 +6653,17 @@ watch(
 
 watch(
   [() => renderedCount.value, () => liveRange.start, () => liveRange.end],
-  async () => {
+  () => {
     if (!isClient || renderAsFragment.value || !ownsTypewriterCursor.value || !showTypewriterCursor.value)
       return
 
-    await nextTick()
-    if (resolvedTypewriterCursorMode.value === 'simple') {
-      updateSimpleTypewriterCursorTarget()
-      return
-    }
-    clearSimpleTypewriterCursorTarget()
-    if (resolvedTypewriterCursorMode.value === 'precise')
-      scheduleTypewriterCursorPositionUpdate()
+    scheduleTypewriterCursorSync()
   },
   { flush: 'post' },
 )
 
 onBeforeUnmount(() => {
+  invalidateTypewriterCursorSync()
   clearTypewriterCursorTimeout()
   clearTypewriterCursorRaf()
   clearSimpleTypewriterCursorTarget()

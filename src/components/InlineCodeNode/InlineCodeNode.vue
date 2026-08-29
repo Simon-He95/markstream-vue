@@ -87,9 +87,15 @@ watch(
       typewriterEnabled: fadeEnabled.value,
     })
 
+    const previousSettledCode = settledCode.value
+    const previousDelta = streamedDelta.value
     settledCode.value = result.settledContent
     streamedDelta.value = result.streamedDelta
-    if (result.appended) {
+    if (
+      result.appended
+      && result.streamedDelta
+      && (result.streamedDelta !== previousDelta || result.settledContent !== previousSettledCode)
+    ) {
       streamFadeVersion.value += 1
       ensureStreamVersionWatch()
     }

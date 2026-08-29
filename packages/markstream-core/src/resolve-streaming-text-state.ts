@@ -61,8 +61,6 @@ export function resolveStreamingTextUpdate({
   typewriterEnabled,
   streamRenderVersionChanged = false,
 }: ResolveStreamingTextUpdateOptions): StreamingTextStateResult {
-  const renderedContent = `${currentState.settledContent}${currentState.streamedDelta}`
-
   if (!typewriterEnabled) {
     return {
       settledContent: nextContent,
@@ -71,25 +69,36 @@ export function resolveStreamingTextUpdate({
     }
   }
 
+  const { settledContent, streamedDelta } = currentState
+  const renderedContentLength = settledContent.length + streamedDelta.length
+  const renderedContentMatches = streamedDelta
+    ? nextContent.length === renderedContentLength
+    && nextContent.startsWith(settledContent)
+    && nextContent.endsWith(streamedDelta)
+    : nextContent === settledContent
+
   // Framework replay guards (e.g. React StrictMode) may replay effects with
   // the same props while the delta animation is still active. Preserve the
   // current delta instead of settling it immediately so the fade remains
-  // visible in dev and playgrounds.
-  if (currentState.streamedDelta && renderedContent === nextContent) {
+  // visible in dev and playgrounds. Check the already-rendered boundary by
+  // length/prefix/suffix first so repeated props do not allocate a full copy
+  // of settledContent + streamedDelta on every update.
+  if (streamedDelta && renderedContentMatches) {
     if (streamRenderVersionChanged) {
       return {
-        settledContent: renderedContent,
+        settledContent: `${settledContent}${streamedDelta}`,
         streamedDelta: '',
         appended: false,
       }
     }
     return {
-      settledContent: currentState.settledContent,
-      streamedDelta: currentState.streamedDelta,
+      settledContent,
+      streamedDelta,
       appended: false,
     }
   }
 
+  const renderedContent = streamedDelta ? `${settledContent}${streamedDelta}` : settledContent
   return resolveStreamingTextState({
     nextContent,
     previousContent: persistedContent ?? renderedContent,

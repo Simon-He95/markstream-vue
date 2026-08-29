@@ -189,15 +189,9 @@ function applyStreamingUpdate(normalized: string) {
     typewriterEnabled: fadeEnabled.value,
   })
 
-  const previousSettledContent = settledContent.value
-  const previousDelta = streamedDelta.value
   settledContent.value = result.settledContent
   streamedDelta.value = result.streamedDelta
-  if (
-    result.appended
-    && result.streamedDelta
-    && (result.streamedDelta !== previousDelta || result.settledContent !== previousSettledContent)
-  ) {
+  if (result.appended) {
     streamFadeVersion.value += 1
     ensureStreamVersionWatch()
   }

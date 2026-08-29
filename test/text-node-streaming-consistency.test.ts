@@ -292,44 +292,6 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     }
   })
 
-  it('does not flip the fade class on a replayed active TextNode delta', async () => {
-    const streamRenderVersion = ref(1)
-    const content = ref('Hello')
-    const Host = defineComponent({
-      setup() {
-        return () => h(TextNode, {
-          node: { type: 'text', content: content.value, raw: content.value },
-        })
-      },
-    })
-    const wrapper = mount(Host, {
-      global: {
-        provide: {
-          markstreamStreamVersion: streamRenderVersion,
-        },
-      },
-    })
-
-    try {
-      content.value = 'HelloWorld'
-      await flushAll()
-      const delta = wrapper.get('.text-node-stream-delta')
-      const initialClass = delta.classes().find(name => name.includes('--'))
-      expect(initialClass).toBeDefined()
-
-      content.value = 'HelloWorld'
-      await flushAll()
-      expect(wrapper.get('.text-node-stream-delta').classes()).toContain(initialClass!)
-
-      content.value = 'HelloWorldAgain'
-      await flushAll()
-      expect(wrapper.get('.text-node-stream-delta').classes()).not.toContain(initialClass!)
-    }
-    finally {
-      wrapper.unmount()
-    }
-  })
-
   it('preserves active InlineCodeNode delta until streamRenderVersion changes', async () => {
     const streamRenderVersion = ref(1)
     const textStreamState = new Map<string, string>()

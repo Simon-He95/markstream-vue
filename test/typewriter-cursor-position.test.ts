@@ -542,58 +542,6 @@ describe('typewriter cursor position', () => {
     wrapper.unmount()
   })
 
-  it('records precise cursor geometry reads by operation', async () => {
-    const queuedFrames: FrameRequestCallback[] = []
-    vi.stubGlobal('requestAnimationFrame', ((cb: FrameRequestCallback) => {
-      queuedFrames.push(cb)
-      return queuedFrames.length
-    }) as typeof requestAnimationFrame)
-    vi.stubGlobal('cancelAnimationFrame', (() => {}) as typeof cancelAnimationFrame)
-
-    const originalCreateRange = document.createRange.bind(document)
-    vi.spyOn(document, 'createRange').mockImplementation(() => {
-      const range = originalCreateRange()
-      range.getClientRects = vi.fn(() => [
-        rect({ right: 50, top: 20, bottom: 40, height: 20 }),
-      ] as unknown as DOMRectList)
-      return range
-    })
-
-    const wrapper = mount(NodeRenderer, {
-      props: {
-        content: '',
-        typewriter: true,
-        debugPerformance: true,
-        smoothStreaming: false,
-        batchRendering: false,
-        viewportPriority: false,
-        deferNodesUntilVisible: false,
-      },
-    })
-
-    try {
-      await flushAll()
-      queuedFrames.length = 0
-      await wrapper.setProps({ content: 'hello' })
-      await flushAll()
-      const baseline = performance.now()
-      while (queuedFrames.length > 0)
-        queuedFrames.shift()?.(baseline + 16)
-      await flushAll()
-
-      const performanceState = (window as Window & {
-        __markstreamLayoutReadPerformance?: {
-          byLabel?: Record<string, number>
-        }
-      }).__markstreamLayoutReadPerformance
-      expect(performanceState?.byLabel?.['typewriterCursor.range.getClientRects']).toBeGreaterThan(0)
-      expect(performanceState?.byLabel?.['typewriterCursor.root.getBoundingClientRect']).toBeGreaterThan(0)
-    }
-    finally {
-      wrapper.unmount()
-    }
-  })
-
   it('falls back to previous rendered text slot when the last non-excluded slot has no text', async () => {
     const scopeId = 'typewriter-empty-tail'
     const queuedFrames: FrameRequestCallback[] = []

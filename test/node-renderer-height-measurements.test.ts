@@ -212,6 +212,34 @@ describe('useHeightMeasurements', () => {
     expect(h.fenwickRangeSum(h.heightKnownTree.value, 0, 2)).toBe(1)
   })
 
+  it('matches full rebuilds across incremental and batched growth', () => {
+    const incremental = useHeightMeasurements()
+    const rebuilt = useHeightMeasurements()
+    const heights = new Map([
+      [0, 10],
+      [2, 30],
+      [3, 40],
+      [7, 80],
+      [8, 90],
+      [15, 160],
+      [16, 170],
+      [23, 240],
+    ])
+
+    for (const [index, height] of heights) {
+      incremental.recordNodeHeight(index, height)
+      rebuilt.recordNodeHeight(index, height)
+    }
+
+    for (const size of [1, 2, 3, 5, 8, 9, 16, 24]) {
+      incremental.syncHeightTreeSize(size)
+      rebuilt.rebuildHeightTrees(size)
+
+      expect(incremental.heightSumTree.value).toEqual(rebuilt.heightSumTree.value)
+      expect(incremental.heightKnownTree.value).toEqual(rebuilt.heightKnownTree.value)
+    }
+  })
+
   it('removes measured heights from stats and Fenwick trees', () => {
     const onHeightRecorded = vi.fn()
     const h = useHeightMeasurements({ onHeightRecorded })

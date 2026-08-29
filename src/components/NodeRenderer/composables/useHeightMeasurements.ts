@@ -136,10 +136,9 @@ export function useHeightMeasurements(
    * Bring the Fenwick trees in sync with a new total node count.
    *
    * Growing the dataset (streaming append) extends the trees in place: Fenwick
-   * entries are indexed by node position, so existing prefix sums stay valid
-   * and only the new slots need zeroing. This avoids the O(measured)-per-commit
-   * full rebuild that previously ran on every append. Shrinks and the first
-   * build still do a full rebuild (rare paths).
+   * entries are indexed by node position, so existing slots stay valid and
+   * only new slots plus entries crossing the old boundary need populating.
+   * Shrinks and the first build still do a full rebuild (rare paths).
    */
   function syncHeightTreeSize(size: number) {
     const prevSize = heightTreeSize.value
@@ -156,33 +155,29 @@ export function useHeightMeasurements(
 
     sumTree.length = size + 1
     countTree.length = size + 1
-    for (let i = prevSize + 1; i <= size; i++) {
-      sumTree[i] = 0
-      countTree[i] = 0
+    for (let index = prevSize; index < size; index++) {
+      sumTree[index + 1] = 0
+      countTree[index + 1] = 0
     }
 
-    // A Fenwick update path that previously stopped at the old array boundary
-    // now extends into the newly added slots. Re-apply the tail of every
-    // measured node's update path so range sums over the grown portion (and
-    // queries that land on the new boundary slots) see the full values.
-    const oldBound = prevSize + 1
-    for (const [rawIndex, rawHeight] of Object.entries(nodeHeights)) {
-      const index = Number(rawIndex)
-      const height = Number(rawHeight)
-
-      if (!Number.isFinite(index) || index < 0 || index >= size)
-        continue
-
+    for (let index = prevSize; index < size; index++) {
+      const height = Number(nodeHeights[index])
       if (!Number.isFinite(height) || height <= 0)
         continue
 
-      let i = index + 1
-      while (i < oldBound)
-        i += i & -i
-      for (; i <= size; i += i & -i) {
-        sumTree[i] += height
-        countTree[i] += 1
-      }
+      fenwickUpdate(sumTree, index, height)
+      fenwickUpdate(countTree, index, 1)
+    }
+
+    // Only new Fenwick slots whose covered range crosses the old boundary
+    // need values from existing measurements.
+    for (let treeIndex = prevSize + 1; treeIndex <= size; treeIndex++) {
+      const rangeStart = treeIndex - (treeIndex & -treeIndex)
+      if (rangeStart >= prevSize)
+        continue
+
+      sumTree[treeIndex] += fenwickRangeSum(sumTree, rangeStart, prevSize)
+      countTree[treeIndex] += fenwickRangeSum(countTree, rangeStart, prevSize)
     }
 
     heightTreeSize.value = size

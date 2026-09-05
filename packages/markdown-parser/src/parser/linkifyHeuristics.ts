@@ -355,11 +355,8 @@ function mayContainLinkifyDemotionContext(text: string) {
 export function inferLinkifyDemotionContext(contextText?: string): LinkifyDemotionContext {
   const text = String(contextText ?? '')
   const cached = linkifyDemotionContextCache.get(text)
-  if (cached) {
-    linkifyDemotionContextCache.delete(text)
-    linkifyDemotionContextCache.set(text, cached)
+  if (cached)
     return cached
-  }
 
   if (!mayContainLinkifyDemotionContext(text))
     return rememberLinkifyDemotionContext(text, EMPTY_LINKIFY_DEMOTION_CONTEXT)

@@ -283,6 +283,12 @@ const fontIncreaseDisabled = computed(() =>
   box-shadow: var(--ms-shadow-subtle);
 }
 
+/* Raise the containing stacking context so sibling code blocks cannot cover the menu. */
+.code-block-container:has(.code-more-menu) {
+  position: relative;
+  z-index: 1;
+}
+
 /* ── Header layout ── */
 .code-block-header {
   position: relative;

@@ -20,7 +20,7 @@ Restore includes creation of a fresh parser for every message and retains all re
 
 ## Evidence and rejected directions
 
-The [full 59-workload matrix and reproduction instructions](https://github.com/Simon-He95/markdown-it-ts/blob/codex/markstream-performance-audit/docs/perf-markstream-consumer.md), [all final samples](https://github.com/Simon-He95/markdown-it-ts/blob/codex/markstream-performance-audit/docs/perf-markstream-consumer.json), and [experimental samples](https://github.com/Simon-He95/markdown-it-ts/blob/codex/markstream-performance-audit/docs/perf-markstream-experiments.json) live with the cross-repo harness.
+The [full 59-workload matrix and reproduction instructions](https://github.com/Simon-He95/markdown-it-ts/blob/f0b852b/docs/perf-markstream-consumer.md), [all final samples](https://github.com/Simon-He95/markdown-it-ts/blob/f0b852b/docs/perf-markstream-consumer.json), and [experimental samples](https://github.com/Simon-He95/markdown-it-ts/blob/f0b852b/docs/perf-markstream-experiments.json) live with the cross-repo harness.
 
 Twelve directions were investigated; only three production changes across both repos survived. Rejected prototypes include incremental table-token merging (stale post-block plugin metadata), signature-based row caching (2.1–2.4× slower), removing the linkify filter (mixed gains/regressions), Token spread removal (no stable marginal gain after the plain-text path), and skipping core-rule clocks (inconsistent consumer gains). Worker experiments improved some restore wall times but increased total CPU; automatic source-only AST caching changed stateful hook results and expanded serialized size about 13×.
 

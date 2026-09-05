@@ -1,7 +1,7 @@
 {
   "name": "markstream-angular",
   "type": "module",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Angular 20+ standalone streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and safe Angular component rendering.",
   "author": "Simon He",
   "license": "MIT",

@@ -6,7 +6,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-vue
 - 包名：markstream-vue
-- 版本：2.0.8-beta.0
+- 版本：2.0.8
 - 成熟度标签：稳定
 - 框架/运行时：Vue 3、Nuxt 3、VitePress
 - 描述：Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, and stream-diffs powered code blocks.
@@ -20,7 +20,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-react
 - 包名：markstream-react
-- 版本：2.0.7
+- 版本：2.0.8
 - 成熟度标签：beta
 - 框架/运行时：React 18/19、Next.js App Router、Next.js Pages Router、Remix
 - 描述：React/Next.js streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom React components.
@@ -34,7 +34,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-octane
 - 包名：markstream-octane
-- 版本：2.0.7
+- 版本：2.0.8
 - 成熟度标签：beta
 - 框架/运行时：Octane 0.1.x 客户端与服务端 runtime
 - 描述：Octane streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Octane components.
@@ -47,7 +47,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-svelte
 - 包名：markstream-svelte
-- 版本：2.0.7
+- 版本：2.0.8
 - 成熟度标签：beta/实验
 - 框架/运行时：仅 Svelte 5
 - 描述：Svelte 5 and SvelteKit streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Svelte components.
@@ -61,7 +61,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-angular
 - 包名：markstream-angular
-- 版本：2.0.7
+- 版本：2.0.8
 - 成熟度标签：alpha
 - 框架/运行时：Angular standalone 组件，Angular 20+
 - 描述：Angular 20+ standalone streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and safe Angular component rendering.
@@ -75,7 +75,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-vue2
 - 包名：markstream-vue2
-- 版本：2.0.7
+- 版本：2.0.8
 - 成熟度标签：兼容移植版
 - 框架/运行时：Vue 2.6 / 2.7
 - 描述：Vue 2.6/2.7 streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and Vue 2 component rendering.
@@ -89,7 +89,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### stream-markdown-parser
 - 包名：stream-markdown-parser
-- 版本：1.2.13
+- 版本：1.2.14
 - 成熟度标签：稳定
 - 框架/运行时：任意 JavaScript 或 TypeScript 应用
 - 描述：Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.
@@ -102,7 +102,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-core
 - 包名：markstream-core
-- 版本：2.0.7
+- 版本：2.0.8
 - 成熟度标签：稳定
 - 框架/运行时：框架无关工具
 - 描述：Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream
@@ -117,7 +117,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 Vue / Nuxt:
 ```txt
-pnpm add markstream-vue@next
+pnpm add markstream-vue
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 ```
@@ -150,7 +150,7 @@ pnpm add markstream-angular
 ## Vue 标准用户接入
 
 ```bash
-pnpm add markstream-vue@next
+pnpm add markstream-vue
 ```
 
 ```vue

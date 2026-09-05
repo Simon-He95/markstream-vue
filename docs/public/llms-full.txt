@@ -6,7 +6,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-vue
 - Package name: markstream-vue
-- Version: 2.0.8-beta.0
+- Version: 2.0.8
 - Maturity label: stable
 - Framework/runtime: Vue 3, Nuxt 3, VitePress
 - Description: Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, and stream-diffs powered code blocks.
@@ -20,7 +20,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-react
 - Package name: markstream-react
-- Version: 2.0.7
+- Version: 2.0.8
 - Maturity label: beta
 - Framework/runtime: React 18/19, Next.js App Router, Next.js Pages Router, Remix
 - Description: React/Next.js streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom React components.
@@ -34,7 +34,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-octane
 - Package name: markstream-octane
-- Version: 2.0.7
+- Version: 2.0.8
 - Maturity label: beta
 - Framework/runtime: Octane 0.1.x client and server runtimes
 - Description: Octane streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Octane components.
@@ -47,7 +47,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-svelte
 - Package name: markstream-svelte
-- Version: 2.0.7
+- Version: 2.0.8
 - Maturity label: beta/experimental
 - Framework/runtime: Svelte 5 only
 - Description: Svelte 5 and SvelteKit streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Svelte components.
@@ -61,7 +61,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-angular
 - Package name: markstream-angular
-- Version: 2.0.7
+- Version: 2.0.8
 - Maturity label: alpha
 - Framework/runtime: Angular standalone components, Angular 20+
 - Description: Angular 20+ standalone streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and safe Angular component rendering.
@@ -75,7 +75,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-vue2
 - Package name: markstream-vue2
-- Version: 2.0.7
+- Version: 2.0.8
 - Maturity label: compatibility port
 - Framework/runtime: Vue 2.6 / 2.7
 - Description: Vue 2.6/2.7 streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and Vue 2 component rendering.
@@ -89,7 +89,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### stream-markdown-parser
 - Package name: stream-markdown-parser
-- Version: 1.2.13
+- Version: 1.2.14
 - Maturity label: stable
 - Framework/runtime: Any JavaScript or TypeScript app
 - Description: Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.
@@ -102,7 +102,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-core
 - Package name: markstream-core
-- Version: 2.0.7
+- Version: 2.0.8
 - Maturity label: stable
 - Framework/runtime: Framework-agnostic utilities
 - Description: Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream
@@ -117,7 +117,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 Vue / Nuxt:
 ```txt
-pnpm add markstream-vue@next
+pnpm add markstream-vue
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 ```
@@ -150,7 +150,7 @@ pnpm add markstream-angular
 ## Canonical Vue Consumer Recipe
 
 ```bash
-pnpm add markstream-vue@next
+pnpm add markstream-vue
 ```
 
 ```vue

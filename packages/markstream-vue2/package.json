@@ -1,7 +1,7 @@
 {
   "name": "markstream-vue2",
   "type": "module",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "Vue 2.6/2.7 streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, Mermaid, KaTeX, stream-diffs powered code blocks, and Vue 2 component rendering.",
   "author": "Simon He",
   "license": "MIT",

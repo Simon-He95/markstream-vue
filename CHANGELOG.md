@@ -1,3 +1,58 @@
+## [2.0.8](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.7...markstream-vue@2.0.8) (2026-09-05)
+
+
+### Bug Fixes
+
+* address reference click review findings ([b6d9308](https://github.com/Simon-He95/markstream-vue/commit/b6d93080d5e94e0b6e66c43848152551aaf6d343))
+* **docs:** align home sections with the page text column ([18739ca](https://github.com/Simon-He95/markstream-vue/commit/18739ca73a236b3c9391b1292b48b66979095e39))
+* **docs:** fit the infographic preview inside the carousel card ([9b5707b](https://github.com/Simon-He95/markstream-vue/commit/9b5707bd7cd0c470781ce4cf23fec77dc4b05cc3))
+* **docs:** fix carousel safety-net race and gallery lazy mounting ([a92e2a7](https://github.com/Simon-He95/markstream-vue/commit/a92e2a7cdf99b94257429775939f3e21bb4af04d))
+* **docs:** inject the KaTeX CDN worker for math nodes ([2222fd3](https://github.com/Simon-He95/markstream-vue/commit/2222fd314de1619ed331555956a9a8c96de995e6))
+* **docs:** inject the Mermaid CDN worker for diagram nodes ([8fafb91](https://github.com/Simon-He95/markstream-vue/commit/8fafb9134c2446b81df434310545936216587136))
+* **docs:** locale-aware labels, timer cleanup, and opt-in wording ([2c3db51](https://github.com/Simon-He95/markstream-vue/commit/2c3db5145cea374e0b44f27a04a3403c2609dba8))
+* **docs:** prevent gallery badge overflow with responsive wrapping ([a217aa8](https://github.com/Simon-He95/markstream-vue/commit/a217aa862ee4582c4a968370b56baf07f82fffac))
+* **docs:** replay showcase cards through the incremental streaming path ([1f55b6f](https://github.com/Simon-He95/markstream-vue/commit/1f55b6f2c8a01e3f324defbbcf0a47dff5bf0608))
+* forward reference id in click event ([4e3937f](https://github.com/Simon-He95/markstream-vue/commit/4e3937ffddede1e417873bddd14ba582c17b5e99))
+* keep code block overflow menu above sibling blocks ([cbc7c6c](https://github.com/Simon-He95/markstream-vue/commit/cbc7c6c0b0155b645161c767bf547511deb04ffd))
+* revoke CDN worker blob URLs right after construction ([ad518a6](https://github.com/Simon-He95/markstream-vue/commit/ad518a6de66750bcbe7077646804608718fbe61b))
+* show canonical "TypeScript" code block label without flicker ([195e7a1](https://github.com/Simon-He95/markstream-vue/commit/195e7a1f1125bfc444eba78073097efbb04db230))
+* **svelte:** define --ms-size-code-max-height so d2 blocks cap their height ([e6c4365](https://github.com/Simon-He95/markstream-vue/commit/e6c4365765de31310e126dfe8a7e63eb94272ab6))
+* unify D2 max-height behavior across all renderer packages ([ab8812d](https://github.com/Simon-He95/markstream-vue/commit/ab8812de0bb1fc421b54a4ee5ce7e81de9e36f47))
+* update markdown-it-ts to version 1.1.1 ([3ffa399](https://github.com/Simon-He95/markstream-vue/commit/3ffa3999357edd2fc87286882ebce187a466cedc))
+* **vue:** keep streaming optimization within bundle budget ([361b83c](https://github.com/Simon-He95/markstream-vue/commit/361b83cf48f5c5e35202dda55efeb0dcc4196285))
+
+
+### Features
+
+* center and scale d2 and infographic diagrams in react, svelte, angular, and vue2 ([856972a](https://github.com/Simon-He95/markstream-vue/commit/856972a495acacdcda2a88ba780e4fce483ace66))
+* center and scale d2 and infographic diagrams like mermaid ([fa7e031](https://github.com/Simon-He95/markstream-vue/commit/fa7e031c06df41cf0baf52785a397720d083a0a1))
+* **docs:** add component gallery, beginner home page, and symptom-first troubleshooting ([7791794](https://github.com/Simon-He95/markstream-vue/commit/7791794b1ed6f4a2f42cbc74c0024c5198bf56d9))
+* **docs:** add PrereqChips and NextStep templates to top guides ([d01c2b8](https://github.com/Simon-He95/markstream-vue/commit/d01c2b84eb64428ad188c48965e89d7de909b4de))
+* **docs:** streamable showcase with fixed-height previews and component marquee ([456d278](https://github.com/Simon-He95/markstream-vue/commit/456d27893f132b7e3f6836d2b7f03da7f3b1b5d5))
+* **docs:** turn the showcase into an autoplay carousel over all components ([3eb331b](https://github.com/Simon-He95/markstream-vue/commit/3eb331b6238d72627d1593903ed7dde47d3ffb0a))
+* let infographic honor --ms-size-diagram-min-height like mermaid ([5b73f01](https://github.com/Simon-He95/markstream-vue/commit/5b73f01301c2b2d67d64ad871d6366793cf19f32))
+* support the diagram min-height token in react, svelte, angular, and vue2 ([30219ba](https://github.com/Simon-He95/markstream-vue/commit/30219baa8c4fb3ca442db0d3ae4e1f289000c7db))
+
+
+### Performance Improvements
+
+* **parser:** avoid promoting linkify context cache hits ([507e17d](https://github.com/Simon-He95/markstream-vue/commit/507e17dfb0afa143cd05ccf101c70ee89b2c65a5))
+* **parser:** convert ordinary single text tokens directly ([a005f7f](https://github.com/Simon-He95/markstream-vue/commit/a005f7f37af56735a684e7de81082a5270ea1d51))
+* **vue:** skip settled transitions during streaming and restore ([efe69f2](https://github.com/Simon-He95/markstream-vue/commit/efe69f2144bc1bd7a51254f17e3919821fb5f5de))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.14`
+* `markstream-core@2.0.8`
+* `markstream-vue@2.0.8`
+* `markstream-react@2.0.8`
+* `markstream-octane@2.0.8`
+* `markstream-svelte@2.0.8`
+* `markstream-angular@2.0.8`
+* `markstream-vue2@2.0.8`
+
+
 ## [2.0.7](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.6...markstream-vue@2.0.7) (2026-08-31)
 
 

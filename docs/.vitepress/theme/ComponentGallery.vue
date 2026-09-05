@@ -145,15 +145,17 @@ onBeforeUnmount(() => {
         :data-lazy="entry.heavy ? 'true' : undefined"
       >
         <div class="ms-gallery-head">
-          <a :href="detailLink(entry.slug)" class="ms-gallery-name">{{ entry.name }}</a>
-          <span
-            v-if="entry.tags.includes('opt-in')"
-            class="ms-gallery-optin"
-            :title="isZh ? '需要额外配置才会触发（如 markdown-it 插件、loader 或渲染选项）' : 'Only triggers after extra setup (a markdown-it plugin, a loader, or a renderer option)'"
-          >{{ isZh ? 'opt-in' : 'opt-in' }}</span>
-          <span v-if="entry.peers.length" class="ms-gallery-peer" :title="isZh ? '渲染此组件需要安装对应的 peer 依赖' : 'Rendering this component requires the listed peer dependency'">
-            {{ entry.peers.join(' · ') }}
-          </span>
+          <a :href="detailLink(entry.slug)" class="ms-gallery-name" :title="entry.name">{{ entry.name }}</a>
+          <div v-if="entry.tags.includes('opt-in') || entry.peers.length" class="ms-gallery-badges">
+            <span
+              v-if="entry.tags.includes('opt-in')"
+              class="ms-gallery-optin"
+              :title="isZh ? '需要额外配置才会触发（如 markdown-it 插件、loader 或渲染选项）' : 'Only triggers after extra setup (a markdown-it plugin, a loader, or a renderer option)'"
+            >opt-in</span>
+            <span v-for="peer in entry.peers" :key="peer" class="ms-gallery-peer" :title="`${isZh ? '渲染此组件需要安装对应的 peer 依赖' : 'Rendering this component requires the listed peer dependency'}: ${peer}`">
+              {{ peer }}
+            </span>
+          </div>
         </div>
         <div class="ms-gallery-preview">
           <pre v-if="entry.mdSnippet && needsCodeFallback(entry.slug)" class="ms-gallery-codefallback"><code>{{ entry.mdSnippet }}</code></pre>
@@ -263,6 +265,7 @@ onBeforeUnmount(() => {
 .ms-gallery-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   border: 1px solid var(--vp-c-border);
   border-radius: 12px;
   background: var(--vp-c-bg);
@@ -279,13 +282,17 @@ onBeforeUnmount(() => {
 
 .ms-gallery-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.4rem 0.5rem;
   margin-bottom: 0.6rem;
 }
 
 .ms-gallery-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font-size: 0.9rem;
   font-weight: 650;
   color: var(--vp-c-text-1);
@@ -298,7 +305,21 @@ onBeforeUnmount(() => {
   text-decoration: underline;
 }
 
+.ms-gallery-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
 .ms-gallery-peer {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--vp-c-warning-1);
@@ -306,10 +327,11 @@ onBeforeUnmount(() => {
   background: var(--vp-c-warning-soft);
   border-radius: 999px;
   padding: 0.1rem 0.5rem;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .ms-gallery-optin {
+  flex: 0 0 auto;
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--vp-c-text-2);

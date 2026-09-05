@@ -8,10 +8,11 @@ import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { chromium } from 'playwright-core'
-import { createServer } from 'vite'
+import { build, createServer, preview } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '..')
+const sourceRoot = path.resolve(repoRoot, process.env.MARKSTREAM_BENCHMARK_SOURCE_ROOT || '.')
 const outputDir = path.resolve(repoRoot, process.env.MARKSTREAM_REAL_CORPUS_OUTPUT_DIR || '.tmp/perf-real-corpus')
 const fixtureRoot = path.join(outputDir, 'fixture')
 const outputJsonPath = path.join(outputDir, 'latest.json')
@@ -60,6 +61,7 @@ const browserRendererOptions = {
   renderBatchSize: 48,
   renderBatchDelay: 6,
   parseCoalesceMs: 32,
+  ...readJsonObjectEnv('MARKSTREAM_REAL_CORPUS_RENDERER_OPTIONS_JSON'),
 }
 const browserFinalTimelineMarkdownOptions = {
   nodeVirtual: 'auto',
@@ -73,6 +75,20 @@ const browserStandaloneFinalRestoreAutoExpectedOptions = {
 }
 
 const corpusDefinitions = [
+  {
+    id: 'nested-history',
+    label: 'Synthetic multi-paragraph list items',
+    path: 'scripts/benchmark-real-corpus-performance.mjs#nested-history',
+    markdown: Array.from({ length: 120 }, (_, index) =>
+      `- **Item ${index}** with [link](https://example.com/${index})\n\n  Second paragraph with **strong** and <kbd>Enter</kbd>.\n\n  > Nested quote with _emphasis_.\n`).join('\n'),
+  },
+  {
+    id: 'chat-answer',
+    label: 'Synthetic short assistant answer',
+    path: 'scripts/benchmark-real-corpus-performance.mjs#chat-answer',
+    markdown: Array.from({ length: 6 }, (_, index) =>
+      `## Section ${index}\n\n中文 answer with **strong**, _emphasis_ and [reference](https://example.com/${index}).\n\n- first\n- second\n`).join('\n'),
+  },
   { id: 'ai-chat-streaming', label: 'Docs AI chat streaming', path: 'docs/guide/ai-chat-streaming.md' },
   { id: 'readme-en', label: 'README English', path: 'README.md' },
   { id: 'readme-zh', label: 'README Chinese', path: 'README.zh-CN.md' },
@@ -83,6 +99,14 @@ const corpusDefinitions = [
 ]
 
 const chatTranscriptDefinitions = [
+  {
+    id: 'many-message-thread',
+    label: 'Synthetic 40-answer conversation restore',
+    items: Array.from({ length: 40 }, (_, index) => [
+      { kind: 'user-message', text: `Question ${index}` },
+      { kind: 'assistant-markdown', corpusId: 'chat-answer' },
+    ]).flat(),
+  },
   {
     id: 'docs-chat-thread',
     label: 'Real docs multi-message chat restore',
@@ -199,7 +223,7 @@ function summarize(values) {
 function readCorpus() {
   return corpusDefinitions.map((definition) => {
     const absolutePath = path.join(repoRoot, definition.path)
-    const markdown = readFileSync(absolutePath, 'utf8')
+    const markdown = definition.markdown ?? readFileSync(absolutePath, 'utf8')
     return {
       ...definition,
       absolutePath,
@@ -1564,21 +1588,33 @@ createApp(App).mount('#app')
 `
 }
 
-async function createBenchmarkServer(corpus) {
+async function createBenchmarkServer(corpus, benchmarkSourceRoot = sourceRoot, buildOutputDir = outputDir) {
   writeFixture(corpus)
-  const server = await createServer({
+  const serverConfig = {
+    configFile: false,
     root: fixtureRoot,
     logLevel: 'silent',
     plugins: [vue()],
     resolve: {
       alias: [
-        { find: 'markstream-vue/index.css', replacement: path.join(repoRoot, 'src/index.css') },
-        { find: 'markstream-vue', replacement: path.join(repoRoot, 'src/exports.ts') },
+        { find: 'markstream-vue/index.css', replacement: path.join(benchmarkSourceRoot, 'src/index.css') },
+        { find: 'markstream-vue', replacement: path.join(benchmarkSourceRoot, 'src/exports.ts') },
+        { find: 'stream-markdown-parser', replacement: path.join(benchmarkSourceRoot, 'packages/markdown-parser/src/index.ts') },
+        { find: 'markstream-core', replacement: path.join(benchmarkSourceRoot, 'packages/markstream-core/src/index.ts') },
       ],
     },
     server: { host: '127.0.0.1', port: 4193, strictPort: false },
-  })
-  await server.listen()
+  }
+  let server
+  if (process.env.MARKSTREAM_BENCHMARK_BUILD === '1') {
+    const buildOptions = { outDir: path.join(buildOutputDir, 'dist'), emptyOutDir: true }
+    await build({ ...serverConfig, mode: 'production', build: buildOptions })
+    server = await preview({ ...serverConfig, build: buildOptions, preview: { host: '127.0.0.1', port: serverConfig.server.port, strictPort: false } })
+  }
+  else {
+    server = await createServer(serverConfig)
+    await server.listen()
+  }
   const address = server.httpServer?.address()
   const port = typeof address === 'object' && address ? address.port : server.config.server.port
   return { server, port }
@@ -1698,6 +1734,7 @@ function summarizeBrowserRuns(runs) {
     'layoutDurationMs',
     'recalcStyleDurationMs',
     'jsHeapUsedMB',
+    'retainedHeapMB',
   ]
   const output = {}
   for (const key of numericKeys) {
@@ -1768,6 +1805,16 @@ async function runBrowserCase(browser, port, mode, testCase) {
       runOptions,
     )
     const after = await getMetrics(client)
+    const correctness = await page.evaluate(() => {
+      const root = document.querySelector('#app')
+      return {
+        text: root.textContent,
+        links: Array.from(root.querySelectorAll('a'), link => [link.textContent, link.getAttribute('href'), link.getAttribute('title')]),
+        images: Array.from(root.querySelectorAll('img'), image => [image.getAttribute('src'), image.getAttribute('alt')]),
+      }
+    })
+    await client.send('HeapProfiler.collectGarbage')
+    const retainedMetrics = await getMetrics(client)
     await page.close()
 
     if (pageErrors.length || consoleErrors.length) {
@@ -1781,6 +1828,8 @@ async function runBrowserCase(browser, port, mode, testCase) {
     runs.push({
       ...result,
       ...deltaMetrics(after, before),
+      correctness,
+      retainedHeapMB: round(retainedMetrics.JSHeapUsedSize / 1024 / 1024),
       totalMs: round(result.totalMs),
       avgUpdateMs: round(result.avgUpdateMs),
       p95UpdateMs: round(result.p95UpdateMs),
@@ -2039,6 +2088,8 @@ async function main() {
 
   const payload = {
     generatedAt: new Date().toISOString(),
+    productionBuild: process.env.MARKSTREAM_BENCHMARK_BUILD === '1',
+    sourceRoot,
     source: 'scripts/benchmark-real-corpus-performance.mjs',
     config: {
       parserRounds,
@@ -2089,4 +2140,7 @@ async function main() {
   console.log(`wrote ${path.relative(repoRoot, outputMarkdownPath)}`)
 }
 
-await main()
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href)
+  await main()
+
+export { createBenchmarkServer, createChatTranscriptCases, readCorpus, runBrowserCase, summarizeBrowserRuns }

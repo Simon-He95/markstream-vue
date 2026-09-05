@@ -92,6 +92,7 @@ import FallbackComponent from './FallbackComponent.vue'
 import HeightEstimationProbes from './HeightEstimationProbes.vue'
 import { InfographicBlockNodeLoading } from './InfographicBlockNodeLoading'
 import { MermaidBlockNodeLoading } from './MermaidBlockNodeLoading'
+import NodeRendererContent from './NodeRendererContent.vue'
 import { normalizeRendererMode, RENDERER_MODE_DEFAULTS } from './rendererModeDefaults'
 import { buildVirtualMeasurementKey, buildVirtualRendererLayoutKey, stringifyVirtualToken } from './virtualLayoutKey'
 
@@ -6767,44 +6768,14 @@ onBeforeUnmount(() => {
             class="node-content"
           >
             <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
-            <transition
+            <NodeRendererContent
               v-if="!item.isCodeBlock"
-              name="fade"
-              :css="rendererProps.fade !== false"
-              :appear="rendererProps.fade !== false && requestedFinal !== true"
-            >
-              <component
-                :is="item.component"
-                v-if="item.rendersCustomNode"
-                v-bind="item.customNodeProps"
-              >
-                <NodeRenderer
-                  v-if="item.hasSlotChildren"
-                  v-bind="nestedRendererProps"
-                  :nodes="(item.node as any).children"
-                  :index-key="item.indexKey"
-                  :batch-rendering="false"
-                  :defer-nodes-until-visible="false"
-                  :render-as-fragment="true"
-                />
-                <NodeRenderer
-                  v-else-if="item.slotContent"
-                  v-bind="nestedRendererProps"
-                  :content="item.slotContent"
-                  :final="!item.node.loading"
-                  :index-key="`${item.indexKey}-content`"
-                  :smooth-streaming="false"
-                  :batch-rendering="false"
-                  :defer-nodes-until-visible="false"
-                  :render-as-fragment="true"
-                />
-              </component>
-              <component
-                :is="item.component"
-                v-else
-                v-bind="item.nodeProps"
-              />
-            </transition>
+              :item="item"
+              :source-nodes="props.nodes"
+              :fade="rendererProps.fade"
+              :final="requestedFinal"
+              :nested-renderer-props="item.rendersCustomNode ? nestedRendererProps : undefined"
+            />
 
             <component
               :is="item.component"

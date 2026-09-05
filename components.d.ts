@@ -43,6 +43,7 @@ declare module 'vue' {
     MermaidBlockNode: typeof import('./src/components/MermaidBlockNode/MermaidBlockNode.vue')['default']
     NodeChildRenderer: typeof import('./src/components/NodeChildRenderer/NodeChildRenderer.vue')['default']
     NodeRenderer: typeof import('./src/components/NodeRenderer/NodeRenderer.vue')['default']
+    NodeRendererContent: typeof import('./src/components/NodeRenderer/NodeRendererContent.vue')['default']
     ParagraphNode: typeof import('./src/components/ParagraphNode/ParagraphNode.vue')['default']
     PreCodeBlock: typeof import('./src/components/PreCodeNode/PreCodeBlock.vue')['default']
     PreCodeNode: typeof import('./src/components/PreCodeNode/PreCodeNode.vue')['default']

@@ -4,10 +4,10 @@ import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { chromium } from 'playwright-core'
-import { createServer } from 'vite'
+import { build, createServer, preview } from 'vite'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(__dirname, '..')
@@ -69,6 +69,48 @@ if (!Number.isFinite(smoothMaxCommitFps) || smoothMaxCommitFps <= 0)
   throw new Error('MARKSTREAM_STREAMING_SPLIT_SMOOTH_MAX_FPS must be a positive number.')
 
 const allCases = [
+  {
+    id: 'inline-rich',
+    label: 'Links, emphasis, inline code, CJK and emoji',
+    block: '中文 **strong** _emphasis_ ~~removed~~ [link](https://example.com) `inline` 🙂 end.\n\n',
+  },
+  {
+    id: 'long-paragraph',
+    label: 'One growing paragraph without stable block boundaries',
+    block: 'Long paragraph 中文 **strong** and _emphasis_ with words and emoji 🙂 ',
+  },
+  {
+    id: 'long-table',
+    label: 'One growing table',
+    prefix: '| Name | Value | Detail |\n| --- | --- | --- |\n',
+    block: '| cell | **value** | [detail](https://example.com) |\n',
+  },
+  {
+    id: 'long-list',
+    label: 'One growing nested list',
+    block: '- parent **strong**\n  - nested _emphasis_ and `code`\n  - [link](https://example.com)\n',
+  },
+  {
+    id: 'single-code',
+    label: 'One growing code fence',
+    prefix: '```ts\n',
+    block: 'const value = { label: "streaming", count: 42 }\n',
+  },
+  {
+    id: 'math',
+    label: 'Inline and block math',
+    block: 'Euler $e^{i\\pi}+1=0$.\n\n$$\nx^2 + y^2 = z^2\n$$\n\n',
+  },
+  {
+    id: 'custom-html',
+    label: 'Custom HTML component and nested Markdown',
+    block: '<audit-widget>\n\n**Nested** paragraph with [link](https://example.com).\n\n- one\n- two\n\n</audit-widget>\n\n',
+  },
+  {
+    id: 'references',
+    label: 'Late global reference definitions',
+    block: 'A [reference][audit] and **strong**.\n\n[audit]: https://example.com "title"\n\n',
+  },
   {
     id: 'plain',
     label: 'Plain text + headings',
@@ -191,6 +233,7 @@ if (missingCases.length)
   throw new Error(`Unknown streaming split benchmark cases: ${missingCases.join(', ')}`)
 
 const allPrimaryRenderers = [
+  ...(selectedRendererIds.includes('markstream-local-nosmooth') ? [{ id: 'markstream-local-nosmooth', renderer: 'markstream', variant: 'incremental-nosmooth' }] : []),
   { id: 'streamdown', renderer: 'streamdown', variant: null },
   { id: 'markstream-local', renderer: 'markstream', variant: 'incremental' },
 ]
@@ -247,8 +290,8 @@ function resolveChromeLaunchOptions() {
   }
 }
 
-function createChunks(block) {
-  let content = ''
+function createChunks(block, prefix = '') {
+  let content = prefix
   while (content.length < targetChunks * chunkSize)
     content += block
   content = content.slice(0, targetChunks * chunkSize)
@@ -417,7 +460,7 @@ async function runOnce(browser, port, rendererConfig, chunks, caseId) {
   })
   const client = await page.context().newCDPSession(page)
   await client.send('Performance.enable')
-  const params = new URLSearchParams({ renderer: rendererConfig.renderer })
+  const params = new URLSearchParams({ renderer: rendererConfig.renderer, case: caseId })
   if (rendererConfig.variant)
     params.set('variant', rendererConfig.variant)
   params.set('smoothMaxCps', String(smoothMaxCharsPerSecond))
@@ -761,27 +804,37 @@ function renderMarkdown(payload, baseline) {
   return `${sections.join('\n')}\n`
 }
 
-async function createBenchmarkServer() {
-  const server = await createServer({
+async function createBenchmarkServer(benchmarkSourceRoot = sourceRoot, buildOutputDir = outputDir) {
+  const serverConfig = {
+    configFile: false,
     root: fixtureRoot,
     logLevel: 'silent',
     plugins: [vue()],
     resolve: {
       alias: [
-        { find: 'markstream-vue/index.css', replacement: path.join(sourceRoot, 'src/index.css') },
-        { find: 'markstream-core', replacement: path.join(sourceRoot, 'packages/markstream-core/src/index.ts') },
-        { find: 'stream-markdown-parser', replacement: path.join(sourceRoot, 'packages/markdown-parser/src/index.ts') },
-        { find: 'markstream-vue', replacement: path.join(sourceRoot, 'src/exports.ts') },
+        { find: 'markstream-vue/index.css', replacement: path.join(benchmarkSourceRoot, 'src/index.css') },
+        { find: 'markstream-core', replacement: path.join(benchmarkSourceRoot, 'packages/markstream-core/src/index.ts') },
+        { find: 'stream-markdown-parser', replacement: path.join(benchmarkSourceRoot, 'packages/markdown-parser/src/index.ts') },
+        { find: 'markstream-vue', replacement: path.join(benchmarkSourceRoot, 'src/exports.ts') },
       ],
     },
     server: {
       host: '127.0.0.1',
       port: 4181,
       strictPort: false,
-      fs: { allow: [repoRoot, sourceRoot] },
+      fs: { allow: [repoRoot, benchmarkSourceRoot] },
     },
-  })
-  await server.listen()
+  }
+  let server
+  if (process.env.MARKSTREAM_BENCHMARK_BUILD === '1') {
+    const buildOptions = { outDir: path.join(buildOutputDir, 'dist'), emptyOutDir: true }
+    await build({ ...serverConfig, mode: 'production', build: buildOptions })
+    server = await preview({ ...serverConfig, build: buildOptions, preview: { host: '127.0.0.1', port: serverConfig.server.port, strictPort: false } })
+  }
+  else {
+    server = await createServer(serverConfig)
+    await server.listen()
+  }
   const address = server.httpServer?.address()
   const port = typeof address === 'object' && address ? address.port : server.config.server.port
   return { server, port }
@@ -794,7 +847,7 @@ async function main() {
   try {
     const split = []
     for (const testCase of cases) {
-      const chunks = createChunks(testCase.block)
+      const chunks = createChunks(testCase.block, testCase.prefix)
       const results = []
       for (const rendererConfig of primaryRenderers) {
         console.log(`case=${testCase.id} renderer=${rendererConfig.id}`)
@@ -821,6 +874,8 @@ async function main() {
 
     const payload = {
       generatedAt: new Date().toISOString(),
+      productionBuild: process.env.MARKSTREAM_BENCHMARK_BUILD === '1',
+      sourceRoot,
       source: 'scripts/benchmark-streaming-split.mjs',
       fixture: 'test/benchmark/streaming-split',
       method: `${warmups} warm-up + ${repeats}-run median, Playwright Core + Chrome CDP, ${targetChunks} transport chunks plus end marker per case, ${chunkSize} chars per transport chunk, ${intervalMs}ms transport cadence, ${cpuThrottleRate}x CPU throttle after page ready, smooth ${smoothMaxCharsPerSecond} cps/${smoothMaxCharsPerCommit} chars/${smoothMaxCommitFps} fps, ${stableFrames} stable frames`,
@@ -866,4 +921,7 @@ async function main() {
   }
 }
 
-await main()
+if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href)
+  await main()
+
+export { cases, createBenchmarkServer, createChunks, medianResult, runOnce }

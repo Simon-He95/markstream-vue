@@ -1,4 +1,4 @@
-import MarkdownRender from 'markstream-vue'
+import MarkdownRender, { setCustomComponents } from 'markstream-vue'
 import React from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
@@ -11,13 +11,22 @@ import './style.css'
 const params = new URLSearchParams(window.location.search)
 const renderer = params.get('renderer') || 'markstream'
 const variant = params.get('variant') || 'incremental'
+if (params.get('case') === 'custom-html') {
+  setCustomComponents({
+    'audit-widget': defineComponent({
+      setup(_, { slots }) {
+        return () => h('aside', { class: 'audit-widget' }, slots.default?.())
+      },
+    }),
+  })
+}
 const smoothStreamingOptions = {
   maxCharsPerSecond: Number(params.get('smoothMaxCps') || 3000),
   maxCharsPerCommit: Number(params.get('smoothMaxChars') || 160),
   maxCommitFps: Number(params.get('smoothMaxFps') || 20),
 }
 
-const semanticTags = ['h1', 'h2', 'h3', 'p', 'ul', 'li', 'table', 'tr', 'th', 'td', 'pre', 'code', 'blockquote']
+const semanticTags = ['h1', 'h2', 'h3', 'p', 'ul', 'ol', 'li', 'table', 'tr', 'th', 'td', 'pre', 'code', 'blockquote', 'strong', 'em', 'del', 'a', 'details', 'summary', 'img']
 
 function countElements(root) {
   const tags = ['h1', 'h2', 'h3', 'p', 'ul', 'li', 'table', 'tr', 'th', 'td', 'pre', 'code', 'blockquote', 'svg', 'button']
@@ -64,6 +73,8 @@ function correctnessSnapshot(root) {
   return {
     text: normalizeText(root.textContent || ''),
     semanticCounts: Object.fromEntries(semanticTags.map(tag => [tag, root.querySelectorAll(tag).length])),
+    links: Array.from(root.querySelectorAll('a'), link => [link.textContent, link.getAttribute('href'), link.getAttribute('title')]),
+    images: Array.from(root.querySelectorAll('img'), img => [img.getAttribute('src'), img.getAttribute('alt')]),
   }
 }
 
@@ -76,6 +87,11 @@ function assertCorrectnessSnapshot(actual, expected) {
       `static tail=${JSON.stringify(expected.text.slice(-240))}`,
     ].join('\n'))
   }
+
+  if (JSON.stringify(actual.links) !== JSON.stringify(expected.links))
+    throw new Error('Final link text or attributes differ from static rendering')
+  if (JSON.stringify(actual.images) !== JSON.stringify(expected.images))
+    throw new Error('Final image attributes differ from static rendering')
 
   for (const tag of semanticTags) {
     if (actual.semanticCounts[tag] !== expected.semanticCounts[tag])
@@ -174,13 +190,15 @@ function installBenchmark({ getContent, setContent, getFinal, setFinal, renderEx
       if (markerSeenAt && !mutationsAtMarker)
         mutationsAtMarker = mutationCount
 
-      if (markerSeenAt && getFinal() && mutationCount === previousMutationCount)
+      // The loading indicator can still be leaving after the table clears aria-busy.
+      const finalRenderReady = getFinal() && !root.querySelector('.table-node__loading')
+      if (markerSeenAt && finalRenderReady && mutationCount === previousMutationCount)
         stableFrameCount += 1
       else
         stableFrameCount = 0
       previousMutationCount = mutationCount
 
-      if (markerSeenAt && getFinal() && stableFrameCount >= stableFrames)
+      if (markerSeenAt && finalRenderReady && stableFrameCount >= stableFrames)
         break
     }
 
@@ -276,6 +294,9 @@ function installBenchmark({ getContent, setContent, getFinal, setFinal, renderEx
     assertCorrectnessSnapshot(targetSnapshot, expectedSnapshot)
     return {
       textChars: targetSnapshot.text.length,
+      text: targetSnapshot.text,
+      links: targetSnapshot.links,
+      images: targetSnapshot.images,
       semanticCounts: targetSnapshot.semanticCounts,
     }
   }

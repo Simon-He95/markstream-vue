@@ -8,6 +8,8 @@ import { dispatchInlineToken } from './inline-token-dispatcher'
 
 export { isLikelyUrl } from './link-image-recovery'
 
+const TEXT_RECOVERY_MARKER_RE = /[!$(*[\\\]_`|~]/
+
 // Process inline tokens (for text inside paragraphs, headings, etc.)
 export function parseInlineTokens(
   tokens: MarkdownToken[],
@@ -17,6 +19,12 @@ export function parseInlineTokens(
 ): ParsedNode[] {
   if (!tokens || tokens.length === 0)
     return []
+
+  if (tokens.length === 1 && tokens[0].type === 'text') {
+    const content = tokens[0].content
+    if (typeof content === 'string' && content && content !== '<' && !content.endsWith('undefined') && !TEXT_RECOVERY_MARKER_RE.test(content))
+      return [{ type: 'text', content, raw: content, center: false }]
+  }
 
   let parseContext = ensureParseContext(options)
   const inheritedContext = parseContext.linkifyDemotionContext

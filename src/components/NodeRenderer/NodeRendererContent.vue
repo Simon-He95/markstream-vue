@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { ParsedNode } from 'stream-markdown-parser'
-import type { Component, PropType } from 'vue'
+import type { Component } from 'vue'
 import type { NodeRendererProps } from '../../types/node-renderer-props'
 import { createCommentVNode, defineComponent, h, Transition } from 'vue'
 import NodeRenderer from './NodeRenderer.vue'
@@ -16,16 +16,18 @@ interface RenderedContentItem {
   indexKey: string
 }
 
-export default defineComponent({
+interface ContentProps {
+  item: RenderedContentItem
+  // Replacing a caller-owned array can mutate raw custom-node data.
+  sourceNodes?: NodeRendererProps['nodes']
+  fade?: boolean
+  final?: boolean
+  nestedRendererProps?: Partial<NodeRendererProps>
+}
+
+export default defineComponent<ContentProps>({
   name: 'NodeRendererContent',
-  props: {
-    item: { type: Object as PropType<RenderedContentItem>, required: true },
-    // Replacing a caller-owned array can mutate raw custom-node data.
-    sourceNodes: Array as PropType<NodeRendererProps['nodes']>,
-    fade: { type: Boolean, default: undefined },
-    final: { type: Boolean, default: undefined },
-    nestedRendererProps: Object as PropType<Partial<NodeRendererProps>>,
-  },
+  props: ['item', 'sourceNodes', 'fade', 'final', 'nestedRendererProps'],
   setup(props) {
     // Stable item props skip settled transitions. Runtime slots preserve the
     // original v-for's dynamic-slot updates for custom components and raw ASTs.

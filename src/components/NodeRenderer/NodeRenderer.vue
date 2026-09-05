@@ -5761,10 +5761,30 @@ function hasSameRenderedItemSignature(previous: readonly unknown[], next: readon
 
 function buildRenderedItemSignature(node: ParsedNode, index: number, globalSignature: readonly unknown[]) {
   const estimatedHeight = heightEstimationActive.value ? estimatedNodeHeights.value[index] : null
+  const codeBlock = node.type === 'code_block' ? node as RuntimeCodeBlockNode : null
   // Loading may be updated in place on externally supplied or parser-reused
   // nodes. Include the primitive snapshot so virtualized cache lookups rebuild
   // the pre-merged props when that visible state changes.
-  return [index, (node as { loading?: unknown }).loading, estimatedHeight, globalSignature]
+  // Code-block render nodes are shallow clones. Include their payload fields
+  // in the cache signature as well; otherwise a parser-reused source node can
+  // receive new code while the rendered-item cache still returns the old
+  // clone, dropping characters on the final smooth-streaming commit.
+  return [
+    index,
+    (node as { loading?: unknown }).loading,
+    codeBlock?.language,
+    codeBlock?.code,
+    codeBlock?.raw,
+    codeBlock?.originalCode,
+    codeBlock?.updatedCode,
+    codeBlock?.diff,
+    codeBlock?.startLine,
+    codeBlock?.endLine,
+    codeBlock?.sourceMap?.startLine,
+    codeBlock?.sourceMap?.endLine,
+    estimatedHeight,
+    globalSignature,
+  ]
 }
 
 /**

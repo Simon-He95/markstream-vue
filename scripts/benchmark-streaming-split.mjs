@@ -44,6 +44,7 @@ const selectedRendererIds = (process.env.MARKSTREAM_STREAMING_SPLIT_RENDERERS ||
   .split(',')
   .map(value => value.trim())
   .filter(Boolean)
+const includeCssHighlight = process.env.MARKSTREAM_STREAMING_SPLIT_INCLUDE_CSS_HIGHLIGHT === '1'
 
 if (!Number.isFinite(targetChunks) || targetChunks <= 0)
   throw new Error('MARKSTREAM_STREAMING_SPLIT_CHUNKS must be a positive number.')
@@ -194,6 +195,15 @@ const allPrimaryRenderers = [
   { id: 'streamdown', renderer: 'streamdown', variant: null },
   { id: 'markstream-local', renderer: 'markstream', variant: 'incremental' },
 ]
+if (includeCssHighlight || selectedRendererIds.some(id => id.startsWith('markstream-css-highlight-'))) {
+  allPrimaryRenderers.push(
+    { id: 'markstream-css-highlight-local', renderer: 'markstream', variant: 'css-highlight-local' },
+    // Deliberately explicit until a pure transferable tokenizer and worker
+    // lifecycle are implemented. The fixture records this as unavailable
+    // instead of accidentally benchmarking the main-thread implementation.
+    { id: 'markstream-css-highlight-worker', renderer: 'markstream', variant: 'css-highlight-worker' },
+  )
+}
 
 const primaryRenderers = selectedRendererIds.length
   ? allPrimaryRenderers.filter(renderer => selectedRendererIds.includes(renderer.id))
@@ -401,6 +411,15 @@ function medianResult(runs) {
   output.elementCounts = representative.elementCounts
   output.correctness = representative.correctness
   output.phases = representative.phases
+  output.streaming = representative.streaming
+    ? Object.fromEntries(Object.keys(representative.streaming).map(key => [key, round(median(runs.map(run => run.streaming?.[key] ?? 0)))]))
+    : null
+  output.cssHighlight = representative.cssHighlight
+    ? Object.fromEntries(Object.keys(representative.cssHighlight).map((key) => {
+        const values = runs.map(run => run.cssHighlight?.[key]).filter(value => typeof value === 'number')
+        return [key, values.length ? round(median(values)) : representative.cssHighlight[key]]
+      }))
+    : null
   if (traceEnabled)
     output.traceTopEvents = representative.traceTopEvents
   return output
@@ -487,6 +506,8 @@ async function runOnce(browser, port, rendererConfig, chunks, caseId) {
     caughtUpMs: result.caughtUpMs,
     settleMs: result.settleMs,
     phases: result.phases,
+    streaming: result.streaming,
+    cssHighlight: result.cssHighlight,
     stableFrames: result.stableFrames,
     finalCommitted: result.finalCommitted,
     endMarkerVisible: result.endMarkerVisible,
@@ -546,6 +567,8 @@ async function runAggregate(browser, port, rendererConfig, chunks, caseId) {
       p95UpdateMs: round(run.p95UpdateMs),
       maxUpdateMs: round(run.maxUpdateMs),
       avgUpdateMs: round(run.avgUpdateMs),
+      ...(run.streaming ? { streaming: Object.fromEntries(Object.entries(run.streaming).map(([key, value]) => [key, round(value)])) } : {}),
+      ...(run.cssHighlight ? { cssHighlight: run.cssHighlight } : {}),
       frameP95Ms: round(run.frameP95Ms),
       frameMaxMs: round(run.frameMaxMs),
       heapPeakMB: round(run.heapPeakMB),
@@ -689,13 +712,21 @@ function renderConfigProbe(configProbe) {
 
 function renderCompletionTable(split) {
   const lines = [
-    '| Case | Renderer | Total | Caught up | Main-thread busy | Long tasks count/total/max | Frame p95/max | Layout count/time | Recalc count/time | Peak heap | Mutations | DOM | Correct |',
-    '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
+    '| Case | Renderer | Total | Caught up | Main-thread busy | Stream commit avg/p95/max | CSS tokenize/range/registry | Long tasks count/total/max | Frame p95/max | Layout count/time | Recalc count/time | Peak heap | Mutations | DOM | Correct |',
+    '| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |',
   ]
   for (const splitCase of split) {
     for (const result of splitCase.results) {
+      if (result.status === 'unavailable') {
+        lines.push(`| ${splitCase.id} | ${result.id} | unavailable | unavailable | unavailable | unavailable | ${result.reason.replaceAll('|', '\\|')} | - | - | - | - | - | - | - | - |`)
+        continue
+      }
       const metric = result.median
-      lines.push(`| ${splitCase.id} | ${result.id} | ${formatMs(metric.totalMs)} | ${formatMs(metric.caughtUpMs)} | ${formatPercent(metric.taskBusyRatio)} | ${metric.longTaskCount} / ${formatMs(metric.longTaskTotalMs)} / ${formatMs(metric.longTaskMaxMs)} | ${formatMs(metric.frameP95Ms)} / ${formatMs(metric.frameMaxMs)} | ${metric.layoutCount} / ${formatMs(metric.layoutDurationMs)} | ${metric.recalcStyleCount} / ${formatMs(metric.recalcStyleDurationMs)} | ${formatMb(metric.heapPeakMB)} | ${metric.mutationCount} | ${metric.domNodes} | ${metric.correctness ? 'yes' : 'no'} |`)
+      const stream = metric.streaming
+      const css = metric.cssHighlight
+      const streamText = stream ? `${formatMs(stream.avgCommitMs)} / ${formatMs(stream.p95CommitMs)} / ${formatMs(stream.maxCommitMs)}` : '-'
+      const cssText = css ? `${formatMs(css.tokenizeMs)} / ${formatMs(css.rangeBuildMs)} / ${formatMs(css.registryMs)}` : '-'
+      lines.push(`| ${splitCase.id} | ${result.id} | ${formatMs(metric.totalMs)} | ${formatMs(metric.caughtUpMs)} | ${formatPercent(metric.taskBusyRatio)} | ${streamText} | ${cssText} | ${metric.longTaskCount} / ${formatMs(metric.longTaskTotalMs)} / ${formatMs(metric.longTaskMaxMs)} | ${formatMs(metric.frameP95Ms)} / ${formatMs(metric.frameMaxMs)} | ${metric.layoutCount} / ${formatMs(metric.layoutDurationMs)} | ${metric.recalcStyleCount} / ${formatMs(metric.recalcStyleDurationMs)} | ${formatMb(metric.heapPeakMB)} | ${metric.mutationCount} | ${metric.domNodes} | ${metric.correctness ? 'yes' : 'no'} |`)
     }
   }
   return lines.join('\n')
@@ -798,7 +829,18 @@ async function main() {
       const results = []
       for (const rendererConfig of primaryRenderers) {
         console.log(`case=${testCase.id} renderer=${rendererConfig.id}`)
-        results.push(await runAggregate(browser, port, rendererConfig, chunks, testCase.id))
+        try {
+          results.push(await runAggregate(browser, port, rendererConfig, chunks, testCase.id))
+        }
+        catch (error) {
+          results.push({
+            id: rendererConfig.id,
+            renderer: rendererConfig.renderer,
+            variant: rendererConfig.variant,
+            status: 'unavailable',
+            reason: String(error?.message || error),
+          })
+        }
       }
       split.push({
         id: testCase.id,

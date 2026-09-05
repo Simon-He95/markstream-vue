@@ -1,9 +1,10 @@
-import MarkdownRender from 'markstream-vue'
+import MarkdownRender, { setCustomComponents } from 'markstream-vue'
 import React from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { Streamdown } from 'streamdown'
 import { createApp, defineComponent, h, nextTick, onMounted, ref } from 'vue'
+import CssHighlightCodeBlock from '../../../../src/components/CodeBlockNode/CssHighlightCodeBlock.vue'
 import 'markstream-vue/index.css'
 import 'streamdown/styles.css'
 import './style.css'
@@ -11,6 +12,7 @@ import './style.css'
 const params = new URLSearchParams(window.location.search)
 const renderer = params.get('renderer') || 'markstream'
 const variant = params.get('variant') || 'incremental'
+const cssHighlightVariant = variant === 'css-highlight-local' || variant === 'css-highlight-worker'
 const smoothStreamingOptions = {
   maxCharsPerSecond: Number(params.get('smoothMaxCps') || 3000),
   maxCharsPerCommit: Number(params.get('smoothMaxChars') || 160),
@@ -69,9 +71,17 @@ function correctnessSnapshot(root) {
 
 function assertCorrectnessSnapshot(actual, expected) {
   if (actual.text !== expected.text) {
+    let firstDifference = 0
+    while (firstDifference < actual.text.length
+      && firstDifference < expected.text.length
+      && actual.text[firstDifference] === expected.text[firstDifference]) {
+      firstDifference++
+    }
     throw new Error([
       'Final rendered text differs from a static final render.',
       `streamed length=${actual.text.length}, static length=${expected.text.length}`,
+      `first difference at ${firstDifference}: streamed=${JSON.stringify(actual.text.slice(Math.max(0, firstDifference - 80), firstDifference + 120))}`,
+      `first difference at ${firstDifference}: static=${JSON.stringify(expected.text.slice(Math.max(0, firstDifference - 80), firstDifference + 120))}`,
       `streamed tail=${JSON.stringify(actual.text.slice(-240))}`,
       `static tail=${JSON.stringify(expected.text.slice(-240))}`,
     ].join('\n'))
@@ -96,6 +106,8 @@ function readHeapUsedBytes() {
 
 function installBenchmark({ getContent, setContent, getFinal, setFinal, renderExpected }) {
   window.__runBenchmark = async ({ chunks, intervalMs, endMarker, timeoutMs, stableFrames }) => {
+    if (window.__benchmarkUnavailableReason)
+      throw new Error(window.__benchmarkUnavailableReason)
     const root = document.querySelector('.bench-host')
     await setFinal(false)
     setContent('')
@@ -103,6 +115,7 @@ function installBenchmark({ getContent, setContent, getFinal, setFinal, renderEx
     await waitFrame()
 
     const updateDurations = []
+    const streamingUpdateDurations = []
     const heightSamples = []
     const frameIntervals = []
     const heapSamples = []
@@ -138,18 +151,27 @@ function installBenchmark({ getContent, setContent, getFinal, setFinal, renderEx
     }
     requestAnimationFrame(sampleFrame)
 
+    // Reset the optional CSS Highlight probe before transport starts. A
+    // renderer must not tokenize or touch CSS.highlights while loading.
+    window.__markstreamCssHighlightMetrics = undefined
     const start = performance.now()
     for (const chunk of chunks) {
       const updateStart = performance.now()
       await setContent(getContent() + chunk)
       await nextTick()
-      updateDurations.push(performance.now() - updateStart)
+      const updateMs = performance.now() - updateStart
+      updateDurations.push(updateMs)
+      streamingUpdateDurations.push(updateMs)
       heightSamples.push(root.scrollHeight)
       await new Promise(resolve => setTimeout(resolve, intervalMs))
     }
 
     const expectedContent = `${chunks.join('')}\n\n${endMarker}\n`
-    const markerUpdateStart = performance.now()
+    const lastChunkCommittedAt = performance.now()
+    const cssHighlightAtTransport = window.__markstreamCssHighlightMetrics
+      ? { ...window.__markstreamCssHighlightMetrics }
+      : null
+    const markerUpdateStart = lastChunkCommittedAt
     await setContent(expectedContent)
     await nextTick()
     updateDurations.push(performance.now() - markerUpdateStart)
@@ -228,6 +250,17 @@ function installBenchmark({ getContent, setContent, getFinal, setFinal, renderEx
       }
     }
 
+    const rawCssHighlight = window.__markstreamCssHighlightMetrics || null
+    const cssHighlight = rawCssHighlight
+      ? {
+          ...rawCssHighlight,
+          firstEnhancedAt: rawCssHighlight.firstEnhancedAt == null ? null : rawCssHighlight.firstEnhancedAt - start,
+          lastDisposedAt: rawCssHighlight.lastDisposedAt == null ? null : rawCssHighlight.lastDisposedAt - start,
+          streamingTokenizeCalls: cssHighlightAtTransport?.tokenizeCalls ?? 0,
+          streamingRegistryMs: cssHighlightAtTransport?.registryMs ?? 0,
+        }
+      : null
+    const streamP95 = percentile(streamingUpdateDurations, 0.95)
     return {
       chunks: chunks.length + 1,
       transportChunks: chunks.length,
@@ -247,6 +280,14 @@ function installBenchmark({ getContent, setContent, getFinal, setFinal, renderEx
       p95UpdateMs: sorted[Math.floor(sorted.length * 0.95)] || 0,
       maxUpdateMs: Math.max(...updateDurations),
       avgUpdateMs: updateDurations.reduce((sum, value) => sum + value, 0) / updateDurations.length,
+      streaming: {
+        chunkCount: streamingUpdateDurations.length,
+        avgCommitMs: streamingUpdateDurations.reduce((sum, value) => sum + value, 0) / streamingUpdateDurations.length,
+        p95CommitMs: streamP95,
+        maxCommitMs: Math.max(...streamingUpdateDurations),
+        busyRatio: streamingUpdateDurations.reduce((sum, value) => sum + value, 0) / Math.max(1, transportEnd - start),
+      },
+      cssHighlight,
       longTaskCount,
       longTaskTotalMs,
       longTaskMaxMs: Math.max(0, ...longTasks.map(entry => entry.duration)),
@@ -336,6 +377,13 @@ const MarkstreamApp = defineComponent({
     const content = ref('')
     const final = ref(false)
     const expectedContent = ref('')
+    const customId = cssHighlightVariant ? 'benchmark-css-highlight' : undefined
+    if (variant === 'css-highlight-worker') {
+      window.__benchmarkUnavailableReason = 'CSS Highlight worker tokenizer is not implemented; provide a pure transferable tokenizer before collecting this row.'
+    }
+    else if (cssHighlightVariant) {
+      setCustomComponents(customId, { code_block: CssHighlightCodeBlock })
+    }
     installBenchmark({
       getContent: () => content.value,
       setContent: (value) => {
@@ -367,6 +415,7 @@ const MarkstreamApp = defineComponent({
           smoothStreamingOptions,
           parseCoalesceMs: 32,
           renderCodeBlocksAsPre: true,
+          customId,
         }),
       ]),
       h('section', { class: 'bench-oracle vue-oracle-host' }, [
@@ -380,6 +429,7 @@ const MarkstreamApp = defineComponent({
           smoothStreaming: false,
           parseCoalesceMs: 32,
           renderCodeBlocksAsPre: true,
+          customId,
         }),
       ]),
     ])

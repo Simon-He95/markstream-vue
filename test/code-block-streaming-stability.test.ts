@@ -202,4 +202,46 @@ describe('code block streaming stability', () => {
       wrapper.unmount()
     }
   })
+
+  it('refreshes a custom code block clone when streamed content grows in place', async () => {
+    const CodeBlockProbe = defineComponent({
+      props: {
+        node: { type: Object, required: true },
+      },
+      setup(props) {
+        return () => h('div', {
+          'class': 'code-block-probe',
+          'data-code': String((props.node as any).code ?? ''),
+        })
+      },
+    })
+
+    setCustomComponents(customId, { code_block: CodeBlockProbe as any })
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        customId,
+        content: '```ts\nconst value =',
+        final: false,
+        smoothStreaming: false,
+        batchRendering: false,
+        deferNodesUntilVisible: false,
+        maxLiveNodes: 0,
+        viewportPriority: false,
+      },
+    })
+
+    try {
+      await flushAll()
+      await wrapper.setProps({
+        content: '```ts\nconst value = 42\n```',
+        final: true,
+      })
+      await flushAll()
+
+      expect(wrapper.get('.code-block-probe').attributes('data-code')).toBe('const value = 42\n')
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
 })

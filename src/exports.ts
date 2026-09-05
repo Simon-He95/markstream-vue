@@ -66,6 +66,7 @@ function definePublicAsyncComponent<TProps extends object>(
 }
 
 const CodeBlockNode = definePublicAsyncComponent<CodeBlockNodeProps>(() => import('./components/CodeBlockNode'))
+const CssHighlightCodeBlock = definePublicAsyncComponent<CodeBlockNodeProps>(() => import('./components/CodeBlockNode/CssHighlightCodeBlock.vue'))
 const MathBlockNode = definePublicAsyncComponent<MathBlockNodeProps>(() => import('./components/MathBlockNode'))
 const MathInlineNode = definePublicAsyncComponent<MathInlineNodeProps>(() => import('./components/MathInlineNode'))
 const MermaidBlockNode = definePublicAsyncComponent<MermaidBlockNodeProps>(() => import('./components/MermaidBlockNode'))
@@ -221,6 +222,7 @@ export {
   CheckboxNode,
   clearGlobalCustomComponents,
   CodeBlockNode,
+  CssHighlightCodeBlock,
   D2BlockNode,
   DefinitionListNode,
   disableD2,
@@ -290,6 +292,7 @@ const componentMap: Record<string, Component> = {
   BlockquoteNode,
   CheckboxNode,
   CodeBlockNode,
+  CssHighlightCodeBlock,
   DefinitionListNode,
   EmojiNode,
   EmphasisNode,

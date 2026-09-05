@@ -1,0 +1,336 @@
+{
+  "status": "exploratory",
+  "generatedAt": "2026-08-28T08:10:00.941Z",
+  "environment": {
+    "browser": "Chrome 152.0.7977.64",
+    "cpu": "Apple M4",
+    "platform": "darwin"
+  },
+  "fixture": {
+    "blocks": [
+      1,
+      12,
+      24
+    ],
+    "lines": [
+      100,
+      1000
+    ]
+  },
+  "implementations": {
+    "css-highlight-local": "same lexer categories and StaticRange strategy as src/components/CodeBlockNode/cssHighlightAdapter.ts",
+    "microlighter-2.1.0": "npm package pinned in devDependencies",
+    "microlighter-main": "not supplied"
+  },
+  "modes": [
+    "plain-pre",
+    "css-highlight-local",
+    "microlighter-2.1.0",
+    "microlighter-main",
+    "stream-diffs-main-thread",
+    "stream-diffs-worker-pool"
+  ],
+  "results": [
+    {
+      "mode": "plain-pre",
+      "blocks": 1,
+      "lines": 100,
+      "durationMs": 43,
+      "domNodes": 2,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "css-highlight-local",
+      "blocks": 1,
+      "lines": 100,
+      "durationMs": 42,
+      "domNodes": 2,
+      "ranges": 300,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-2.1.0",
+      "blocks": 1,
+      "lines": 100,
+      "durationMs": 46,
+      "domNodes": 2,
+      "ranges": 400,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-main",
+      "blocks": 1,
+      "lines": 100,
+      "status": "not-run",
+      "reason": "Set MICROLIGHTER_MAIN_DIST to a built dist directory from current upstream main."
+    },
+    {
+      "mode": "stream-diffs-main-thread",
+      "blocks": 1,
+      "lines": 100,
+      "durationMs": 259,
+      "domNodes": 960,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "stream-diffs-worker-pool",
+      "blocks": 1,
+      "lines": 100,
+      "status": "not-run",
+      "reason": "Run this harness against the stream-diffs playground surface; the standalone fixture cannot construct its worker pool."
+    },
+    {
+      "mode": "plain-pre",
+      "blocks": 1,
+      "lines": 1000,
+      "durationMs": 25,
+      "domNodes": 2,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "css-highlight-local",
+      "blocks": 1,
+      "lines": 1000,
+      "durationMs": 38,
+      "domNodes": 2,
+      "ranges": 3000,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-2.1.0",
+      "blocks": 1,
+      "lines": 1000,
+      "durationMs": 1009,
+      "domNodes": 2,
+      "ranges": 4000,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-main",
+      "blocks": 1,
+      "lines": 1000,
+      "status": "not-run",
+      "reason": "Set MICROLIGHTER_MAIN_DIST to a built dist directory from current upstream main."
+    },
+    {
+      "mode": "stream-diffs-main-thread",
+      "blocks": 1,
+      "lines": 1000,
+      "durationMs": 296,
+      "domNodes": 9060,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "stream-diffs-worker-pool",
+      "blocks": 1,
+      "lines": 1000,
+      "status": "not-run",
+      "reason": "Run this harness against the stream-diffs playground surface; the standalone fixture cannot construct its worker pool."
+    },
+    {
+      "mode": "plain-pre",
+      "blocks": 12,
+      "lines": 100,
+      "durationMs": 22,
+      "domNodes": 24,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "css-highlight-local",
+      "blocks": 12,
+      "lines": 100,
+      "durationMs": 42,
+      "domNodes": 24,
+      "ranges": 3600,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-2.1.0",
+      "blocks": 12,
+      "lines": 100,
+      "durationMs": 163,
+      "domNodes": 24,
+      "ranges": 4800,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-main",
+      "blocks": 12,
+      "lines": 100,
+      "status": "not-run",
+      "reason": "Set MICROLIGHTER_MAIN_DIST to a built dist directory from current upstream main."
+    },
+    {
+      "mode": "stream-diffs-main-thread",
+      "blocks": 12,
+      "lines": 100,
+      "durationMs": 315,
+      "domNodes": 11520,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "stream-diffs-worker-pool",
+      "blocks": 12,
+      "lines": 100,
+      "status": "not-run",
+      "reason": "Run this harness against the stream-diffs playground surface; the standalone fixture cannot construct its worker pool."
+    },
+    {
+      "mode": "plain-pre",
+      "blocks": 12,
+      "lines": 1000,
+      "durationMs": 48,
+      "domNodes": 24,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "css-highlight-local",
+      "blocks": 12,
+      "lines": 1000,
+      "durationMs": 204,
+      "domNodes": 24,
+      "ranges": 36000,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-2.1.0",
+      "blocks": 12,
+      "lines": 1000,
+      "durationMs": 12063,
+      "domNodes": 24,
+      "ranges": 48000,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-main",
+      "blocks": 12,
+      "lines": 1000,
+      "status": "not-run",
+      "reason": "Set MICROLIGHTER_MAIN_DIST to a built dist directory from current upstream main."
+    },
+    {
+      "mode": "stream-diffs-main-thread",
+      "blocks": 12,
+      "lines": 1000,
+      "durationMs": 1688,
+      "domNodes": 108720,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "stream-diffs-worker-pool",
+      "blocks": 12,
+      "lines": 1000,
+      "status": "not-run",
+      "reason": "Run this harness against the stream-diffs playground surface; the standalone fixture cannot construct its worker pool."
+    },
+    {
+      "mode": "plain-pre",
+      "blocks": 24,
+      "lines": 100,
+      "durationMs": 30,
+      "domNodes": 48,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "css-highlight-local",
+      "blocks": 24,
+      "lines": 100,
+      "durationMs": 44,
+      "domNodes": 48,
+      "ranges": 7200,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-2.1.0",
+      "blocks": 24,
+      "lines": 100,
+      "durationMs": 306,
+      "domNodes": 48,
+      "ranges": 9600,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-main",
+      "blocks": 24,
+      "lines": 100,
+      "status": "not-run",
+      "reason": "Set MICROLIGHTER_MAIN_DIST to a built dist directory from current upstream main."
+    },
+    {
+      "mode": "stream-diffs-main-thread",
+      "blocks": 24,
+      "lines": 100,
+      "durationMs": 472,
+      "domNodes": 23040,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "stream-diffs-worker-pool",
+      "blocks": 24,
+      "lines": 100,
+      "status": "not-run",
+      "reason": "Run this harness against the stream-diffs playground surface; the standalone fixture cannot construct its worker pool."
+    },
+    {
+      "mode": "plain-pre",
+      "blocks": 24,
+      "lines": 1000,
+      "durationMs": 81,
+      "domNodes": 48,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "css-highlight-local",
+      "blocks": 24,
+      "lines": 1000,
+      "durationMs": 420,
+      "domNodes": 48,
+      "ranges": 72000,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-2.1.0",
+      "blocks": 24,
+      "lines": 1000,
+      "durationMs": 24298,
+      "domNodes": 48,
+      "ranges": 96000,
+      "status": "measured"
+    },
+    {
+      "mode": "microlighter-main",
+      "blocks": 24,
+      "lines": 1000,
+      "status": "not-run",
+      "reason": "Set MICROLIGHTER_MAIN_DIST to a built dist directory from current upstream main."
+    },
+    {
+      "mode": "stream-diffs-main-thread",
+      "blocks": 24,
+      "lines": 1000,
+      "durationMs": 3197,
+      "domNodes": 217440,
+      "ranges": 0,
+      "status": "measured"
+    },
+    {
+      "mode": "stream-diffs-worker-pool",
+      "blocks": 24,
+      "lines": 1000,
+      "status": "not-run",
+      "reason": "Run this harness against the stream-diffs playground surface; the standalone fixture cannot construct its worker pool."
+    }
+  ],
+  "caveat": "Run with Chrome. stream-diffs rows are explicit not-run entries until the playground adapter is supplied; do not use this exploratory artifact as release evidence."
+}

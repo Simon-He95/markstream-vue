@@ -22,6 +22,17 @@ function links(input: string) {
 }
 
 describe('linkify candidate filter', () => {
+  it('keeps native initialization on the first streaming frame and after reconfiguration', () => {
+    const md = getMarkdown('stream-linkify-initialization')
+    const linkify = md.linkify as any
+    parseMarkdownToStructure('## Heading\n\nPlain text.', md, { final: false })
+    expect(linkify.re.cache.link_fuzzy_search).toBeDefined()
+    linkify.set({ fuzzyLink: true })
+    expect(linkify.re.cache.link_fuzzy_search).toBeUndefined()
+    parseMarkdownToStructure('## Heading\n\nPlain text. More text.', md, { final: false })
+    expect(linkify.re.cache.link_fuzzy_search).toBeDefined()
+  })
+
   it('skips native regex construction for prose and leaves public methods unchanged', () => {
     const md = getMarkdown('plain-screen')
     const linkify = md.linkify as any

@@ -38,7 +38,7 @@ const LINKIFY_SEED_RE = /[@:]|\/\/|\.\S/
 interface LinkifyLike {
   test: (text: string) => boolean
   match?: unknown
-  re?: { cache: object, opts: { schema_names?: string[], tlds?: string[] } }
+  re?: { cache: { link_fuzzy_search?: RegExp }, opts: { schema_names?: string[], tlds?: string[] } }
 }
 
 interface CoreRuleRecord {
@@ -54,6 +54,7 @@ interface CoreRulerWithNamedRules {
 interface CoreStateLike {
   md?: MarkdownItInstance & { linkify?: LinkifyLike }
   tokens?: Token[]
+  env?: { __markstreamFinal?: boolean }
 }
 
 interface InlineRuleRecord {
@@ -143,7 +144,9 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
       seedSafe = schemas.every(name => name === '//' || name.endsWith(':'))
         && tlds.every(tld => /^[\p{L}\p{N}-]+$/u.test(tld))
     }
+    // Keep cold streaming initialization spread across frames as in the native path.
     let canScreen = !!nativeMethods && !!nativeBuilder && seedSafe
+      && (state.env?.__markstreamFinal !== false || !!re?.cache.link_fuzzy_search)
     const candidates = tokens.filter((token: Token) => {
       if (canScreen && token?.type === 'inline') {
         const children = token.children

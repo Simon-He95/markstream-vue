@@ -33,9 +33,12 @@ export interface FactoryOptions extends Record<string, unknown> {
 
 const HTML_LINK_OPEN_RE = /^<a[>\s]/i
 const HTML_LINK_CLOSE_RE = /^<\/a\s*>/i
+const LINKIFY_SEED_RE = /[@:]|\/\/|\.\S/
 
 interface LinkifyLike {
   test: (text: string) => boolean
+  match?: unknown
+  re?: { cache: object, opts: { schema_names?: string[], tlds?: string[] } }
 }
 
 interface CoreRuleRecord {
@@ -110,6 +113,13 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
   if (typeof original !== 'function')
     return
 
+  const nativeLinkify = md.options.linkify ? md.linkify as LinkifyLike : undefined
+  const nativeTest = nativeLinkify?.test
+  const nativeMatch = nativeLinkify?.match
+  const nativeBuilderPrototype = nativeLinkify?.re && Object.getPrototypeOf(nativeLinkify.re)
+  let screenedCache: object | undefined
+  let seedSafe = false
+
   ruler.at('linkify', (state: CoreStateLike) => {
     if (!state.md?.options?.linkify)
       return
@@ -119,7 +129,36 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
     if (!linkify)
       return
 
-    const candidates = tokens.filter((token: Token) => inlineTokenMayNeedLinkify(token, linkify))
+    if (!tokens.some(token => token?.type === 'inline'))
+      return
+
+    const re = linkify.re
+    const nativeBuilder = re && Object.getPrototypeOf(re) === nativeBuilderPrototype
+      && !Object.values(re).some(value => typeof value === 'function')
+    const nativeMethods = linkify.test === nativeTest && linkify.match === nativeMatch
+    if (nativeMethods && nativeBuilder && screenedCache !== re.cache) {
+      // Configuration methods replace this cache; screening must not compile regexes.
+      screenedCache = re.cache
+      const { schema_names: schemas = [], tlds = [] } = re.opts
+      seedSafe = schemas.every(name => name === '//' || name.endsWith(':'))
+        && tlds.every(tld => /^[\p{L}\p{N}-]+$/u.test(tld))
+    }
+    let canScreen = !!nativeMethods && !!nativeBuilder && seedSafe
+    const candidates = tokens.filter((token: Token) => {
+      if (canScreen && token?.type === 'inline') {
+        const children = token.children
+        if (Array.isArray(children) && children.length > 0) {
+          if (!children.some(child => child?.type === 'text' && LINKIFY_SEED_RE.test(String(child.content ?? ''))))
+            return false
+        }
+        else if (!LINKIFY_SEED_RE.test(String(token.content ?? ''))) {
+          return false
+        }
+        // Native validators can change schemas or methods during this rule run.
+        canScreen = false
+      }
+      return inlineTokenMayNeedLinkify(token, linkify)
+    })
     if (!candidates.length)
       return
 

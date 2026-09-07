@@ -22,6 +22,125 @@ function links(input: string) {
 }
 
 describe('linkify candidate filter', () => {
+  it('skips native regex construction for prose and leaves public methods unchanged', () => {
+    const md = getMarkdown('plain-screen')
+    const linkify = md.linkify as any
+    const test = linkify.test
+    parseMarkdownToStructure('A sentence. Another sentence.\nNext line.', md, { final: true })
+    expect(linkify.re.cache.link_fuzzy_search).toBeUndefined()
+    expect(linkify.re.cache.schema_search).toBeUndefined()
+    expect(linkify.test).toBe(test)
+  })
+
+  it('preserves replaced test callbacks on seed-free text', () => {
+    const md = getMarkdown('custom-test')
+    const linkify = md.linkify as any
+    let calls = 0
+    linkify.test = () => {
+      calls++
+      return false
+    }
+    parseMarkdownToStructure('Plain text.', md, { final: true })
+    expect(calls).toBe(1)
+  })
+
+  it('bypasses screening when the matcher is replaced', () => {
+    const md = getMarkdown('custom-match')
+    const linkify = md.linkify as any
+    linkify.match = linkify.match.bind(linkify)
+    parseMarkdownToStructure('Plain text.', md, { final: true })
+    expect(linkify.re.cache.link_fuzzy_search).toBeDefined()
+  })
+
+  it('preserves linkify being enabled after factory construction', () => {
+    const md = getMarkdown('disabled-linkify', { markdownItOptions: { linkify: false } })
+    expect(flatten(parseMarkdownToStructure('example.com', md, { final: true })).filter(node => node.type === 'link')).toHaveLength(0)
+    md.options.linkify = true
+    const found = flatten(parseMarkdownToStructure('example.com', md, { final: true })).filter(node => node.type === 'link')
+    expect(found.map(node => node.href)).toEqual(['http://example.com'])
+  })
+
+  it('matches the native filter on every streaming prefix and final commit', () => {
+    const fixtures = [
+      'A sentence. Another sentence.\n\n**Bold** and `code`.',
+      '//localhost/path and user@example.com, example.com.',
+      '中文.example.com，文件 README.md 和 https://例子.测试/a。',
+      '[example.com](https://target.test) and <a href="https://target.test">example.com</a> then example.org',
+      '| name | value |\n| - | - |\n| text. | 12 |\n| next | https://example.com |',
+      'Before.\r\n\r\n$$\nx+y\n$$\n\n::: warning\nNo links.\n:::',
+      '[label][ref]\n\n[ref]: https://example.com\n',
+    ]
+    for (const source of fixtures) {
+      const optimized = getMarkdown('screened')
+      const native = getMarkdown('native')
+      const linkify = native.linkify as any
+      const test = linkify.test
+      // A replaced test method retains the original candidate-filter path.
+      linkify.test = (text: string) => test.call(linkify, text)
+      for (let end = 1; end <= source.length; end++) {
+        expect(parseMarkdownToStructure(source.slice(0, end), optimized, { final: false }))
+          .toEqual(parseMarkdownToStructure(source.slice(0, end), native, { final: false }))
+      }
+      expect(parseMarkdownToStructure(source, optimized, { final: true }))
+        .toEqual(parseMarkdownToStructure(source, native, { final: true }))
+    }
+  })
+
+  it('invalidates the screen after schema, TLD, option and builder changes', () => {
+    const configure = [
+      (linkify: any) => linkify.add('issue', { validate: (text: string, pos: number) => /^\d+/.exec(text.slice(pos))?.[0].length ?? 0 }),
+      (linkify: any) => linkify.tlds(['$']),
+      (linkify: any) => linkify.set({ tlds: ['$'] }),
+      (linkify: any) => { linkify.re.get_fuzzy_link_search = () => /(^| )(magic)/gi },
+      (linkify: any) => {
+        const Builder = Object.getPrototypeOf(linkify.re).constructor
+        class CustomBuilder extends Builder {
+          get_fuzzy_link_search() { return /(^| )(magic)/gi }
+        }
+        linkify.re = new CustomBuilder(linkify.re.opts)
+      },
+    ]
+    for (const change of configure) {
+      const optimized = getMarkdown('configured-screen')
+      const native = getMarkdown('configured-native')
+      const nativeLinkify = native.linkify as any
+      const test = nativeLinkify.test
+      nativeLinkify.test = (text: string) => test.call(nativeLinkify, text)
+      for (const md of [optimized, native]) {
+        parseMarkdownToStructure('Plain text.', md, { final: true })
+        change(md.linkify)
+      }
+      for (const source of ['issue123', 'foo.', 'magic', '//localhost/path']) {
+        expect(parseMarkdownToStructure(source, optimized, { final: true }))
+          .toEqual(parseMarkdownToStructure(source, native, { final: true }))
+      }
+    }
+  })
+
+  it('preserves configuration changes made by a validator within the same rule run', () => {
+    const optimized = getMarkdown('mutating-validator')
+    const native = getMarkdown('native-mutating-validator')
+    const nativeLinkify = native.linkify as any
+    const test = nativeLinkify.test
+    nativeLinkify.test = (text: string) => test.call(nativeLinkify, text)
+    for (const md of [optimized, native]) {
+      const linkify = md.linkify as any
+      linkify.add('trigger:', {
+        validate: () => {
+          linkify.add('issue', {
+            validate: () => 3,
+            normalize: (match: any) => { match.url = 'https://example.com/issue123' },
+          })
+          return 0
+        },
+      })
+    }
+    const source = 'trigger:noop\n\nissue123'
+    const expected = parseMarkdownToStructure(source, native, { final: true })
+    expect(flatten(expected).some(node => node.href === 'https://example.com/issue123')).toBe(true)
+    expect(parseMarkdownToStructure(source, optimized, { final: true })).toEqual(expected)
+  })
+
   it('linkifies ordinary bare links', () => {
     const found = links('Visit example.com now.')
 

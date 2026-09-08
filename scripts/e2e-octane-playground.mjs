@@ -154,7 +154,8 @@ async function main() {
     )
 
     const emoji = homeRenderer.locator('.emoji-node')
-    await emoji.waitFor({ timeout: 30000 })
+    // Streaming prefixes can resolve to another emoji before :smile: completes.
+    await emoji.filter({ hasText: /^😄$/ }).waitFor({ timeout: 30000 })
     assert(await emoji.textContent() === '😄', 'The :smile: shortcode was not rendered as an emoji')
 
     const expectedCodeBlocks = [

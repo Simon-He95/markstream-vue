@@ -3382,6 +3382,61 @@ describe('node renderer virtual-scroll coordination', () => {
     scrollRoot.remove()
   })
 
+  it.each(['node', 'bottom'] as const)('stops reconciling a %s anchor when the restore token is revoked', async (type) => {
+    const NodeRenderer = (await import('../src/components/NodeRenderer')).default
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400)
+    const scrollRoot = document.createElement('div')
+    document.body.appendChild(scrollRoot)
+    Object.defineProperty(scrollRoot, 'clientHeight', { get: () => 200 })
+    Object.defineProperty(scrollRoot, 'scrollHeight', { get: () => 1000 })
+
+    const virtualScroll = {
+      enabled: true,
+      sessionKey: 'revoked-anchor',
+      scrollRoot: () => scrollRoot,
+      settleMode: 'manual' as const,
+    }
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        nodes: [createParagraph(1), createParagraph(2)],
+        final: true,
+        fade: false,
+        viewportPriority: false,
+        virtualScroll,
+      },
+    })
+
+    try {
+      await flushAll()
+      installRendererBottomGeometry(wrapper, scrollRoot, () => 1000)
+      const restoreState = {
+        sessionKey: 'revoked-anchor',
+        anchor: type === 'node'
+          ? { type, nodeIndex: 0, offsetWithinNodePx: 40 }
+          : { type, distanceFromBottomPx: 0 },
+        metrics: (wrapper.vm as any).getVirtualMetrics(),
+        width: 400,
+      }
+      await wrapper.setProps({
+        virtualScroll: { ...virtualScroll, restoreState, restoreAnchor: 'restore-1' },
+      })
+      await flushAll()
+      expect(scrollRoot.scrollTop).toBe(type === 'node' ? 40 : 800)
+
+      await wrapper.setProps({
+        virtualScroll: { ...virtualScroll, restoreState, restoreAnchor: false },
+      })
+      scrollRoot.scrollTop = 300
+      await new Promise(resolve => setTimeout(resolve, 160))
+
+      expect(scrollRoot.scrollTop).toBe(300)
+    }
+    finally {
+      wrapper.unmount()
+      scrollRoot.remove()
+    }
+  })
+
   it('does not imperatively restore anchor unless restoreAnchor is true', async () => {
     const NodeRenderer = (await import('../src/components/NodeRenderer')).default
     vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400)

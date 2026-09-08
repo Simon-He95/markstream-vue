@@ -5129,6 +5129,16 @@ watch(
   { flush: 'post', immediate: true },
 )
 
+watch(getVirtualRestoreAnchorToken, (token, previousToken) => {
+  if (token != null || previousToken == null)
+    return
+
+  clearRestoreReconcile()
+  activeRestoreAnchor.value = null
+  clearActiveVirtualBottomAnchor()
+  lastAppliedVirtualRestoreSignature = null
+}, { flush: 'post' })
+
 watch(
   [
     virtualScrollEnabled,

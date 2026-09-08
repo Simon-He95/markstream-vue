@@ -12,9 +12,11 @@ import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline
 import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
 import MermaidWorker from '../../../src/workers/mermaidParser.worker?worker&inline'
 import { setMermaidWorker } from '../../../src/workers/mermaidWorkerClient'
+import StreamSpeedPanel from '../components/StreamSpeedPanel.vue'
 import ThinkingNode from '../components/ThinkingNode.vue'
 import { CUSTOM_STREAM_PRESET_ID, findMatchingStreamPreset, getStreamPreset, STREAM_PRESETS } from '../composables/streamPresets'
 import { clampStreamControl, normalizeStreamRange, useStreamSimulator } from '../composables/useStreamSimulator'
+import { useTpsStreamSimulator } from '../composables/useTpsStreamSimulator'
 import { streamContent } from '../const/markdown'
 import { createAutoScrollChaseController } from '../utils/autoScrollChase'
 import 'katex/dist/katex.min.css'
@@ -90,23 +92,64 @@ const streamChunkRangeLabel = computed(() => `${normalizedChunkSizeRange.value.m
 const streamDelayRangeLabel = computed(() => `${normalizedChunkDelayRange.value.min}-${normalizedChunkDelayRange.value.max}ms`)
 const isBenchmarkMode = typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('benchmark') === '1'
 const benchmarkRenderChat = ref(true)
-const {
-  content,
-  isPaused,
-  isStreaming,
-  start: startStreamSimulation,
-  stop: stopStreamSimulation,
-  togglePause: toggleStreamPause,
-} = useStreamSimulator({
+const savedSimulationMode = useLocalStorage<'tps' | 'chunks'>('vmr-settings-simulation-mode', 'tps')
+const simulationMode = computed(() => isBenchmarkMode ? 'chunks' : savedSimulationMode.value === 'chunks' ? 'chunks' : 'tps')
+const targetTps = useLocalStorage<number>('vmr-settings-target-tps', 300)
+const normalizedTargetTps = computed(() => Math.round(clampStreamControl(Number(targetTps.value), 1, 2000, 300)))
+const tpsSimulator = useTpsStreamSimulator({ source: fullStreamContent, targetTps: normalizedTargetTps })
+const chunkSettings = computed(() => ({
+  chunkSizeMin: normalizedChunkSizeRange.value.min,
+  chunkSizeMax: normalizedChunkSizeRange.value.max,
+  chunkDelayMin: normalizedChunkDelayRange.value.min,
+  chunkDelayMax: normalizedChunkDelayRange.value.max,
+  burstiness: normalizedBurstiness.value / 100,
+  sliceMode: streamSliceMode.value,
+  transportMode: streamTransportMode.value,
+}))
+const chunkRunSettings = ref(chunkSettings.value)
+const chunkSimulator = useStreamSimulator({
   source: fullStreamContent,
-  chunkSizeMin: computed(() => normalizedChunkSizeRange.value.min),
-  chunkSizeMax: computed(() => normalizedChunkSizeRange.value.max),
-  chunkDelayMin: computed(() => normalizedChunkDelayRange.value.min),
-  chunkDelayMax: computed(() => normalizedChunkDelayRange.value.max),
-  burstiness: computed(() => normalizedBurstiness.value / 100),
-  sliceMode: streamSliceMode,
-  transportMode: streamTransportMode,
+  chunkSizeMin: () => chunkRunSettings.value.chunkSizeMin,
+  chunkSizeMax: () => chunkRunSettings.value.chunkSizeMax,
+  chunkDelayMin: () => chunkRunSettings.value.chunkDelayMin,
+  chunkDelayMax: () => chunkRunSettings.value.chunkDelayMax,
+  burstiness: () => chunkRunSettings.value.burstiness,
+  sliceMode: () => chunkRunSettings.value.sliceMode,
+  transportMode: () => chunkRunSettings.value.transportMode,
 })
+
+const activeSimulator = computed(() => simulationMode.value === 'tps' ? tpsSimulator : chunkSimulator)
+const content = computed(() => activeSimulator.value.content.value)
+const isPaused = computed(() => activeSimulator.value.isPaused.value)
+const isStreaming = computed(() => activeSimulator.value.isStreaming.value)
+
+function stopStreamSimulation() {
+  chunkSimulator.stop()
+  tpsSimulator.stop()
+}
+
+function startStreamSimulation() {
+  stopStreamSimulation()
+  chunkRunSettings.value = chunkSettings.value
+  activeSimulator.value.start()
+}
+
+function toggleStreamPause() {
+  activeSimulator.value.togglePause()
+}
+
+function selectSimulationMode(mode: 'tps' | 'chunks') {
+  if (mode === simulationMode.value)
+    return
+  stopStreamSimulation()
+  savedSimulationMode.value = mode
+  replayStream()
+}
+
+function selectTps(speed: number) {
+  targetTps.value = speed
+  replayStream()
+}
 
 // 预加载 stream-diffs 运行时
 if (!isBenchmarkMode)
@@ -349,6 +392,15 @@ const autoScrollChase = createAutoScrollChaseController({
   },
 })
 
+function replayStream() {
+  startStreamSimulation()
+  nextTick(() => {
+    shouldStickToBottom.value = true
+    autoScrollChase.scrollToBottom()
+    autoScrollChase.schedule()
+  })
+}
+
 function scheduleScrollToBottom() {
   autoScrollChase.schedule()
 }
@@ -521,6 +573,8 @@ onBeforeUnmount(() => {
     <button
       v-if="isCompactSettings"
       class="settings-fab"
+      aria-label="Toggle controls"
+      :aria-expanded="showSettings"
       :class="{ 'settings-fab--active': showSettings }"
       @click="showSettings = !showSettings"
     >
@@ -599,108 +653,112 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <!-- Stream Profile -->
-        <div class="setting-group">
-          <label class="setting-label">Stream Profile</label>
-          <div class="setting-select-wrap">
-            <select v-model="selectedStreamPresetId" class="setting-select">
-              <option v-for="preset in STREAM_PRESETS" :key="preset.id" :value="preset.id">
-                {{ preset.label }}
-              </option>
-              <option :value="CUSTOM_STREAM_PRESET_ID">
-                Custom
-              </option>
-            </select>
-            <Icon icon="carbon:chevron-down" class="setting-select-icon" />
+        <template v-if="simulationMode === 'chunks'">
+          <!-- Stream Profile -->
+          <div class="setting-group">
+            <label class="setting-label">Stream Profile</label>
+            <div class="setting-select-wrap">
+              <select v-model="selectedStreamPresetId" class="setting-select">
+                <option v-for="preset in STREAM_PRESETS" :key="preset.id" :value="preset.id">
+                  {{ preset.label }}
+                </option>
+                <option :value="CUSTOM_STREAM_PRESET_ID">
+                  Custom
+                </option>
+              </select>
+              <Icon icon="carbon:chevron-down" class="setting-select-icon" />
+            </div>
+            <p class="setting-hint">
+              {{ streamPresetDescription }} Settings apply on replay.
+            </p>
           </div>
+
+          <!-- Transport -->
+          <div class="setting-group">
+            <label class="setting-label">Transport</label>
+            <div class="setting-select-wrap">
+              <select v-model="streamTransportMode" class="setting-select">
+                <option value="readable-stream">
+                  ReadableStream
+                </option>
+                <option value="scheduler">
+                  Scheduler
+                </option>
+              </select>
+              <Icon icon="carbon:chevron-down" class="setting-select-icon" />
+            </div>
+          </div>
+
+          <!-- Slice Mode -->
+          <div class="setting-group">
+            <label class="setting-label">Slice Mode</label>
+            <div class="setting-select-wrap">
+              <select v-model="streamSliceMode" class="setting-select">
+                <option value="pure-random">
+                  Pure Random
+                </option>
+                <option value="boundary-aware">
+                  Boundary Aware
+                </option>
+              </select>
+              <Icon icon="carbon:chevron-down" class="setting-select-icon" />
+            </div>
+          </div>
+
+          <div class="settings-divider" />
+
+          <!-- Sliders -->
+          <div class="setting-group">
+            <label class="setting-label">Chunk Delay</label>
+            <div class="setting-slider-row">
+              <span class="setting-slider-label">Min</span>
+              <input v-model.number="streamChunkDelayMin" type="range" min="8" max="240" step="4" class="setting-slider">
+              <span class="setting-slider-value">{{ normalizedChunkDelayRange.min }}ms</span>
+            </div>
+            <div class="setting-slider-row">
+              <span class="setting-slider-label">Max</span>
+              <input v-model.number="streamChunkDelayMax" type="range" min="8" max="240" step="4" class="setting-slider">
+              <span class="setting-slider-value">{{ normalizedChunkDelayRange.max }}ms</span>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <label class="setting-label">Chunk Size</label>
+            <div class="setting-slider-row">
+              <span class="setting-slider-label">Min</span>
+              <input v-model.number="streamChunkSizeMin" type="range" min="1" max="24" step="1" class="setting-slider">
+              <span class="setting-slider-value">{{ normalizedChunkSizeRange.min }}</span>
+            </div>
+            <div class="setting-slider-row">
+              <span class="setting-slider-label">Max</span>
+              <input v-model.number="streamChunkSizeMax" type="range" min="1" max="24" step="1" class="setting-slider">
+              <span class="setting-slider-value">{{ normalizedChunkSizeRange.max }}</span>
+            </div>
+          </div>
+
+          <div v-if="streamTransportMode === 'scheduler' && streamSliceMode === 'boundary-aware'" class="setting-group">
+            <label class="setting-label">Burstiness</label>
+            <div class="setting-slider-row">
+              <input v-model.number="streamBurstiness" type="range" min="0" max="100" step="1" class="setting-slider">
+              <span class="setting-slider-value">{{ normalizedBurstiness }}%</span>
+            </div>
+          </div>
+
           <p class="setting-hint">
-            {{ streamPresetDescription }}
+            Window: {{ streamChunkRangeLabel }} chars / {{ streamDelayRangeLabel }}
           </p>
-        </div>
 
-        <!-- Transport -->
-        <div class="setting-group">
-          <label class="setting-label">Transport</label>
-          <div class="setting-select-wrap">
-            <select v-model="streamTransportMode" class="setting-select">
-              <option value="readable-stream">
-                ReadableStream
-              </option>
-              <option value="scheduler">
-                Scheduler
-              </option>
-            </select>
-            <Icon icon="carbon:chevron-down" class="setting-select-icon" />
-          </div>
-        </div>
-
-        <!-- Slice Mode -->
-        <div class="setting-group">
-          <label class="setting-label">Slice Mode</label>
-          <div class="setting-select-wrap">
-            <select v-model="streamSliceMode" class="setting-select">
-              <option value="pure-random">
-                Pure Random
-              </option>
-              <option value="boundary-aware">
-                Boundary Aware
-              </option>
-            </select>
-            <Icon icon="carbon:chevron-down" class="setting-select-icon" />
-          </div>
-        </div>
-
-        <div class="settings-divider" />
-
-        <!-- Sliders -->
-        <div class="setting-group">
-          <label class="setting-label">Chunk Delay</label>
-          <div class="setting-slider-row">
-            <span class="setting-slider-label">Min</span>
-            <input v-model.number="streamChunkDelayMin" type="range" min="8" max="240" step="4" class="setting-slider">
-            <span class="setting-slider-value">{{ normalizedChunkDelayRange.min }}ms</span>
-          </div>
-          <div class="setting-slider-row">
-            <span class="setting-slider-label">Max</span>
-            <input v-model.number="streamChunkDelayMax" type="range" min="8" max="240" step="4" class="setting-slider">
-            <span class="setting-slider-value">{{ normalizedChunkDelayRange.max }}ms</span>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <label class="setting-label">Chunk Size</label>
-          <div class="setting-slider-row">
-            <span class="setting-slider-label">Min</span>
-            <input v-model.number="streamChunkSizeMin" type="range" min="1" max="24" step="1" class="setting-slider">
-            <span class="setting-slider-value">{{ normalizedChunkSizeRange.min }}</span>
-          </div>
-          <div class="setting-slider-row">
-            <span class="setting-slider-label">Max</span>
-            <input v-model.number="streamChunkSizeMax" type="range" min="1" max="24" step="1" class="setting-slider">
-            <span class="setting-slider-value">{{ normalizedChunkSizeRange.max }}</span>
-          </div>
-        </div>
-
-        <div class="setting-group">
-          <label class="setting-label">Burstiness</label>
-          <div class="setting-slider-row">
-            <input v-model.number="streamBurstiness" type="range" min="0" max="100" step="1" class="setting-slider">
-            <span class="setting-slider-value">{{ normalizedBurstiness }}%</span>
-          </div>
-        </div>
-
-        <p class="setting-hint">
-          Window: {{ streamChunkRangeLabel }} chars / {{ streamDelayRangeLabel }}
-        </p>
-
-        <div class="settings-divider" />
+          <div class="settings-divider" />
+        </template>
 
         <!-- Dark Mode -->
         <div class="setting-row-inline">
-          <label class="setting-label">Dark Mode</label>
+          <label id="dark-mode-label" class="setting-label">Dark Mode</label>
           <button
             class="theme-toggle"
             :class="{ 'theme-toggle--dark': isDark }"
+            aria-labelledby="dark-mode-label"
+            :aria-pressed="isDark"
             @click.stop="toggleTheme()"
           >
             <div class="theme-toggle__thumb">
@@ -721,10 +779,12 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="setting-row-inline">
-          <label class="setting-label">Smooth Stream</label>
+          <label id="smooth-stream-label" class="setting-label">Smooth Stream</label>
           <button
             class="theme-toggle"
             :class="{ 'theme-toggle--dark': smoothStreaming }"
+            aria-labelledby="smooth-stream-label"
+            :aria-pressed="smoothStreaming"
             @click.stop="smoothStreaming = !smoothStreaming"
           >
             <div class="theme-toggle__thumb">
@@ -827,8 +887,7 @@ onBeforeUnmount(() => {
 
             <button
               class="nav-btn nav-btn--retry"
-              :disabled="isStreaming && !isPaused"
-              @click="() => { stopStreamSimulation(); startStreamSimulation() }"
+              @click="replayStream"
             >
               <Icon icon="carbon:restart" class="nav-btn__icon" />
               <span class="nav-btn__text">Retry</span>
@@ -855,11 +914,25 @@ onBeforeUnmount(() => {
           </nav>
         </header>
 
-        <section class="chat-overview">
+        <StreamSpeedPanel
+          :mode="simulationMode"
+          :target-tps="normalizedTargetTps"
+          :actual-tps="tpsSimulator.actualTps.value"
+          :total-tokens="tpsSimulator.totalTokens.value"
+          :elapsed-ms="tpsSimulator.elapsedMs.value"
+          :progress="tpsSimulator.progress.value"
+          :is-streaming="isStreaming"
+          :is-paused="isPaused"
+          :smooth-streaming="smoothStreaming"
+          @mode="selectSimulationMode"
+          @speed="selectTps"
+        />
+
+        <section v-if="simulationMode === 'chunks'" class="chat-overview">
           <div class="chat-overview__intro">
             <span class="chat-overview__eyebrow">Live Playground</span>
             <p class="chat-overview__summary">
-              {{ streamPresetDescription }}
+              {{ streamPresetDescription }} Settings apply on replay.
             </p>
           </div>
 
@@ -878,7 +951,7 @@ onBeforeUnmount(() => {
             </div>
             <div class="chat-overview__stat">
               <span class="chat-overview__stat-label">Burst</span>
-              <strong class="chat-overview__stat-value">{{ normalizedBurstiness }}%</strong>
+              <strong class="chat-overview__stat-value">{{ streamTransportMode === 'scheduler' && streamSliceMode === 'boundary-aware' ? `${normalizedBurstiness}%` : 'Off' }}</strong>
             </div>
           </div>
 
@@ -895,6 +968,7 @@ onBeforeUnmount(() => {
             v-if="benchmarkRenderChat"
             :content="content"
             :smooth-streaming="smoothStreaming"
+            :final="!isStreaming"
             :fade="!smoothStreaming"
             :code-block-dark-theme="selectedTheme || undefined"
             :code-block-light-theme="selectedTheme || undefined"
@@ -917,6 +991,12 @@ onBeforeUnmount(() => {
 <style scoped>
 /* ─── Root & Background ─── */
 .playground-root {
+  --speed-surface: rgb(255 255 255 / 0.44);
+  --speed-subtle: rgb(15 23 42 / 0.035);
+  --speed-text: var(--play-ink);
+  --speed-muted: #526174;
+  --speed-border: rgb(15 23 42 / 0.1);
+  --speed-accent: var(--play-accent);
   --play-accent: #0f766e;
   --play-accent-2: #0ea5e9;
   --play-warm: #f97316;
@@ -933,6 +1013,15 @@ onBeforeUnmount(() => {
     linear-gradient(140deg, hsl(var(--ms-background)), hsl(var(--ms-muted) / 0.45));
   color: hsl(var(--ms-foreground));
   transition: background-color 0.3s ease;
+}
+
+.playground-root.dark {
+  --speed-surface: rgb(255 255 255 / 0.04);
+  --speed-subtle: rgb(255 255 255 / 0.04);
+  --speed-text: #e0e0e0;
+  --speed-muted: #a6b0bd;
+  --speed-border: rgb(255 255 255 / 0.1);
+  --speed-accent: #5eead4;
 }
 
 .playground-bg {

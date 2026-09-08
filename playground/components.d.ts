@@ -12,6 +12,7 @@ declare module 'vue' {
     LabSelect: typeof import('./src/components/LabSelect.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    StreamSpeedPanel: typeof import('./src/components/StreamSpeedPanel.vue')['default']
     ThinkingNode: typeof import('./src/components/ThinkingNode.vue')['default']
   }
 }

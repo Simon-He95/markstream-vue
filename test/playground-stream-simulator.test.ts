@@ -57,6 +57,32 @@ describe('playground stream simulator', () => {
     vi.useRealTimers()
   })
 
+  it('keeps a replay running when switching from a reader to the scheduler', async () => {
+    vi.useFakeTimers()
+    const transportMode = ref<StreamTransportMode>('readable-stream')
+    const wrapper = mount(defineComponent({
+      setup: () => useStreamSimulator({
+        source: 'a'.repeat(1000),
+        chunkSizeMin: 2,
+        chunkSizeMax: 2,
+        chunkDelayMin: 10,
+        chunkDelayMax: 10,
+        burstiness: 0,
+        transportMode,
+      }),
+      template: '<div />',
+    }))
+    wrapper.vm.start()
+    await vi.advanceTimersByTimeAsync(10)
+    wrapper.vm.stop()
+    transportMode.value = 'scheduler'
+    wrapper.vm.start()
+    await vi.advanceTimersByTimeAsync(30)
+    expect(wrapper.vm.isStreaming).toBe(true)
+    expect(wrapper.vm.content).toHaveLength(6)
+    wrapper.unmount()
+  })
+
   it('uses exact delay and chunk sizes when min and max are identical', async () => {
     vi.useFakeTimers()
     const wrapper = mountSimulator({

@@ -489,10 +489,8 @@ export function useStreamSimulator(options: StreamSimulatorOptions) {
       }
     }
     finally {
-      if (abortController === controller)
+      if (abortController === controller) {
         abortController = null
-
-      if (abortController === null || abortController === controller) {
         isStreaming.value = false
         isPaused.value = false
       }

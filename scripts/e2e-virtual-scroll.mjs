@@ -1993,30 +1993,30 @@ async function run() {
 
         const sameShapeAfter = api.read()
 
-        await api.scrollToRatio(1)
-        for (let i = 0; i < 20; i++)
-          await api.nextFrame()
+        // Settling can change the total height more than once. Finish positioning
+        // at the measured bottom before recording streaming scroll diagnostics.
+        for (let attempt = 0; attempt < 4; attempt++) {
+          await api.scrollToRatio(1)
+          await api.settleVisibleRenderers()
+          for (let i = 0; i < 20; i++)
+            await api.nextFrame()
 
-        // Let any scroll-to-bottom settlement / outer-anchor compensation finish before
-        // the streaming probe starts. Otherwise the probe records the intentional
-        // programmatic jump as a streaming jitter regression.
-        await api.settleVisibleRenderers()
-        for (let i = 0; i < 20; i++)
-          await api.nextFrame()
-
-        // Settling swaps estimated heights for measured ones, which can change
-        // totalHeight after the initial scrollToRatio(1) ran; re-pin to the
-        // true bottom so the streaming probe actually starts pinned (its
-        // assertion requires distanceFromBottomPx < 48).
-        await api.scrollToRatio(1)
-        await api.settleVisibleRenderers()
-        for (let i = 0; i < 20; i++)
-          await api.nextFrame()
+          if (api.read().distanceFromBottomPx <= 32)
+            break
+        }
 
         api.clearEvents()
         await api.nextFrame()
 
         const streamingBefore = api.read()
+        if (streamingBefore.distanceFromBottomPx > 32) {
+          throw new Error(`Could not reach the bottom before the streaming probe: ${JSON.stringify({
+            scrollTop: streamingBefore.scrollTop,
+            totalHeight: streamingBefore.totalHeight,
+            viewportHeight: streamingBefore.viewportHeight,
+            distanceFromBottomPx: streamingBefore.distanceFromBottomPx,
+          })}`)
+        }
 
         await api.startStreamingLastMessage({
           blocks: 520,

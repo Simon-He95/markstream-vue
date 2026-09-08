@@ -555,9 +555,9 @@ describe('node renderer measurement performance', () => {
     const baselineHeight = state.getFallbackNodeHeight(0)
 
     platform.heights.set(element, 100)
-    state.setNodeContentRef(0, element)
+    state.setNodeContentRef(0, state.renderedItems[0].vnodeKey, element)
     await Promise.resolve()
-    state.setNodeContentRef(0, null)
+    state.setNodeContentRef(0, state.renderedItems[0].vnodeKey, null)
     platform.flushFrames()
 
     expect(state.getFallbackNodeHeight(0)).toBe(baselineHeight)
@@ -800,8 +800,8 @@ describe('node renderer measurement performance', () => {
     // rendered node on every streaming commit), so simulate a real remount
     // with a null pass to force the measurement/observer re-registration.
     platform.heights.set(element, 40)
-    state.setNodeContentRef(0, null)
-    state.setNodeContentRef(0, element)
+    state.setNodeContentRef(0, state.renderedItems[0].vnodeKey, null)
+    state.setNodeContentRef(0, state.renderedItems[0].vnodeKey, element)
     await Promise.resolve()
     platform.flushFrames()
     expect(state.getFallbackNodeHeight(0)).toBe(40)

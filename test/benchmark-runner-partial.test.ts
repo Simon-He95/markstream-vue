@@ -69,7 +69,8 @@ describe('benchmark 1.0 runner partial reports', () => {
           MARKSTREAM_BENCHMARK_SAMPLES: 'truncated,ok',
           MARKSTREAM_BENCHMARK_SKIP_BUILD: '1',
           NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
-          PLAYWRIGHT_CHROME_PATH: join(tmpRoot, 'missing-chrome'),
+          // Probe a deterministic executable instead of the host's Chrome install.
+          PLAYWRIGHT_CHROME_PATH: process.execPath,
         },
       })
 
@@ -78,6 +79,10 @@ describe('benchmark 1.0 runner partial reports', () => {
       const partialJson = readdirSync(outputDir).find(file => file.endsWith('.partial.json'))
       expect(partialJson).toBeTruthy()
       const report = JSON.parse(readFileSync(join(outputDir, partialJson!), 'utf8'))
+      expect(report.environment.browser).toEqual({
+        executablePath: process.execPath,
+        version: process.version,
+      })
 
       expect(report.scenarios.map((scenario: any) => scenario.id)).toEqual([
         'diagnostic-truncated',
@@ -119,7 +124,7 @@ describe('benchmark 1.0 runner partial reports', () => {
           MARKSTREAM_BENCHMARK_SKIP_BUILD: '1',
           MARKSTREAM_TEST_WEB_VITALS_PARTIAL: '1',
           NODE_OPTIONS: [process.env.NODE_OPTIONS, `--require=${hookPath}`].filter(Boolean).join(' '),
-          PLAYWRIGHT_CHROME_PATH: join(tmpRoot, 'missing-chrome'),
+          PLAYWRIGHT_CHROME_PATH: process.execPath,
         },
       })
 

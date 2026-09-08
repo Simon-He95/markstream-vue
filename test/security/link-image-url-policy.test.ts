@@ -349,7 +349,7 @@ describe('link and image URL policy', () => {
     await nextTick()
 
     expect(wrapper.find('img').exists()).toBe(false)
-    expect(wrapper.find('.image-shimmer-overlay').exists()).toBe(false)
+    expect(wrapper.find('.image-placeholder').exists()).toBe(false)
     expect(wrapper.find('.image-error').exists()).toBe(true)
   })
 

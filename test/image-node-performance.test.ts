@@ -73,6 +73,29 @@ describe('image node performance defaults', () => {
     expect(wrapper.get('img').classes()).not.toContain('has-natural-size')
   })
 
+  it.each([false, true])('keeps the streaming placeholder until the image loads (lazy=%s)', async (lazy) => {
+    const node = {
+      type: 'image' as const,
+      src: 'https://example.com/hero.png',
+      alt: 'Hero',
+      raw: '![Hero](https://example.com/hero.png)',
+      loading: true,
+    }
+    const wrapper = mount(ImageNode, { props: { node, lazy } })
+    try {
+      const placeholder = wrapper.get('.image-placeholder').element
+      await wrapper.setProps({ node: { ...node, loading: false } })
+      expect(wrapper.get('img').attributes('src')).toBe(node.src)
+      expect(wrapper.find('.image-placeholder').element).toBe(placeholder)
+      await wrapper.get('img').trigger('load')
+      expect(wrapper.find('.image-placeholder').exists()).toBe(false)
+      expect(wrapper.get('img').classes()).toContain('has-natural-size')
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
   it('reports image load lifecycle for virtual-scroll settling', async () => {
     const markPending = vi.fn()
     const reportHeight = vi.fn()

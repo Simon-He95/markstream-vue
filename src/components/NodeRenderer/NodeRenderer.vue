@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ParsedNode } from 'stream-markdown-parser'
+import type { FootnoteNode as FootnoteNodeData, ParsedNode } from 'stream-markdown-parser'
 import type { EstimatedNodeHeight } from '../../internal/heightEstimationExperiment'
 import type { CustomComponents } from '../../types'
 import type { CodeBlockPreviewPayload } from '../../types/component-props'
@@ -481,11 +481,11 @@ watch(
 )
 
 watch(
-  [renderContent, () => props.nodes, requestedFinal],
-  ([content, nodes, finalRequested]) => {
+  [renderContent, () => props.nodes, effectiveFinal],
+  ([content, nodes, finalRendered]) => {
     const nextContent = content ?? ''
 
-    if (nodes?.length || finalRequested === true) {
+    if (nodes?.length || finalRendered === true) {
       clearContentStreamingTailActive()
       continuousStreamingObserved.value = false
       previousContentStreamValue = nextContent
@@ -4487,7 +4487,15 @@ function scheduleFinalHeightConvergence() {
   }
 }
 
-function setNodeContentRef(index: number, el: HTMLElement | null) {
+// Deferral controls initial mounting; moving a mounted key must not hide it again.
+const mountedNodeKeys = new Set<string>()
+
+function setNodeContentRef(index: number, key: string, el: HTMLElement | null) {
+  if (el)
+    mountedNodeKeys.add(key)
+  else
+    mountedNodeKeys.delete(key)
+
   if (el) {
     const node = parsedNodes.value[index]
     const registered = nodeContentRegistration.get(index)
@@ -5801,6 +5809,20 @@ function buildRenderedItemSignature(node: ParsedNode, index: number, globalSigna
   return [index, (node as { loading?: unknown }).loading, estimatedHeight, globalSignature]
 }
 
+const footnoteOccurrences = computed(() => {
+  const counts = new Map<string, number>()
+  const occurrences = new Map<number, number>()
+  parsedNodes.value.forEach((node, index) => {
+    if (node.type !== 'footnote')
+      return
+    const id = (node as FootnoteNodeData).id
+    const occurrence = counts.get(id) ?? 0
+    occurrences.set(index, occurrence)
+    counts.set(id, occurrence + 1)
+  })
+  return occurrences
+})
+
 /**
  * Build (or reuse from the WeakMap cache) the render item for one node.
  * The per-node signature tracks index, loading, estimated height and the
@@ -5928,7 +5950,14 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
     ? getCustomNodeAttrs(node as any, resolvedHtmlPolicy.value)
     : undefined
   const loading = (node as unknown as { loading?: unknown }).loading
-  const indexKey = `${indexPrefix.value}-${item.index}`
+  // Footnotes move as body blocks arrive; inline footnotes can share parser ids.
+  let nodeIdentity: string | number = item.index
+  if (node.type === 'footnote' && component === FootnoteNode) {
+    const id = (node as FootnoteNodeData).id
+    const occurrence = footnoteOccurrences.value.get(item.index)!
+    nodeIdentity = `footnote-${id}-${occurrence}`
+  }
+  const indexKey = `${indexPrefix.value}-${nodeIdentity}`
   const baseNodeProps = {
     node,
     loading,
@@ -5982,7 +6011,7 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
     slotContent: String((node as any).content ?? ''),
     isCodeBlock: node.type === 'code_block',
     indexKey,
-    vnodeKey: `${rendererSessionIdentity.value}\u0000${item.index}\u0000${node.type}`,
+    vnodeKey: `${rendererSessionIdentity.value}\u0000${nodeIdentity}\u0000${node.type}`,
   }
   renderedItemCache.set(item.node, { signature: cacheSignature, item: renderedItem })
   return renderedItem
@@ -6796,8 +6825,8 @@ onBeforeUnmount(() => {
           :data-node-type="item.node.type"
         >
           <div
-            v-if="shouldRenderNode(item.index)"
-            :ref="el => setNodeContentRef(item.index, el as HTMLElement | null)"
+            v-if="mountedNodeKeys.has(item.vnodeKey) || shouldRenderNode(item.index)"
+            :ref="el => setNodeContentRef(item.index, item.vnodeKey, el as HTMLElement | null)"
             class="node-content"
           >
             <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->

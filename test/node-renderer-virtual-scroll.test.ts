@@ -1578,7 +1578,7 @@ describe('node renderer virtual-scroll coordination', () => {
     wrapper.unmount()
   })
 
-  it('keeps virtual metrics unsettled until an async custom node reports settled', async () => {
+  it.each(['async_node', 'footnote'])('keeps virtual metrics unsettled until a custom %s reports settled', async (nodeType) => {
     let finishAsyncNode: ((height: number) => void) | null = null
     const AsyncNode = defineComponent({
       props: {
@@ -1599,7 +1599,7 @@ describe('node renderer virtual-scroll coordination', () => {
     })
 
     setCustomComponents('virtual-lifecycle-test', {
-      async_node: AsyncNode as any,
+      [nodeType]: AsyncNode as any,
     })
 
     const NodeRenderer = (await import('../src/components/NodeRenderer')).default
@@ -1608,7 +1608,8 @@ describe('node renderer virtual-scroll coordination', () => {
         customId: 'virtual-lifecycle-test',
         nodes: [
           {
-            type: 'async_node',
+            type: nodeType,
+            id: 'custom-note',
             raw: '<async-node />',
             content: '',
           },

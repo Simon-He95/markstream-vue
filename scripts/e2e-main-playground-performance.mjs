@@ -486,15 +486,8 @@ async function collectMetrics(page) {
   fullScroll.layoutReads = normalizeLayoutReadPerformance(fullScroll.layoutReads)
   fullScroll.scrollDriftPx = scrollMetrics.maxScrollDriftPx
 
-  const replayButton = page.locator('button.nav-btn--stream')
+  const replayButton = page.locator('button.nav-btn--retry')
   await replayButton.waitFor({ state: 'visible', timeout: 5000 })
-  if ((await replayButton.textContent())?.includes('Pause')) {
-    await replayButton.click()
-    await page.waitForFunction(() => {
-      const button = document.querySelector('button.nav-btn--stream')
-      return button?.textContent?.includes('Resume')
-    }, null, { timeout: 5000 })
-  }
   const replayParsePerformanceBaseline = await page.evaluate(() => {
     const state = window.__mainPlaygroundPerf
     if (!state)
@@ -510,7 +503,13 @@ async function collectMetrics(page) {
     return state.replayParsePerformanceBaseline
   })
   await resetLayoutReadPerformance(page)
-  await page.locator('button.nav-btn--stream').click()
+  await replayButton.click()
+  await page.waitForFunction((baseline) => {
+    const stream = window.__mainPlaygroundPerf.parsePerformance.stream
+    const previous = baseline.stream
+    return stream.appendHits + stream.tailHits + stream.cacheHits
+      > previous.appendHits + previous.tailHits + previous.cacheHits
+  }, replayParsePerformanceBaseline, { timeout: 5000 })
   await waitForVisibleBlocksReady(page, rootSelector)
   await page.waitForTimeout(250)
 

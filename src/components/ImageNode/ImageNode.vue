@@ -18,6 +18,7 @@ const emit = defineEmits<{ (e: 'load', src: string): void, (e: 'error', src: str
 const IMAGE_LIFECYCLE_PENDING_TIMEOUT_MS = 8000
 
 const imageLoaded = ref(false)
+const streamingPlaceholder = ref(false)
 const hasError = ref(false)
 const activeSrc = ref('')
 const imageStage = ref<'primary' | 'fallback' | 'failed'>('primary')
@@ -57,10 +58,11 @@ const viewportRootMargin = computed(() => viewportPriorityOptions?.value.heavyBl
 const showImage = computed(() => !props.node.loading && imageStage.value !== 'failed' && activeSrc.value.length > 0)
 const showError = computed(() => imageStage.value === 'failed')
 
-// Shimmer overlay while waiting to enter viewport or finish downloading.
+// Keep the placeholder through viewport deferral and downloading.
 const showShimmer = computed(() => (
-  !useEagerImagePath.value
-  || (shouldDeferImageRequest.value && !viewportReady.value)
+  streamingPlaceholder.value
+  || !useEagerImagePath.value
+  || shouldDeferImageRequest.value
 ) && !imageLoaded.value && !hasError.value && imageStage.value !== 'failed' && activeSrc.value.length > 0)
 const lifecycleIndexKey = computed(() => {
   return resolveLifecycleIndexKey(props, attrs)
@@ -158,6 +160,7 @@ function handleImageError() {
 
 function handleImageLoad() {
   imageLoaded.value = true
+  streamingPlaceholder.value = false
   hasError.value = false
   emit('load', displaySrc.value)
   scheduleLifecycleHeightReport()
@@ -179,6 +182,7 @@ watch(
     hasError.value = false
 
     if (props.node.loading) {
+      streamingPlaceholder.value = true
       activeSrc.value = safeNodeSrc.value
       imageStage.value = 'primary'
       return
@@ -290,6 +294,7 @@ onBeforeUnmount(() => {
       :title="String(props.node.title ?? props.node.alt ?? '')"
       class="image-node__img"
       :class="{
+        'has-placeholder': node.loading || showShimmer,
         'is-loading': !useEagerImagePath && !imageLoaded,
         'is-loaded': useEagerImagePath || imageLoaded,
         'has-natural-size': imageLoaded,
@@ -306,22 +311,8 @@ onBeforeUnmount(() => {
     >
 
     <span
-      v-if="node.loading && !hasError"
+      v-if="(node.loading || showShimmer) && !hasError"
       class="image-placeholder"
-    >
-      <template v-if="props.usePlaceholder">
-        <slot name="placeholder" :node="props.node" :display-src="displaySrc" :image-loaded="imageLoaded" :has-error="hasError" :fallback-src="props.fallbackSrc" :lazy="props.lazy">
-          <span class="image-shimmer" />
-        </slot>
-      </template>
-      <template v-else>
-        <span class="image-node__raw-text">{{ node.raw }}</span>
-      </template>
-    </span>
-
-    <span
-      v-if="showShimmer && !node.loading"
-      class="image-shimmer-overlay"
     >
       <template v-if="props.usePlaceholder">
         <slot name="placeholder" :node="props.node" :display-src="displaySrc" :image-loaded="imageLoaded" :has-error="hasError" :fallback-src="props.fallbackSrc" :lazy="props.lazy">
@@ -386,19 +377,10 @@ onBeforeUnmount(() => {
   vertical-align: middle;
 }
 
-.image-shimmer-overlay {
+.image-node__img.has-placeholder {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: hsl(var(--ms-muted));
-  overflow: hidden;
-}
-
-.image-shimmer-overlay .image-shimmer {
-  width: 100%;
-  height: 100%;
+  opacity: 0;
 }
 
 .image-shimmer {

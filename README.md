@@ -623,7 +623,9 @@ Parse hooks example (match server + client):
 
 ## Support the project
 
-If markstream-vue helps your work, you can support ongoing maintenance with one of these QR codes.
+If markstream-vue helps your work, you can support ongoing maintenance via [GitHub Sponsors](https://github.com/sponsors/Simon-He95) or one of these QR codes.
+
+[![Sponsor on GitHub](https://img.shields.io/badge/-Sponsor-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Simon-He95)
 
 | Alipay | WeChat Pay |
 | --- | --- |

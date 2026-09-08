@@ -48,8 +48,9 @@ hero:
 
 <SupportQRCodes
   title="支持 Markstream"
-  description="如果 Markstream 对你的工作有帮助，欢迎通过支付宝或微信支持项目的持续维护。"
+  description="如果 Markstream 对你的工作有帮助，欢迎通过 GitHub Sponsors、支付宝或微信支持项目的持续维护。"
   note="感谢你的支持，这会帮助文档、演示和包维护持续迭代。"
+  sponsor-label="在 GitHub 上赞助"
   alipay-label="支付宝"
   wechat-label="微信收款"
 />

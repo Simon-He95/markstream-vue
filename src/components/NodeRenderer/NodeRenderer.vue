@@ -5809,6 +5809,20 @@ function buildRenderedItemSignature(node: ParsedNode, index: number, globalSigna
   return [index, (node as { loading?: unknown }).loading, estimatedHeight, globalSignature]
 }
 
+const footnoteOccurrences = computed(() => {
+  const counts = new Map<string, number>()
+  const occurrences = new Map<number, number>()
+  parsedNodes.value.forEach((node, index) => {
+    if (node.type !== 'footnote')
+      return
+    const id = (node as FootnoteNodeData).id
+    const occurrence = counts.get(id) ?? 0
+    occurrences.set(index, occurrence)
+    counts.set(id, occurrence + 1)
+  })
+  return occurrences
+})
+
 /**
  * Build (or reuse from the WeakMap cache) the render item for one node.
  * The per-node signature tracks index, loading, estimated height and the
@@ -5940,9 +5954,7 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
   let nodeIdentity: string | number = item.index
   if (node.type === 'footnote' && component === FootnoteNode) {
     const id = (node as FootnoteNodeData).id
-    const occurrence = parsedNodes.value.slice(0, item.index)
-      .filter(previous => previous.type === 'footnote' && (previous as FootnoteNodeData).id === id)
-      .length
+    const occurrence = footnoteOccurrences.value.get(item.index)!
     nodeIdentity = `footnote-${id}-${occurrence}`
   }
   const indexKey = `${indexPrefix.value}-${nodeIdentity}`

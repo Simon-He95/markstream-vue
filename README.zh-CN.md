@@ -175,7 +175,9 @@ npx skills add git@github.com:Simon-He95/markstream-vue.git
 
 ## 支持项目
 
-如果 markstream-vue 对你的工作有帮助，欢迎通过下面的收款码支持项目的持续维护。
+如果 markstream-vue 对你的工作有帮助，欢迎通过 [GitHub Sponsors](https://github.com/sponsors/Simon-He95) 或下面的收款码支持项目的持续维护。
+
+[![在 GitHub 上赞助](https://img.shields.io/badge/-Sponsor-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Simon-He95)
 
 | 支付宝 | 微信收款 |
 | --- | --- |

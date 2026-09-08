@@ -5,11 +5,15 @@ interface Props {
   title: string
   description: string
   note?: string
+  sponsorUrl?: string
+  sponsorLabel?: string
   alipayLabel?: string
   wechatLabel?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  sponsorUrl: 'https://github.com/sponsors/Simon-He95',
+  sponsorLabel: 'Sponsor on GitHub',
   alipayLabel: 'Alipay',
   wechatLabel: 'WeChat Pay',
 })
@@ -27,6 +31,25 @@ const wechatSrc = withBase('/sponsor/weixin.jpg')
       <p class="support-qrs__description">
         {{ props.description }}
       </p>
+
+      <a
+        class="support-qrs__sponsor-btn"
+        :href="props.sponsorUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <svg
+          class="support-qrs__sponsor-icon"
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+        >
+          <path
+            d="M8 14.25l.345.666a.75.75 0 0 1-.69 0l-.008-.004-.018-.01a7.152 7.152 0 0 1-.31-.17 15.848 15.848 0 0 1-1.794-1.238C4.005 11.81 2 9.983 2 7.5 2 5.088 3.827 3 6.25 3c.72 0 1.393.2 1.975.545.582-.345 1.255-.545 1.975-.545C12.673 3 14.5 5.088 14.5 7.5c0 2.483-2.005 4.317-3.515 5.494a15.848 15.848 0 0 1-1.794 1.238 7.152 7.152 0 0 1-.31.17l-.018.01-.008.004Z"
+            fill="currentColor"
+          />
+        </svg>
+        {{ props.sponsorLabel }}
+      </a>
     </div>
 
     <div class="support-qrs__grid">
@@ -93,6 +116,35 @@ const wechatSrc = withBase('/sponsor/weixin.jpg')
   line-height: 1.7;
 }
 
+.support-qrs__sponsor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.15rem;
+  padding: 0.55rem 1.35rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ea4aaa, #db61a2);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 8px 20px rgba(219, 97, 162, 0.32);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.support-qrs__sponsor-btn:hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px rgba(219, 97, 162, 0.42);
+}
+
+.support-qrs__sponsor-icon {
+  width: 1.05em;
+  height: 1.05em;
+  flex-shrink: 0;
+}
+
 .support-qrs__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -157,6 +209,10 @@ const wechatSrc = withBase('/sponsor/weixin.jpg')
 .dark .support-qrs__card {
   background: rgba(15, 23, 42, 0.78);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.dark .support-qrs__sponsor-btn {
+  box-shadow: 0 10px 28px rgba(219, 97, 162, 0.4);
 }
 
 .dark .support-qrs__image-frame {

@@ -48,8 +48,9 @@ The showcase cards below replay their markdown as a live token stream through `m
 
 <SupportQRCodes
   title="Support Markstream"
-  description="If Markstream helps your work, you can support ongoing maintenance with Alipay or WeChat Pay."
+  description="If Markstream helps your work, you can support ongoing maintenance on GitHub Sponsors, or with Alipay / WeChat Pay."
   note="Thank you for helping keep the docs, demos, and package maintenance moving."
+  sponsor-label="Sponsor on GitHub"
   alipay-label="Alipay"
   wechat-label="WeChat Pay"
 />

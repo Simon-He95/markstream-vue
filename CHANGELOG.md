@@ -1,3 +1,33 @@
+## [2.0.9](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.8...markstream-vue@2.0.9) (2026-09-08)
+
+
+### Bug Fixes
+
+* **parser:** preserve cold streaming linkify initialization ([4479403](https://github.com/Simon-He95/markstream-vue/commit/4479403310113f79f43e32c638469e3d849107b5))
+* **playground:** release stale restore anchors on explicit scroll ([84ec202](https://github.com/Simon-He95/markstream-vue/commit/84ec202cb2d942f333ee474d2dcb683f07f43dff))
+* **virtual-scroll:** cancel reconciliation when restore token is revoked ([4344246](https://github.com/Simon-He95/markstream-vue/commit/4344246070396b490ba6856ef95c4097acae2bb2))
+
+
+### Performance Improvements
+
+* **parser:** skip link-free inline candidates ([2f3ea6f](https://github.com/Simon-He95/markstream-vue/commit/2f3ea6f1e3db36513578d71012419409743fa338))
+* reduce CPU cost of source diff previews ([5afe95c](https://github.com/Simon-He95/markstream-vue/commit/5afe95c04dafc788774c949f46d97bdf1b59659e))
+* **vue:** reuse streaming descendants and history height signatures ([ba1a829](https://github.com/Simon-He95/markstream-vue/commit/ba1a8293c0d023dcc14d14d719f0df9c99a6453c))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.15`
+* `markstream-core@2.0.9`
+* `markstream-vue@2.0.9`
+* `markstream-react@2.0.9`
+* `markstream-octane@2.0.9`
+* `markstream-svelte@2.0.9`
+* `markstream-angular@2.0.9`
+* `markstream-vue2@2.0.9`
+
+
+
 ## [2.0.8](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.7...markstream-vue@2.0.8) (2026-09-05)
 
 

@@ -2645,6 +2645,10 @@ async function replaceVisibleHugeMessageSameShape() {
 }
 
 async function scrollToRatio(ratio: number) {
+  clearThreadRestoreTargetTimer(activeThreadId.value)
+  threadRestoreTargets.delete(activeThreadId.value)
+  await nextTick()
+
   const max = Math.max(0, totalHeight.value - viewportHeight.value)
   applyOuterScrollTop(max * Math.max(0, Math.min(1, ratio)))
   expectedScrollTop = scrollTop.value

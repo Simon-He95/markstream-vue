@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
+import MarkdownRender from '../src/exports'
 import { flushAll } from './setup/flush-all'
 
 vi.mock('../src/exports', async () => {
@@ -160,4 +161,29 @@ describe('playground /virtual-scroll shell smoke', () => {
 
     wrapper.unmount()
   }, 10000)
+
+  it('releases the previous restore anchor when explicitly scrolling', async () => {
+    const wrapper = mount(VirtualScrollPage, {
+      attachTo: document.body,
+    })
+
+    try {
+      await flushAll()
+      const api = window.__markstreamVirtualScrollLab!
+      await api.replaceVisibleHugeMessageSameShape()
+
+      expect(wrapper.findAllComponents(MarkdownRender).some(renderer =>
+        renderer.props('virtualScroll')?.restoreAnchor,
+      )).toBe(true)
+
+      await api.scrollToRatio(0)
+
+      expect(wrapper.findAllComponents(MarkdownRender).some(renderer =>
+        renderer.props('virtualScroll')?.restoreAnchor,
+      )).toBe(false)
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
 })

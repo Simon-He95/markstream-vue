@@ -481,11 +481,11 @@ watch(
 )
 
 watch(
-  [renderContent, () => props.nodes, requestedFinal],
-  ([content, nodes, finalRequested]) => {
+  [renderContent, () => props.nodes, effectiveFinal],
+  ([content, nodes, finalRendered]) => {
     const nextContent = content ?? ''
 
-    if (nodes?.length || finalRequested === true) {
+    if (nodes?.length || finalRendered === true) {
       clearContentStreamingTailActive()
       continuousStreamingObserved.value = false
       previousContentStreamValue = nextContent
@@ -4487,7 +4487,15 @@ function scheduleFinalHeightConvergence() {
   }
 }
 
-function setNodeContentRef(index: number, el: HTMLElement | null) {
+// Deferral controls initial mounting; moving a mounted key must not hide it again.
+const mountedNodeKeys = new Set<string>()
+
+function setNodeContentRef(index: number, key: string, el: HTMLElement | null) {
+  if (el)
+    mountedNodeKeys.add(key)
+  else
+    mountedNodeKeys.delete(key)
+
   if (el) {
     const node = parsedNodes.value[index]
     const registered = nodeContentRegistration.get(index)
@@ -5929,9 +5937,14 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
     : undefined
   const loading = (node as unknown as { loading?: unknown }).loading
   // Footnotes move as body blocks arrive; inline footnotes can share parser ids.
-  const nodeIdentity = node.type === 'footnote' && component === FootnoteNode
-    ? `footnote-${(node as FootnoteNodeData).id}-${parsedNodes.value.slice(0, item.index).filter(node => node.type === 'footnote').length}`
-    : item.index
+  let nodeIdentity: string | number = item.index
+  if (node.type === 'footnote' && component === FootnoteNode) {
+    const id = (node as FootnoteNodeData).id
+    const occurrence = parsedNodes.value.slice(0, item.index)
+      .filter(previous => previous.type === 'footnote' && (previous as FootnoteNodeData).id === id)
+      .length
+    nodeIdentity = `footnote-${id}-${occurrence}`
+  }
   const indexKey = `${indexPrefix.value}-${nodeIdentity}`
   const baseNodeProps = {
     node,
@@ -6800,8 +6813,8 @@ onBeforeUnmount(() => {
           :data-node-type="item.node.type"
         >
           <div
-            v-if="shouldRenderNode(item.index)"
-            :ref="el => setNodeContentRef(item.index, el as HTMLElement | null)"
+            v-if="mountedNodeKeys.has(item.vnodeKey) || shouldRenderNode(item.index)"
+            :ref="el => setNodeContentRef(item.index, item.vnodeKey, el as HTMLElement | null)"
             class="node-content"
           >
             <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->

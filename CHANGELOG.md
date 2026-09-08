@@ -1,3 +1,23 @@
+## [2.0.10](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.9...markstream-vue@2.0.10) (2026-09-08)
+
+
+### Bug Fixes
+
+* preserve streamed footnotes and image placeholders ([1a38ab8](https://github.com/Simon-He95/markstream-vue/commit/1a38ab812c99b9c19431b7673ec2105dbffb32ec))
+* retain mounted nodes through streaming completion ([66dc221](https://github.com/Simon-He95/markstream-vue/commit/66dc2214821781a2cfa39067fa1b29922494cc7c))
+
+
+### Features
+
+* **playground:** add estimated TPS stream simulation ([8ebe26d](https://github.com/Simon-He95/markstream-vue/commit/8ebe26d7ff5fb17894835a8e296e459cc1e81dd2))
+
+
+### Performance Improvements
+
+* compute footnote occurrences once per parse ([6be1046](https://github.com/Simon-He95/markstream-vue/commit/6be1046fe911f8ed8697cbd60c31a753be15af8c))
+
+
+
 ## [2.0.9](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.8...markstream-vue@2.0.9) (2026-09-08)
 
 

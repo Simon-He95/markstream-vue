@@ -12,6 +12,7 @@ const variants = process.env.MARKSTREAM_BENCHMARK_BASELINE_ROOT
   ? [path.resolve(process.env.MARKSTREAM_BENCHMARK_BASELINE_ROOT), process.cwd()]
   : [process.cwd()]
 const screenshots = []
+const structuralScreenshots = []
 const chrome = process.env.PLAYWRIGHT_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const browser = await chromium.launch(existsSync(chrome) ? { executablePath: chrome, headless: true } : { channel: 'chrome', headless: true })
 try {
@@ -21,7 +22,7 @@ try {
       const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 })
       const errors = []
       page.on('pageerror', error => errors.push(error.message))
-      await page.goto(`http://127.0.0.1:${port}/?renderer=markstream&variant=incremental-nosmooth&case=custom-html`)
+      await page.goto(`http://127.0.0.1:${port}/?renderer=markstream&variant=incremental-nosmooth&case=inline-rich`)
       await page.waitForFunction(() => window.__ready)
       const result = await page.evaluate(async () => {
         let heading
@@ -67,6 +68,52 @@ try {
       assert.equal(result.paragraphPreserved, true)
       assert.equal(result.parentScopeInherited, true)
       await page.evaluate(() => window.getSelection().removeAllRanges())
+      const structuralSelections = await page.evaluate(async () => {
+        const results = []
+        for (const phase of [
+          { seed: '- **Stable** selected item\n- growing ', selector: 'li', text: 'Stable selected item', append: 'more ' },
+          { seed: '| Name | Value |\n| --- | --- |\n| Stable cell | first |\n| growing ', selector: 'tbody td', text: 'Stable cell', append: 'more ' },
+        ]) {
+          let selectedNode
+          const select = setInterval(() => {
+            const node = document.querySelector('.vue-host')?.querySelector(phase.selector)
+            if (selectedNode || node?.textContent !== phase.text)
+              return
+            selectedNode = node
+            const range = document.createRange()
+            range.selectNodeContents(node)
+            window.getSelection().removeAllRanges()
+            window.getSelection().addRange(range)
+          }, 10)
+          try {
+            await window.__runBenchmark({
+              chunks: [phase.seed, ...Array.from({ length: 20 }, () => phase.append)],
+              intervalMs: 40,
+              endMarker: 'STRUCTURAL_SELECTION_END',
+              timeoutMs: 10000,
+              stableFrames: 4,
+            })
+            results.push({
+              expected: phase.text,
+              selected: window.getSelection().toString(),
+              nodePreserved: Boolean(selectedNode && selectedNode === document.querySelector('.vue-host')?.querySelector(phase.selector)),
+            })
+          }
+          finally {
+            clearInterval(select)
+            window.getSelection().removeAllRanges()
+          }
+        }
+        return results
+      })
+      for (const result of structuralSelections) {
+        assert.equal(result.selected, result.expected)
+        assert.equal(result.nodePreserved, true)
+      }
+      mkdirSync(outputDir, { recursive: true })
+      structuralScreenshots.push(await page.locator('.vue-host').screenshot({ path: path.join(outputDir, `${index}-table.png`), animations: 'disabled' }))
+      await page.goto(`http://127.0.0.1:${port}/?renderer=markstream&variant=incremental-nosmooth&case=custom-html`)
+      await page.waitForFunction(() => window.__ready)
       await page.evaluate(async () => window.__runBenchmark({
         chunks: ['# Visual parity\n\n**Strong**, _emphasis_, ~~removed~~, [link](https://example.com), and `code`.\n\n> Quoted paragraph.\n\n- first\n- second\n\n| Name | Value |\n| --- | --- |\n| A | B |\n\n<audit-widget>\n\n**Custom** child paragraph.\n\n</audit-widget>\n\n```ts\nconst answer = 42\n```\n'],
         intervalMs: 16,
@@ -86,6 +133,7 @@ try {
     }
   }
   if (screenshots.length === 2) {
+    assert.equal(structuralScreenshots[0].equals(structuralScreenshots[1]), true, 'Baseline and candidate growing-table screenshots differ')
     assert.equal(screenshots[0].equals(screenshots[1]), true, 'Baseline and candidate screenshots differ')
     console.log('Baseline and candidate final screenshots are byte-identical.')
   }

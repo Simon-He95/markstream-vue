@@ -844,6 +844,32 @@ function compareCheapParsedNodesIfSafe(
   return true
 }
 
+function reuseParsedDescendants(previous: ParsedNode, next: ParsedNode, depth = 0) {
+  if (previous === next || previous.type !== next.type || depth >= MAX_SIGNATURE_DEPTH)
+    return
+
+  const previousRecord = previous as Record<string, unknown>
+  const nextRecord = next as Record<string, unknown>
+  for (const key of ['children', 'items', 'rows', 'cells']) {
+    const previousChildren = previousRecord[key]
+    const nextChildren = nextRecord[key]
+    if (!Array.isArray(previousChildren) || !Array.isArray(nextChildren))
+      continue
+
+    const limit = Math.min(previousChildren.length, nextChildren.length)
+    for (let index = 0; index < limit; index++) {
+      const previousChild = previousChildren[index]
+      const nextChild = nextChildren[index]
+      if (previousChild === nextChild || !isParsedNodeLike(previousChild) || !isParsedNodeLike(nextChild))
+        continue
+      if (compareCheapParsedNodesIfSafe(previousChild, nextChild) === true)
+        nextChildren[index] = previousChild
+      else
+        reuseParsedDescendants(previousChild, nextChild, depth + 1)
+    }
+  }
+}
+
 function areTopLevelNodesStable(previous: ParsedNode | undefined, next: ParsedNode | undefined) {
   if (!previous || !next)
     return false
@@ -1369,6 +1395,17 @@ export function useMarkdownParsing(
     const reuseStart = collectPerformanceMetrics
       ? getNow()
       : 0
+    if (
+      canReuseParsedNodes
+      && !parserHasCustomExtensions
+      && !hasCustomComponents
+      && !mergedParseOptions.value.preTransformTokens
+      && !mergedParseOptions.value.postTransformTokens
+    ) {
+      const limit = Math.min(previousParsedNodes.length, nextParsed.length)
+      for (let index = 0; index < limit; index++)
+        reuseParsedDescendants(previousParsedNodes[index]!, nextParsed[index]!)
+    }
     const signatureTiming: ParsedNodeSignatureTimingMetrics | undefined = collectPerformanceMetrics
       ? {
           signatureMs: 0,

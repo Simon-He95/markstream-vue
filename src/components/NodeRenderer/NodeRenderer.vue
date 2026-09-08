@@ -677,6 +677,7 @@ provideMathBlockMinHeightCache(mathBlockMinHeightCache)
 const customComponentsMap = useCustomNodeComponents(() => rendererProps.customId)
 const {
   effectiveCustomHtmlTagsSet,
+  mdInstance,
   mergedParseOptions,
   parsedNodes,
   getParsedNodesDirtyStartIndex,
@@ -2829,16 +2830,38 @@ function stableHeightSignatureValue(
   }
 }
 
+let nodeHeightCacheSignatureRevision = -1
+const nodeHeightCacheSignatures = new Map<number, string>()
+
 let virtualContentHashRevision = -1
 let virtualContentHashCache = ''
 let virtualContentHashPrefixHashes: number[] = [2166136261]
 
 function getNodeHeightCacheSignature(index: number) {
   const node = parsedNodes.value[index]
+  const revision = getParsedNodesRevision()
+  if (nodeHeightCacheSignatureRevision !== revision) {
+    nodeHeightCacheSignatureRevision = revision
+    nodeHeightCacheSignatures.clear()
+  }
   if (!node)
     return ''
 
-  return hashVirtualString(stableHeightSignatureValue(node))
+  // Caller-owned ASTs and extension hooks may mutate nodes between captures.
+  const canCache = !props.nodes?.length
+    && !rendererProps.parseOptions
+    && !rendererProps.customMarkdownIt
+    && !(mdInstance.value as any).__markstreamHasCustomParserExtensions
+    && Object.keys(customComponentsMap.value).length === 0
+  if (!canCache)
+    return hashVirtualString(stableHeightSignatureValue(node))
+
+  const cached = nodeHeightCacheSignatures.get(index)
+  if (cached !== undefined)
+    return cached
+  const signature = hashVirtualString(stableHeightSignatureValue(node))
+  nodeHeightCacheSignatures.set(index, signature)
+  return signature
 }
 
 function hashVirtualSignatureInto(seed: number, signature: string) {

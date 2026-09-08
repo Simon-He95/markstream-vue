@@ -11,6 +11,9 @@ const candidateRoot = path.resolve(process.env.MARKSTREAM_BENCHMARK_SOURCE_ROOT 
 const outputDir = path.resolve(process.env.MARKSTREAM_PAIRS_OUTPUT_DIR || '.tmp/optimization-pairs')
 const repeats = Number(process.env.MARKSTREAM_PAIRS_REPEATS || 3)
 const suite = process.env.MARKSTREAM_PAIRS_SUITE || 'stream'
+const chatMode = process.env.MARKSTREAM_PAIRS_CHAT_MODE || 'chat-restore'
+if (!['chat-restore', 'chat-mount'].includes(chatMode))
+  throw new Error('MARKSTREAM_PAIRS_CHAT_MODE must be chat-restore or chat-mount.')
 if (!Number.isInteger(repeats) || repeats < 1)
   throw new Error('MARKSTREAM_PAIRS_REPEATS must be a positive integer.')
 if (!['stream', 'restore'].includes(suite))
@@ -40,7 +43,7 @@ try {
     ? harness.cases.map(testCase => ({ ...testCase, mode: 'stream' }))
     : [
         ...corpus.filter(testCase => (process.env.MARKSTREAM_PAIRS_RESTORE_CASES || 'nested-history,changelog,react-components').split(',').includes(testCase.id)).map(testCase => ({ ...testCase, mode: 'restore' })),
-        ...harness.createChatTranscriptCases(corpus).filter(testCase => (process.env.MARKSTREAM_PAIRS_CHAT_CASES || 'docs-chat-thread,many-message-thread').split(',').includes(testCase.id)).map(testCase => ({ ...testCase, mode: 'chat-restore' })),
+        ...harness.createChatTranscriptCases(corpus).filter(testCase => (process.env.MARKSTREAM_PAIRS_CHAT_CASES || 'docs-chat-thread,many-message-thread').split(',').includes(testCase.id)).map(testCase => ({ ...testCase, mode: chatMode })),
       ]
   if (!cases.length)
     throw new Error('No benchmark cases selected.')

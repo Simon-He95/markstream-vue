@@ -2505,6 +2505,73 @@ describe('node renderer virtual-scroll coordination', () => {
     wrapper.unmount()
   })
 
+  it('invalidates content height signatures after streaming, finalization and replacement', async () => {
+    const platform = installManualMeasurementPlatform()
+    const NodeRenderer = (await import('../src/components/NodeRenderer')).default
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: 'first paragraph',
+        final: false,
+        smoothStreaming: false,
+        fade: false,
+        viewportPriority: false,
+        virtualScroll: { enabled: true, sessionKey: 'signature-content', settleMode: 'manual' },
+      },
+    })
+    const capture = async () => {
+      await flushAll()
+      for (const el of getRootNodeContentElements(wrapper.element)) {
+        platform.heights.set(el, 40)
+        platform.resizeCallbacks.get(el)?.([], {} as ResizeObserver)
+      }
+      platform.flushFrames()
+      await nextTick()
+      await (wrapper.vm as any).forceMeasure('manual')
+      return (wrapper.vm as any).captureVirtualState()
+    }
+    const first = await capture()
+    expect(first.heightCache[0].signature).toBeTruthy()
+    expect((await capture()).heightCache).toEqual(first.heightCache)
+    await wrapper.setProps({ content: 'first paragraph grows' })
+    const appended = await capture()
+    expect(appended.heightCache[0].signature).not.toBe(first.heightCache[0].signature)
+    await wrapper.setProps({ final: true })
+    const final = await capture()
+    await wrapper.setProps({ content: 'different paragraph' })
+    const replacement = await capture()
+    expect(replacement.heightCache[0].signature).not.toBe(final.heightCache[0].signature)
+    await wrapper.setProps({ content: 'first paragraph grows' })
+    expect((await capture()).heightCache[0].signature).toBe(final.heightCache[0].signature)
+    wrapper.unmount()
+  })
+
+  it('reads in-place caller AST changes on each height cache capture', async () => {
+    const platform = installManualMeasurementPlatform()
+    const NodeRenderer = (await import('../src/components/NodeRenderer')).default
+    const node = createParagraph(1)
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        nodes: [node],
+        final: true,
+        fade: false,
+        viewportPriority: false,
+        virtualScroll: { enabled: true, sessionKey: 'signature-external', settleMode: 'manual' },
+      },
+    })
+    await flushAll()
+    const el = getRootNodeContentElements(wrapper.element)[0]!
+    platform.heights.set(el, 40)
+    platform.resizeCallbacks.get(el)?.([], {} as ResizeObserver)
+    platform.flushFrames()
+    await nextTick()
+    await (wrapper.vm as any).forceMeasure('manual')
+    const handle = wrapper.vm as any
+    const before = handle.captureVirtualState().heightCache[0].signature
+    node.children[0]!.content = 'changed without replacing the array'
+    expect(handle.captureVirtualState().heightCache[0].signature).not.toBe(before)
+    wrapper.unmount()
+  })
+
   it('caps exported virtual height cache payloads', async () => {
     const platform = installManualMeasurementPlatform()
     const NodeRenderer = (await import('../src/components/NodeRenderer')).default

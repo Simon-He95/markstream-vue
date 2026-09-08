@@ -2088,4 +2088,42 @@ stable tail
 
     scope.stop()
   })
+
+  it('preserves unchanged list items while appending to a growing list', () => {
+    const content = ref('- **first** item\n- second item')
+    const { scope, state } = createParsingState(content)
+    const before = (state.parsedNodes.value[0] as any).items[0]
+    content.value += ' grows\n- third item'
+    const after = (state.parsedNodes.value[0] as any).items
+    expect(after[0]).toBe(before)
+    expect(after[1].raw).toContain('grows')
+    expect(after).toHaveLength(3)
+    scope.stop()
+  })
+
+  it.each([
+    '- **first** item\n- second with [link](https://example.com)\n  - nested `code`\n\n  extra paragraph\n- last',
+    '| Name | Value |\n| --- | --- |\n| A | **one** |\n| B | [two](https://example.com) |',
+    '> **first** paragraph\n>\n> second _paragraph_\n>\n> - list one\n> - list two',
+    '- [reference][target]\n- second\n\n[target]: https://example.com "title"',
+  ])('matches fresh parsing at every structural streaming prefix: %s', (markdown) => {
+    const content = ref('')
+    const { final, scope, state } = createParsingState(content)
+    const md = getMarkdown('descendant-differential')
+    for (let end = 1; end <= markdown.length; end++) {
+      content.value = markdown.slice(0, end)
+      expect(state.parsedNodes.value, `prefix ${end}`).toEqual(
+        parseMarkdownToStructure(content.value, md, { final: false, streamParse: false }),
+      )
+    }
+    final.value = true
+    expect(state.parsedNodes.value).toEqual(
+      parseMarkdownToStructure(content.value, md, { final: true, streamParse: false }),
+    )
+    content.value = '- replacement'
+    expect(state.parsedNodes.value).toEqual(
+      parseMarkdownToStructure(content.value, md, { final: true, streamParse: false }),
+    )
+    scope.stop()
+  })
 })

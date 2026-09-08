@@ -1343,12 +1343,15 @@ async function prepareChatRestore(options) {
 
 async function runChatRestore(options) {
   const item = buildChatTranscript(options.caseId)
-  const prepared = preparedChatStates.get(item.id) ?? {
-    state: null,
-    summary: await prepareChatRestore(options),
-  }
-  const preparedState = prepared.state ?? preparedChatStates.get(item.id)?.state
-  if (!preparedState)
+  const coldMount = options.mode === 'chat-mount'
+  const prepared = coldMount
+    ? { state: null, summary: null }
+    : preparedChatStates.get(item.id) ?? {
+        state: null,
+        summary: await prepareChatRestore(options),
+      }
+  const preparedState = coldMount ? null : prepared.state ?? preparedChatStates.get(item.id)?.state
+  if (!coldMount && !preparedState)
     throw new Error('Missing prepared chat restore state for ' + item.id)
 
   await resetRenderer('chat', false)
@@ -1473,7 +1476,7 @@ async function runStream(options) {
 }
 
 window.__runRealCorpusBenchmark = async (options) => {
-  if (options.mode === 'chat-restore')
+  if (options.mode === 'chat-restore' || options.mode === 'chat-mount')
     return runChatRestore(options)
   if (options.mode === 'stream')
     return runStream(options)

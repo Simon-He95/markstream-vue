@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ParsedNode } from 'stream-markdown-parser'
+import type { FootnoteNode as FootnoteNodeData, ParsedNode } from 'stream-markdown-parser'
 import type { EstimatedNodeHeight } from '../../internal/heightEstimationExperiment'
 import type { CustomComponents } from '../../types'
 import type { CodeBlockPreviewPayload } from '../../types/component-props'
@@ -5928,7 +5928,11 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
     ? getCustomNodeAttrs(node as any, resolvedHtmlPolicy.value)
     : undefined
   const loading = (node as unknown as { loading?: unknown }).loading
-  const indexKey = `${indexPrefix.value}-${item.index}`
+  // Footnotes move as body blocks arrive; inline footnotes can share parser ids.
+  const nodeIdentity = node.type === 'footnote' && component === FootnoteNode
+    ? `footnote-${(node as FootnoteNodeData).id}-${parsedNodes.value.slice(0, item.index).filter(node => node.type === 'footnote').length}`
+    : item.index
+  const indexKey = `${indexPrefix.value}-${nodeIdentity}`
   const baseNodeProps = {
     node,
     loading,
@@ -5982,7 +5986,7 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
     slotContent: String((node as any).content ?? ''),
     isCodeBlock: node.type === 'code_block',
     indexKey,
-    vnodeKey: `${rendererSessionIdentity.value}\u0000${item.index}\u0000${node.type}`,
+    vnodeKey: `${rendererSessionIdentity.value}\u0000${nodeIdentity}\u0000${node.type}`,
   }
   renderedItemCache.set(item.node, { signature: cacheSignature, item: renderedItem })
   return renderedItem

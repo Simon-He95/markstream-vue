@@ -161,7 +161,7 @@ describe('final restore heavy-node deferral', () => {
       expect(target.exists()).toBe(true)
       expect(countImageRequests()).toBe(0)
       expect(image.attributes('src')).toBeUndefined()
-      expect(wrapper.find('.image-shimmer-overlay').exists()).toBe(true)
+      expect(wrapper.find('.image-placeholder').exists()).toBe(true)
       expect(target.attributes('data-markstream-viewport-pending')).toBe('true')
 
       await drainIdleCallbacks()
@@ -174,6 +174,7 @@ describe('final restore heavy-node deferral', () => {
 
       expect(countImageRequests()).toBe(1)
       expect(image.attributes('src')).toBe('https://example.com/history.png')
+      expect(wrapper.find('.image-placeholder').exists()).toBe(true)
       expect(target.attributes('data-markstream-viewport-pending')).toBeUndefined()
     }
     finally {

@@ -305,8 +305,8 @@ exports[`markdownRender node e2e coverage > renders footnote nodes 1`] = `
                 <div data-v-8dfe8a80="" class="node-content">
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
                   <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="footnote-markdown-renderer-1-0-0"><span data-v-a84b8095="">Footnote explanation</span><span data-v-a84b8095=""></span>
-                      <!--v-if--></span><a data-v-31914872="" data-v-93ee5c2d="" class="footnote-anchor text-sm hover:underline cursor-pointer" href="#fnref-1" title="返回引用 1" index-key="footnote-markdown-renderer-1-0-1"> ↩︎ </a>
+                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="footnote-markdown-renderer-footnote-1-0-0-0"><span data-v-a84b8095="">Footnote explanation</span><span data-v-a84b8095=""></span>
+                      <!--v-if--></span><a data-v-31914872="" data-v-93ee5c2d="" class="footnote-anchor text-sm hover:underline cursor-pointer" href="#fnref-1" title="返回引用 1" index-key="footnote-markdown-renderer-footnote-1-0-0-1"> ↩︎ </a>
                     </p>
                   </transition-stub>
                 </div>
@@ -402,7 +402,11 @@ exports[`markdownRender node e2e coverage > renders image links with relative ta
   <div data-v-8dfe8a80="" class="node-slot" data-node-index="0" data-node-type="paragraph">
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
-      <p data-v-93ee5c2d="" data-v-8dfe8a80="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><a data-v-994bfd08="" data-v-93ee5c2d="" class="link-node" href="https://www.npmjs.com/package/markstream-vue" title="" aria-label="Link: https://www.npmjs.com/package/markstream-vue" aria-hidden="false" target="_blank" rel="noopener noreferrer" style="--underline-height: 2px; --underline-bottom: -3px; --underline-opacity: 0.35; --underline-rest-opacity: 0.175; --underline-duration: 1.6s; --underline-timing: ease-in-out; --underline-iteration: infinite;"><span data-v-4ff2ac62="" data-v-994bfd08="" class="image-node-container" index-key="markdown-renderer-0-0-0"><img data-v-4ff2ac62="" alt="NPM version" title="NPM version" class="image-node__img is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="NPM version" src="https://img.shields.io/npm/v/markstream-vue?color=a1b858&amp;label="><!--v-if--><!--v-if--><!--v-if--></span></a> <a data-v-994bfd08="" data-v-93ee5c2d="" class="link-node" href="README.zh-CN.md" title="" aria-label="Link: README.zh-CN.md" aria-hidden="false" style="--underline-height: 2px; --underline-bottom: -3px; --underline-opacity: 0.35; --underline-rest-opacity: 0.175; --underline-duration: 1.6s; --underline-timing: ease-in-out; --underline-iteration: infinite;"><span data-v-4ff2ac62="" data-v-994bfd08="" class="image-node-container" index-key="markdown-renderer-0-2-0"><img data-v-4ff2ac62="" alt="中文版" title="中文版" class="image-node__img is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="中文版" src="https://img.shields.io/badge/docs-%E4%B8%AD%E6%96%87%E6%96%87%E6%A1%A3-blue"><!--v-if--><!--v-if--><!--v-if--></span></a></p>
+      <p data-v-93ee5c2d="" data-v-8dfe8a80="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><a data-v-994bfd08="" data-v-93ee5c2d="" class="link-node" href="https://www.npmjs.com/package/markstream-vue" title="" aria-label="Link: https://www.npmjs.com/package/markstream-vue" aria-hidden="false" target="_blank" rel="noopener noreferrer" style="--underline-height: 2px; --underline-bottom: -3px; --underline-opacity: 0.35; --underline-rest-opacity: 0.175; --underline-duration: 1.6s; --underline-timing: ease-in-out; --underline-iteration: infinite;"><span data-v-4ff2ac62="" data-v-994bfd08="" class="image-node-container" index-key="markdown-renderer-0-0-0"><img data-v-4ff2ac62="" alt="NPM version" title="NPM version" class="image-node__img has-placeholder is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="NPM version" src="https://img.shields.io/npm/v/markstream-vue?color=a1b858&amp;label="><span data-v-4ff2ac62="" class="image-placeholder"><span data-v-4ff2ac62="" class="image-shimmer"></span></span>
+          <!--v-if--></span>
+        </a> <a data-v-994bfd08="" data-v-93ee5c2d="" class="link-node" href="README.zh-CN.md" title="" aria-label="Link: README.zh-CN.md" aria-hidden="false" style="--underline-height: 2px; --underline-bottom: -3px; --underline-opacity: 0.35; --underline-rest-opacity: 0.175; --underline-duration: 1.6s; --underline-timing: ease-in-out; --underline-iteration: infinite;"><span data-v-4ff2ac62="" data-v-994bfd08="" class="image-node-container" index-key="markdown-renderer-0-2-0"><img data-v-4ff2ac62="" alt="中文版" title="中文版" class="image-node__img has-placeholder is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="中文版" src="https://img.shields.io/badge/docs-%E4%B8%AD%E6%96%87%E6%96%87%E6%A1%A3-blue"><span data-v-4ff2ac62="" class="image-placeholder"><span data-v-4ff2ac62="" class="image-shimmer"></span></span>
+          <!--v-if--></span>
+        </a></p>
     </div>
   </div>
   <!--v-if-->
@@ -416,7 +420,9 @@ exports[`markdownRender node e2e coverage > renders image node 1`] = `
   <div data-v-8dfe8a80="" class="node-slot" data-node-index="0" data-node-type="paragraph">
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
-      <p data-v-93ee5c2d="" data-v-8dfe8a80="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-4ff2ac62="" data-v-93ee5c2d="" class="image-node-container" index-key="markdown-renderer-0-0"><img data-v-4ff2ac62="" alt="Vue Logo" title="Vue Logo" class="image-node__img is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="Vue Logo" src="https://example.com/vue.png"><!--v-if--><!--v-if--><!--v-if--></span></p>
+      <p data-v-93ee5c2d="" data-v-8dfe8a80="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-4ff2ac62="" data-v-93ee5c2d="" class="image-node-container" index-key="markdown-renderer-0-0"><img data-v-4ff2ac62="" alt="Vue Logo" title="Vue Logo" class="image-node__img has-placeholder is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="Vue Logo" src="https://example.com/vue.png"><span data-v-4ff2ac62="" class="image-placeholder"><span data-v-4ff2ac62="" class="image-shimmer"></span></span>
+        <!--v-if--></span>
+      </p>
     </div>
   </div>
   <!--v-if-->
@@ -575,7 +581,9 @@ exports[`markdownRender node e2e coverage > renders single badge image with trai
   <div data-v-8dfe8a80="" class="node-slot" data-node-index="0" data-node-type="paragraph">
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
-      <p data-v-93ee5c2d="" data-v-8dfe8a80="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-4ff2ac62="" data-v-93ee5c2d="" class="image-node-container" index-key="markdown-renderer-0-0"><img data-v-4ff2ac62="" alt="License" title="License" class="image-node__img is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="License" src="https://img.shields.io/npm/l/markstream-vue"><!--v-if--><!--v-if--><!--v-if--></span></p>
+      <p data-v-93ee5c2d="" data-v-8dfe8a80="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-4ff2ac62="" data-v-93ee5c2d="" class="image-node-container" index-key="markdown-renderer-0-0"><img data-v-4ff2ac62="" alt="License" title="License" class="image-node__img has-placeholder is-loaded" fetchpriority="high" decoding="sync" tabindex="-1" aria-label="License" src="https://img.shields.io/npm/l/markstream-vue"><span data-v-4ff2ac62="" class="image-placeholder"><span data-v-4ff2ac62="" class="image-shimmer"></span></span>
+        <!--v-if--></span>
+      </p>
     </div>
   </div>
   <!--v-if-->

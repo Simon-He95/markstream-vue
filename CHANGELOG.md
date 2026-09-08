@@ -17,6 +17,18 @@
 * compute footnote occurrences once per parse ([6be1046](https://github.com/Simon-He95/markstream-vue/commit/6be1046fe911f8ed8697cbd60c31a753be15af8c))
 
 
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.16`
+* `markstream-core@2.0.10`
+* `markstream-vue@2.0.10`
+* `markstream-react@2.0.10`
+* `markstream-octane@2.0.10`
+* `markstream-svelte@2.0.10`
+* `markstream-angular@2.0.10`
+* `markstream-vue2@2.0.10`
+
+
 
 ## [2.0.9](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.8...markstream-vue@2.0.9) (2026-09-08)
 

@@ -311,10 +311,12 @@ function computeLcs(original: string[], modified: string[]): SourceLineMatch[] {
   let originalEnd = original.length - 1
   let modifiedEnd = modified.length - 1
   while (originalEnd >= start && modifiedEnd >= start && original[originalEnd] === modified[modifiedEnd]) {
-    suffix.unshift({ originalIndex: originalEnd, modifiedIndex: modifiedEnd })
+    suffix.push({ originalIndex: originalEnd, modifiedIndex: modifiedEnd })
     originalEnd--
     modifiedEnd--
   }
+
+  suffix.reverse()
 
   const originalLength = originalEnd - start + 1
   const modifiedLength = modifiedEnd - start + 1
@@ -325,12 +327,27 @@ function computeLcs(original: string[], modified: string[]): SourceLineMatch[] {
   if ((originalLength + 1) * (modifiedLength + 1) > maxCells)
     return prefix.concat(suffix)
 
+  // Intern lines once so the quadratic LCS loop only compares integer IDs.
+  const lineIds = new Map<string, number>()
+  const modifiedIds = new Uint32Array(modifiedLength)
+  for (let j = 0; j < modifiedLength; j++) {
+    const line = modified[start + j]
+    let id = lineIds.get(line)
+    if (id === undefined) {
+      id = lineIds.size + 1
+      lineIds.set(line, id)
+    }
+    modifiedIds[j] = id
+  }
+  const originalIds = new Uint32Array(originalLength)
+  for (let i = 0; i < originalLength; i++)
+    originalIds[i] = lineIds.get(original[start + i]) ?? 0
   const columns = modifiedLength + 1
   const scores = new Uint32Array((originalLength + 1) * (modifiedLength + 1))
   for (let originalIndex = originalLength - 1; originalIndex >= 0; originalIndex--) {
     for (let modifiedIndex = modifiedLength - 1; modifiedIndex >= 0; modifiedIndex--) {
       const scoreIndex = originalIndex * columns + modifiedIndex
-      if (original[start + originalIndex] === modified[start + modifiedIndex]) {
+      if (originalIds[originalIndex] === modifiedIds[modifiedIndex]) {
         scores[scoreIndex] = scores[(originalIndex + 1) * columns + modifiedIndex + 1] + 1
       }
       else {

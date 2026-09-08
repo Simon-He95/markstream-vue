@@ -140,13 +140,28 @@ export function estimateDiffStats(originalSource: string, modifiedSource: string
   else {
     const maxCells = 1_500_000
     if ((originalMiddleLength + 1) * (modifiedMiddleLength + 1) <= maxCells) {
+      // Intern lines once so the quadratic LCS loop only compares integer IDs.
+      const lineIds = new Map<string, number>()
+      const modifiedIds = new Uint32Array(modifiedMiddleLength)
+      for (let j = 0; j < modifiedMiddleLength; j++) {
+        const line = modifiedLines[start + j]
+        let id = lineIds.get(line)
+        if (id === undefined) {
+          id = lineIds.size + 1
+          lineIds.set(line, id)
+        }
+        modifiedIds[j] = id
+      }
+      const originalIds = new Uint32Array(originalMiddleLength)
+      for (let i = 0; i < originalMiddleLength; i++)
+        originalIds[i] = lineIds.get(originalLines[start + i]) ?? 0
       const columns = modifiedMiddleLength + 1
       let next = new Uint32Array(columns)
       let current = new Uint32Array(columns)
       for (let i = originalMiddleLength - 1; i >= 0; i--) {
         current[modifiedMiddleLength] = 0
         for (let j = modifiedMiddleLength - 1; j >= 0; j--) {
-          current[j] = originalLines[start + i] === modifiedLines[start + j]
+          current[j] = originalIds[i] === modifiedIds[j]
             ? next[j + 1] + 1
             : Math.max(next[j], current[j + 1])
         }

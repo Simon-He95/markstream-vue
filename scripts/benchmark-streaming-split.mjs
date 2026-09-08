@@ -509,9 +509,13 @@ async function runOnce(browser, port, rendererConfig, chunks, caseId) {
     stableFrames,
   })
   const after = await getMetrics(client)
-  const cpuProfile = cpuProfileEnabled
-    ? summarizeCpuProfile((await client.send('Profiler.stop')).profile)
-    : undefined
+  let cpuProfile
+  if (cpuProfileEnabled) {
+    const { profile } = await client.send('Profiler.stop')
+    cpuProfile = summarizeCpuProfile(profile)
+    mkdirSync(outputDir, { recursive: true })
+    writeFileSync(path.join(outputDir, `${caseId}-${rendererConfig.id}-${Date.now()}.cpuprofile`), JSON.stringify(profile))
+  }
   const trace = traceEnabled ? await stopTracing(client) : {}
   const correctness = await page.evaluate(options => window.__verifyBenchmarkResult(options), {
     expectedContent,

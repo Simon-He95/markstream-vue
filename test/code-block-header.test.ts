@@ -20,6 +20,12 @@ describe('code block lazy header layout', () => {
     expect(stats.added).toBe(3) // d, y, z
   })
 
+  it.each(['\n', '\r\n', '\r'])('distinguishes repeated, empty, and Unicode lines (%j)', (newline) => {
+    const original = ['old', '重复', '', '重复', 'end-old', ''].join(newline)
+    const modified = ['new', '重复', '重复', '', 'end-new', ''].join(newline)
+    expect(estimateDiffStats(original, modified)).toEqual({ removed: 3, added: 3 })
+  })
+
   it('returns a stable result for the same input pair (memo)', () => {
     const original = Array.from({ length: 40 }, (_, index) => `line ${index}`).join('\n')
     const modified = `${original}\ntail added`

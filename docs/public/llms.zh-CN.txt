@@ -5,7 +5,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 ## Vue 标准用户接入
 
 ```bash
-pnpm add markstream-vue
+pnpm add markstream-vue@next
 ```
 
 ```vue
@@ -79,7 +79,7 @@ Vue 可选 peer：
 
 Vue / Nuxt:
 ```txt
-pnpm add markstream-vue
+pnpm add markstream-vue@next
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 ```

@@ -5,7 +5,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 ## Canonical Vue Consumer Recipe
 
 ```bash
-pnpm add markstream-vue
+pnpm add markstream-vue@next
 ```
 
 ```vue
@@ -79,7 +79,7 @@ Framework docs:
 
 Vue / Nuxt:
 ```txt
-pnpm add markstream-vue
+pnpm add markstream-vue@next
 import MarkdownRender from 'markstream-vue'
 import 'markstream-vue/index.css'
 ```

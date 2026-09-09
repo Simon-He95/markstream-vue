@@ -1,3 +1,24 @@
+## [2.0.11](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.10...markstream-vue@2.0.11) (2026-09-09)
+
+
+### Bug Fixes
+
+* preserve streaming text fade continuity ([3079387](https://github.com/Simon-He95/markstream-vue/commit/3079387dbadc0d13781ad3fb616601e40f0489d1))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.16`
+* `markstream-core@2.0.11`
+* `markstream-vue@2.0.11`
+* `markstream-react@2.0.11`
+* `markstream-octane@2.0.11`
+* `markstream-svelte@2.0.11`
+* `markstream-angular@2.0.11`
+* `markstream-vue2@2.0.11`
+
+
+
 ## [2.0.10](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.9...markstream-vue@2.0.10) (2026-09-08)
 
 

@@ -46,6 +46,8 @@ import 'markstream-vue/index.css'
 
 ## 最小 Vue 聊天消息
 
+`mode="chat"` 默认关闭 fade 以减少动画工作。需要文字渐显时，在下面的示例中添加 `fade` 即可；Vue 3 支持它与内置平滑出字同时开启。
+
 ```vue
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'
@@ -62,7 +64,6 @@ defineProps<{
     mode="chat"
     :content="content"
     :final="isDone"
-    :fade="false"
   />
 </template>
 ```
@@ -107,7 +108,6 @@ onBeforeUnmount(() => {
     :content="content"
     :final="isDone"
     smooth-streaming="auto"
-    :fade="false"
   />
 </template>
 ```

@@ -121,7 +121,7 @@ Diagnostic Studio 场景跨版本不可比：1.0 用普通 `markdown` 渲染模�
 
 有些 LLM 会一次推送大量文本，导致前端表现为“卡顿一会儿再一次性显示”。想让用户始终看到稳定、连续的输出，可以：
 
-- **需要光标时显式开启 `typewriter`，并在 smooth streaming 期间关闭 `fade`**。`smooth-streaming="auto"` 已经在内容层完成 pacing；再叠加 `fade` 会让每个小提交都重新触发 opacity 动画，容易产生闪烁。`fade=true` 更适合完整历史消息或静态内容一次性进入的场景。
+- **需要光标时显式开启 `typewriter`，fade 与 pacing 独立选择。** 在 Vue 3（含 Nuxt）中，`smooth-streaming` 控制出字节奏，`fade` 控制透明度，两者可以同时开启。`mode="chat"` 保留 `fade=false` 作为轻量默认值；需要文字渐显时添加 `fade`，更看重动画成本时保持关闭。稳定批次避免了追加时重启动画，但 CSS 动画和额外 DOM 仍有成本。请用实际负载测量两者同时开启的开销；单独测 fade 的结果不代表组合成本。
 - **用 smooth streaming options 调整文本 pacing**：后端一次推送大段文本时，优先调整 `smooth-streaming-options`。`initialRenderBatchSize` / `renderBatchSize` / `renderBatchDelay` 这类 batching props 主要控制关闭虚拟化时的节点挂载节奏，不是主要的文本 pacing 控制。
 - **在上游做节流或拆包**：把后端一次性推送的大段文本按段落拆分，或用 50–100 ms 的防抖再更新 `content`，减少一次性 diff。
 - **保留延迟可见渲染**：继续启用 `deferNodesUntilVisible` / `viewportPriority`，避免 Mermaid、增强代码 surface 这类重型节点阻塞文字流。

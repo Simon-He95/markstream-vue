@@ -39,6 +39,14 @@ const interval = setInterval(() => {
 </template>
 ```
 
+## 打字光标与追加淡入
+
+`typewriter` 只控制光标，`smooth-streaming` 调度出字节奏，`fade` 控制文字渐显。Vue 3 可以同时使用后两者；`mode="chat"` 默认关闭 fade 以减少动画成本，需要渐显时显式开启：
+
+```vue
+<MarkdownRender mode="chat" :content="content" :final="isDone" typewriter fade />
+```
+
 ## 使用 `nodes`
 
 如果你想跳过字符串解析阶段，可直接传入解析后的节点：

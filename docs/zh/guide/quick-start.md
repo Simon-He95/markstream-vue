@@ -40,6 +40,8 @@ const content = '# Hello World\n\n这是 **加粗** 的文本。'
 
 维护一个持续累加的字符串，并在流结束时设置 `final`。`mode="chat"` 已经选择了平滑输出、关闭 fade 等聊天默认值，不需要重复填写底层 props。
 
+在 Vue 3（含 Nuxt）中，`smooth-streaming` 控制出字节奏，`fade` 控制透明度，两者可以同时开启。`mode="chat"` 保留 `fade=false` 作为轻量默认值；需要文字渐显时添加 `fade`，更看重动画成本时保持关闭。
+
 ```vue
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'

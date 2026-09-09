@@ -45,9 +45,11 @@ function ChatMessage({ content, isDone }: { content: string, isDone: boolean }) 
 ```vue
 <!-- Vue -->
 <template>
-  <MarkdownRender mode="chat" :content="content" :final="isDone" :fade="false" />
+  <MarkdownRender mode="chat" :content="content" :final="isDone" />
 </template>
 ```
+
+The Vue 3 chat preset leaves fade off to reduce animation work. Add `fade` to the Vue example for gradual text reveal alongside smooth pacing; these options are independent.
 
 ### 2. Pre-parsed nodes path (high-frequency)
 
@@ -98,7 +100,7 @@ function ChatMessage({
 - `typewriter` shows a blinking cursor while streaming
 - `smooth-streaming="auto"` paces content insertion for a natural reading experience
 - `smoothStreamingOptions` controls pacing speed — adjust `maxCharsPerSecond` for faster/slower display
-- `fade={false}` prevents opacity animation restarts on each update
+- `fade={false}` avoids animation work in this React example; Vue 3 can opt into bounded append fades alongside smooth pacing
 
 ## SSE integration
 

@@ -58,6 +58,7 @@ const final = ref(false)
 - Backlog-aware pacing 在积压文本增多时会自动加速。
 - 最终解析会等到可见内容追上后再触发，避免流结束时的不稳定状态。
 - `mode="chat"` 会选择流式默认值，包括 `max-live-nodes="0"`、smooth pacing、增量批次和关闭 fade。
+- 在 Vue 3（含 Nuxt）中，`smooth-streaming` 控制出字节奏，`fade` 控制透明度，两者可以同时开启。`mode="chat"` 保留 `fade=false` 作为轻量默认值；需要文字渐显时添加 `fade`，更看重动画成本时保持关闭。
 - 只有需要作用域样式或组件覆盖时才添加 `custom-id="chat"`；只有需要可见光标时才添加 `typewriter`。
 
 如果某个渲染面需要原始 chunk 节奏，可以用 `:smooth-streaming="false"` 关闭。如果你已经在 worker/store 中自行解析并需要 AST 控制，可以继续用 `nodes` + `final`。
@@ -126,7 +127,7 @@ watch(
           :content="message.content"
           :final="message.final"
           :smooth-streaming="message.final ? false : 'auto'"
-          :fade="message.final"
+          fade
           :typewriter="!message.final"
           v-bind="message.final ? {} : { maxLiveNodes: 0 }"
         />
@@ -256,23 +257,24 @@ watch([stream.visible, stream.final], () => {
 - **流式输出**：模型正在实时生成 token — `content` 逐步增长，`final` 为 `false`。
 - **恢复历史消息**：从缓存或存储中加载已完成的消息 — 完整的 Markdown 字符串一次性可用。
 
-这两种模式需要不同的 `smooth-streaming` 和 `fade` 组合：
+是否还在接收内容决定了 pacing 的选择。fade 是独立的视觉选择；下面的 Vue 3 示例在流式与历史展示期间都开启淡入。更看重动画成本时可以保持关闭。
 
 ### 流式输出（token 实时到达）
 
 ```vue
 <MarkdownRender
+  mode="chat"
   :content="streamedText"
   :final="false"
   smooth-streaming="auto"
-  :fade="false"
+  fade
   :typewriter="true"
   :max-live-nodes="0"
 />
 ```
 
 - `smooth-streaming="auto"` 对可见输出进行 pacing，使突发式 chunk 平稳呈现。它已经在内容层实现了"文本逐步出现"的效果。
-- `fade=false`，因为 280 ms 的 opacity 动画与高频 smooth-streaming 更新冲突——每个小批量内容都会打断上一帧的 fade，导致闪烁而非平滑淡入。
+- `fade` 显式开启 Vue 3 的 200 ms 追加渐显，后续文字到达时，已有批次仍然自然完成。它可以与 pacing 同时使用；`mode="chat"` 默认关闭它以减少动画工作。
 - `typewriter=true` 在流末尾添加闪烁光标。
 - `max-live-nodes=0` 关闭虚拟化，启用流式场景下的增量/分批渲染。
 
@@ -280,6 +282,7 @@ watch([stream.visible, stream.final], () => {
 
 ```vue
 <MarkdownRender
+  mode="chat"
   :content="historyText"
   :final="true"
   :smooth-streaming="false"
@@ -310,17 +313,17 @@ const isStreaming = computed(() => !final.value)
 <template>
   <MarkdownRender
     custom-id="chat"
+    mode="chat"
     :content="content"
     :final="final"
     :smooth-streaming="isStreaming ? 'auto' : false"
-    :fade="!isStreaming"
+    fade
     :typewriter="isStreaming"
-    v-bind="isStreaming ? { maxLiveNodes: 0 } : {}"
   />
 </template>
 ```
 
-当流结束时，设置 `final.value = true`。渲染器会从 smooth pacing + 无 fade 切换到无 pacing + fade，但不会 remount 未变化的内容，从而避免完成瞬间闪烁；`fade=true` 会作用于之后新挂载的完整历史消息，或一次性到达的完整内容。
+当流结束时，设置 `final.value = true`。这个示例关闭 pacing 和光标，同时保持 `chat` mode 与 fade 选择不变；无需在流结束时反转 fade。已有内容不会为了重播动画而重新挂载，入场 fade 作用于新挂载的节点。若更看重动画成本，可以始终使用 `:fade="false"`。这些有界追加淡入细节仅适用于 Vue 3，不代表其他适配器的实现。
 
 ### 静态 / SSR 快照（无动画）
 

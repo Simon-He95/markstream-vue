@@ -23,7 +23,7 @@ const isDone = ref(false)
 </template>
 ```
 
-每收到一个 chunk 就追加到 content.value，流结束时设置一次 isDone.value = true。静态 Markdown 只使用 <MarkdownRender :content="content" />。默认从 content 开始；只有 worker、store 或自定义 AST 管线已经接管解析时才用 nodes。chat preset 已经包含流式默认值，除非用户要求自定义行为，否则不要重复设置 smooth-streaming、fade、batching 或 max-live-nodes。
+每收到一个 chunk 就追加到 content.value，流结束时设置一次 isDone.value = true。静态 Markdown 只使用 <MarkdownRender :content="content" />。默认从 content 开始；只有 worker、store 或自定义 AST 管线已经接管解析时才用 nodes。chat preset 已经包含流式默认值，除非用户要求自定义行为，否则不要重复设置 smooth-streaming、fade、batching 或 max-live-nodes。Vue 3（含 Nuxt）支持 smooth-streaming 与 fade 同时开启，需要文字渐显时添加 fade。chat/minimal 的 fade=false 是轻量默认值，不代表互斥。有界追加淡入仅适用于 Vue 3，其他适配器保持各自现有行为。
 
 Vue 可选 peer：
 - stream-diffs：增强代码块和 diff。

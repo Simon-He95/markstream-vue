@@ -46,6 +46,8 @@ Use `index.px.css` instead of `index.css` for mobile WebViews where the host app
 
 ## Minimal Vue chat message
 
+`mode="chat"` defaults to no fade to reduce animation work. For gradual text reveal, add `fade` to the examples below; Vue 3 supports it together with built-in smooth pacing.
+
 ```vue
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'
@@ -62,7 +64,6 @@ defineProps<{
     mode="chat"
     :content="content"
     :final="isDone"
-    :fade="false"
   />
 </template>
 ```
@@ -107,7 +108,6 @@ onBeforeUnmount(() => {
     :content="content"
     :final="isDone"
     smooth-streaming="auto"
-    :fade="false"
   />
 </template>
 ```

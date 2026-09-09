@@ -151,7 +151,7 @@ Use these as “answer skeletons”: quick steps + minimal repro questions + whe
 - Signals: “bursty”, “jumpy”, “not smooth”
 - Steps:
   - Use `content` with built-in smooth streaming first (`typewriter=true` or `max-live-nodes<=0` enables `smooth-streaming="auto"`)
-  - Keep `fade=false` during active smooth streaming; use `fade=true` for completed history/static content
+  - In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more. This bounded append-fade behavior is Vue 3-specific; check the adapter guide for other frameworks.
   - Enable/tune batching (`renderBatchSize` / `renderBatchDelay`) when virtualization is disabled
   - Keep heavy nodes deferred (`viewportPriority`, `deferNodesUntilVisible`)
 - Ask: “How often do you update the `content` or `nodes` input path (per token? per chunk?) and what batch props are set?”

@@ -151,7 +151,7 @@ const isDone = ref(false)
 - 表述： “一坨一坨冒出来”, “不平滑”
 - 步骤：
   - 优先用 `content` + 内置 smooth streaming（`typewriter=true` 或 `max-live-nodes<=0` 会启用 `smooth-streaming="auto"`）
-  - active smooth streaming 期间保持 `fade=false`；完整历史消息/静态内容再用 `fade=true`
+  - 在 Vue 3（含 Nuxt）中，`smooth-streaming` 控制出字节奏，`fade` 控制透明度，两者可以同时开启。`mode="chat"` 保留 `fade=false` 作为轻量默认值；需要文字渐显时添加 `fade`，更看重动画成本时保持关闭。 此次有界追加淡入仅适用于 Vue 3，其他框架应按对应适配器文档选择。
   - 关闭虚拟化时再调整 batch（`renderBatchSize` / `renderBatchDelay`）
   - 保持重节点延迟（`viewportPriority`, `deferNodesUntilVisible`）
 - 最小追问：“你更新 `content` 或 `nodes` 输入路径的频率（每 token 还是每 chunk）？batch 参数是多少？”

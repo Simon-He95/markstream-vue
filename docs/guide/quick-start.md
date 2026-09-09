@@ -41,6 +41,8 @@ const content = '# Hello World\n\nThis is **bold** and this is *italic*.'
 
 Keep one accumulated string and set `final` when the stream ends. `mode="chat"` selects the chat defaults, including smooth pacing and no fade, so you do not need to repeat those low-level props.
 
+In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more.
+
 ```vue
 <script setup lang="ts">
 import MarkdownRender from 'markstream-vue'

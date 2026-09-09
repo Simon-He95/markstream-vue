@@ -969,7 +969,7 @@ onBeforeUnmount(() => {
             :content="content"
             :smooth-streaming="smoothStreaming"
             :final="!isStreaming"
-            :fade="!smoothStreaming"
+            fade
             :code-block-dark-theme="selectedTheme || undefined"
             :code-block-light-theme="selectedTheme || undefined"
             :html-policy="htmlPolicy"

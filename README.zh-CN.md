@@ -333,7 +333,7 @@ createApp({
 />
 ```
 
-当你想要和 `chat` 相同的轻量默认值，但当前页面不是聊天语义时，可以使用 `mode="minimal"`。避免把高频 `smooth-streaming` 和 `fade` 同时开启，否则稳定的流式输出可能变成反复重启的透明度动画。
+当你想要和 `chat` 相同的轻量默认值，但当前页面不是聊天语义时，可以使用 `mode="minimal"`。在 Vue 3（含 Nuxt）中，`smooth-streaming` 控制出字节奏，`fade` 控制透明度，两者可以同时开启。`mode="chat"` 保留 `fade=false` 作为轻量默认值；需要文字渐显时添加 `fade`，更看重动画成本时保持关闭。
 同一条聊天消息不要仅因为 `final` 变为 `true` 就从 `mode="chat"` 切到 `mode="docs"`。保持 mode 稳定，只切换 `smooth-streaming`、`typewriter`、`fade` 等节奏/动画 props；`docs` 会改变布局策略。
 如果某个渲染面不需要增强代码块，建议设置 `:render-code-blocks-as-pre="true"`；如果需要富 `CodeBlockNode` UI 与 File/Diff 渲染，请安装 `stream-diffs`，否则渲染器会按设计降级为 `<pre>` 渲染。如果应用要完全接管普通 fenced code，用 `setCustomComponents` 注册带作用域的 `code_block`。
 `stream-diffs` 是与框架无关的 DOM runtime；由 `CodeBlockNode` 决定何时把流式 `<pre>` 切换为最终的 File 或 FileDiff surface。

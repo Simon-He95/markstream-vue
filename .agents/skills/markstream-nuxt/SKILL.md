@@ -21,10 +21,10 @@ Use this skill when the host app is Nuxt and SSR boundaries matter.
    - Use `mode="minimal"` for lightweight non-chat surfaces.
    - Regular fenced code uses the built-in renderer, enhanced by `stream-diffs` when the optional peer is installed. Use `render-code-blocks-as-pre` for a forced plain path or `setCustomComponents(customId, { code_block: ... })` for a scoped application-owned renderer.
    - `typewriter` only controls the blinking cursor and defaults to `false`. Prefer `typewriter="simple"` for high-frequency chat.
-   - When overriding mode defaults on a high-frequency stream, pair smooth streaming with `:fade="false"` to avoid delta fade stacking with high-commit pacing.
+   - In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more. Vue 3 append fades use stable batches (200 ms, 50 ms coalescing window, at most four batches per text node); later appends do not restart earlier batches.
    - **Streaming vs recovering history**: in chat UIs the same `MarkdownRender` starts streaming and later switches to history when `final=true`.
-     - Streaming: `mode="chat"`, `smooth-streaming="auto"`, `:fade="false"`, `typewriter=true`.
-     - Recovering/completed chat history: keep `mode="chat"` on the same chat row; use `:smooth-streaming="false"`, `typewriter=false`, and only set `:fade="true"` when the host explicitly wants a history-entry animation.
+     - Streaming: start with `mode="chat"` and `final`; add `fade` for text reveal and `typewriter` only when a cursor is wanted.
+     - Recovering/completed chat history: keep `mode="chat"` on the same chat row; use `:smooth-streaming="false"`, `typewriter=false`, and choose `fade` independently for the desired entry/reveal effect. Do not bind it to the inverse of streaming state unless that visual policy is intentional.
      - Use `mode="minimal"` for lightweight non-chat recovered content, and use `mode="docs"` only for rich document surfaces.
    - In SSR, avoid `smooth-streaming="true"` on first-screen content; the mounted gate inside `auto` prevents hydration mismatch.
    - Remember that `html-policy` now defaults to `safe`, and Mermaid strict mode is on by default through `mermaid-props`.

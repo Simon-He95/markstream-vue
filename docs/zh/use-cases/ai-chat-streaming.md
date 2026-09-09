@@ -63,6 +63,8 @@ export function ChatView() {
 }
 ```
 
+Vue 3 的 `mode="chat"` 默认关闭 fade 以减少动画工作；需要渐显时可添加 `fade`，与平滑出字同时使用。其他框架仍保留各自的动画实现。
+
 Vue、Svelte、Angular 的核心思路相同：累积内容、传入完成状态、避免每个 token 都触发昂贵渲染。不要为了“最终态更漂亮”在同一条消息里从 `chat` mode 切到 `docs` mode；保持 mode 稳定，只切换 pacing 和动画选项。
 
 如果你的聊天只显示纯文本且永远没有 Markdown、代码块或长回答，普通文本节点更简单。Markstream 适合已经明确需要 Markdown 流式体验的聊天界面。

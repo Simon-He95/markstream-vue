@@ -20,7 +20,7 @@ Use this skill when the host app is Vue 2 and the bundler is Vite.
      - `typewriter` only controls the blinking cursor and defaults to `false`.
      - `fade` controls node enter and streamed-text fade animations and defaults to `true`.
    - **Streaming vs recovering history**: in chat UIs the same `MarkdownRender` starts streaming and later switches to history when `final=true`.
-     - Streaming: `smooth-streaming="auto"`, `:fade="false"`, `typewriter=true`. Smooth pacing handles gradual appearance; fade would flicker.
+     - Streaming: `smooth-streaming="auto"`, `:fade="false"`, `typewriter=true`. This is a conservative visual/performance choice, not an API incompatibility. This adapter has not adopted Vue 3's bounded append fades, so verify its animation behavior before enabling both.
      - Recovering history: `:smooth-streaming="false"`, `:fade="true"`, `typewriter=false`. Content is already complete — pacing would slow it down, but fade gives a polished entry animation.
      - Dynamic switch: `:smooth-streaming="isStreaming ? 'auto' : false"`, `:fade="!isStreaming"`.
    - Move to `nodes` + `final` only for worker-preparsed content, shared AST stores, or custom AST control.

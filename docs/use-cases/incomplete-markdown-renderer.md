@@ -80,7 +80,7 @@ Use `htmlPolicy="escape"` for untrusted model output, or the default safe policy
 ## Performance notes
 
 - Buffer very small tokens and commit at animation-frame cadence.
-- Prefer `fade={false}` or `:fade="false"` in chat surfaces so opacity animation does not restart on each update.
+- `fade=false` reduces animation work. Vue 3 also supports smooth pacing with stable append fades enabled; choose based on the desired effect and measured cost. Other adapters retain their existing fade behavior.
 - Use the `nodes` path only when another layer already owns parsing, batching, or worker execution.
 - Enable virtualization for long answers that keep growing beyond tens of kilobytes.
 

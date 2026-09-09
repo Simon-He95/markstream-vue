@@ -37,5 +37,6 @@ Peer sets are package-specific. Confirm the selected package's current `peerDepe
   - `smoothStreaming="auto"` / `smooth-streaming="auto"` is the default.
   - Auto mode enables pacing when `typewriter=true` or `maxLiveNodes <= 0` / `max-live-nodes <= 0`.
   - `typewriter` only controls the blinking cursor and defaults to `false`.
-  - `fade` controls node enter and streamed-text fade animations and defaults to `true`.
+  - `fade` controls node enter and streamed-text fade animations. Vue 3 `chat`/`minimal` modes default it to `false`; Vue 3 `docs` mode defaults it to `true`.
+  - In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more.
 - `nodes` + `final`: worker-preparsed content, shared AST stores, custom AST transforms, or cases where another layer already owns parsing.

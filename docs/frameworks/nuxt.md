@@ -65,7 +65,7 @@ const markdown = '# Hello Nuxt SSR'
 
 ## When to use `<ClientOnly>`
 
-Use `<ClientOnly>` only when your surrounding page logic or optional peer setup is browser-only:
+Use `<ClientOnly>` only when your surrounding page logic or optional peer setup is browser-only. `mode="chat"` leaves fade off by default to reduce animation work; add `fade` when you want text reveal alongside smooth pacing:
 
 ```vue
 <template>
@@ -74,7 +74,6 @@ Use `<ClientOnly>` only when your surrounding page logic or optional peer setup 
       mode="chat"
       :content="streamingContent"
       :final="isDone"
-      :fade="false"
     />
   </ClientOnly>
 </template>

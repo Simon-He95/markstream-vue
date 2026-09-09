@@ -101,7 +101,7 @@ If a non-marker character or another line arrives, the pending text is released 
 ## Performance notes
 
 - Batch token updates before rendering; do not commit every byte from an SSE or WebSocket stream.
-- Keep `fade` disabled in chat surfaces to avoid animation restarts.
+- Keep `fade` disabled when minimizing animation work. Vue 3 can combine it with smooth streaming for surrounding text and inline code; fenced code blocks do not use this append fade.
 - Use viewport priority or virtualization when a long answer contains many code blocks.
 - Prefer `render-code-blocks-as-pre` on mobile if users only need to read code.
 

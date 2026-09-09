@@ -43,8 +43,8 @@ Inspect `package.json`, the lockfile, imports, and renderer props before changin
    - For Vue 3, choose `mode="chat"` for AI/SSE output, `mode="docs"` for rich document surfaces, and `mode="minimal"` for lightweight non-chat surfaces.
    - If the app streams `content` and only needs pacing, `smooth-streaming="auto"` (the default) handles it without requiring `nodes`.
    - Move to `nodes` only when the app needs custom AST control, worker preparsing, or high-frequency structural updates.
-   - When smooth streaming is on outside Vue 3 `mode="chat"` defaults, pair it with `:fade="false"`.
-   - **Streaming vs recovering history**: when migrating a chat UI, keep `mode="chat"` on the same chat row and switch pacing/animation props instead. Vue 3 streaming: `mode="chat"`, `smooth-streaming="auto"`, `:fade="false"`. Vue 3 completed chat history: `mode="chat"`, `:smooth-streaming="false"`, optional `:fade="true"`. Use `mode="docs"` only for separate rich document surfaces.
+   - In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more. Do not carry a legacy `:fade="!isStreaming"` binding into a Vue 3 migration unless the host wants that policy.
+   - **Streaming vs recovering history**: when migrating a chat UI, keep `mode="chat"` on the same chat row and switch pacing/animation props instead. Vue 3 streaming: `mode="chat"`, `final`, and optional `fade`. Vue 3 completed chat history: keep `mode="chat"`, use `:smooth-streaming="false"` when pacing is unnecessary, and choose fade independently. Use `mode="docs"` only for separate rich document surfaces.
 7. Validate and summarize.
    - Run the smallest relevant tests or build.
    - Report direct mappings, TODOs, and remaining verification work.

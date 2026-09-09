@@ -166,7 +166,7 @@ function StreamedMarkdown({
   content={content}
   final={isDone}
   smoothStreaming="auto" // smooth pacing
-  fade={false} // no opacity flicker
+  fade={false} // omit opacity animation work
   deferNodesUntilVisible // lazy render off-screen nodes
 />
 ```

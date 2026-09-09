@@ -358,7 +358,7 @@ Choose the renderer mode by surface:
 />
 ```
 
-Use `mode="minimal"` when you want the same lightweight defaults as `chat`, but prefer a neutral mode name for non-chat surfaces. Avoid combining high-frequency `smooth-streaming` with `fade`; it can turn a steady stream into repeated opacity restarts.
+Use `mode="minimal"` when you want the same lightweight defaults as `chat`, but prefer a neutral mode name for non-chat surfaces. In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more.
 For the same chat message, do not switch from `mode="chat"` to `mode="docs"` only because `final` changed. Keep the mode stable and switch pacing/animation props (`smooth-streaming`, `typewriter`, `fade`) instead; `docs` changes the layout strategy.
 For surfaces that do not need enhanced code blocks, set `:render-code-blocks-as-pre="true"`. If you want the rich `CodeBlockNode` UI and File/Diff rendering, install `stream-diffs`; otherwise the renderer intentionally falls back to `<pre>` rendering. To own ordinary fenced-code rendering, register a scoped `code_block` with `setCustomComponents`.
 `stream-diffs` is a framework-agnostic DOM runtime. `CodeBlockNode` owns the Vue-side decision of when to replace the streaming `<pre>` with its finalized File or FileDiff surface.

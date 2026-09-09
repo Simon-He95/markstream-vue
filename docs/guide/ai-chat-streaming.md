@@ -60,6 +60,7 @@ Why this path works better:
 - Backlog-aware pacing speeds up automatically when pending text grows.
 - Final parsing waits for visible content to catch up, so end-of-stream settling is stable.
 - `mode="chat"` selects the streaming defaults, including `max-live-nodes="0"`, smooth pacing, incremental batches, and no fade.
+- In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more.
 - Add `custom-id="chat"` only when you need scoped styles or component overrides. Add `typewriter` only when you want a visible cursor.
 
 Turn it off per surface with `:smooth-streaming="false"` if you want raw chunk cadence. If you already parse in a worker/store and need AST control, keep using `nodes` + `final`.
@@ -128,7 +129,7 @@ watch(
           :content="message.content"
           :final="message.final"
           :smooth-streaming="message.final ? false : 'auto'"
-          :fade="message.final"
+          fade
           :typewriter="!message.final"
           v-bind="message.final ? {} : { maxLiveNodes: 0 }"
         />
@@ -258,23 +259,24 @@ In a chat UI the same `MarkdownRender` instance typically handles two very diffe
 - **Streaming**: the model is generating tokens in real-time — `content` grows incrementally, `final` is `false`.
 - **Recovering history**: a previously completed message is loaded from cache or a store — the full Markdown string is available immediately.
 
-These two modes need different combinations of `smooth-streaming` and `fade`:
+Pacing depends on whether content is still arriving. Fade is an independent visual choice; the following Vue 3 examples enable it during both streaming and history display. Keep it disabled when lower animation cost is preferred.
 
 ### Streaming (tokens arriving in real-time)
 
 ```vue
 <MarkdownRender
+  mode="chat"
   :content="streamedText"
   :final="false"
   smooth-streaming="auto"
-  :fade="false"
+  fade
   :typewriter="true"
   :max-live-nodes="0"
 />
 ```
 
 - `smooth-streaming="auto"` paces the visible output so bursty chunks appear steadily. It already gives the "text appears gradually" effect at the content layer.
-- `fade=false` because the 280 ms opacity animation conflicts with high-frequency smooth-streaming updates — each small content batch interrupts the previous fade, causing flicker instead of a smooth fade.
+- `fade` opts into Vue 3's 200 ms append reveal. Existing batches finish naturally while later text arrives. It can run alongside pacing; `mode="chat"` leaves it off by default to reduce animation work.
 - `typewriter=true` adds a blinking cursor at the end of the stream.
 - `max-live-nodes=0` disables virtualization and enables incremental/batched rendering for streaming.
 
@@ -282,6 +284,7 @@ These two modes need different combinations of `smooth-streaming` and `fade`:
 
 ```vue
 <MarkdownRender
+  mode="chat"
   :content="historyText"
   :final="true"
   :smooth-streaming="false"
@@ -312,17 +315,17 @@ const isStreaming = computed(() => !final.value)
 <template>
   <MarkdownRender
     custom-id="chat"
+    mode="chat"
     :content="content"
     :final="final"
     :smooth-streaming="isStreaming ? 'auto' : false"
-    :fade="!isStreaming"
+    fade
     :typewriter="isStreaming"
-    v-bind="isStreaming ? { maxLiveNodes: 0 } : {}"
   />
 </template>
 ```
 
-When the stream ends, set `final.value = true`. The renderer switches from smooth pacing + no-fade to no-pacing + fade without remounting unchanged content. That avoids completion flicker; `fade=true` then applies to completed/history content that mounts later or arrives all at once.
+When the stream ends, set `final.value = true`. This example disables pacing and the cursor while keeping the same `chat` mode and fade choice. There is no requirement to invert fade when streaming ends. Unchanged content is not remounted just to replay an animation; entry fade applies to newly mounted nodes. Use `:fade="false"` throughout if animation cost is more important. These bounded append-fade details apply to Vue 3, not the other adapters.
 
 ### Static / SSR snapshot (no animation)
 

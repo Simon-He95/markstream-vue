@@ -100,7 +100,7 @@ pnpm add stream-diffs
 ## 性能说明
 
 - 在渲染前批处理 token 更新；不要提交 SSE 或 WebSocket 流中的每个字节。
-- 在聊天界面中保持 `fade` 禁用，以避免动画重启。
+- 要减少动画开销时保持 `fade` 关闭。Vue 3 支持为代码块周围的文字及行内代码同时开启 smooth streaming 和 fade；围栏代码块不使用这套追加淡入。
 - 当长回答包含许多代码块时，使用视口优先级或虚拟化。
 - 如果移动端用户只需要阅读代码，优先使用 `render-code-blocks-as-pre`。
 

@@ -83,27 +83,34 @@ Slot props：
 
 如果你更看重滚动和高度稳定，保留默认值。如果产品更看重 loading 时长有上限，再设置数字。
 
-### smooth-streaming 与 fade —— 二选一，不要同时开启
+### smooth-streaming 与 fade —— 独立控制
 
-`smooth-streaming` 和 `fade` 都能实现"文本逐步出现"的效果，但作用在不同层面：
+在 Vue 3（含 Nuxt）中，两者可以同时开启。`smooth-streaming` 本身没有透明度动画，只调度交给渲染器的可见内容；`fade` 负责新增文字和非代码节点入场时的动画。
 
 | | `smooth-streaming` | `fade` |
 |---|---|---|
-| **工作方式** | 控制向渲染器暴露 `content` 字符串的速度（按字/秒节流） | 内容立即渲染，但新增文本以 opacity 0→1 CSS 动画渐入（280 ms） |
+| **工作方式** | 平滑调度可见内容，输入积压时加速追赶 | 内容渲染后执行透明度动画 |
 | **作用层面** | 字符串 / 内容层 | DOM / 视觉层 |
-| **适用场景** | 流式 / 实时 token 输出 | 静态或历史消息内容 |
+| **流式行为** | 控制何时出字、一次出多少 | TextNode 和 InlineCodeNode 的追加淡入采用 200 ms、opacity 0→1、`cubic-bezier(0.2, 0, 0.4, 1)` |
 
-同时开启两者会导致**视觉闪烁**：smooth-streaming 会频繁以小批量（默认约 20 fps）更新 `content`，每一批都会触发一段新的 fade 动画。由于下一批内容在 280 ms 动画结束前就到达，delta 文本会在每一帧从约 8% opacity 被瞬间 snap 到 100%——结果是快速闪烁，而非平滑淡入。
+Vue 3 的追加淡入在 50 ms 窗口内合批，每个文字节点最多保留四个批次，已有批次自然完成，不会被后续追加重启动画。这个窗口只合并动画批次，不延迟收到的文字；密集更新可能加入已经淡入一部分的批次。非代码节点入场过渡仍保留独立的 280 ms 默认值。
 
-**推荐组合：**
+旧版 Vue 3 fade 会被后续更新提前结束，因此过去曾建议避免同时开启。采用有界追加淡入后，这个限制已经不适用。其他框架适配器仍保留各自的 fade 行为，这不是跨框架的动画保证。
 
 | 场景 | `smooth-streaming` | `fade` | 原因 |
 |---|---|---|---|
-| **流式输出**（token 实时到达） | `'auto'` 或 `true` | `false` | smooth pacing 本身已实现"逐步出现"效果；fade 叠加无益，反而导致闪烁 |
-| **恢复历史消息**（完整 Markdown 一次性加载） | `false` | `true` | 内容一次性到达，无需节流；fade 提供优雅的入场动画 |
-| **静态 / SSR 快照** | `false` | `false` | 零动画，适合服务端渲染输出或打印场景 |
+| **流式输出并渐显文字** | `'auto'` 或 `true` | `true` | 平稳出字节奏叠加连续的透明度动画 |
+| **减少动画开销的流式输出** | `'auto'` 或 `true` | `false` | `chat`/`minimal` 的轻量默认值，省去淡入批次与动画工作 |
+| **恢复历史消息** | `false` | 可选 | 立即展示完整内容，独立选择是否需要入场动画 |
+| **静态 / 打印快照** | `false` | `false` | 不做 pacing 或动画 |
 
-在聊天界面中，同一个 `MarkdownRender` 通常先以流式模式运行，响应完成后再切换到历史消息模式。具体代码示例见 [AI 聊天与流式输出 → 流式输出 vs 恢复历史消息](/zh/guide/ai-chat-streaming#流式输出-vs-恢复历史消息-运行时切换-props)。
+保留 chat 默认值，同时开启追加淡入：
+
+```vue
+<MarkdownRender mode="chat" :content="content" :final="isDone" fade />
+```
+
+即使批次数量有上限，`fade` 仍会增加 DOM 和浏览器动画工作。请在实际负载下测量组合成本；同时开启是视觉选择，不是性能优化。SSR 首屏优先使用 `smooth-streaming="auto"`，避免强制 `true`。同一聊天消息保持 mode 稳定，fade 与完成状态独立选择，见 [AI 聊天与流式输出](/zh/guide/ai-chat-streaming#流式输出-vs-恢复历史消息-运行时切换-props)。
 
 ### 进阶 smooth streaming 配置
 

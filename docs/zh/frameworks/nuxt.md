@@ -46,7 +46,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 | 需求 | 推荐路径 |
 | --- | --- |
 | 普通 Markdown SSR | 先走 Vue/Nuxt 基础渲染 |
-| AI 聊天实时输出 | 在 client 组件里传 `content` 和 `final` |
+| AI 聊天实时输出 | 在 client 组件里用 `mode="chat"`，传 `content` 和 `final`；需要渐显时添加 `fade`，可与平滑出字同时开启 |
 | Mermaid / stream-diffs | 放在浏览器边界后启用 |
 | 移动端 Nuxt WebView | 使用 `index.px.css` 并测试字体缩放 |
 

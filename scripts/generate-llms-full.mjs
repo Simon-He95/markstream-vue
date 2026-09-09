@@ -448,7 +448,7 @@ const isDone = ref(false)
 </template>
 \`\`\`
 
-Append each incoming chunk to content.value. Set isDone.value = true once at end-of-stream. For static Markdown, use only <MarkdownRender :content="content" />. Start with content; use nodes only when a worker, store, or custom AST pipeline already owns parsing. The chat preset already owns streaming defaults, so do not repeat smooth-streaming, fade, batching, or max-live-nodes unless the user asks for custom behavior.
+Append each incoming chunk to content.value. Set isDone.value = true once at end-of-stream. For static Markdown, use only <MarkdownRender :content="content" />. Start with content; use nodes only when a worker, store, or custom AST pipeline already owns parsing. The chat preset already owns streaming defaults, so do not repeat smooth-streaming, fade, batching, or max-live-nodes unless the user asks for custom behavior. Vue 3 (including Nuxt) supports smooth-streaming and fade together: add fade for gradual text reveal. chat/minimal keep fade=false as a lightweight default, not an incompatibility. The bounded append fade is Vue 3-specific; other adapters retain their current behavior.
 
 Optional Vue peers:
 - stream-diffs: enhanced code and diff blocks.
@@ -478,7 +478,7 @@ const isDone = ref(false)
 </template>
 \`\`\`
 
-每收到一个 chunk 就追加到 content.value，流结束时设置一次 isDone.value = true。静态 Markdown 只使用 <MarkdownRender :content="content" />。默认从 content 开始；只有 worker、store 或自定义 AST 管线已经接管解析时才用 nodes。chat preset 已经包含流式默认值，除非用户要求自定义行为，否则不要重复设置 smooth-streaming、fade、batching 或 max-live-nodes。
+每收到一个 chunk 就追加到 content.value，流结束时设置一次 isDone.value = true。静态 Markdown 只使用 <MarkdownRender :content="content" />。默认从 content 开始；只有 worker、store 或自定义 AST 管线已经接管解析时才用 nodes。chat preset 已经包含流式默认值，除非用户要求自定义行为，否则不要重复设置 smooth-streaming、fade、batching 或 max-live-nodes。Vue 3（含 Nuxt）支持 smooth-streaming 与 fade 同时开启，需要文字渐显时添加 fade。chat/minimal 的 fade=false 是轻量默认值，不代表互斥。有界追加淡入仅适用于 Vue 3，其他适配器保持各自现有行为。
 
 Vue 可选 peer：
 - stream-diffs：增强代码块和 diff。

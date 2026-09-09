@@ -93,27 +93,34 @@ Controls the maximum time the timeline may keep the restore loading overlay visi
 
 Keep the default when scroll and height stability are more important than showing partial content. Use a number only when your product prefers a bounded loading duration over strict visual stability.
 
-### smooth-streaming and fade — pick one, not both
+### smooth-streaming and fade — independent controls
 
-`smooth-streaming` and `fade` both produce a "text appears gradually" effect, but at different layers:
+In Vue 3 (including Nuxt), these props can be enabled together. `smooth-streaming` contains no opacity animation; it schedules the visible content passed to the renderer. `fade` animates newly rendered text and non-code-node entry.
 
 | | `smooth-streaming` | `fade` |
 |---|---|---|
-| **How it works** | Throttles how fast the `content` string is exposed to the renderer | Renders content immediately, but new text gets an opacity 0→1 CSS animation (280 ms) |
+| **How it works** | Paces visible content and catches up when input accumulates | Animates opacity after content is rendered |
 | **Where it operates** | String / content layer | DOM / visual layer |
-| **Best for** | Streaming / real-time token output | Static or history content |
+| **Streaming behavior** | Controls when and how much text is revealed | TextNode and InlineCodeNode append fades use 200 ms, opacity 0→1, and `cubic-bezier(0.2, 0, 0.4, 1)` |
 
-Enabling both simultaneously causes **visual flicker**: smooth-streaming updates `content` in small batches frequently (~20 fps by default), and each batch triggers a new fade animation on the delta text. Because the next batch arrives before the 280 ms animation finishes, the delta is snapped from ~8 % opacity to 100 % on every frame — producing a rapid flicker instead of a smooth fade.
+Vue 3 append fades coalesce updates within 50 ms and keep at most four batches per text node. Existing batches finish without being restarted by later appends. The window groups animations; it does not delay incoming text. Dense updates may join a batch already partway through its fade. Non-code-node entry transitions retain their separate 280 ms default.
 
-**Recommended combinations:**
+Earlier Vue 3 fades were interrupted by subsequent updates, which led to the old advice to avoid combining these props. That restriction no longer applies to the bounded append-fade implementation. Other framework adapters retain their own fade behavior; this is not a cross-framework animation guarantee.
 
 | Scenario | `smooth-streaming` | `fade` | Why |
 |---|---|---|---|
-| **Streaming** (tokens arriving in real-time) | `'auto'` or `true` | `false` | Smooth pacing already gives the "gradually appearing" effect; fade adds nothing and causes flicker |
-| **Recovering history** (complete Markdown loaded at once) | `false` | `true` | Content arrives all at once — no throttling needed — but fade gives a polished entry animation |
-| **Static / SSR snapshot** | `false` | `false` | Zero animation; best for server-rendered output or print pipelines |
+| **Streaming with gradual text reveal** | `'auto'` or `true` | `true` | Smooth cadence plus continuous opacity animation |
+| **Streaming with less animation work** | `'auto'` or `true` | `false` | The lightweight `chat`/`minimal` default; avoids fade batches and animation work |
+| **Recovering history** | `false` | Optional | Show complete content immediately; choose entry animation independently |
+| **Static / print snapshot** | `false` | `false` | No pacing or animation |
 
-In a chat UI, the same `MarkdownRender` typically starts in streaming mode and switches to history mode when the response completes. See [AI Chat & Streaming → Streaming vs recovering history](/guide/ai-chat-streaming#streaming-vs-recovering-history-switching-props-at-runtime) for concrete code examples.
+To opt into both while keeping chat defaults:
+
+```vue
+<MarkdownRender mode="chat" :content="content" :final="isDone" fade />
+```
+
+`fade` adds DOM and browser animation work even though batch counts are bounded. Measure the combined configuration on your workload; enabling both is a visual choice, not a performance optimization. In SSR, prefer `smooth-streaming="auto"` over forcing `true` for initial content. Keep a chat row's mode stable and choose fade independently of completion; see [AI Chat & Streaming](/guide/ai-chat-streaming#streaming-vs-recovering-history-switching-props-at-runtime).
 
 ### Advanced smooth streaming configuration
 

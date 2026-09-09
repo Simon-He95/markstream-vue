@@ -37,7 +37,7 @@ const interval = setInterval(() => {
 ```
 
 ## Typewriter streaming example
-- Use `typewriter` for the blinking stream cursor. During smooth streaming, keep `fade` disabled; use `fade=true` for completed/static content that arrives all at once.
+- Use `typewriter` for the blinking stream cursor. In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more.
 
 ## Rendering with `nodes`
 - Call `parseMarkdownToStructure` from `stream-markdown-parser` and pass `nodes` to `MarkdownRender` for custom rendering.
@@ -52,6 +52,6 @@ const md = '# Streaming test\n\nThis text appears with paced streaming and a cur
 </script>
 
 <template>
-  <MarkdownRender :content="md" :typewriter="true" :fade="false" />
+  <MarkdownRender mode="chat" :content="md" :typewriter="true" fade />
 </template>
 ```

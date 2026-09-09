@@ -168,7 +168,7 @@ const isDone = ref(false)
 </template>
 ```
 
-Append each incoming chunk to content.value. Set isDone.value = true once at end-of-stream. For static Markdown, use only <MarkdownRender :content="content" />. Start with content; use nodes only when a worker, store, or custom AST pipeline already owns parsing. The chat preset already owns streaming defaults, so do not repeat smooth-streaming, fade, batching, or max-live-nodes unless the user asks for custom behavior.
+Append each incoming chunk to content.value. Set isDone.value = true once at end-of-stream. For static Markdown, use only <MarkdownRender :content="content" />. Start with content; use nodes only when a worker, store, or custom AST pipeline already owns parsing. The chat preset already owns streaming defaults, so do not repeat smooth-streaming, fade, batching, or max-live-nodes unless the user asks for custom behavior. Vue 3 (including Nuxt) supports smooth-streaming and fade together: add fade for gradual text reveal. chat/minimal keep fade=false as a lightweight default, not an incompatibility. The bounded append fade is Vue 3-specific; other adapters retain their current behavior.
 
 Optional Vue peers:
 - stream-diffs: enhanced code and diff blocks.

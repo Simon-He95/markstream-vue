@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>流式 Fade · 实时调试</title>
+  <link rel="stylesheet" href="/tuner.css">
+</head>
+<body>
+  <header>
+    <div><p class="eyebrow">MARKSTREAM VUE · FADE LAB</p><h1>边调，边看。</h1><p class="intro">左侧保留旧版，右侧实时使用你的参数。两侧接收同一批文字。</p></div>
+    <div class="presets"><button id="current" class="secondary">当前参数</button><button id="soft" class="secondary">试试更柔和</button><button id="copy" class="secondary">复制参数</button></div>
+  </header>
+  <section class="settings" aria-label="动画参数">
+    <label for="duration">淡入时长 <output id="duration-value"></output><input id="duration" type="range" min="80" max="500" step="10" value="200"></label>
+    <label for="opacity">起始可见度 <output id="opacity-value"></output><input id="opacity" type="range" min="0" max="40" step="1" value="0"></label>
+    <label for="batch">合批窗口 <output id="batch-value"></output><input id="batch" type="range" min="16" max="120" step="1" value="50"></label>
+    <label for="ease">淡入曲线<select id="ease"><option value="ease-out">快速变清晰 · ease-out</option><option value="linear">均匀渐显 · linear</option><option value="cubic-bezier(0.2, 0, 0.4, 1)" selected>柔和渐显 · cubic-bezier</option><option value="ease-in-out">缓入缓出 · ease-in-out</option></select></label>
+    <p class="settings-note">仅调整右侧预览，最多 4 个批次。拖动时立即生效；完整感受可点击重播或开启循环。<span id="batch-note"></span></p>
+  </section>
+  <section class="transport" aria-label="流式输入">
+    <label for="scenario">输入场景<select id="scenario"><option value="regular" selected>参考节奏</option><option value="slow">慢速</option><option value="fast">快速</option><option value="burst">突发大包</option><option value="history">长历史 + 追加</option></select></label>
+    <label for="interval">更新间隔 <output id="interval-value"></output><input id="interval" type="range" min="16" max="600" step="1" value="50"></label>
+    <label for="chunk">每批字数 <output id="chunk-value"></output><input id="chunk" type="range" min="1" max="160" step="1" value="2"></label>
+    <div class="play-controls"><button id="play" disabled>同步重播</button><button id="stop" class="secondary">停止</button><label class="check"><input id="loop" type="checkbox" checked>循环播放</label></div>
+  </section>
+  <p class="status" role="status" id="status">正在加载预览…</p>
+  <main>
+    <article><h2><span>Before · 旧版</span><small>280ms · 0% 起始 · 更新时截断</small></h2><iframe id="before" title="旧版淡入预览" src="/before/"></iframe></article>
+    <article class="candidate"><h2><span>After · 实时调参</span><small id="candidate-label"></small></h2><iframe id="after" title="可调淡入预览" src="/tune/"></iframe></article>
+  </main>
+  <details><summary>编辑流式文本 / 查看参数</summary><div class="editor"><label for="text">追加内容（支持 Markdown）<textarea id="text" rows="5"></textarea></label><div><p>复制结果包含预览参数及 CSS 参数。起始可见度与合批窗口目前属于实验参数，尚未成为库的公开配置。</p><pre id="config"></pre></div></div></details>
+  <details><summary>原始性能对比 · 固定参数</summary><p>这是提交版本默认参数下、两个版本分别运行的结果。调参不会自动重跑 perf；双栏预览与循环播放也不能作为独立性能测量。</p><div class="table-scroll"><table><thead><tr><th>场景</th><th>版本</th><th>主线程 ms</th><th>帧间隔 p95 ms</th><th>峰值动画 span</th></tr></thead><tbody id="perf"></tbody></table></div><p><a href="/results.json">完整数据</a> · <a href="/results.md">原始报告</a></p></details>
+  <script type="module" src="/tuner.js"></script>
+</body>
+</html>

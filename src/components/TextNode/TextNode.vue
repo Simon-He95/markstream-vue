@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { resolveStreamingTextUpdate } from 'markstream-core'
 import { computed, inject, onScopeDispose, ref, useAttrs, watch } from 'vue'
+import { useStreamingTextFade } from '../../composables/useStreamingTextFade'
 
 const props = defineProps<{
   node: {
@@ -14,7 +14,6 @@ defineEmits(['copy'])
 const attrs = useAttrs()
 const inheritedFade = inject<{ value?: boolean } | undefined>('markstreamFade', undefined)
 const inheritedTextStreamState = inject<Map<string, string> | undefined>('markstreamTextStreamState', undefined)
-const inheritedStreamVersion = inject<{ value?: number } | undefined>('markstreamStreamVersion', undefined)
 const explicitFade = computed<boolean | undefined>(() => {
   const raw = attrs.fade
   if (raw === '' || raw === true || raw === 'true')
@@ -36,15 +35,7 @@ const streamStateKey = computed(() => {
     return ''
   return String(raw)
 })
-const settledContent = ref(props.node.content)
-const streamedDelta = ref('')
-const streamFadeVersion = ref(0)
-// Template-bound value: rendered by SSR and never changed on the client, so
-// Vue never patches this text node after mount (patching would mutate it and
-// collapse a selection). All client updates flow through syncSettledText.
-const frozenTemplateContent = ref(props.node.content)
-let stopStreamVersionWatch: (() => void) | undefined
-
+const { settledContent, segments, update, finish, settleFinished } = useStreamingTextFade(props.node.content)
 // Selection-safe settled-text rendering. Browsers collapse a Selection
 // anchored inside a text node as soon as that node is mutated (nodeValue/
 // data) OR replaced (verified in Chromium). The settle path used to merge
@@ -57,7 +48,7 @@ let stopStreamVersionWatch: (() => void) | undefined
 // Coalesce appended increments unless doing so would disturb a selection.
 const settledTextEl = ref<HTMLElement | null>(null)
 const settledAppendsEl = ref<HTMLElement | null>(null)
-const streamedDeltaEl = ref<HTMLElement | null>(null)
+const streamedDeltaEls = ref<HTMLElement[]>([])
 let frozenSettledText = ''
 let settledTextNode: Text | null = null
 let pendingSelectedContent: string | null = null
@@ -73,17 +64,6 @@ function selectionTouches(element: Element) {
   const { anchorNode, focusNode } = selection
   return (anchorNode != null && element.contains(anchorNode))
     || (focusNode != null && element.contains(focusNode))
-}
-
-function activeSelectionIntersects(element: Element) {
-  const selection = document.getSelection?.()
-  if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
-    return false
-  for (let index = 0; index < selection.rangeCount; index++) {
-    if (selection.getRangeAt(index).intersectsNode(element))
-      return true
-  }
-  return false
 }
 
 function coalesceSettledAppends(appendsEl: HTMLElement) {
@@ -140,65 +120,32 @@ function syncSettledText() {
 
 watch([settledContent, settledTextEl, settledAppendsEl], syncSettledText, { immediate: true })
 
-function getRenderedContent() {
-  return settledContent.value + streamedDelta.value
+function selectionIntersectsDelta() {
+  if (!streamedDeltaEls.value.length)
+    return false
+  const selection = document.getSelection?.()
+  if (!selection || selection.isCollapsed)
+    return false
+  for (let index = 0; index < selection.rangeCount; index++) {
+    const range = selection.getRangeAt(index)
+    if (streamedDeltaEls.value.some(element => range.intersectsNode(element)))
+      return true
+  }
+  return false
 }
 
-function stopWatchingStreamVersion() {
-  stopStreamVersionWatch?.()
-  stopStreamVersionWatch = undefined
-}
-
-function settleStreamedDelta() {
-  if (streamedDeltaEl.value && activeSelectionIntersects(streamedDeltaEl.value)) {
+function finishSegment(id: number) {
+  const selected = selectionIntersectsDelta()
+  finish(id, selected)
+  if (selected) {
     settleAfterSelection = true
     watchSelectionRelease()
-    return
   }
-  settleAfterSelection = false
-  if (!streamedDelta.value)
-    return
-  settledContent.value = getRenderedContent()
-  streamedDelta.value = ''
-}
-
-function ensureStreamVersionWatch() {
-  if (stopStreamVersionWatch || !inheritedStreamVersion)
-    return
-  // One persistent watcher for the component's whole lifecycle instead of a
-  // create-per-delta + destroy-on-settle watcher. Streaming commits bump the
-  // version once per commit, and this fires to settle whichever delta is
-  // active at that moment; the old approach churned a new `flush: 'sync'`
-  // watcher on every commit that appended a delta.
-  stopStreamVersionWatch = watch(
-    () => inheritedStreamVersion.value,
-    () => {
-      if (streamedDelta.value)
-        settleStreamedDelta()
-    },
-    { flush: 'sync' },
-  )
 }
 
 function applyStreamingUpdate(normalized: string) {
   const key = streamStateKey.value
-  const result = resolveStreamingTextUpdate({
-    nextContent: normalized,
-    persistedContent: key ? inheritedTextStreamState?.get(key) : undefined,
-    currentState: { settledContent: settledContent.value, streamedDelta: streamedDelta.value },
-    typewriterEnabled: fadeEnabled.value,
-  })
-
-  settledContent.value = result.settledContent
-  streamedDelta.value = result.streamedDelta
-  if (result.appended) {
-    streamFadeVersion.value += 1
-    ensureStreamVersionWatch()
-  }
-  else if (!streamedDelta.value) {
-    stopWatchingStreamVersion()
-  }
-
+  update(normalized, key ? inheritedTextStreamState?.get(key) : undefined, fadeEnabled.value)
   if (key)
     inheritedTextStreamState?.set(key, normalized)
 }
@@ -207,7 +154,7 @@ watch(
   [() => props.node.content, streamStateKey, fadeEnabled],
   ([next]) => {
     const normalized = String(next ?? '')
-    if (streamedDeltaEl.value && activeSelectionIntersects(streamedDeltaEl.value)) {
+    if (selectionIntersectsDelta()) {
       pendingSelectedContent = normalized
       watchSelectionRelease()
       return
@@ -219,8 +166,13 @@ watch(
   { immediate: true },
 )
 
+// Template-bound value: rendered by SSR and never changed on the client, so
+// Vue never patches this text node after mount (patching would mutate it and
+// collapse a selection). All client updates flow through syncSettledText.
+const frozenTemplateContent = ref(settledContent.value)
+
 function handleSelectionChange() {
-  if (streamedDeltaEl.value && activeSelectionIntersects(streamedDeltaEl.value))
+  if (selectionIntersectsDelta())
     return
   stopWatchingSelectionRelease()
   if (pendingSelectedContent != null) {
@@ -228,9 +180,11 @@ function handleSelectionChange() {
     pendingSelectedContent = null
     settleAfterSelection = false
     applyStreamingUpdate(pending)
+    settleFinished()
   }
   else if (settleAfterSelection) {
-    settleStreamedDelta()
+    settleAfterSelection = false
+    settleFinished()
   }
 }
 
@@ -246,16 +200,7 @@ function stopWatchingSelectionRelease() {
   watchedSelectionDocument = undefined
 }
 
-onScopeDispose(() => {
-  stopWatchingStreamVersion()
-  stopWatchingSelectionRelease()
-})
-
-const streamedDeltaClass = computed(() => (
-  streamFadeVersion.value % 2 === 0
-    ? 'text-node-stream-delta--a'
-    : 'text-node-stream-delta--b'
-))
+onScopeDispose(stopWatchingSelectionRelease)
 </script>
 
 <template>
@@ -272,12 +217,13 @@ const streamedDeltaClass = computed(() => (
       ref="settledAppendsEl"
     />
     <span
-      v-if="streamedDelta"
-      ref="streamedDeltaEl"
-      class="text-node-stream-delta" :class="[streamedDeltaClass]"
-      @animationend="settleStreamedDelta"
+      v-for="segment in segments"
+      :key="segment.id"
+      ref="streamedDeltaEls"
+      class="text-node-stream-delta"
+      @animationend="finishSegment(segment.id)"
     >
-      {{ streamedDelta }}
+      {{ segment.content }}
     </span>
   </span>
 </template>
@@ -294,27 +240,11 @@ const streamedDeltaClass = computed(() => (
   width: 100%;
 }
 .text-node-stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, 280ms));
-  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.33, 0, 0.67, 1)));
-  animation-fill-mode: both;
-}
-.text-node-stream-delta--a {
-  animation-name: text-node-stream-update-fade-a;
-}
-.text-node-stream-delta--b {
-  animation-name: text-node-stream-update-fade-b;
+  animation: text-node-stream-update-fade var(--stream-update-fade-duration, var(--fade-duration, 200ms))
+    var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.2, 0, 0.4, 1))) both;
 }
 
-@keyframes text-node-stream-update-fade-a {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes text-node-stream-update-fade-b {
+@keyframes text-node-stream-update-fade {
   from {
     opacity: 0;
   }
@@ -325,7 +255,7 @@ const streamedDeltaClass = computed(() => (
 
 @media (prefers-reduced-motion: reduce) {
   .text-node-stream-delta {
-    animation: none !important;
+    animation-duration: 0s !important;
   }
 }
 </style>

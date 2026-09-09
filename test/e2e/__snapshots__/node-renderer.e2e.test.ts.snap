@@ -24,9 +24,7 @@ exports[`markdownRender node e2e coverage > renders admonition node 1`] = `
                 <div data-v-8dfe8a80="" class="node-content">
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
                   <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="admonition-stable-renderer-0-0-0"><span data-v-a84b8095="">Admonition content</span><span data-v-a84b8095=""></span>
-                      <!--v-if--></span>
-                    </p>
+                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="admonition-stable-renderer-0-0-0"><span data-v-a84b8095="">Admonition content</span><span data-v-a84b8095=""></span></span></p>
                   </transition-stub>
                 </div>
               </div>
@@ -51,9 +49,7 @@ exports[`markdownRender node e2e coverage > renders blockquote node 1`] = `
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
         <blockquote data-v-8ae59609="" class="blockquote blockquote-node" dir="auto" is-dark="false">
-          <p data-v-8ae59609="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="blockquote-markdown-renderer-0-paragraph-0"><span data-v-a84b8095="">Blockquote rendered content.</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </p>
+          <p data-v-8ae59609="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="blockquote-markdown-renderer-0-paragraph-0"><span data-v-a84b8095="">Blockquote rendered content.</span><span data-v-a84b8095=""></span></span></p>
         </blockquote>
       </transition-stub>
     </div>
@@ -79,8 +75,7 @@ exports[`markdownRender node e2e coverage > renders checkbox nodes 1`] = `
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
                   <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
                     <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-31e4c290="" data-v-93ee5c2d="" class="checkbox-node" role="img" aria-label="checked" index-key="list-item-markdown-renderer-0-0-0-0"><!-- Unchecked --><!-- Checked --><svg data-v-31e4c290="" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" class="checkbox-icon checkbox-checked"><rect data-v-31e4c290="" x="3" y="3" width="18" height="18" rx="4" fill="currentColor"></rect><path data-v-31e4c290="" d="M9 12l2 2 4-4" stroke="hsl(var(--ms-background))" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-                      <!----><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="list-item-markdown-renderer-0-0-0-2"><span data-v-a84b8095=""> Completed task</span><span data-v-a84b8095=""></span>
-                      <!--v-if--></span>
+                      <!----><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="list-item-markdown-renderer-0-0-0-2"><span data-v-a84b8095=""> Completed task</span><span data-v-a84b8095=""></span></span>
                       <!---->
                     </p>
                   </transition-stub>
@@ -98,8 +93,7 @@ exports[`markdownRender node e2e coverage > renders checkbox nodes 1`] = `
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
                   <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
                     <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-31e4c290="" data-v-93ee5c2d="" class="checkbox-node" role="img" aria-label="unchecked" index-key="list-item-markdown-renderer-0-1-0-0"><!-- Unchecked --><svg data-v-31e4c290="" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" class="checkbox-icon checkbox-unchecked"><rect data-v-31e4c290="" x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2"></rect></svg></span>
-                      <!----><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="list-item-markdown-renderer-0-1-0-2"><span data-v-a84b8095=""> Pending task</span><span data-v-a84b8095=""></span>
-                      <!--v-if--></span>
+                      <!----><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="list-item-markdown-renderer-0-1-0-2"><span data-v-a84b8095=""> Pending task</span><span data-v-a84b8095=""></span></span>
                       <!---->
                     </p>
                   </transition-stub>
@@ -174,13 +168,7 @@ exports[`markdownRender node e2e coverage > renders complex inline code with emp
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
         <ol data-v-b195669a="" class="list-node list-decimal">
           <li data-v-d94d2511="" data-v-b195669a="" class="list-item" dir="auto" value="1">
-            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><strong data-v-b1e65240="" class="strong-node"><span data-v-a84b8095="" data-v-b1e65240="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-0-0"><span data-v-a84b8095="">整合冗余条款：</span><span data-v-a84b8095=""></span><!--v-if--></span></strong><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-1"><span data-v-a84b8095=""> 将原</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-2"><span data-v-36040df8="">1-(5)</span><!--v-if--></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-3"><span data-v-a84b8095="">、</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-4"><span data-v-36040df8="">3-(3)</span><!--v-if--></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-5"><span data-v-a84b8095="">、</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-6"><span data-v-36040df8="">3-(4)</span><!--v-if--></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-7"><span data-v-a84b8095="">中关于“缴纳费用”和“告知法律状态变化”的核心义务合并，统一放入</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-8"><span data-v-36040df8="">1-(4)</span><!--v-if--></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-9"><span data-v-a84b8095="">“法律状态维护与通知义务”中，使其逻辑更集中，避免了在不同部分重复提及相似义务。</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span>
-            </p>
+            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><strong data-v-b1e65240="" class="strong-node"><span data-v-a84b8095="" data-v-b1e65240="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-0-0"><span data-v-a84b8095="">整合冗余条款：</span><span data-v-a84b8095=""></span></span></strong><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-1"><span data-v-a84b8095=""> 将原</span><span data-v-a84b8095=""></span></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-2"><span data-v-36040df8="">1-(5)</span></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-3"><span data-v-a84b8095="">、</span><span data-v-a84b8095=""></span></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-4"><span data-v-36040df8="">3-(3)</span></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-5"><span data-v-a84b8095="">、</span><span data-v-a84b8095=""></span></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-6"><span data-v-36040df8="">3-(4)</span></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-7"><span data-v-a84b8095="">中关于“缴纳费用”和“告知法律状态变化”的核心义务合并，统一放入</span><span data-v-a84b8095=""></span></span><code data-v-36040df8="" class="inline-code" index-key="list-item-markdown-renderer-0-0-paragraph-8"><span data-v-36040df8="">1-(4)</span></code><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-9"><span data-v-a84b8095="">“法律状态维护与通知义务”中，使其逻辑更集中，避免了在不同部分重复提及相似义务。</span><span data-v-a84b8095=""></span></span></p>
           </li>
         </ol>
       </transition-stub>
@@ -205,9 +193,7 @@ exports[`markdownRender node e2e coverage > renders definition list node 1`] = `
               <div data-v-8dfe8a80="" class="node-slot" data-node-index="0" data-node-type="text">
                 <div data-v-8dfe8a80="" class="node-content">
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
-                  <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true"><span data-v-a84b8095="" class="text-node" index-key="definition-term-markdown-renderer-0-0-0" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="">Term</span><span data-v-a84b8095=""></span>
-                    <!--v-if--></span>
-                  </transition-stub>
+                  <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true"><span data-v-a84b8095="" class="text-node" index-key="definition-term-markdown-renderer-0-0-0" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="">Term</span><span data-v-a84b8095=""></span></span></transition-stub>
                 </div>
               </div>
               <!--v-if-->
@@ -221,9 +207,7 @@ exports[`markdownRender node e2e coverage > renders definition list node 1`] = `
                 <div data-v-8dfe8a80="" class="node-content">
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
                   <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="definition-desc-markdown-renderer-0-0-0-0"><span data-v-a84b8095="">Definition details</span><span data-v-a84b8095=""></span>
-                      <!--v-if--></span>
-                    </p>
+                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="definition-desc-markdown-renderer-0-0-0-0"><span data-v-a84b8095="">Definition details</span><span data-v-a84b8095=""></span></span></p>
                   </transition-stub>
                 </div>
               </div>
@@ -247,10 +231,7 @@ exports[`markdownRender node e2e coverage > renders emoji node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Smile with </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><span data-v-b001e831="" data-v-93ee5c2d="" class="emoji-node" index-key="markdown-renderer-0-1">😄</span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> emoji.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Smile with </span><span data-v-a84b8095=""></span></span><span data-v-b001e831="" data-v-93ee5c2d="" class="emoji-node" index-key="markdown-renderer-0-1">😄</span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> emoji.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -266,10 +247,7 @@ exports[`markdownRender node e2e coverage > renders emphasis node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">This is </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><em data-v-ca49685e="" data-v-93ee5c2d="" class="emphasis-node"><span data-v-a84b8095="" data-v-ca49685e="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">italic text</span><span data-v-a84b8095=""></span><!--v-if--></span></em><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">This is </span><span data-v-a84b8095=""></span></span><em data-v-ca49685e="" data-v-93ee5c2d="" class="emphasis-node"><span data-v-a84b8095="" data-v-ca49685e="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">italic text</span><span data-v-a84b8095=""></span></span></em><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -285,10 +263,7 @@ exports[`markdownRender node e2e coverage > renders footnote nodes 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">A footnote reference</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><sup data-v-ba0412bc="" data-v-93ee5c2d="" id="fnref-1" class="footnote-reference" index-key="markdown-renderer-0-1"><span data-v-ba0412bc="" href="#fnref--1" title="查看脚注 1" class="footnote-link cursor-pointer">[1]</span></sup><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">A footnote reference</span><span data-v-a84b8095=""></span></span><sup data-v-ba0412bc="" data-v-93ee5c2d="" id="fnref-1" class="footnote-reference" index-key="markdown-renderer-0-1"><span data-v-ba0412bc="" href="#fnref--1" title="查看脚注 1" class="footnote-link cursor-pointer">[1]</span></sup><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -305,9 +280,7 @@ exports[`markdownRender node e2e coverage > renders footnote nodes 1`] = `
                 <div data-v-8dfe8a80="" class="node-content">
                   <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
                   <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="footnote-markdown-renderer-footnote-1-0-0-0"><span data-v-a84b8095="">Footnote explanation</span><span data-v-a84b8095=""></span>
-                      <!--v-if--></span><a data-v-31914872="" data-v-93ee5c2d="" class="footnote-anchor text-sm hover:underline cursor-pointer" href="#fnref-1" title="返回引用 1" index-key="footnote-markdown-renderer-footnote-1-0-0-1"> ↩︎ </a>
-                    </p>
+                    <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="footnote-markdown-renderer-footnote-1-0-0-0"><span data-v-a84b8095="">Footnote explanation</span><span data-v-a84b8095=""></span></span><a data-v-31914872="" data-v-93ee5c2d="" class="footnote-anchor text-sm hover:underline cursor-pointer" href="#fnref-1" title="返回引用 1" index-key="footnote-markdown-renderer-footnote-1-0-0-1"> ↩︎ </a></p>
                   </transition-stub>
                 </div>
               </div>
@@ -345,10 +318,7 @@ exports[`markdownRender node e2e coverage > renders hardbreak node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Line one</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><br data-v-2587360c="" data-v-93ee5c2d="" class="hard-break" index-key="markdown-renderer-0-1"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">Line two</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Line one</span><span data-v-a84b8095=""></span></span><br data-v-2587360c="" data-v-93ee5c2d="" class="hard-break" index-key="markdown-renderer-0-1"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">Line two</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -364,9 +334,7 @@ exports[`markdownRender node e2e coverage > renders heading node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <h1 data-v-9f883140="" class="heading-node heading-1" dir="auto" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-9f883140="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Heading Node Title</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </h1>
+        <h1 data-v-9f883140="" class="heading-node heading-1" dir="auto" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-9f883140="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Heading Node Title</span><span data-v-a84b8095=""></span></span></h1>
       </transition-stub>
     </div>
   </div>
@@ -382,12 +350,7 @@ exports[`markdownRender node e2e coverage > renders highlight node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Use </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><mark data-v-9bc40b1b="" data-v-93ee5c2d="" class="highlight-node"><span data-v-a84b8095="" data-v-9bc40b1b="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">highlighted text</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </mark><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> for emphasis.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Use </span><span data-v-a84b8095=""></span></span><mark data-v-9bc40b1b="" data-v-93ee5c2d="" class="highlight-node"><span data-v-a84b8095="" data-v-9bc40b1b="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">highlighted text</span><span data-v-a84b8095=""></span></span></mark><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> for emphasis.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -437,10 +400,7 @@ exports[`markdownRender node e2e coverage > renders inline code node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Here is </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><code data-v-36040df8="" data-v-93ee5c2d="" class="inline-code" index-key="markdown-renderer-0-1"><span data-v-36040df8="">const answer = 42</span><!--v-if--></code><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> inline.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Here is </span><span data-v-a84b8095=""></span></span><code data-v-36040df8="" data-v-93ee5c2d="" class="inline-code" index-key="markdown-renderer-0-1"><span data-v-36040df8="">const answer = 42</span></code><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> inline.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -456,12 +416,7 @@ exports[`markdownRender node e2e coverage > renders insert node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Here comes </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><ins data-v-1e673445="" data-v-93ee5c2d="" class="insert-node"><span data-v-a84b8095="" data-v-1e673445="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">inserted text</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </ins><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> in the paragraph.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Here comes </span><span data-v-a84b8095=""></span></span><ins data-v-1e673445="" data-v-93ee5c2d="" class="insert-node"><span data-v-a84b8095="" data-v-1e673445="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">inserted text</span><span data-v-a84b8095=""></span></span></ins><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> in the paragraph.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -477,12 +432,7 @@ exports[`markdownRender node e2e coverage > renders link node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Visit </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><a data-v-994bfd08="" data-v-93ee5c2d="" class="link-node" href="https://vuejs.org" title="" aria-label="Link: https://vuejs.org" aria-hidden="false" target="_blank" rel="noopener noreferrer" style="--underline-height: 2px; --underline-bottom: -3px; --underline-opacity: 0.35; --underline-rest-opacity: 0.175; --underline-duration: 1.6s; --underline-timing: ease-in-out; --underline-iteration: infinite;"><span data-v-a84b8095="" data-v-994bfd08="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">Vue</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </a><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> now.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Visit </span><span data-v-a84b8095=""></span></span><a data-v-994bfd08="" data-v-93ee5c2d="" class="link-node" href="https://vuejs.org" title="" aria-label="Link: https://vuejs.org" aria-hidden="false" target="_blank" rel="noopener noreferrer" style="--underline-height: 2px; --underline-bottom: -3px; --underline-opacity: 0.35; --underline-rest-opacity: 0.175; --underline-duration: 1.6s; --underline-timing: ease-in-out; --underline-iteration: infinite;"><span data-v-a84b8095="" data-v-994bfd08="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">Vue</span><span data-v-a84b8095=""></span></span></a><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> now.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -498,11 +448,7 @@ exports[`markdownRender node e2e coverage > renders math inline node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Einstein wrote </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-1"><span data-v-a84b8095="">$E=mc^2$</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Einstein wrote </span><span data-v-a84b8095=""></span></span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-1"><span data-v-a84b8095="">$E=mc^2$</span><span data-v-a84b8095=""></span></span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -520,14 +466,10 @@ exports[`markdownRender node e2e coverage > renders ordered list node 1`] = `
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
         <ol data-v-b195669a="" class="list-node list-decimal">
           <li data-v-d94d2511="" data-v-b195669a="" class="list-item" dir="auto" value="1">
-            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-0"><span data-v-a84b8095="">First entry</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span>
-            </p>
+            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-0"><span data-v-a84b8095="">First entry</span><span data-v-a84b8095=""></span></span></p>
           </li>
           <li data-v-d94d2511="" data-v-b195669a="" class="list-item" dir="auto" value="2">
-            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-1-paragraph-0"><span data-v-a84b8095="">Second entry</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span>
-            </p>
+            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-1-paragraph-0"><span data-v-a84b8095="">Second entry</span><span data-v-a84b8095=""></span></span></p>
           </li>
         </ol>
       </transition-stub>
@@ -545,9 +487,7 @@ exports[`markdownRender node e2e coverage > renders paragraph and text node 1`] 
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Simple paragraph content rendered as plain text.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Simple paragraph content rendered as plain text.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -563,10 +503,7 @@ exports[`markdownRender node e2e coverage > renders reference node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Cite research </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><span data-v-7c86ecd2="" data-v-93ee5c2d="" class="reference-node cursor-pointer text-xs rounded-md px-1.5 mx-0.5" role="button" tabindex="0" data-reference-id="1" data-markstream-reference-id="1" index-key="markdown-renderer-0-1">1</span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> for details.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Cite research </span><span data-v-a84b8095=""></span></span><span data-v-7c86ecd2="" data-v-93ee5c2d="" class="reference-node cursor-pointer text-xs rounded-md px-1.5 mx-0.5" role="button" tabindex="0" data-reference-id="1" data-markstream-reference-id="1" index-key="markdown-renderer-0-1">1</span><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> for details.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -598,12 +535,7 @@ exports[`markdownRender node e2e coverage > renders strikethrough node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">This is </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><del data-v-d7c2e36d="" data-v-93ee5c2d="" class="strikethrough-node"><span data-v-a84b8095="" data-v-d7c2e36d="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">deleted text</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </del><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">This is </span><span data-v-a84b8095=""></span></span><del data-v-d7c2e36d="" data-v-93ee5c2d="" class="strikethrough-node"><span data-v-a84b8095="" data-v-d7c2e36d="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">deleted text</span><span data-v-a84b8095=""></span></span></del><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -619,10 +551,7 @@ exports[`markdownRender node e2e coverage > renders strong node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">This is </span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><strong data-v-b1e65240="" data-v-93ee5c2d="" class="strong-node"><span data-v-a84b8095="" data-v-b1e65240="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">bold text</span><span data-v-a84b8095=""></span><!--v-if--></span></strong><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">This is </span><span data-v-a84b8095=""></span></span><strong data-v-b1e65240="" data-v-93ee5c2d="" class="strong-node"><span data-v-a84b8095="" data-v-b1e65240="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">bold text</span><span data-v-a84b8095=""></span></span></strong><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -638,12 +567,7 @@ exports[`markdownRender node e2e coverage > renders subscript node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Chemical formula H</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><sub data-v-40ad1ac6="" data-v-93ee5c2d="" class="subscript-node"><span data-v-a84b8095="" data-v-40ad1ac6="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">2</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </sub><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">O is familiar.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Chemical formula H</span><span data-v-a84b8095=""></span></span><sub data-v-40ad1ac6="" data-v-93ee5c2d="" class="subscript-node"><span data-v-a84b8095="" data-v-40ad1ac6="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">2</span><span data-v-a84b8095=""></span></span></sub><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095="">O is familiar.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -659,12 +583,7 @@ exports[`markdownRender node e2e coverage > renders superscript node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Math uses x</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span><sup data-v-9c4a3c09="" data-v-93ee5c2d="" class="superscript-node"><span data-v-a84b8095="" data-v-9c4a3c09="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">2</span><span data-v-a84b8095=""></span>
-            <!--v-if--></span>
-          </sup><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> frequently.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">Math uses x</span><span data-v-a84b8095=""></span></span><sup data-v-9c4a3c09="" data-v-93ee5c2d="" class="superscript-node"><span data-v-a84b8095="" data-v-9c4a3c09="" class="text-node" index-key="markdown-renderer-0-1-0"><span data-v-a84b8095="">2</span><span data-v-a84b8095=""></span></span></sup><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-2"><span data-v-a84b8095=""> frequently.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -685,23 +604,16 @@ exports[`markdownRender node e2e coverage > renders table node 1`] = `
             <!--v-if-->
             <thead data-v-8fb37ab3="">
               <tr data-v-8fb37ab3="">
-                <th data-v-8fb37ab3="" dir="auto" class="text-left"><span data-v-a84b8095="" class="text-node" index-key="table-th-markdown-renderer-0-0-0"><span data-v-a84b8095="">Name</span><span data-v-a84b8095=""></span>
-                  <!--v-if--></span><button data-v-8fb37ab3="" type="button" class="table-node__resize-handle" aria-label="Resize columns 1 and 2"></button>
-                </th>
-                <th data-v-8fb37ab3="" dir="auto" class="text-left"><span data-v-a84b8095="" class="text-node" index-key="table-th-markdown-renderer-0-1-0"><span data-v-a84b8095="">Role</span><span data-v-a84b8095=""></span>
-                  <!--v-if--></span>
+                <th data-v-8fb37ab3="" dir="auto" class="text-left"><span data-v-a84b8095="" class="text-node" index-key="table-th-markdown-renderer-0-0-0"><span data-v-a84b8095="">Name</span><span data-v-a84b8095=""></span></span><button data-v-8fb37ab3="" type="button" class="table-node__resize-handle" aria-label="Resize columns 1 and 2"></button></th>
+                <th data-v-8fb37ab3="" dir="auto" class="text-left"><span data-v-a84b8095="" class="text-node" index-key="table-th-markdown-renderer-0-1-0"><span data-v-a84b8095="">Role</span><span data-v-a84b8095=""></span></span>
                   <!--v-if-->
                 </th>
               </tr>
             </thead>
             <tbody data-v-8fb37ab3="">
               <tr data-v-8fb37ab3="">
-                <td data-v-8fb37ab3="" class="text-left" dir="auto"><span data-v-a84b8095="" class="text-node" index-key="table-td-markdown-renderer-0-0-0-0"><span data-v-a84b8095="">Alice</span><span data-v-a84b8095=""></span>
-                  <!--v-if--></span>
-                </td>
-                <td data-v-8fb37ab3="" class="text-left" dir="auto"><span data-v-a84b8095="" class="text-node" index-key="table-td-markdown-renderer-0-0-1-0"><span data-v-a84b8095="">Developer</span><span data-v-a84b8095=""></span>
-                  <!--v-if--></span>
-                </td>
+                <td data-v-8fb37ab3="" class="text-left" dir="auto"><span data-v-a84b8095="" class="text-node" index-key="table-td-markdown-renderer-0-0-0-0"><span data-v-a84b8095="">Alice</span><span data-v-a84b8095=""></span></span></td>
+                <td data-v-8fb37ab3="" class="text-left" dir="auto"><span data-v-a84b8095="" class="text-node" index-key="table-td-markdown-renderer-0-0-1-0"><span data-v-a84b8095="">Developer</span><span data-v-a84b8095=""></span></span></td>
               </tr>
             </tbody>
           </table>
@@ -724,9 +636,7 @@ exports[`markdownRender node e2e coverage > renders thematic break node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">First section.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-0-0"><span data-v-a84b8095="">First section.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -742,9 +652,7 @@ exports[`markdownRender node e2e coverage > renders thematic break node 1`] = `
     <div data-v-8dfe8a80="" class="node-content">
       <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
-        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-2-0"><span data-v-a84b8095="">Second section.</span><span data-v-a84b8095=""></span>
-          <!--v-if--></span>
-        </p>
+        <p data-v-93ee5c2d="" dir="auto" class="paragraph-node" typewriter="false" fade="true" is-dark="false"><span data-v-a84b8095="" data-v-93ee5c2d="" class="text-node" index-key="markdown-renderer-2-0"><span data-v-a84b8095="">Second section.</span><span data-v-a84b8095=""></span></span></p>
       </transition-stub>
     </div>
   </div>
@@ -762,14 +670,10 @@ exports[`markdownRender node e2e coverage > renders unordered list node 1`] = `
       <transition-stub data-v-8dfe8a80="" name="fade" appear="true" persisted="false" css="true">
         <ul data-v-b195669a="" class="list-node list-disc">
           <li data-v-d94d2511="" data-v-b195669a="" class="list-item" dir="auto">
-            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-0"><span data-v-a84b8095="">Item one</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span>
-            </p>
+            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-0-paragraph-0"><span data-v-a84b8095="">Item one</span><span data-v-a84b8095=""></span></span></p>
           </li>
           <li data-v-d94d2511="" data-v-b195669a="" class="list-item" dir="auto">
-            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-1-paragraph-0"><span data-v-a84b8095="">Item two</span><span data-v-a84b8095=""></span>
-              <!--v-if--></span>
-            </p>
+            <p data-v-d94d2511="" dir="auto" class="paragraph-node"><span data-v-a84b8095="" class="text-node" index-key="list-item-markdown-renderer-0-1-paragraph-0"><span data-v-a84b8095="">Item two</span><span data-v-a84b8095=""></span></span></p>
           </li>
         </ul>
       </transition-stub>

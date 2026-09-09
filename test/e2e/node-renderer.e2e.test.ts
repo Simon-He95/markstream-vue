@@ -963,7 +963,7 @@ After`,
     }
   })
 
-  it('replays a fade animation when a streamed non-code node updates in place', async () => {
+  it('preserves fading batches when a streamed non-code node updates in place', async () => {
     const wrapper = await mountMarkdown('Hello')
     try {
       const nodeContent = () => wrapper.find('[data-node-index="0"] .node-content')
@@ -985,7 +985,7 @@ After`,
       expect(nodeContent().attributes('style') ?? '').toBe('')
       const secondDelta = wrapper.find('.text-node-stream-delta')
       expect(secondDelta.exists()).toBe(true)
-      expect(secondDelta.text()).toBe('again')
+      expect(wrapper.findAll('.text-node-stream-delta').map(delta => delta.text()).join(' ')).toBe('world again')
       expect(normalizeText(wrapper.text())).toContain('Hello world again')
     }
     finally {

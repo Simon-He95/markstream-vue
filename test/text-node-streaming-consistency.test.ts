@@ -111,7 +111,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     }
   })
 
-  it('settles a finished strong-node delta when following sibling text keeps streaming', async () => {
+  it('lets a strong-node fade finish while following sibling text keeps streaming', async () => {
     const wrapper = mount(NodeRenderer, {
       props: {
         content: '1. **记忆化递归（动态规划',
@@ -139,7 +139,9 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
       await flushAll()
 
       strongDelta = wrapper.find('.strong-node .text-node-stream-delta')
-      expect(strongDelta.exists()).toBe(false)
+      expect(strongDelta.text()).toBe('）')
+      await strongDelta.trigger('animationend')
+      expect(wrapper.find('.strong-node .text-node-stream-delta').exists()).toBe(false)
       expect(wrapper.get('.strong-node').text()).toBe('记忆化递归（动态规划）')
 
       await wrapper.setProps({
@@ -243,7 +245,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     }
   })
 
-  it('preserves active TextNode delta until streamRenderVersion changes', async () => {
+  it('preserves active TextNode fade across streamRenderVersion changes until animationend', async () => {
     const streamRenderVersion = ref(1)
     const textStreamState = new Map<string, string>()
     const wrapper = mount(TextNode, {
@@ -283,6 +285,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
 
       streamRenderVersion.value += 1
       await flushAll()
+      expect(wrapper.find('.text-node-stream-delta').exists()).toBe(true)
+      await wrapper.get('.text-node-stream-delta').trigger('animationend')
 
       expect(wrapper.find('.text-node-stream-delta').exists()).toBe(false)
       expect(wrapper.text()).toBe('HelloWorld')
@@ -292,7 +296,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     }
   })
 
-  it('preserves active InlineCodeNode delta until streamRenderVersion changes', async () => {
+  it('preserves active InlineCodeNode fade across streamRenderVersion changes until animationend', async () => {
     const streamRenderVersion = ref(1)
     const textStreamState = new Map<string, string>()
     const wrapper = mount(InlineCodeNode, {
@@ -332,6 +336,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
 
       streamRenderVersion.value += 1
       await flushAll()
+      expect(wrapper.find('.inline-code-stream-delta').exists()).toBe(true)
+      await wrapper.get('.inline-code-stream-delta').trigger('animationend')
 
       expect(wrapper.find('.inline-code-stream-delta').exists()).toBe(false)
       expect(wrapper.text()).toBe('foobar')
@@ -418,6 +424,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
 
       streamRenderVersion.value += 1
       await flushAll()
+      expect(wrapper.get('.text-node-stream-delta').text()).toBe('World')
+      await wrapper.get('.text-node-stream-delta').trigger('animationend')
       expect(wrapper.find('.text-node-stream-delta').exists()).toBe(false)
       expect(wrapper.text()).toBe('HelloWorld')
     }
@@ -426,7 +434,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     }
   })
 
-  it('settles the previous delta before a same-tick version bump and content append', async () => {
+  it('preserves fading text through a same-tick version bump and content append', async () => {
     const content = ref('Hello')
     const streamRenderVersion = ref(1)
     const textStreamState = new Map<string, string>()
@@ -451,7 +459,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
       streamRenderVersion.value += 1
       await flushAll()
 
-      expect(wrapper.get('.text-node-stream-delta').text()).toBe('Again')
+      expect(wrapper.findAll('.text-node-stream-delta').map(delta => delta.text()).join('')).toBe('WorldAgain')
       expect(wrapper.text()).toBe('HelloWorldAgain')
     }
     finally {
@@ -459,7 +467,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     }
   })
 
-  it('stops the active stream version watcher when unmounted', async () => {
+  it('does not subscribe active fades to the global stream version', async () => {
     let version = 1
     let versionReads = 0
     const streamRenderVersion = customRef<number>((track, trigger) => ({
@@ -494,6 +502,7 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
     await flushAll()
     expect(wrapper.get('.text-node-stream-delta').text()).toBe('World')
 
+    expect(versionReads).toBe(0)
     wrapper.unmount()
     versionReads = 0
     streamRenderVersion.value = 2

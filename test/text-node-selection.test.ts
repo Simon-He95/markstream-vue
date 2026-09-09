@@ -66,6 +66,8 @@ describe('text node streaming selection', () => {
       // replacing or mutating the settled text node.
       await wrapper.setProps({ content })
       await flushAll()
+      for (const delta of wrapper.findAll('.text-node-stream-delta'))
+        await delta.trigger('animationend')
       const textNodeFinal = wrapper.find('.text-node > span:first-child').element.firstChild as Text | null
       expect(textNodeFinal, 'settled text node identity preserved across settle').toBe(textNodeBefore)
       expect(textNodeBefore.textContent).toBe(first)
@@ -121,6 +123,8 @@ describe('text node streaming selection', () => {
       for (let index = 1; index <= 12; index++) {
         await wrapper.setProps({ content: `base${'x'.repeat(index)}` })
         await flushAll()
+        for (const delta of wrapper.findAll('.text-node-stream-delta'))
+          await delta.trigger('animationend')
       }
 
       const appends = wrapper.find('.text-node > span:nth-child(2)').element
@@ -138,9 +142,11 @@ describe('text node streaming selection', () => {
       const content = 'base123456789'
       await wrapper.setProps({ content: 'base1' })
       await flushAll()
+      await wrapper.get('.text-node-stream-delta').trigger('animationend')
       await wrapper.setProps({ content: 'base12' })
       await flushAll()
 
+      await wrapper.get('.text-node-stream-delta').trigger('animationend')
       const appends = wrapper.find('.text-node > span:nth-child(2)').element
       const selectedNode = appends.firstChild as Text
       expect(selectText(selectedNode, 0, 1)).toBe('1')
@@ -148,6 +154,8 @@ describe('text node streaming selection', () => {
       for (let index = 3; index <= 9; index++) {
         await wrapper.setProps({ content: content.slice(0, 4 + index) })
         await flushAll()
+        for (const delta of wrapper.findAll('.text-node-stream-delta'))
+          await delta.trigger('animationend')
       }
 
       expect(appends.childNodes.length).toBeGreaterThan(4)
@@ -170,6 +178,8 @@ describe('text node streaming selection', () => {
       const selectedBefore = selectText(selectedNode, 1, 4)
       expect(selectedBefore).toBe('tai')
 
+      await delta.trigger('animationend')
+      expect(selectedNode.isConnected).toBe(true)
       await wrapper.setProps({ content: 'base tail more' })
       await flushAll()
 

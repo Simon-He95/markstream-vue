@@ -1,0 +1,3 @@
+:root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202723; background: #fff; }
+body { margin: 0; padding: 28px 32px 48px; font-size: 19px; line-height: 1.85; }
+.markstream-vue { max-width: 780px; margin: 0 auto; }

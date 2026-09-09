@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { resolveStreamingTextUpdate } from 'markstream-core'
-import { computed, inject, onScopeDispose, ref, useAttrs, watch } from 'vue'
+import { computed, inject, useAttrs, watch } from 'vue'
+import { useStreamingTextFade } from '../../composables/useStreamingTextFade'
 
 const props = defineProps<{
   node: {
@@ -13,7 +13,6 @@ const props = defineProps<{
 const attrs = useAttrs()
 const inheritedFade = inject<{ value?: boolean } | undefined>('markstreamFade', undefined)
 const inheritedTextStreamState = inject<Map<string, string> | undefined>('markstreamTextStreamState', undefined)
-const inheritedStreamVersion = inject<{ value?: number } | undefined>('markstreamStreamVersion', undefined)
 const explicitFade = computed<boolean | undefined>(() => {
   const raw = attrs.fade
   if (raw === '' || raw === true || raw === 'true')
@@ -37,79 +36,19 @@ const streamStateKey = computed(() => {
     return ''
   return String(raw)
 })
-const settledCode = ref(props.node.code)
-const streamedDelta = ref('')
-const streamFadeVersion = ref(0)
-let stopStreamVersionWatch: (() => void) | undefined
-
-function getRenderedContent() {
-  return settledCode.value + streamedDelta.value
-}
-
-function stopWatchingStreamVersion() {
-  stopStreamVersionWatch?.()
-  stopStreamVersionWatch = undefined
-}
-
-function settleStreamedDelta() {
-  if (!streamedDelta.value)
-    return
-  settledCode.value = getRenderedContent()
-  streamedDelta.value = ''
-}
-
-function ensureStreamVersionWatch() {
-  if (stopStreamVersionWatch || !inheritedStreamVersion)
-    return
-  // One persistent watcher for the component's whole lifecycle instead of a
-  // create-per-delta + destroy-on-settle watcher (the old approach churned a
-  // new `flush: 'sync'` watcher on every streaming commit that appended a
-  // delta).
-  stopStreamVersionWatch = watch(
-    () => inheritedStreamVersion.value,
-    () => {
-      if (streamedDelta.value)
-        settleStreamedDelta()
-    },
-    { flush: 'sync' },
-  )
-}
+const { settledContent: settledCode, segments, update, finish } = useStreamingTextFade(props.node.code)
 
 watch(
   [() => props.node.code, streamStateKey, fadeEnabled],
   ([next]) => {
     const normalized = String(next ?? '')
     const key = streamStateKey.value
-    const result = resolveStreamingTextUpdate({
-      nextContent: normalized,
-      persistedContent: key ? inheritedTextStreamState?.get(key) : undefined,
-      currentState: { settledContent: settledCode.value, streamedDelta: streamedDelta.value },
-      typewriterEnabled: fadeEnabled.value,
-    })
-
-    settledCode.value = result.settledContent
-    streamedDelta.value = result.streamedDelta
-    if (result.appended) {
-      streamFadeVersion.value += 1
-      ensureStreamVersionWatch()
-    }
-    else if (!streamedDelta.value) {
-      stopWatchingStreamVersion()
-    }
-
+    update(normalized, key ? inheritedTextStreamState?.get(key) : undefined, fadeEnabled.value)
     if (key)
       inheritedTextStreamState?.set(key, normalized)
   },
   { immediate: true },
 )
-
-onScopeDispose(stopWatchingStreamVersion)
-
-const streamedDeltaClass = computed(() => (
-  streamFadeVersion.value % 2 === 0
-    ? 'inline-code-stream-delta--a'
-    : 'inline-code-stream-delta--b'
-))
 </script>
 
 <template>
@@ -120,11 +59,12 @@ const streamedDeltaClass = computed(() => (
     <template v-else>
       <span v-if="settledCode">{{ settledCode }}</span>
       <span
-        v-if="streamedDelta"
-        class="inline-code-stream-delta" :class="[streamedDeltaClass]"
-        @animationend="settleStreamedDelta"
+        v-for="segment in segments"
+        :key="segment.id"
+        class="inline-code-stream-delta"
+        @animationend="finish(segment.id)"
       >
-        {{ streamedDelta }}
+        {{ segment.content }}
       </span>
     </template>
   </code>
@@ -148,27 +88,11 @@ const streamedDeltaClass = computed(() => (
 }
 
 .inline-code-stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, 280ms));
-  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.33, 0, 0.67, 1)));
-  animation-fill-mode: both;
-}
-.inline-code-stream-delta--a {
-  animation-name: inline-code-stream-update-fade-a;
-}
-.inline-code-stream-delta--b {
-  animation-name: inline-code-stream-update-fade-b;
+  animation: inline-code-stream-update-fade var(--stream-update-fade-duration, var(--fade-duration, 200ms))
+    var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.2, 0, 0.4, 1))) both;
 }
 
-@keyframes inline-code-stream-update-fade-a {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes inline-code-stream-update-fade-b {
+@keyframes inline-code-stream-update-fade {
   from {
     opacity: 0;
   }
@@ -179,7 +103,7 @@ const streamedDeltaClass = computed(() => (
 
 @media (prefers-reduced-motion: reduce) {
   .inline-code-stream-delta {
-    animation: none !important;
+    animation-duration: 0s !important;
   }
 }
 </style>

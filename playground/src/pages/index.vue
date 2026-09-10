@@ -522,8 +522,16 @@ onMounted(() => {
   // 初次判断（确保组件渲染完）
   requestAnimationFrame(scheduleCheckMinHeight)
 
+  // A delayed layout change (for example, a large Markdown node finishing
+  // parsing) must also extend the bottom-follow window. Do this directly from
+  // ResizeObserver instead of relying only on the min-height probe's rAF.
+  const handleObservedResize = () => {
+    scheduleCheckMinHeight()
+    scheduleScrollToBottom()
+  }
+
   // 观察容器尺寸变化（窗口大小、面板大小）
-  __roContainer = new ResizeObserver(scheduleCheckMinHeight)
+  __roContainer = new ResizeObserver(handleObservedResize)
   __roContainer.observe(container)
 
   // 观察渲染内容尺寸变化（markdown 内容动态变化）
@@ -534,7 +542,7 @@ onMounted(() => {
     if (el) {
       if (__roContent)
         __roContent.disconnect()
-      __roContent = new ResizeObserver(scheduleCheckMinHeight)
+      __roContent = new ResizeObserver(handleObservedResize)
       __roContent.observe(el)
     }
   }
@@ -544,6 +552,7 @@ onMounted(() => {
   __mo = new MutationObserver(() => {
     tryObserveContent()
     scheduleCheckMinHeight()
+    scheduleScrollToBottom()
   })
   __mo.observe(container, { childList: true, subtree: true })
   scheduleScrollToBottom()

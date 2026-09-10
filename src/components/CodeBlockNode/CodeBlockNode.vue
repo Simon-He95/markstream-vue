@@ -885,24 +885,19 @@ async function revealEditorDisplay() {
   if (!isDiff.value) {
     if (whenRuntimeVisualReady && !await whenRuntimeVisualReady())
       return false
-    // Hold the grid row at the fallback <pre>'s full height (content + vertical
-    // padding) while the stream-diffs surface is revealed, then settle on a
-    // later frame. Without this pin, removing the fallback collapses the row by
-    // its padding and any content-estimation delta in the same patch the surface
-    // mounts, producing a CLS. Mirror the diff handoff below.
-    syncEditorHostToFallbackHeight()
-    layoutEditorToHost(true)
+    // The enhanced surface and the fallback <pre> share one grid cell and are
+    // driven by the same line metrics: `syncEditorCssVars()` feeds the
+    // fallback's font-size/line-height into `--diffs-font-size` /
+    // `--diffs-line-height`, so both surfaces resolve the same line box height
+    // and the grid track keeps its height when the fallback is removed. No host
+    // pin is required here (unlike the diff handoff below, whose fallback uses a
+    // different row model). Move the host into its final cell while the
+    // fallback is still visible, lay the runtime out against that box, reveal.
     editorHandoffPrepared.value = true
     await nextTick()
-    syncEditorHostToFallbackHeight()
-    layoutEditorToHost(true)
-    await waitForAnimationFrame()
-    syncEditorHostToFallbackHeight()
     layoutEditorToHost(true)
     editorDisplayReady.value = true
     await nextTick()
-    // Keep the removal frame at the pinned fallback height; schedule the settle
-    // on a subsequent frame instead of collapsing synchronously.
     scheduleEditorHeightSync()
     return true
   }

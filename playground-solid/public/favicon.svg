@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="markstream-vue app icon">
+
+  <defs>
+    <linearGradient id="msGrad" x1="18" y1="18" x2="112" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#43d67b"/>
+      <stop offset="0.52" stop-color="#20c7bd"/>
+      <stop offset="1" stop-color="#4cc9f0"/>
+    </linearGradient>
+    <linearGradient id="msGradSoft" x1="20" y1="20" x2="108" y2="100" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7df28f"/>
+      <stop offset="0.55" stop-color="#50dca5"/>
+      <stop offset="1" stop-color="#3bc6f2"/>
+    </linearGradient>
+    <radialGradient id="tileBg" cx="50%" cy="12%" r="92%">
+      <stop offset="0" stop-color="#1d2b3b"/>
+      <stop offset="0.62" stop-color="#0c1724"/>
+      <stop offset="1" stop-color="#050a12"/>
+    </radialGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#020617" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#tileBg)"/>
+  <rect x="9.5" y="9.5" width="109" height="109" rx="26" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
+  <circle cx="32" cy="28" r="3" fill="#43d67b" opacity="0.85"/>
+  <circle cx="44" cy="28" r="3" fill="#20c7bd" opacity="0.75"/>
+  <circle cx="56" cy="28" r="3" fill="#4cc9f0" opacity="0.65"/>
+  <g transform="translate(0 5)">
+    <path d="M31 93 V33 L64 66 L97 33 V93" fill="none" stroke="#020617" stroke-opacity="0.26" stroke-width="23" stroke-linecap="square" stroke-linejoin="round"/>
+    <path d="M31 93 V33 L64 66 L97 33 V93" fill="none" stroke="url(#msGradSoft)" stroke-width="16" stroke-linecap="square" stroke-linejoin="round"/>
+    <path d="M31 93 V33 L64 66" fill="none" stroke="#f8fafc" stroke-opacity="0.84" stroke-width="5.6" stroke-linecap="square" stroke-linejoin="round"/>
+    <rect x="15" y="42" width="24" height="8" rx="3" fill="url(#msGrad)" opacity="0.92"/>
+    <rect x="8" y="61" width="31" height="8" rx="3" fill="url(#msGrad)" opacity="0.74"/>
+    <rect x="20" y="80" width="20" height="8" rx="3" fill="url(#msGrad)" opacity="0.58"/>
+    <rect x="103" y="84" width="10" height="9" rx="2" fill="url(#msGrad)" opacity="0.9"/>
+  </g>
+</svg>

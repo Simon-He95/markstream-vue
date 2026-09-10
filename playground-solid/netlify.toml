@@ -1,0 +1,12 @@
+[build]
+publish = "dist"
+command = "npx pnpm i && pnpm --filter stream-markdown-parser build && pnpm --filter markstream-solid build && npm run build"
+
+[build.environment]
+NPM_FLAGS = "--version"
+NODE_VERSION = "22"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200

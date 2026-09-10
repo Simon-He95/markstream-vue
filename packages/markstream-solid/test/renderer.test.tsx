@@ -218,6 +218,18 @@ describe('markstream-solid renderer foundation', () => {
     dispose()
   })
 
+  it('does not keep custom-component listeners after the renderer unmounts', () => {
+    const store = (globalThis as any).__MARKSTREAM_SOLID_CUSTOM_COMPONENTS_STORE__ as { listeners: Set<() => void> }
+    const before = store.listeners.size
+    const container = document.createElement('div')
+    const dispose = render(() => <MarkdownRender content="# hi" final />, container)
+    expect(store.listeners.size).toBe(before + 1)
+    dispose()
+    expect(store.listeners.size).toBe(before)
+    expect(() => setCustomComponents({ notice: () => <aside /> })).not.toThrow()
+    clearGlobalCustomComponents()
+  })
+
   it('keeps renderer-scoped custom components isolated from global registration', () => {
     const container = document.createElement('div')
     setCustomComponents({ notice: props => <aside data-global-notice>{props.node.content}</aside> })

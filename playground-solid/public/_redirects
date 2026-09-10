@@ -1,0 +1,5 @@
+# Cloudflare Pages 重定向规则
+# SPA 路由: 将所有请求重定向到 index.html
+# https://developers.cloudflare.com/pages/configuration/redirects/
+
+/*  /index.html  200

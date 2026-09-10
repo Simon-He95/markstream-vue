@@ -67,8 +67,8 @@ export function NodeRenderer(props: MarkdownRenderProps) {
 
   onMount(() => {
     setMounted(true)
-    return subscribeCustomComponents(() => setCustomComponentsRevision(getCustomComponentsRevision()))
   })
+  onCleanup(subscribeCustomComponents(() => setCustomComponentsRevision(getCustomComponentsRevision())))
 
   const renderContent = () => smoothEnabled() ? smooth.visible() : (props.content ?? '')
   const effectiveFinal = () => smoothEnabled() && requestedFinal() != null

@@ -10,8 +10,8 @@
 | `pnpm --filter markstream-solid build` | 退出 0 | 浏览器 ESM、SSR、声明和 CSS 产物 |
 | `pnpm --filter markstream-solid test:ssr` | 退出 0 | 条件导出的 SSR 包入口与服务端 Markdown 输出 |
 | `pnpm --filter markstream-solid test` | 退出 0（50 tests） | 解析、Solid DOM、HTML 安全、流式节点身份、自定义组件、批量调度、TextNode 稳定追加、final replacement/reset、代码块控件、NodeOutlet 模式/高度、可选 peer 降级、渐进图表渲染、KaTeX 取消、worker 清理、D2 预览前源码 fallback、Mermaid 与 Infographic 预览高度默认值、跨框架 parser cache 隔离和 Mermaid 流式节流 |
-| `pnpm --filter markstream-solid-playground build` | 退出 0 | Solid 消费端的生产构建 |
-| `pnpm --filter markstream-solid-playground hydration:generate` + Chromium | 退出 0 | 同一组件的 SSR 标记、Solid hydration bootstrap 和客户端响应式更新 |
+| `pnpm --filter markstream-solid-playground build` | **historical / unreproducible from this commit** — git at `1f51247e` has no `playground-solid/` source. Do not treat as this playground-migration run. See `playground-solid/VERIFICATION.md`. | previously claimed production build |
+| `pnpm --filter markstream-solid-playground hydration:generate` + Chromium | **historical / unreproducible from this commit** — no playground app existed in git. See `playground-solid/VERIFICATION.md`. | previously claimed SSR/hydration |
 
 ## 已实现的试搬链路
 

@@ -1,0 +1,59 @@
+{
+  "name": "markstream-solid",
+  "type": "module",
+  "version": "2.0.11",
+  "description": "Solid streaming Markdown renderer for AI chat and incomplete Markdown.",
+  "license": "MIT",
+  "sideEffects": ["**/*.css"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "node": "./dist/server/index.js", "import": "./dist/index.js" },
+    "./index.css": "./dist/index.css",
+    "./index.px.css": "./dist/index.px.css",
+    "./index.tailwind.css": "./dist/index.tailwind.css",
+    "./tailwind": { "types": "./dist/tailwind.d.ts", "import": "./dist/tailwind.js" },
+    "./workers/katexWorkerClient": { "types": "./dist/workers/katexWorkerClient.d.ts", "import": "./dist/workers/katexWorkerClient.js" },
+    "./workers/mermaidWorkerClient": { "types": "./dist/workers/mermaidWorkerClient.d.ts", "import": "./dist/workers/mermaidWorkerClient.js" },
+    "./workers/katexCdnWorker": { "types": "./dist/workers/katexCdnWorker.d.ts", "import": "./dist/workers/katexCdnWorker.js" },
+    "./workers/mermaidCdnWorker": { "types": "./dist/workers/mermaidCdnWorker.d.ts", "import": "./dist/workers/mermaidCdnWorker.js" },
+    "./workers/katexRenderer.worker": "./dist/workers/katexRenderer.worker.js",
+    "./workers/mermaidParser.worker": "./dist/workers/mermaidParser.worker.js"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "pnpm --dir ../markdown-parser build && pnpm --dir ../markstream-core build && vite build --mode npm && vite build --mode ssr && cp dist/index.css dist/index.tailwind.css && node ../../scripts/generate-px-css.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:ssr": "node scripts/verify-ssr.mjs"
+  },
+  "peerDependencies": {
+    "@antv/infographic": "^0.2.3",
+    "@terrastruct/d2": ">=0.1.33",
+    "katex": ">=0.16.22",
+    "mermaid": ">=11",
+    "solid-js": "^1.9.0",
+    "stream-diffs": ">=0.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@antv/infographic": { "optional": true },
+    "@terrastruct/d2": { "optional": true },
+    "katex": { "optional": true },
+    "mermaid": { "optional": true },
+    "stream-diffs": { "optional": true }
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
+    "markstream-core": "workspace:*",
+    "stream-markdown-parser": "workspace:*"
+  },
+  "devDependencies": {
+    "solid-js": "^1.9.15",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vite-plugin-dts": "^4.5.4",
+    "vite-plugin-solid": "^2.11.14",
+    "vitest": "^3.2.4"
+  }
+}

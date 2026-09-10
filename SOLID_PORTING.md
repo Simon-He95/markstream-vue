@@ -94,9 +94,9 @@ Solid 的组件函数只初始化一次，不能依赖 React 式函数重执行�
 import MarkdownRender, { CodeBlockNode } from 'markstream-solid'
 import 'markstream-solid/index.css'
 
-const Message = (props: { content: string, final: boolean }) => (
-  <MarkdownRender content={props.content} final={props.final} />
-)
+function Message(props: { content: string, final: boolean }) {
+  return <MarkdownRender content={props.content} final={props.final} />
+}
 ```
 
 提供默认 MarkdownRender 和相应具名组件导出；采用 Solid JSX 类型、普通 props 和 `onX` 回调。已有 Svelte 能力全部获得可表达的入口，包括单独使用节点组件与 HTML 工具。React 中相同能力的命名优先参考；Svelte 独有能力保留等价入口。框架命名的类型与别名转换必须列清单。

@@ -176,7 +176,9 @@ export default defineConfig(({ mode }) => {
     build,
     test: {
       environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'packages/markstream-octane/tests/**'],
+      // Framework packages own JSX transforms and Vitest environments. Their
+      // suites run through their package scripts instead of this Vue config.
+      exclude: [...configDefaults.exclude, 'packages/markstream-octane/tests/**', 'packages/markstream-solid/test/**'],
       setupFiles: ['./test/setup/vitest.setup.ts'],
       restoreMocks: true,
       testTimeout: 10000,

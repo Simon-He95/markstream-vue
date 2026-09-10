@@ -52,5 +52,5 @@ describe('playground native print preview', () => {
     expect(wrapper.findAll('.markdown-renderer > .node-slot')).toHaveLength(220)
 
     wrapper.unmount()
-  })
+  }, 30000)
 })

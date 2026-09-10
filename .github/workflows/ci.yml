@@ -104,6 +104,16 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run test:e2e:virtual-scroll:ci
 
+      - name: Code block handoff e2e (Ubuntu only)
+        # Guards the pre -> enhanced code-block handoff: asserts the surfaces
+        # agree on line metrics, that the fallback never disappears before the
+        # enhanced surface is ready, and that switching heights at the handoff
+        # stays within max(2px, 1%). This is the only check that measures that
+        # invariant, and the Web Vitals CLS budgets for code blocks are too loose
+        # (0.15 / 0.8) to catch a regression of this size.
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm run test:e2e:line-number-handoff-playgrounds --framework=vue3
+
       - name: Virtual scroll playground stress e2e (scheduled/manual, Ubuntu only)
         if: >
           matrix.os == 'ubuntu-latest' &&

@@ -942,6 +942,31 @@ async function runFramework(browser, framework, spec) {
 
     await page.getByRole('button', { name: 'Toggle dark' }).click()
     await page.waitForFunction(() => !document.querySelector('.handoff-check')?.classList.contains('dark'))
+    // The wrapper class follows the `isDark` prop synchronously, but the
+    // enhanced surface applies its theme asynchronously: the component syncs the
+    // injected worker pool's render options and re-tokenizes before repainting.
+    // Waiting only on the class samples the one-frame window where the fallback
+    // is already light while the code surface is still dark. Wait for the
+    // surfaces to actually agree — a failure to converge within the timeout is
+    // itself the regression this guards against.
+    await page.waitForFunction(() => {
+      const queryDeep = (root, selector) => {
+        const direct = root?.querySelector?.(selector)
+        if (direct)
+          return direct
+        for (const element of root?.querySelectorAll?.('*') || []) {
+          const nested = element.shadowRoot && queryDeep(element.shadowRoot, selector)
+          if (nested)
+            return nested
+        }
+        return null
+      }
+      const pre = document.querySelector('[data-handoff-case="pre"] pre[data-markstream-pre="1"]')
+      const code = queryDeep(document.querySelector('[data-handoff-case="enhanced"]'), '[data-code]')
+      if (!pre || !code)
+        return false
+      return getComputedStyle(code).backgroundColor === getComputedStyle(pre).backgroundColor
+    }, { timeout: 15000 })
     const lightVisual = await page.evaluate(() => {
       const queryDeep = (root, selector) => {
         const direct = root?.querySelector?.(selector)

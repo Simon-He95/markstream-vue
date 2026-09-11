@@ -1,6 +1,8 @@
 # playground-solid verification (this run)
 
-Date: 2026-09-10. Git baseline `1f51247e`. This file is the playground-migration evidence. Do **not** copy historical rows from `packages/markstream-solid/VERIFICATION.md` (those playground build/browser/hydration claims are unreproducible: this commit had no `playground-solid/` source).
+Historical playground-migration log. Current checks: `pnpm --filter markstream-solid-playground test`, `pnpm test:e2e:solid-playground`, `pnpm test:e2e:solid-hydration`. Capability table: [`packages/markstream-solid/CAPABILITY.md`](../packages/markstream-solid/CAPABILITY.md).
+
+Date: 2026-09-10. Git baseline `1f51247e`. Do **not** copy historical rows from `packages/markstream-solid/VERIFICATION.md`.
 
 Scratch evidence: `/tmp/grok-goal-7a02a97d93cf/implementer/`.
 

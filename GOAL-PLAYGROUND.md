@@ -1,5 +1,7 @@
 # 将 React Playground 搬到 Solid，并展示本次移植的实际能力
 
+> Historical task brief. Current playground status: [`playground-solid/README.md`](./playground-solid/README.md).
+
 本文件是待执行的目标与验收合同。此次只编写计划，不启动 goal，不实施迁移，不设置默认 token、轮数或时间预算。
 
 ## 目标与当前基线

@@ -6,6 +6,7 @@ export default simon(
       '**/**/*.d.ts',
       '**/dist/**',
       '**/dist-ssr/**',
+      'diagnostics/**',
       'test/fixtures/unclosed-fence.md',
       'PERFORMANCE_ANALYSIS.md',
     ],

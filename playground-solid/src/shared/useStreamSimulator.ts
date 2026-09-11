@@ -12,6 +12,8 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
   const [chunksState, setChunksState] = createSignal<ChunkInfo[]>([])
   const [isStreamingState, setIsStreamingState] = createSignal(false)
   const [isPausedState, setIsPausedState] = createSignal(false)
+  const [userStoppedState, setUserStoppedState] = createSignal(false)
+  const [transportCompleteState, setTransportCompleteState] = createSignal(false)
   const [lastDelayMsState, setLastDelayMsState] = createSignal(0)
   const [lastChunkSizeState, setLastChunkSizeState] = createSignal(0)
   const [chunkCountState, setChunkCountState] = createSignal(0)
@@ -75,13 +77,29 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
     }
   }
 
-  const stop = () => {
+  const haltTransport = (reason: 'user' | 'complete' | 'reset') => {
     clearTimer()
     abortController?.abort()
     abortController = null
     runToken += 1
     setIsStreaming(false)
     setIsPaused(false)
+    if (reason === 'user') {
+      setUserStoppedState(true)
+      setTransportCompleteState(false)
+      return
+    }
+    if (reason === 'complete') {
+      setUserStoppedState(false)
+      setTransportCompleteState(true)
+      return
+    }
+    setUserStoppedState(false)
+    setTransportCompleteState(false)
+  }
+
+  const stop = () => {
+    haltTransport('user')
   }
 
   const scheduleNext = (isFirstChunk = false) => {
@@ -90,7 +108,7 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
       return
 
     if (contentValue.length >= source.length) {
-      stop()
+      haltTransport('complete')
       return
     }
 
@@ -126,13 +144,13 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
         return
 
       if (!sourceValue.length) {
-        stop()
+        haltTransport('complete')
         return
       }
 
       const start = contentValue.length
       if (start >= sourceValue.length) {
-        stop()
+        haltTransport('complete')
         return
       }
 
@@ -175,7 +193,7 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
       }
 
       if (contentValue.length >= sourceValue.length) {
-        stop()
+        haltTransport('complete')
         return
       }
 
@@ -201,6 +219,8 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
     setLastDelayMs(0)
     setChunkCount(0)
     setIsPaused(false)
+    setUserStoppedState(false)
+    setTransportCompleteState(false)
 
     const source = optionsValue.source || ''
     if (!source.length) {
@@ -275,6 +295,9 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
       if (token === runToken) {
         setIsStreaming(false)
         setIsPaused(false)
+        const sourceValue = optionsValue.source || ''
+        if (!controller.signal.aborted && contentValue.length >= sourceValue.length && sourceValue.length > 0)
+          setTransportCompleteState(true)
       }
     }
   }
@@ -287,6 +310,8 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
       setLastDelayMs(0)
       setIsStreaming(false)
       setIsPaused(false)
+      setUserStoppedState(false)
+      setTransportCompleteState(false)
       return
     }
 
@@ -310,6 +335,8 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
     setLastChunkSize(0)
     setLastDelayMs(0)
     setChunkCount(0)
+    setUserStoppedState(false)
+    setTransportCompleteState(false)
     setIsStreaming(true)
     setIsPaused(false)
     scheduleNext(true)
@@ -338,7 +365,7 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
   }
 
   const reset = () => {
-    stop()
+    haltTransport('reset')
     setContent('')
     setChunks([])
     setChunkCount(0)
@@ -349,7 +376,7 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
   }
 
   onCleanup(() => {
-    stop()
+    haltTransport('reset')
   })
 
   return {
@@ -366,5 +393,7 @@ export function useStreamSimulator(getOptions: () => StreamSimulatorOptions) {
     start,
     stop,
     togglePause,
+    transportComplete: transportCompleteState,
+    userStopped: userStoppedState,
   }
 }

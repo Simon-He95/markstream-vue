@@ -150,7 +150,10 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
   const language = () => resolveLanguageId(getString((props.node as any).language) || 'plaintext')
   const highlighterLanguage = () => resolveHighlighterLanguage(rawLanguage() || 'plaintext')
   const isLoading = () => props.loading ?? Boolean((props.node as any).loading)
-  const shouldDeferStreamingLanguage = () => isLoading() && isLikelyIncompleteLanguageIdentifier(rawLanguage())
+  const resolvedStream = () => props.stream ?? props.context?.codeBlockStream ?? true
+  const documentStreaming = () => props.context?.final === false || isLoading()
+  const shouldDelayEditor = () => resolvedStream() === false && isLoading()
+  const shouldDeferStreamingLanguage = () => resolvedStream() !== false && documentStreaming() && isLikelyIncompleteLanguageIdentifier(rawLanguage())
   const isDiff = () => Boolean((props.node as any).diff)
   const isPreviewable = () => props.isShowPreview !== false && ['html', 'svg'].includes(language())
   const requestedTheme = () => {
@@ -188,10 +191,16 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
     const nextLanguage = highlighterLanguage()
     const nextDiff = isDiff()
     const theme = requestedTheme()
+    const lineNumbers = showLineNumbers()
+    const size = fontSize()
+    const delayEditor = shouldDelayEditor()
+    const deferLanguage = shouldDeferStreamingLanguage()
+    const options = runtimeOptions()
+    void resolvedStream()
     if (!target || typeof window === 'undefined')
       return
     const task = ++generation
-    if (shouldDeferStreamingLanguage()) {
+    if (delayEditor || deferLanguage) {
       setFallback(true)
       return
     }
@@ -209,10 +218,13 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
         return
       }
       if (!helpers)
-        helpers = module.createCodeBlockRuntime(runtimeOptions()) as typeof helpers
+        helpers = module.createCodeBlockRuntime(options) as typeof helpers
       const runtime = helpers
       await Promise.resolve(runtime?.setTheme?.(theme))
-      await Promise.resolve((runtime as any)?.updateOptions?.({ fontSize: fontSize() }))
+      await Promise.resolve(runtime?.updateOptions?.({
+        fontSize: size,
+        disableLineNumbers: !lineNumbers,
+      }))
       if (task !== generation || !runtime)
         return
       const applyEditor = async (highlighterLanguage: string) => {
@@ -220,7 +232,7 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
         if (editorKind !== kind) {
           if (editorKind) {
             try {
-              runtime.safeClean?.() ?? runtime.cleanupEditor?.()
+              (runtime.safeClean ?? runtime.cleanupEditor)?.()
             }
             catch {}
           }
@@ -282,14 +294,30 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
     setCopied(true)
     window.setTimeout(() => setCopied(false), 1000)
   }
+  const preview = () => {
+    if (!isPreviewable())
+      return
+    const artifactType = language() === 'svg' ? 'image/svg+xml' : 'text/html'
+    const handler = props.context?.events?.onHandleArtifactClick
+    if (handler) {
+      handler({
+        node: props.node,
+        artifactType,
+        artifactTitle: `${language()} preview`,
+        id: `temp-${language()}-${Date.now()}`,
+      })
+      return
+    }
+    setPreviewOpen(value => !value)
+  }
   return (
-    <div ref={setRoot} class={`code-block-node code-block-container${expanded() ? ' is-expanded' : ''}${collapsed() ? ' is-collapsed' : ''}`} data-markstream-code-block="1" style={{ 'min-width': widthStyle()[0] == null ? undefined : String(widthStyle()[0]), 'max-width': widthStyle()[1] == null ? undefined : String(widthStyle()[1]) }}>
+    <div ref={setRoot} class={`code-block-node code-block-container${expanded() ? ' is-expanded' : ''}${collapsed() ? ' is-collapsed' : ''}`} data-markstream-code-block="1" data-markstream-code-stream={resolvedStream() ? 'true' : 'false'} data-markstream-artifact-handler={props.context?.events?.onHandleArtifactClick ? 'true' : 'false'} style={{ 'min-width': widthStyle()[0] == null ? undefined : String(widthStyle()[0]), 'max-width': widthStyle()[1] == null ? undefined : String(widthStyle()[1]) }}>
       {props.showHeader !== false && (
         <div class="code-block-header">
           <div class="code-block-header__meta">{isDiff() ? `Diff / ${language()}` : language()}</div>
           <div class="code-block-header__actions">
             {props.showCopyButton !== false && <button type="button" class="code-action-btn" aria-label={copied() ? 'Copied' : 'Copy'} onClick={() => void copy()}>{copied() ? '✓' : 'Copy'}</button>}
-            {isPreviewable() && props.showPreviewButton !== false && <button type="button" class="code-action-btn" aria-label="Preview" onClick={() => setPreviewOpen(value => !value)}>Preview</button>}
+            {isPreviewable() && props.showPreviewButton !== false && <button type="button" class="code-action-btn" data-markstream-code-preview aria-label="Preview" onClick={() => preview()}>Preview</button>}
             {props.showExpandButton !== false && <button type="button" class="code-action-btn" aria-pressed={expanded()} aria-label={expanded() ? 'Collapse' : 'Expand'} onClick={() => setExpanded(value => !value)}>{expanded() ? 'Collapse' : 'Expand'}</button>}
             {props.showCollapseButton !== false && <button type="button" class="code-action-btn" aria-pressed={collapsed()} aria-label={collapsed() ? 'Expand' : 'Collapse'} onClick={() => setCollapsed(value => !value)}>{collapsed() ? 'Expand' : 'Collapse'}</button>}
             {props.enableFontSizeControl !== false && props.showFontSizeButtons !== false && (

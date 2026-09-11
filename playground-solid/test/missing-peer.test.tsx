@@ -1,19 +1,22 @@
 /**
  * @vitest-environment jsdom
+ *
+ * In-process disable*() is not a missing-peer proof. The packed consumer
+ * without optional peers is `scripts/smoke-solid-packed-package.mjs`.
  */
 
 import { disableKatex, disableMermaid, enableKatex, enableMermaid, NodeRenderer } from 'markstream-solid'
 import { render } from 'solid-js/web'
 import { afterEach, describe, expect, it } from 'vitest'
 
-describe('solid playground missing-peer fallback', () => {
+describe('solid playground disabled-loader fallback', () => {
   afterEach(() => {
     enableKatex()
     enableMermaid()
     document.body.innerHTML = ''
   })
 
-  it('degrades readably when KaTeX and Mermaid peers are disabled', async () => {
+  it('degrades readably when KaTeX and Mermaid loaders are disabled in-process', async () => {
     disableKatex()
     disableMermaid()
     const host = document.createElement('div')

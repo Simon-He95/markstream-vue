@@ -1,6 +1,8 @@
 # Markstream Solid 移植台账
 
-基线：`f808226cd747ae266e5a046819d374c707b63f80` 的 `markstream-svelte`。状态只在存在对应实现和验证证据时标记为“已验证”。本台账开始于 2026-09-10。
+历史台账。当前能力、限制与重跑入口见 [CAPABILITY.md](./CAPABILITY.md)，不要把本文件的“已验证”行当成产品现状。
+
+基线：`f808226cd747ae266e5a046819d374c707b63f80` 的 `markstream-svelte`。本台账开始于 2026-09-10。
 
 ## 已有证据
 

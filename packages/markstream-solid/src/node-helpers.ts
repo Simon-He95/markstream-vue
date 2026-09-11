@@ -53,9 +53,11 @@ export interface NodeRendererProps {
   final?: boolean
   parseOptions?: ParseOptions
   customMarkdownIt?: (md: MarkdownIt) => MarkdownIt
+  /** Compatibility no-op: the main Solid renderer does not attach a performance monitor. */
   debugPerformance?: boolean
   customHtmlTags?: readonly string[]
   htmlPolicy?: HtmlPolicy
+  /** Compatibility no-op: render-window virtualization is exported as a tool, not used by NodeRenderer. */
   viewportPriority?: boolean
   codeBlockStream?: boolean
   codeBlockDarkTheme?: CodeBlockTheme
@@ -82,11 +84,14 @@ export interface NodeRendererProps {
   renderBatchDelay?: number
   renderBatchBudgetMs?: number
   renderBatchIdleTimeoutMs?: number
+  /** Compatibility no-op: nodes are not deferred with IntersectionObserver. */
   deferNodesUntilVisible?: boolean
   maxLiveNodes?: number
+  /** Compatibility no-op: virtualization window is not used by the main renderer. */
   liveNodeBuffer?: number
   allowHtml?: boolean
   smoothStreaming?: boolean | 'auto'
+  /** Options are read when the renderer mounts; the core controller does not hot-swap them. */
   smoothStreamingOptions?: SmoothMarkdownStreamOptions
 }
 
@@ -162,7 +167,7 @@ export function buildRenderContext(
     textStreamState,
     streamRenderVersion,
     showTooltips: props.showTooltips,
-    codeBlockStream: props.codeBlockStream,
+    codeBlockStream: props.codeBlockStream ?? true,
     renderCodeBlocksAsPre: props.renderCodeBlocksAsPre,
     allowHtml: props.allowHtml !== false,
     htmlPolicy: props.htmlPolicy ?? 'safe',

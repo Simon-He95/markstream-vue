@@ -1,5 +1,5 @@
 import type { NodeRendererEvents, NodeRendererProps } from '../node-helpers'
-import { createEffect, createMemo, createSignal, onCleanup, onMount, untrack } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, onMount, untrack, useContext } from 'solid-js'
 import { useSmoothMarkdownStream } from '../composables/useSmoothMarkdownStream'
 import { SMOOTH_STREAMING_CONTEXT } from '../context/smoothStreaming'
 import { getCustomComponentsRevision, subscribeCustomComponents } from '../customComponents'
@@ -22,7 +22,22 @@ export function NodeRenderer(props: MarkdownRenderProps) {
   const textStreamState = new Map<string, string>()
   const smooth = useSmoothMarkdownStream(props.smoothStreamingOptions)
   const hasNodes = () => Array.isArray(props.nodes)
-  const smoothEligible = () => !hasNodes() && props.smoothStreaming !== false && (props.smoothStreaming === true || props.typewriter === true || (props.maxLiveNodes ?? 320) <= 0)
+  const parentSmoothStreaming = useContext(SMOOTH_STREAMING_CONTEXT)
+  const smoothEligible = () => {
+    if (hasNodes())
+      return false
+    if (props.smoothStreaming === false)
+      return false
+    // Nested auto (and the default) must not pace again when a parent renderer
+    // is already smoothing. Explicit `smoothStreaming={true}` still opts in.
+    if (props.smoothStreaming !== true && parentSmoothStreaming?.())
+      return false
+    if (props.smoothStreaming === true)
+      return true
+    // Svelte defaults maxLiveNodes to 320, so auto is off unless typewriter
+    // is set or the caller explicitly disables the live-node window.
+    return props.typewriter === true || (props.maxLiveNodes ?? 320) <= 0
+  }
   const smoothEnabled = () => smoothEligible() && (props.smoothStreaming === true || mounted())
   const requestedFinal = () => props.final ?? props.parseOptions?.final
 

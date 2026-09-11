@@ -1,5 +1,7 @@
 # 实现完整的 Markstream Solid 支持
 
+> Historical task brief. Current product status: [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md). Do not re-run this goal from scratch.
+
 ## 目标
 
 按照 [SOLID_PORTING.md](./SOLID_PORTING.md)，实现可构建、可安装、可在真实 Solid 应用中使用的 `markstream-solid` 包和对应 playground。

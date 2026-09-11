@@ -97,6 +97,7 @@ export function ThinkingNode(props: ThinkingNodeProps) {
                     codeBlockStream={props.ctx?.codeBlockStream}
                     renderCodeBlocksAsPre={props.ctx?.renderCodeBlocksAsPre}
                     typewriter={inheritedTypewriter()}
+                    smoothStreaming="auto"
                     viewportPriority={false}
                     deferNodesUntilVisible={false}
                     batchRendering={false}

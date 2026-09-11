@@ -97,7 +97,20 @@ export function HomePage(props: HomePageProps) {
     transportMode: props.streamTransportMode,
   }))
 
-  const rendererContent = createMemo(() => simulator.isStreaming() ? simulator.content() : sourceContent())
+  const rendererContent = createMemo(() => {
+    if (simulator.userStopped() || simulator.transportComplete())
+      return sourceContent()
+    return simulator.content()
+  })
+  const displayNote = createMemo(() => {
+    if (activeDemoId() === 'controller')
+      return 'Controller demo: displayed text is useSmoothMarkdownStream.visible(). Transport metrics below are unused while this demo is selected.'
+    if (activeDemoId() === 'smooth')
+      return 'Renderer input is transport-side. Internal NodeRenderer smooth is not shown here — use the controller demo for visible()/caughtUp().'
+    if (simulator.userStopped())
+      return 'Stop jumped renderer input to the full source document. That is a playground reveal, not renderer catch-up.'
+    return 'Lengths below are transport-side (simulator → renderer input), not post-smooth displayed text.'
+  })
 
   useChatAutoScroll(() => messagesEl, () => rendererContent())
   const smoothEnabled = createMemo(() => activeDemoId() === 'smooth')
@@ -391,16 +404,18 @@ export function HomePage(props: HomePageProps) {
             <ObservationPanel
               demoId={activeDemoId()}
               sourceLength={sourceContent().length}
-              visibleLength={rendererContent().length}
-              pendingChars={Math.max(0, sourceContent().length - rendererContent().length)}
-              caughtUp={rendererContent().length >= sourceContent().length}
-              final={!simulator.isStreaming() && rendererContent().length >= sourceContent().length}
+              transportedLength={simulator.content().length}
+              rendererInputLength={rendererContent().length}
+              pendingTransportChars={Math.max(0, sourceContent().length - simulator.content().length)}
+              transportComplete={simulator.transportComplete()}
+              transportPaused={simulator.isPaused()}
+              stopRevealedFullSource={simulator.userStopped()}
               isStreaming={simulator.isStreaming()}
-              isPaused={simulator.isPaused()}
               lastChunkSize={simulator.lastChunkSize()}
               lastDelayMs={simulator.lastDelayMs()}
               codeBlockCount={codeBlockCount()}
               codeBlockIdentity={codeBlockIdentity()}
+              displayNote={displayNote()}
             />
           </div>
 

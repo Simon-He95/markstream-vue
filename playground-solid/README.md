@@ -50,6 +50,35 @@ SSE / WebSocket / proxy-buffered names are cadence presets. Actual transports ar
 
 Root chrome uses `.markstream-solid`. Tailwind `important` is `.markstream-solid`. The renderer also emits that class.
 
+## Observation panel
+
+Tracked app-private resources: simulator timeouts, auto-scroll rAF, resize observers. Those counts are reactive.
+
+Uncovered (shown as `uncovered`, never `0` “no leak”): subscriptions, Workers, stream-diffs editor runtimes. DOM shell identity is not an editor-create count.
+
+| Control | Meaning |
+| --- | --- |
+| Pause | Transport paused. Not complete. |
+| Resume | Continue transport. |
+| Stop | Playground jumps renderer input to the full source. Labeled stop-reveal, not renderer catch-up. |
+| Reset | Drops transported text and stop-reveal. |
+| Natural complete | Transport caught up with the source. Distinct from internal smooth catch-up. |
+| Smooth demo | Renderer input is still transport-side. Use the controller demo for `visible()` / `caughtUp()`. |
+
+## Re-run checks
+
+From the repo root:
+
+```sh
+pnpm --filter markstream-solid-playground typecheck
+pnpm --filter markstream-solid-playground test
+pnpm play:solid:build
+pnpm test:e2e:solid-playground
+pnpm test:e2e:solid-hydration
+```
+
+Packed missing-peer consumption is `pnpm test:smoke:solid` (optional peers absent) and `pnpm test:smoke:solid:optional`. Do not treat in-process `disable*()` tests as a missing-peer proof.
+
 ## Historical claims
 
-`packages/markstream-solid/VERIFICATION.md` previously claimed this playground already passed. Those rows are historical: git `1f51247e` had no `playground-solid/` source. This-run evidence lives in `VERIFICATION.md` in this directory.
+Process files (`VERIFICATION.md`, `PORTING_STATUS.md`, root `GOAL*.md`, `handoff.md`) are not current product truth. Capability and limits: [`packages/markstream-solid/CAPABILITY.md`](../packages/markstream-solid/CAPABILITY.md).

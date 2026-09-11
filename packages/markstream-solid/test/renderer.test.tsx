@@ -603,9 +603,11 @@ describe('markstream-solid renderer foundation', () => {
     expect(container.querySelector('.mermaid-loading, .d2-loading')).toBeNull()
     class Infographic {
       constructor(private readonly options: { container: HTMLElement }) {}
+
       render(source: string) {
         this.options.container.innerHTML = `<svg><text>${source}</text></svg>`
       }
+
       destroy() {}
     }
     deferred.resolve(Infographic)

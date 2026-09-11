@@ -15,6 +15,7 @@ export interface StreamDiffsRuntimeHelpers {
   cleanupEditor?: () => unknown
   safeClean?: () => unknown
   setTheme?: (theme?: string | Record<string, unknown>) => Promise<unknown> | unknown
+  updateOptions?: (options?: Record<string, unknown>) => Promise<unknown> | unknown
   getEditorView?: () => unknown
   getDiffEditorView?: () => unknown
   refreshDiffPresentation?: () => unknown

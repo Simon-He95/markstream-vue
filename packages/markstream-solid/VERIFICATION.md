@@ -1,6 +1,8 @@
 # Solid port verification
 
-Last run: 2026-09-10.
+This file is a historical run log. It does **not** mean “all verified”. Re-run the scripts in [CAPABILITY.md](./CAPABILITY.md). Do not copy numbers from this page into product docs.
+
+Last historical snapshot: 2026-09-10. Current checks live in Ubuntu CI (`pnpm check:solid`, packed smokes, Solid e2e).
 
 | Check | Result |
 | --- | --- |

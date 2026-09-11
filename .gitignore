@@ -1,6 +1,9 @@
 dist
 dist-tw
 playground-solid/hydration-dist
+solid-playground-e2e.png
+solid-playground-e2e.json
+solid-hydration-e2e.png
 /benchmark/
 node_modules
 .nuxt

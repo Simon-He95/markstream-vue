@@ -1,5 +1,7 @@
 # Solid 移植交接
 
+> Historical snapshot. The “尚无实现” claim is obsolete. Current status: [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md). Do not redo the port from this file.
+
 更新日期：2026-09-10。
 
 ## 接手时先看这里

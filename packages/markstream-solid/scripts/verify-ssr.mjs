@@ -10,4 +10,7 @@ const html = renderToString(() => createComponent(MarkdownRender, {
 if (!html.includes('Server rendered'))
   throw new Error('The Solid server entry did not render Markdown content.')
 
+if (!html.includes('data-hk') && !html.includes('markstream-solid'))
+  throw new Error('The Solid server entry did not emit hydratable markup.')
+
 console.log('markstream-solid SSR smoke test passed')

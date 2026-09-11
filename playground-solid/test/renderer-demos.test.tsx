@@ -3,8 +3,6 @@
  */
 
 import type { StreamSliceMode, StreamTransportMode } from '../src/shared/useStreamSimulator'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { NodeRenderer, useSmoothMarkdownStream } from 'markstream-solid'
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
@@ -183,21 +181,19 @@ describe('solid playground demos', () => {
     dispose()
   })
 
-  it('hydrates the same fixture component and exposes Solid hydration bootstrap', () => {
+  it('exposes HydrationApp append controls on the client fixture', () => {
     const host = document.createElement('div')
     document.body.appendChild(host)
     const dispose = render(() => <HydrationApp />, host)
     expect(HYDRATION_FIXTURE_MARKDOWN).toContain('Server rendered Solid')
     expect(host.querySelector('[data-hydration-root]')).toBeTruthy()
-    expect(host.textContent).toContain('Server rendered Solid')
+    const heading = host.querySelector('h1')
+    expect(heading?.textContent).toContain('Server rendered Solid')
     const append = host.querySelector('[data-hydration-append]') as HTMLButtonElement
     expect(append).toBeTruthy()
     append.click()
     expect(host.textContent).toContain(HYDRATION_APPEND.trim())
-    const serverEntry = readFileSync(resolve(process.cwd(), 'src/hydration/entry-server.tsx'), 'utf8')
-    expect(serverEntry).toContain('generateHydrationScript')
-    expect(serverEntry).toContain('renderToString')
-    expect(serverEntry).toContain('HydrationApp')
+    expect(host.querySelector('h1')).toBe(heading)
     dispose()
   })
 

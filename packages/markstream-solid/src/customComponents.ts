@@ -1,7 +1,25 @@
 import type { Component } from 'solid-js'
 
-export type MarkstreamSolidComponent = Component<any>
-export type CustomComponentMap = Record<string, MarkstreamSolidComponent>
+/**
+ * Custom node renderers receive the parsed node plus whatever NodeOutlet
+ * spreads (context, language extras). Extra keys stay allowed so language
+ * overrides and custom HTML tags can pass through.
+ */
+export interface MarkstreamSolidNodeProps {
+  node: any
+  context?: unknown
+  ctx?: unknown
+  customId?: string
+  indexKey?: string | number
+  isDark?: boolean
+  typewriter?: boolean
+  fade?: boolean
+  [key: string]: unknown
+}
+
+export type MarkstreamSolidComponent = Component<MarkstreamSolidNodeProps>
+/** Values stay `Component<any>` so custom tags can use a narrower node props type. */
+export type CustomComponentMap = Record<string, Component<any>>
 
 const globalKey = '__global__'
 const storeKey = '__MARKSTREAM_SOLID_CUSTOM_COMPONENTS_STORE__'

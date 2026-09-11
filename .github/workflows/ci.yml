@@ -85,6 +85,27 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run test:e2e:octane-playground
 
+      - name: Solid package tests, SSR, packed consumers, playground, and browser (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pnpm check:solid
+          pnpm run test:smoke:solid
+          pnpm run test:smoke:solid:optional
+          pnpm run play:solid:build
+          pnpm run test:e2e:solid-playground
+          pnpm run test:e2e:solid-hydration
+
+      - name: Upload Solid e2e diagnostics
+        if: failure() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: solid-e2e-diagnostics-${{ matrix.os }}
+          path: |
+            solid-playground-e2e.png
+            solid-playground-e2e.json
+            solid-hydration-e2e.png
+          if-no-files-found: ignore
+
       - name: Run SSR check
         run: nr check:ssr
 

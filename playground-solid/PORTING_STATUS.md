@@ -1,5 +1,7 @@
 # Solid playground 移植台账
 
+历史台账。当前能力见 [`packages/markstream-solid/CAPABILITY.md`](../packages/markstream-solid/CAPABILITY.md)。
+
 开始于 2026-09-10。基线 React 18 `playground-react18/` at git `1f51247e`，自动滚动行为来自 `f808226c`。
 
 历史 `packages/markstream-solid/PORTING_STATUS.md` / `VERIFICATION.md` 中 `markstream-solid-playground` 构建、浏览器、hydration “通过”行在当前 git 中没有对应源码，已标为 **historical / unreproducible**。本台账才是 playground 迁移的记录。

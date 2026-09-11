@@ -1,6 +1,6 @@
 # Solid 移植约定
 
-状态：准备阶段；本文件确定搬运方式，不表示 Solid 包已经实现或通过验证。
+状态：长期设计约定（Svelte 行为基线、React 接口参考）。实现与验证现状见 [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md)，不要把“准备阶段”当成当前产品状态。
 
 ## 目标与基线
 

@@ -3826,7 +3826,12 @@ watch(mermaidEnabled, (enabled) => {
   border: 1px solid var(--lab-border);
   border-radius: var(--lab-radius);
   box-shadow: var(--lab-shadow);
-  backdrop-filter: blur(16px) saturate(1.4);
+  /*
+   * No `backdrop-filter` here on purpose: these cards cover the whole page and
+   * Chromium whites out / flickers large blurred backdrops while scrolling
+   * (see issues.chromium.org/issues/339841685). The translucent surface alone
+   * keeps the intended look without the repaint flash.
+   */
 }
 
 /* ─── Hero Panel ─── */

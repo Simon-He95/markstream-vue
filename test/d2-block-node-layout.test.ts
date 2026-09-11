@@ -112,6 +112,131 @@ describe('d2 block layout', () => {
     wrapper.unmount()
   })
 
+  it('reserves the estimated preview height while the diagram is pending', async () => {
+    d2MockState.renderImpl = async (code) => {
+      await new Promise(resolve => setTimeout(resolve, 30))
+      return { svg: `<svg viewBox="0 0 100 100"><text>${code}</text></svg>` }
+    }
+
+    const wrapper = mount(D2BlockNode as any, {
+      props: {
+        node: {
+          type: 'code_block',
+          language: 'd2',
+          code: 'a -> b',
+          raw: '```d2\na -> b\n```',
+        },
+        loading: false,
+        estimatedPreviewHeightPx: 445,
+      },
+      attachTo: document.body,
+    })
+
+    await nextTick()
+    expect(wrapper.get('.d2-block-body').attributes('style') || '').toContain('445px')
+
+    await waitForPreview(wrapper)
+    await nextTick()
+    // The reservation is released once the rendered diagram governs the height.
+    expect(wrapper.get('.d2-block-body').attributes('style') || '').not.toContain('445px')
+
+    wrapper.unmount()
+  })
+
+  it('releases the preview reservation when rendering fails permanently', async () => {
+    d2MockState.renderImpl = async () => {
+      throw new Error('boom')
+    }
+
+    const wrapper = mount(D2BlockNode as any, {
+      props: {
+        node: {
+          type: 'code_block',
+          language: 'd2',
+          code: 'a -> b',
+          raw: '```d2\na -> b\n```',
+        },
+        loading: false,
+        estimatedPreviewHeightPx: 445,
+      },
+      attachTo: document.body,
+    })
+
+    await waitForRenderError(wrapper)
+
+    // A diagram that will never render must not hold blank space: the source
+    // panel keeps its own natural height.
+    const style = wrapper.get('.d2-block-body').attributes('style') || ''
+    expect(style).not.toContain('445px')
+    expect((wrapper.vm as any).$?.setupState?.bodyMinHeight ?? null).toBeNull()
+
+    wrapper.unmount()
+  })
+
+  it('does not reserve preview height for empty code', async () => {
+    const wrapper = mount(D2BlockNode as any, {
+      props: {
+        node: {
+          type: 'code_block',
+          language: 'd2',
+          code: '',
+          raw: '```d2\n```',
+        },
+        loading: false,
+        estimatedPreviewHeightPx: 445,
+      },
+      attachTo: document.body,
+    })
+
+    await nextTick()
+    expect(wrapper.get('.d2-block-body').attributes('style') || '').not.toContain('445px')
+
+    wrapper.unmount()
+  })
+
+  it('stores the content height, not the reserved body height, as the fallback floor', async () => {
+    // jsdom reports zero-height rects, so stand in for the browser: the body
+    // would measure the reserved height, its content measures the real one.
+    const rect = (height: number): DOMRect => ({
+      x: 0,
+      y: 0,
+      width: 0,
+      height,
+      top: 0,
+      right: 0,
+      bottom: height,
+      left: 0,
+      toJSON: () => ({}),
+    }) as DOMRect
+    const rectSpy = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.classList.contains('d2-block-body') ? rect(445) : rect(210)
+      })
+
+    const wrapper = mount(D2BlockNode as any, {
+      props: {
+        node: {
+          type: 'code_block',
+          language: 'd2',
+          code: 'a -> b',
+          raw: '```d2\na -> b\n```',
+        },
+        loading: false,
+        estimatedPreviewHeightPx: 445,
+      },
+      attachTo: document.body,
+    })
+
+    await nextTick()
+    await nextTick()
+
+    expect((wrapper.vm as any).$?.setupState?.bodyMinHeight).toBe(210)
+
+    wrapper.unmount()
+    rectSpy.mockRestore()
+  })
+
   it('reports async render lifecycle height when preview settles', async () => {
     const heightSpy = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(96)
     const lifecycle = {

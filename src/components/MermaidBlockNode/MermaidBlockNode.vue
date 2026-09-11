@@ -304,16 +304,6 @@ function resolveInitialContainerHeight() {
   return `${resolveEstimatedPreviewHeight()}px`
 }
 
-// Keep a streamed diagram's reserved preview geometry even if an async
-// render temporarily falls back to the source panel. Without this floor the
-// source text is much shorter than the pending preview estimate and a pinned
-// scroll container observes a real height regression for one render tick.
-const streamingSourceMinHeight = computed(() => {
-  if (props.loading === false)
-    return undefined
-  return resolveInitialContainerHeight()
-})
-
 const lastSvgSnapshot = ref<string | null>(null)
 
 function hasPreviewSvg() {
@@ -335,9 +325,72 @@ const translateY = ref(0)
 const isDragging = ref(false)
 const dragStart = ref({ x: 0, y: 0 })
 const showSource = ref(true)
-const userToggledShowSource = ref(false)
+// Set by switchMode() — either the user picking a mode, or the block switching
+// itself to the preview once streamed content stabilizes. It means "the mode has
+// been chosen on purpose", not "the user chose it", and it is never reset.
+const modeChosenExplicitly = ref(false)
 const isRendering = ref(false)
 const renderQueue = ref<Promise<boolean> | null>(null)
+
+// A consumer loader that never settles would otherwise hold the reservation for
+// the life of the block (getMermaid() has no timeout of its own). This bound
+// starts only once the block is on screen with availability still unresolved, so
+// an offscreen deferred block is not penalised; a diagram that does arrive after
+// the bound simply takes the preview over.
+const MERMAID_RESERVED_HEIGHT_MAX_WAIT_MS = 15_000
+const availabilityWaitExpired = ref(false)
+let availabilityWaitTimer: ReturnType<typeof setTimeout> | null = null
+
+function clearAvailabilityWaitTimer() {
+  if (availabilityWaitTimer != null) {
+    clearTimeout(availabilityWaitTimer)
+    availabilityWaitTimer = null
+  }
+}
+
+watch(
+  [viewportReady, mermaidAvailabilityResolved],
+  ([ready, resolved]) => {
+    clearAvailabilityWaitTimer()
+    availabilityWaitExpired.value = false
+    if (!ready || resolved)
+      return
+    availabilityWaitTimer = setTimeout(() => {
+      availabilityWaitTimer = null
+      availabilityWaitExpired.value = true
+    }, MERMAID_RESERVED_HEIGHT_MAX_WAIT_MS)
+  },
+  { immediate: true },
+)
+
+// Keep a streamed diagram's reserved preview geometry even if an async render
+// temporarily falls back to the source panel. Without this floor the source
+// text is much shorter than the pending preview estimate and a pinned scroll
+// container observes a real height regression for one render tick.
+//
+// The floor must also hold once streaming finishes while the source panel is
+// still the active one: the panel is what the block renders until mermaid
+// resolves, and dropping the floor at that point collapses the block (measured
+// 435px → 233px → 435px on the playground, ~0.11 CLS) before the preview takes
+// over. It is dropped when the preview becomes the visible panel (showSource is
+// false), when an explicit mode switch picked the source view, and once
+// availability resolves to "no runtime", so none of those cases gains empty
+// reserved space.
+//
+// The one way to wait forever is a loader that never settles: getMermaid() has
+// no timeout of its own, so a consumer loader that hangs would keep the floor
+// (and its blank space) for the life of the block. `availabilityWaitExpired`
+// bounds that wait below.
+const streamingSourceMinHeight = computed(() => {
+  if (mermaidAvailabilityResolved.value && !mermaidAvailable.value)
+    return undefined
+  if (!showSource.value || modeChosenExplicitly.value)
+    return undefined
+  if (availabilityWaitExpired.value)
+    return undefined
+  return resolveInitialContainerHeight()
+})
+
 interface MermaidRenderRequest {
   code: string
   codeWithTheme: string
@@ -1404,7 +1457,7 @@ function handleSwitchMode(target: 'source' | 'preview') {
 async function switchMode(target: 'source' | 'preview') {
   const el = modeContainerRef.value
   if (!el) {
-    userToggledShowSource.value = true
+    modeChosenExplicitly.value = true
     showSource.value = (target === 'source')
     return
   }
@@ -1414,7 +1467,7 @@ async function switchMode(target: 'source' | 'preview') {
   el.style.overflow = 'hidden'
 
   // Toggle mode
-  userToggledShowSource.value = true
+  modeChosenExplicitly.value = true
   showSource.value = (target === 'source')
   await nextTick()
 
@@ -2196,8 +2249,9 @@ async function activateMermaid() {
   await nextTick()
   if (!isActiveGeneration(generation))
     return
-  // Set initial default tab based on mermaid availability (unless user already toggled)
-  if (!userToggledShowSource.value) {
+  // Set the initial default tab from mermaid availability unless a mode was
+  // already chosen (by the user, or by the stabilize-then-preview switch).
+  if (!modeChosenExplicitly.value) {
     showSource.value = !mermaidAvailable.value
   }
   if (canScheduleViewportWork()) {
@@ -2217,11 +2271,11 @@ onMounted(() => {
   void activateMermaid()
 })
 
-// Auto-update default tab when mermaid availability changes, but don't override user actions
+// Auto-update default tab when mermaid availability changes, but don't override a mode that was already chosen
 watch(
   () => mermaidAvailable.value,
   (available) => {
-    if (userToggledShowSource.value)
+    if (modeChosenExplicitly.value)
       return
     showSource.value = !available
   },
@@ -2276,6 +2330,7 @@ onUnmounted(() => {
   if (contentStableTimer) {
     clearTimeout(contentStableTimer)
   }
+  clearAvailabilityWaitTimer()
   clearProgressiveRenderDebounceTimer()
   // 在组件卸载时，确保观察者被彻底清理，防止内存泄漏
   if (resizeObserver) {

@@ -4,6 +4,7 @@ import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useAttrs, 
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useOffscreenHeavyNodeDeferral, useViewportPriority, useViewportPriorityOptions } from '../../composables/viewportPriority'
+import { parsePositiveNumber } from '../../utils/diagramHeight'
 import { resolveLifecycleIndexKey } from '../../utils/lifecycleIndexKey'
 import { MARKSTREAM_NODE_LIFECYCLE_KEY } from '../../utils/nodeLifecycle'
 import { getD2 } from './d2'
@@ -12,6 +13,7 @@ const props = withDefaults(
   defineProps<D2BlockNodeProps>(),
   {
     maxHeight: undefined,
+    estimatedPreviewHeightPx: undefined,
     loading: true,
     progressiveRender: true,
     progressiveIntervalMs: 700,
@@ -75,10 +77,33 @@ const hasPreview = computed(() => hasCurrentPreview.value || (!!svgMarkup.value 
 const showSourceFallback = computed(() => {
   return showSource.value || !d2Available.value || !hasPreview.value
 })
+
+// While the diagram is still being produced the source panel is what the block
+// renders, and it is much shorter than the finished diagram. Reserving the
+// estimated preview height here keeps the page below the block in place when
+// the preview replaces the source (measured ~238px of layout shift otherwise).
+//
+// The reservation is applied from the first paint on purpose: applying it once
+// the D2 runtime resolves moves the content just as much as the preview itself
+// would. It is released as soon as the preview can no longer be expected — the
+// user picked the source tab, a preview is on screen, the code is empty, or the
+// render already failed for this content — so an errored or unavailable diagram
+// does not hold blank space that will never be filled.
+const pendingPreviewReserve = computed(() => {
+  if (showSource.value || hasPreview.value)
+    return 0
+  if (!baseCode.value)
+    return 0
+  if (renderError.value && lastFailedRenderSignature.value === renderSignature.value)
+    return 0
+  return parsePositiveNumber(props.estimatedPreviewHeightPx) ?? 0
+})
+
 const bodyStyle = computed(() => {
-  if (!showSourceFallback.value || !bodyMinHeight.value)
+  if (!showSourceFallback.value)
     return undefined
-  return { minHeight: `${bodyMinHeight.value}px` }
+  const minHeight = Math.max(bodyMinHeight.value ?? 0, pendingPreviewReserve.value)
+  return minHeight > 0 ? { minHeight: `${minHeight}px` } : undefined
 })
 const renderStyle = computed(() => {
   if (props.maxHeight === 'none')
@@ -542,7 +567,11 @@ function updateBodyMinHeight() {
   const el = bodyRef.value
   if (!el)
     return
-  const height = el.getBoundingClientRect().height
+  // Measure the content, never the body itself: the body carries the reserved
+  // preview height, so reading it back would ratchet that reservation into a
+  // floor that can never shrink once the reservation is released.
+  const content = (el.firstElementChild as HTMLElement | null) ?? el
+  const height = content.getBoundingClientRect().height
   if (height > 0)
     bodyMinHeight.value = height
 }

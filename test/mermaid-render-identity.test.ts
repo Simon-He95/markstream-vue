@@ -138,7 +138,7 @@ describe('mermaid render identity', () => {
     })
 
     await flushVueUpdates()
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     ;(wrapper.vm as any).mermaidAvailable = true
     ;(wrapper.vm as any).viewportReady = true
     ;(wrapper.vm as any).showSource = false

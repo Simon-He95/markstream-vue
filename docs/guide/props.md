@@ -260,7 +260,7 @@ Use these to control specialized block renderers without overriding components m
 - `d2-props` forwards props to `D2BlockNode`
 - `infographic-props` forwards props to `InfographicBlockNode`
 
-For Mermaid and Infographic fences, `MarkdownRender` injects an `estimatedPreviewHeightPx` value when the caller does not provide one. This reserves a stable first-preview height for async loading and remounts. Custom `mermaid` and `infographic` renderers receive the same prop, so forward or consume it if the custom block renders its own preview shell.
+For Mermaid, Infographic, and D2 fences, `MarkdownRender` injects an `estimatedPreviewHeightPx` value when the caller does not provide one. This reserves a stable first-preview height for async loading and remounts, so the block does not jump when the diagram replaces its source panel. Custom `mermaid`, `infographic`, and `d2` renderers receive the same prop, so forward or consume it if the custom block renders its own preview shell.
 
 Example:
 

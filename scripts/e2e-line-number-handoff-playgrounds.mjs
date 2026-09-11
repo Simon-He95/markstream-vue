@@ -701,7 +701,15 @@ function validateResult(result, { requireDark = true, requireNarrowPre = true, r
     assert(result.preHeadingOpacity === '1', `Pre Markdown heading opacity is ${result.preHeadingOpacity}`)
   }
   if (vue3HeaderParityFrameworks.has(result.framework)) {
-    assert(Math.abs(result.headerHeight - 41) <= 0.5, `code header height is ${result.headerHeight}px, expected 41px`)
+    // The header's content box is driven by the platform's default sans line box,
+    // which differs by a pixel or two between macOS and Linux. Keep the band
+    // tight enough to catch a structural regression (the exact padding, gaps,
+    // icon and action sizes are asserted separately below) without pinning one
+    // platform's font metrics.
+    assert(
+      result.headerHeight >= 38 && result.headerHeight <= 46,
+      `code header height is ${result.headerHeight}px, expected 38-46px`,
+    )
     assert(
       [result.headerPaddingTop, result.headerPaddingRight, result.headerPaddingBottom, result.headerPaddingLeft].join(' ') === '6px 10px 6px 10px',
       `code header padding is ${result.headerPaddingTop} ${result.headerPaddingRight} ${result.headerPaddingBottom} ${result.headerPaddingLeft}`,
@@ -738,8 +746,21 @@ function validateResult(result, { requireDark = true, requireNarrowPre = true, r
   assert(result.preLineHeight === '18px', `shared Pre line height is ${result.preLineHeight}, expected 18px`)
   assert(result.prePaddingTop === '8px', `shared Pre top padding is ${result.prePaddingTop}, expected 8px`)
   assert(result.prePaddingBottom === '8px', `shared Pre bottom padding is ${result.prePaddingBottom}, expected 8px`)
-  assert(Math.abs(Number.parseFloat(result.prePaddingRight) - 7.20117) <= 0.1, `shared Pre right padding is ${result.prePaddingRight}, expected 1ch`)
-  assert(Math.abs(Number.parseFloat(result.prePaddingLeft) - 45.207) <= 0.1, `shared Pre line-number padding is ${result.prePaddingLeft}, expected gutter plus 1ch`)
+  // The Pre gutter contract is `padding-right: 1ch` and
+  // `padding-left: calc(2ch + 2ch + 1ch + 2px + 1ch)` (PreCodeNode.vue:406,411).
+  // A `ch` resolves to whatever monospace font the platform picks, so asserting
+  // absolute pixels would pin one platform's font metrics. `padding-right` *is*
+  // the resolved `1ch` of this element, so assert the relationship between the
+  // two paddings instead — exact, and independent of the font.
+  const preCh = Number.parseFloat(result.prePaddingRight)
+  assert(Number.isFinite(preCh) && preCh > 0, `shared Pre right padding is not measurable: ${result.prePaddingRight}`)
+  // At the shared 12px font size a monospace `ch` is roughly 0.45-0.75em; this
+  // catches the gutter silently switching to a non-`ch` unit.
+  assert(preCh >= 5.4 && preCh <= 9, `shared Pre right padding is ${result.prePaddingRight}, not a 12px monospace ch`)
+  assert(
+    Math.abs(Number.parseFloat(result.prePaddingLeft) - (6 * preCh + 2)) <= 0.05,
+    `shared Pre line-number padding is ${result.prePaddingLeft}, expected 6ch + 2px separator (${(6 * preCh + 2).toFixed(3)}px)`,
+  )
   assert(
     result.preOverflowX === (overflow === 'wrap' ? 'hidden' : 'auto'),
     `${overflow} shared Pre overflow-x is ${result.preOverflowX}`,
@@ -942,6 +963,31 @@ async function runFramework(browser, framework, spec) {
 
     await page.getByRole('button', { name: 'Toggle dark' }).click()
     await page.waitForFunction(() => !document.querySelector('.handoff-check')?.classList.contains('dark'))
+    // The wrapper class follows the `isDark` prop synchronously, but the
+    // enhanced surface applies its theme asynchronously: the component syncs the
+    // injected worker pool's render options and re-tokenizes before repainting.
+    // Waiting only on the class samples the one-frame window where the fallback
+    // is already light while the code surface is still dark. Wait for the
+    // surfaces to actually agree — a failure to converge within the timeout is
+    // itself the regression this guards against.
+    await page.waitForFunction(() => {
+      const queryDeep = (root, selector) => {
+        const direct = root?.querySelector?.(selector)
+        if (direct)
+          return direct
+        for (const element of root?.querySelectorAll?.('*') || []) {
+          const nested = element.shadowRoot && queryDeep(element.shadowRoot, selector)
+          if (nested)
+            return nested
+        }
+        return null
+      }
+      const pre = document.querySelector('[data-handoff-case="pre"] pre[data-markstream-pre="1"]')
+      const code = queryDeep(document.querySelector('[data-handoff-case="enhanced"]'), '[data-code]')
+      if (!pre || !code)
+        return false
+      return getComputedStyle(code).backgroundColor === getComputedStyle(pre).backgroundColor
+    }, { timeout: 15000 })
     const lightVisual = await page.evaluate(() => {
       const queryDeep = (root, selector) => {
         const direct = root?.querySelector?.(selector)

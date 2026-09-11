@@ -4702,7 +4702,6 @@ watch(mermaidEnabled, (enabled) => {
   border: 1px solid var(--lab-border);
   background: var(--lab-surface);
   box-shadow: 0 16px 48px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(20px) saturate(1.4);
   opacity: 0;
   transform: translateY(8px);
   pointer-events: none;
@@ -5072,7 +5071,6 @@ watch(mermaidEnabled, (enabled) => {
   border-radius: 14px;
   background: var(--lab-surface);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(16px);
   pointer-events: auto;
 }
 
@@ -5121,7 +5119,6 @@ watch(mermaidEnabled, (enabled) => {
   border: 1px solid var(--lab-border);
   background: var(--lab-surface);
   box-shadow: 0 16px 48px rgba(15, 23, 42, 0.14);
-  backdrop-filter: blur(16px);
 }
 
 .preview-annotation-text-editor__input {
@@ -5181,7 +5178,6 @@ watch(mermaidEnabled, (enabled) => {
 
 .settings-dialog::backdrop {
   background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(4px);
 }
 
 .settings-dialog__panel {
@@ -5192,7 +5188,6 @@ watch(mermaidEnabled, (enabled) => {
   background: var(--lab-surface);
   border: 1px solid var(--lab-border);
   box-shadow: 0 24px 80px rgba(15, 23, 42, 0.15);
-  backdrop-filter: blur(16px);
 }
 
 .settings-dialog__head {

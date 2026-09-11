@@ -1000,6 +1000,21 @@ onBeforeUnmount(() => {
 <style scoped>
 /* ─── Root & Background ─── */
 .playground-root {
+  /*
+   * The library scopes its `--ms-*` bridge tokens to `.markstream-vue`, so page
+   * chrome in this playground cannot inherit them: every `var(--ms-*)` below
+   * would resolve to nothing and drop the whole declaration (no page background,
+   * no card border/shadow). Mirror the library's light defaults for the page.
+   * `.markstream-vue` subtrees still declare their own tokens on themselves,
+   * so this stays out of the renderer.
+   */
+  --ms-background: 0 0% 100%;
+  --ms-foreground: 0 0% 10%;
+  --ms-muted: 0 0% 96.5%;
+  --ms-muted-foreground: 0 0% 43%;
+  --ms-accent: 0 0% 91%;
+  --ms-border: 0 0% 87%;
+  --ms-ring: 0 0% 10%;
   --speed-surface: rgb(255 255 255 / 0.44);
   --speed-subtle: rgb(15 23 42 / 0.035);
   --speed-text: var(--play-ink);
@@ -1025,6 +1040,14 @@ onBeforeUnmount(() => {
 }
 
 .playground-root.dark {
+  /* Dark counterparts of the bridge tokens declared on `.playground-root`. */
+  --ms-background: 0 0% 7%;
+  --ms-foreground: 0 0% 93%;
+  --ms-muted: 0 0% 12%;
+  --ms-muted-foreground: 0 0% 60%;
+  --ms-accent: 0 0% 24%;
+  --ms-border: 0 0% 20%;
+  --ms-ring: 0 0% 80%;
   --speed-surface: rgb(255 255 255 / 0.04);
   --speed-subtle: rgb(255 255 255 / 0.04);
   --speed-text: #e0e0e0;
@@ -1086,7 +1109,6 @@ onBeforeUnmount(() => {
   border: 1px solid var(--play-border);
   border-radius: 14px;
   background: var(--play-paper);
-  backdrop-filter: blur(12px) saturate(1.6);
   box-shadow: 0 4px 24px hsl(var(--ms-foreground) / 0.06);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1123,7 +1145,6 @@ onBeforeUnmount(() => {
   width: 280px;
   padding: 20px;
   background: hsl(var(--ms-background) / 0.92);
-  backdrop-filter: blur(20px) saturate(1.6);
   border: 1px solid hsl(var(--ms-border) / 0.4);
   overflow-y: auto;
   scrollbar-width: thin;
@@ -1134,7 +1155,6 @@ onBeforeUnmount(() => {
   top: 0;
   right: 0;
   height: 100vh;
-  backdrop-filter: none;
   border-radius: 0;
   border-right: 0;
   border-top: 0;
@@ -1355,7 +1375,11 @@ onBeforeUnmount(() => {
   border: 1px solid var(--play-border);
   background:
     linear-gradient(180deg, hsl(var(--ms-background) / 0.88), hsl(var(--ms-background) / 0.78));
-  backdrop-filter: blur(16px) saturate(1.4);
+  /*
+   * No `backdrop-filter` on the page-wide cards: Chromium whites out large
+   * blurred backdrops while scrolling (issues.chromium.org/issues/339841685).
+   * The translucent surfaces alone keep the intended look.
+   */
   box-shadow:
     0 0 0 1px hsl(var(--ms-border) / 0.1),
     0 28px 84px hsl(var(--ms-foreground) / 0.1),

@@ -17,6 +17,7 @@ keywords:
 - `loading?: boolean` — 初始加载占位
 - `maxHeight?: string | null` — 最大高度
 - `estimatedPreviewHeightPx?: number` — Mermaid 完成渲染前预留的首屏 preview 高度；通过 `MarkdownRender` 渲染 Mermaid 围栏时会自动填入
+- `fitPreviewHeight?: boolean` — 默认 `false`；图渲染完成且渲染静止后丢弃渲染前的预留高度，让容器贴合实际图高（下界 120px、上界 `maxHeight`）。不开启时，宽扁图（甘特／时序等）会一直保持预留高度（实测：506px 宽列中预留 500px，实际图高仅 77px）。开启后图块会收缩一次，下方内容随之回流；流式渲染期间无论开关都保持预留。
 - `isStrict?: boolean` — 默认 `true`；开启 `securityLevel: 'strict'` + DOMPurify，并禁用 HTML labels。只有可信图表确实需要 Mermaid loose 解析/渲染配置时才设为 `false`；最终 SVG 挂载和导出前仍会清理。
 - `enableMermaidInteractions?: boolean` — 默认 `false`；在清理后的 SVG 挂载后启用 Mermaid 生成的点击绑定。只建议用于可信图表。
 - Header/按钮控制（全部可选，默认 `true`）:

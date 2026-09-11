@@ -1,7 +1,6 @@
 import type { PreparedText } from '@chenglou/pretext'
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { CodeBlockOptions } from '../types/component-props'
-import { layout, prepare } from '@chenglou/pretext'
 import { shallowRef } from 'vue'
 import { resolveDiffInlineLayout } from '../components/CodeBlockNode/codeBlockHeader'
 import { resolvePreCodeVisualOptions } from '../components/PreCodeNode/preCodeVisual'
@@ -133,6 +132,43 @@ const store: HeightEstimationExperimentStore = (() => {
 
 let canPrepareTextSupport: boolean | null = null
 
+type PretextModule = typeof import('@chenglou/pretext')
+
+// `@chenglou/pretext` is a text-measurement engine that is only reachable when
+// the height experiment or virtual scrolling is active. Importing it statically
+// pulled its whole bidi/line-break/analysis implementation (tens of KB) into the
+// renderer's main chunk for every consumer, including the many that never
+// estimate a single height. It is therefore loaded on demand: the first
+// estimation request starts the import and returns no estimate, and the module
+// resolving bumps the experiment revision so the renderer recomputes heights
+// with the real estimator.
+let pretextModule: PretextModule | null = null
+let pretextLoadPromise: Promise<PretextModule> | null = null
+
+export function ensureHeightEstimationRuntimeLoaded(): Promise<void> | null {
+  if (pretextModule || typeof window === 'undefined')
+    return null
+
+  if (!pretextLoadPromise) {
+    pretextLoadPromise = import('@chenglou/pretext')
+      .then((module) => {
+        pretextModule = module
+        // Estimates produced before the runtime was ready fell back to the
+        // renderer's default heights; invalidate them so the next pass uses
+        // the loaded estimator.
+        store.revision.value++
+        return module
+      })
+      .catch(() => {
+        // Leave the promise resolved-but-empty so later calls do not retry the
+        // failed import on every node; estimation stays on the fallback path.
+        return null as unknown as PretextModule
+      })
+  }
+
+  return pretextLoadPromise.then(() => undefined)
+}
+
 export const heightEstimationExperimentRevision = store.revision
 
 export function setHeightEstimationExperiment(customId: string, config: HeightEstimationExperimentConfig) {
@@ -199,7 +235,7 @@ function parsePositiveNumber(raw: string | null | undefined, fallback: number) {
   return Number.isFinite(value) && value > 0 ? value : fallback
 }
 
-function getPreparedText(text: string, font: string, whiteSpace: WhiteSpaceMode) {
+function getPreparedText(pretext: PretextModule, text: string, font: string, whiteSpace: WhiteSpaceMode) {
   const key = `${whiteSpace}\u0000${font}\u0000${text}`
   const cached = store.preparedCache.get(key)
   if (cached) {
@@ -207,7 +243,7 @@ function getPreparedText(text: string, font: string, whiteSpace: WhiteSpaceMode)
     store.preparedCache.set(key, cached)
     return cached.prepared
   }
-  const prepared = prepare(text, font, { whiteSpace })
+  const prepared = pretext.prepare(text, font, { whiteSpace })
   store.preparedCache.set(key, { prepared })
   while (store.preparedCache.size > PREPARED_CACHE_LIMIT) {
     const oldestKey = store.preparedCache.keys().next().value
@@ -242,6 +278,17 @@ function flattenSimpleInlineChildren(children: any[] | undefined): string | null
 function estimateBlockTextHeight(text: string, width: number, profile: BlockTextProfile) {
   if (!text || !Number.isFinite(width) || width <= 0 || !canPrepareText())
     return null
+
+  const pretext = pretextModule
+  if (!pretext) {
+    // Start the on-demand load; this call (and any other before the module
+    // resolves) reports "no estimate" so the caller keeps using its fallback
+    // heights. The load completion bumps the experiment revision, which makes
+    // the renderer recompute estimates with the real engine.
+    void ensureHeightEstimationRuntimeLoaded()
+    return null
+  }
+
   try {
     const roundedWidth = Math.round(width * 100) / 100
     const cacheKey = [
@@ -264,9 +311,9 @@ function estimateBlockTextHeight(text: string, width: number, profile: BlockText
       }
     }
     const whiteSpace = profile.whiteSpace ?? 'pre-wrap'
-    const prepared = getPreparedText(text, profile.font, whiteSpace)
+    const prepared = getPreparedText(pretext, text, profile.font, whiteSpace)
     const layoutWidth = Math.max(24, roundedWidth - profile.widthAdjustment)
-    const result = layout(prepared, layoutWidth, profile.lineHeight)
+    const result = pretext.layout(prepared, layoutWidth, profile.lineHeight)
     const contentHeight = Math.max(profile.lineHeight, result.height)
     const height = Math.max(profile.lineHeight, Math.round(contentHeight + profile.wrapperOverhead))
     store.blockEstimateCache.set(cacheKey, {

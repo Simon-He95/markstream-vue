@@ -54,6 +54,7 @@ import { DEFAULT_VIEWPORT_PRIORITY_ROOT_MARGIN, provideOffscreenHeavyNodeDeferra
 import {
   buildBlockTextProfile,
   createEmptySimpleTextProbeProfile,
+  ensureHeightEstimationRuntimeLoaded,
   estimateCodeBlockHeight,
   estimateSimpleTextBlockHeight,
   getHeightEstimationExperiment,
@@ -791,6 +792,19 @@ const virtualScrollDomEnabled = computed(() => Boolean(
   && virtualScrollEnabled.value,
 ))
 const heightEstimationActive = computed(() => heightExperimentEnabled.value || virtualScrollEnabled.value)
+
+// The text estimator's runtime is loaded on demand (it is heavy and most
+// consumers never estimate heights). Start that load as soon as estimation is
+// active so the fallback-height window is as short as possible instead of
+// waiting for the first estimation request.
+watch(
+  heightEstimationActive,
+  (active) => {
+    if (active)
+      void ensureHeightEstimationRuntimeLoaded()
+  },
+  { immediate: true },
+)
 
 const heightEstimationDomActive = computed(() => heightExperimentEnabled.value || virtualScrollDomEnabled.value)
 const textEstimationEnabled = computed(() => {

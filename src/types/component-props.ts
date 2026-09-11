@@ -210,6 +210,7 @@ export interface MermaidBlockEvent<TPayload = unknown> {
 export interface D2BlockNodeProps {
   node: CodeBlockNode
   maxHeight?: string | null
+  estimatedPreviewHeightPx?: number
   loading?: boolean
   isDark?: boolean
   progressiveRender?: boolean

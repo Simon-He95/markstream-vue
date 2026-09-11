@@ -304,16 +304,6 @@ function resolveInitialContainerHeight() {
   return `${resolveEstimatedPreviewHeight()}px`
 }
 
-// Keep a streamed diagram's reserved preview geometry even if an async
-// render temporarily falls back to the source panel. Without this floor the
-// source text is much shorter than the pending preview estimate and a pinned
-// scroll container observes a real height regression for one render tick.
-const streamingSourceMinHeight = computed(() => {
-  if (props.loading === false)
-    return undefined
-  return resolveInitialContainerHeight()
-})
-
 const lastSvgSnapshot = ref<string | null>(null)
 
 function hasPreviewSvg() {
@@ -338,6 +328,29 @@ const showSource = ref(true)
 const userToggledShowSource = ref(false)
 const isRendering = ref(false)
 const renderQueue = ref<Promise<boolean> | null>(null)
+
+// Keep a streamed diagram's reserved preview geometry even if an async render
+// temporarily falls back to the source panel. Without this floor the source
+// text is much shorter than the pending preview estimate and a pinned scroll
+// container observes a real height regression for one render tick.
+//
+// The floor must also hold once streaming finishes while the source panel is
+// still the active one: the panel is what the block renders until mermaid
+// resolves, and dropping the floor at that point collapses the block (measured
+// 435px → 233px → 435px on the playground, ~0.11 CLS) before the preview takes
+// over. It is dropped once a preview is on screen, when the user explicitly
+// chose the source view, and once availability resolves to "no runtime", so
+// none of those cases gains empty reserved space.
+const streamingSourceMinHeight = computed(() => {
+  if (hasPreviewSvg())
+    return undefined
+  if (mermaidAvailabilityResolved.value && !mermaidAvailable.value)
+    return undefined
+  if (!showSource.value || userToggledShowSource.value)
+    return undefined
+  return resolveInitialContainerHeight()
+})
+
 interface MermaidRenderRequest {
   code: string
   codeWithTheme: string

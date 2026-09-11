@@ -63,7 +63,7 @@ import {
 import { getCodeBlockExtraProps } from '../../utils/codeBlockExtraProps'
 import { getCustomCodeLanguageComponent } from '../../utils/customCodeLanguageComponent'
 import { isDevEnvironment } from '../../utils/devEnv'
-import { clampInfographicPreviewHeight, clampMermaidPreviewHeight, estimateInfographicPreviewHeight, estimateMermaidPreviewHeight, parsePositiveNumber } from '../../utils/diagramHeight'
+import { clampD2PreviewHeight, clampInfographicPreviewHeight, clampMermaidPreviewHeight, estimateD2PreviewHeight, estimateInfographicPreviewHeight, estimateMermaidPreviewHeight, parsePositiveNumber } from '../../utils/diagramHeight'
 import { getCustomNodeAttrs, getHtmlTagFromContent, shouldRenderUnknownHtmlTagAsText, stripCustomHtmlWrapper } from '../../utils/htmlRenderer'
 import { isReservedNodeComponentKey, useCustomNodeComponents } from '../../utils/nodeComponents'
 import { MARKSTREAM_NODE_LIFECYCLE_KEY } from '../../utils/nodeLifecycle'
@@ -88,6 +88,7 @@ import { useScrollListener } from './composables/useScrollListener'
 import { useScrollRestore } from './composables/useScrollRestore'
 import { useSmoothStreamingBridge } from './composables/useSmoothStreamingBridge'
 import { useViewportRoot } from './composables/useViewportRoot'
+import { D2BlockNodeLoading } from './D2BlockNodeLoading'
 import FallbackComponent from './FallbackComponent.vue'
 import HeightEstimationProbes from './HeightEstimationProbes.vue'
 import { InfographicBlockNodeLoading } from './InfographicBlockNodeLoading'
@@ -790,6 +791,7 @@ const virtualScrollDomEnabled = computed(() => Boolean(
   && virtualScrollEnabled.value,
 ))
 const heightEstimationActive = computed(() => heightExperimentEnabled.value || virtualScrollEnabled.value)
+
 const heightEstimationDomActive = computed(() => heightExperimentEnabled.value || virtualScrollDomEnabled.value)
 const textEstimationEnabled = computed(() => {
   return heightEstimationActive.value
@@ -5480,23 +5482,27 @@ const InfographicBlockNodeAsync = withViewportDeferredLoading(
   InfographicBlockNodeLoading,
 )
 
-const D2BlockNodeInnerAsync = defineAsyncComponent(async () => {
-  try {
-    const mod = await import('../../components/D2BlockNode')
-    return mod.default
-  }
-  catch (e) {
-    console.warn(
-      '[markstream-vue] Optional peer dependencies for D2BlockNode are missing. Falling back to preformatted code rendering. To enable D2 rendering, please install "@terrastruct/d2".',
-      e,
-    )
-    return PreCodeNode
-  }
+const D2BlockNodeInnerAsync = defineAsyncComponent({
+  loader: async () => {
+    try {
+      const mod = await import('../../components/D2BlockNode')
+      return mod.default
+    }
+    catch (e) {
+      console.warn(
+        '[markstream-vue] Optional peer dependencies for D2BlockNode are missing. Falling back to preformatted code rendering. To enable D2 rendering, please install "@terrastruct/d2".',
+        e,
+      )
+      return PreCodeNode
+    }
+  },
+  loadingComponent: D2BlockNodeLoading,
+  delay: 0,
 })
 const D2BlockNodeAsync = withViewportDeferredLoading(
   'ViewportDeferredD2BlockNode',
   D2BlockNodeInnerAsync,
-  PreCodeNode,
+  D2BlockNodeLoading,
 )
 
 // 组件映射表
@@ -6145,6 +6151,10 @@ function getInfographicBindingsFor(node: ParsedNode) {
   return getPreviewBindingsFor(infographicBindings, node, estimateInfographicPreviewHeight, clampInfographicPreviewHeight)
 }
 
+function getD2BindingsFor(node: ParsedNode) {
+  return getPreviewBindingsFor(d2Bindings, node, estimateD2PreviewHeight, clampD2PreviewHeight)
+}
+
 // Decide which component to use for a given node. Ensure that code blocks
 // with language `mermaid` are rendered with `MermaidBlockNode` (unless a
 // custom component named `mermaid` is registered for the given customId).
@@ -6227,7 +6237,7 @@ function getBindingsFor(node: ParsedNode, language?: string, component?: unknown
         return getInfographicBindingsFor(node)
 
       if (lang === 'd2' || lang === 'd2lang')
-        return d2Bindings.value
+        return getD2BindingsFor(node)
 
       return customCodeBlockBindings.value
     }
@@ -6243,7 +6253,7 @@ function getBindingsFor(node: ParsedNode, language?: string, component?: unknown
     return getInfographicBindingsFor(node)
 
   if (lang === 'd2' || lang === 'd2lang')
-    return d2Bindings.value
+    return getD2BindingsFor(node)
 
   if (node.type === 'link')
     return linkBindings.value

@@ -2,6 +2,8 @@ export const MERMAID_PREVIEW_MIN_HEIGHT = 360
 export const MERMAID_PREVIEW_MAX_HEIGHT = 500
 export const INFOGRAPHIC_PREVIEW_MIN_HEIGHT = 360
 export const INFOGRAPHIC_PREVIEW_MAX_HEIGHT = 500
+export const D2_PREVIEW_MIN_HEIGHT = 240
+export const D2_PREVIEW_MAX_HEIGHT = 520
 
 export function parsePositiveNumber(value: unknown) {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''))
@@ -76,4 +78,44 @@ export function clampInfographicPreviewHeight(
   maxHeight: number | null = INFOGRAPHIC_PREVIEW_MAX_HEIGHT,
 ) {
   return clampPreviewHeight(height, minHeight, maxHeight)
+}
+
+export function clampD2PreviewHeight(
+  height: number,
+  minHeight = D2_PREVIEW_MIN_HEIGHT,
+  maxHeight: number | null = D2_PREVIEW_MAX_HEIGHT,
+) {
+  return clampPreviewHeight(height, minHeight, maxHeight)
+}
+
+/**
+ * Estimates the height a D2 diagram will occupy before its runtime has produced
+ * the SVG. The source panel is much shorter than the rendered diagram, so
+ * without a reservation the whole page below the block is pushed down when the
+ * preview appears (measured ~238px, ~0.10 CLS on the playground).
+ *
+ * The estimate deliberately errs low: the renderer keeps the measured source
+ * height as a floor as well, so a low estimate never shrinks the block, and any
+ * residual growth is smaller than the un-reserved jump.
+ */
+export function estimateD2PreviewHeight(code: string) {
+  const { lineCount, nodeCount } = code
+    .split(/\r?\n/)
+    .reduce<{ lineCount: number, nodeCount: number }>((acc, rawLine) => {
+      const line = rawLine.trim()
+      if (!line || line.startsWith('#') || line.startsWith('...'))
+        return acc
+      // `direction`, `vars`, `style` and similar are directives, not shapes.
+      const isDirective = /^[A-Z_][\w-]*\s*:/i.test(line)
+      if (!isDirective)
+        acc.nodeCount += 1
+      acc.lineCount += 1
+      return acc
+    }, { lineCount: 0, nodeCount: 0 })
+
+  // Rank-direction diagrams grow with depth, not with row count, so the node
+  // count dominates; each node contributes a box plus surrounding spacing.
+  const estimated = 120 + Math.max(1, nodeCount) * 46 + Math.max(0, lineCount - nodeCount) * 8
+
+  return clampPreviewHeight(estimated, D2_PREVIEW_MIN_HEIGHT, D2_PREVIEW_MAX_HEIGHT)
 }

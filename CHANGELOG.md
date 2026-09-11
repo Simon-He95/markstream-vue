@@ -1,3 +1,35 @@
+## [2.0.12](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.11...markstream-vue@2.0.12) (2026-09-11)
+
+
+### Bug Fixes
+
+* **diagram:** correct the D2 estimate and the loading shell styles ([9bb4a21](https://github.com/Simon-He95/markstream-vue/commit/9bb4a2142a4257ca8374b815465b0269b3a1f43c))
+* **diagram:** reserve preview height so diagram blocks stop shifting ([311bdb9](https://github.com/Simon-He95/markstream-vue/commit/311bdb9bcbb20c3fee1cae7c128b6238a94e8a06))
+* **e2e:** wait for theme convergence instead of the wrapper class ([cc958b2](https://github.com/Simon-He95/markstream-vue/commit/cc958b2c5bad0cc546dc893f78f4ec3f8fb0f585))
+* **playground:** drop remaining backdrop-filter surfaces and restore page tokens ([09e4021](https://github.com/Simon-He95/markstream-vue/commit/09e4021d3b371b37462708501b6d898db0d84fe5))
+* **playground:** keep auto-scroll pinned during fast streams ([f808226](https://github.com/Simon-He95/markstream-vue/commit/f808226cd747ae266e5a046819d374c707b63f80))
+* **playground:** stop test page card backdrop-filter flicker on scroll ([5115c4b](https://github.com/Simon-He95/markstream-vue/commit/5115c4b83c8462835cabb354551edf95af95c7d0))
+
+
+### Performance Improvements
+
+* **code-block:** drop redundant single-editor host pin before reveal ([1720dc1](https://github.com/Simon-He95/markstream-vue/commit/1720dc187f3bb0c84020f1d42d9d16a0640a375b))
+* **height-estimation:** load the text estimator on demand ([e88c263](https://github.com/Simon-He95/markstream-vue/commit/e88c263bc2074bb7db6e61eda4944798a424af65))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.16`
+* `markstream-core@2.0.12`
+* `markstream-vue@2.0.12`
+* `markstream-react@2.0.12`
+* `markstream-octane@2.0.12`
+* `markstream-svelte@2.0.12`
+* `markstream-angular@2.0.12`
+* `markstream-vue2@2.0.12`
+
+
+
 ## [2.0.11](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.10...markstream-vue@2.0.11) (2026-09-09)
 
 

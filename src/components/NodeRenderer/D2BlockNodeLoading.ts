@@ -29,9 +29,18 @@ export const D2BlockNodeLoading = defineComponent({
     ))
     return () => h('div', {
       'class': 'd2-block-container rounded-lg border overflow-hidden',
+      // `d2-block-container` and `d2-label` are scoped to D2BlockNode.vue
+      // (`.d2-block-container[data-v-…]`), so a `.ts` render function — which has
+      // no scope id — inherits none of them. The surface styles the block relies
+      // on have to be inline here or the loading shell renders on a transparent
+      // background with a full-size label, and the block visibly changes when
+      // the real component takes over.
       'style': {
         margin: 'var(--ms-flow-diagram-y) 0',
+        background: 'var(--diagram-bg)',
         borderColor: 'var(--diagram-border)',
+        color: 'hsl(var(--ms-foreground))',
+        boxShadow: 'var(--ms-shadow-subtle)',
       },
       'data-markstream-d2': '1',
       'data-markstream-mode': 'pending',
@@ -48,7 +57,10 @@ export const D2BlockNodeLoading = defineComponent({
             h('div', { class: 'flex items-center gap-x-2' }, [
               h('span', {
                 class: 'd2-label font-medium font-mono',
-                style: { color: 'var(--code-action-fg)' },
+                style: {
+                  fontSize: 'var(--ms-text-label)',
+                  color: 'var(--code-action-fg)',
+                },
               }, 'D2'),
             ]),
             h('div', {

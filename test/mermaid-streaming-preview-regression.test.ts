@@ -60,7 +60,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     ;(wrapper.vm as any).mermaidAvailable = true
     ;(wrapper.vm as any).viewportReady = true
     ;(wrapper.vm as any).showSource = false
@@ -120,7 +120,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     ;(wrapper.vm as any).mermaidAvailable = true
     ;(wrapper.vm as any).viewportReady = true
     ;(wrapper.vm as any).showSource = false
@@ -178,7 +178,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = false
     ;(wrapper.vm as any).showSource = false
@@ -234,7 +234,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = false
     ;(wrapper.vm as any).showSource = false
@@ -730,7 +730,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = true
     ;(wrapper.vm as any).viewportReady = true
@@ -809,7 +809,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = true
     ;(wrapper.vm as any).viewportReady = true
@@ -887,7 +887,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = true
     ;(wrapper.vm as any).viewportReady = true
@@ -954,7 +954,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = false
     ;(wrapper.vm as any).showSource = false
@@ -1007,7 +1007,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = false
     ;(wrapper.vm as any).showSource = false
@@ -1060,7 +1060,7 @@ describe('mermaid streaming preview regression', () => {
       },
     })
 
-    ;(wrapper.vm as any).userToggledShowSource = true
+    ;(wrapper.vm as any).modeChosenExplicitly = true
     await settleStreamingRender()
     ;(wrapper.vm as any).mermaidAvailable = false
     ;(wrapper.vm as any).showSource = false
@@ -1129,7 +1129,7 @@ describe('mermaid streaming preview regression', () => {
     })
 
     for (const wrapper of [first, second]) {
-      ;(wrapper.vm as any).userToggledShowSource = true
+      ;(wrapper.vm as any).modeChosenExplicitly = true
       await settleStreamingRender()
       ;(wrapper.vm as any).mermaidAvailable = true
       ;(wrapper.vm as any).showSource = false

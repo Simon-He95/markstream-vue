@@ -3,7 +3,10 @@ export const MERMAID_PREVIEW_MAX_HEIGHT = 500
 export const INFOGRAPHIC_PREVIEW_MIN_HEIGHT = 360
 export const INFOGRAPHIC_PREVIEW_MAX_HEIGHT = 500
 export const D2_PREVIEW_MIN_HEIGHT = 240
-export const D2_PREVIEW_MAX_HEIGHT = 520
+// Matches the rendered preview's own cap (--ms-size-code-max-height, 500px):
+// reserving more than the preview can occupy would trade the growth shift for a
+// shrink shift once the diagram resolves.
+export const D2_PREVIEW_MAX_HEIGHT = 500
 
 export function parsePositiveNumber(value: unknown) {
   const numeric = typeof value === 'number' ? value : Number.parseFloat(String(value ?? ''))
@@ -88,6 +91,60 @@ export function clampD2PreviewHeight(
   return clampPreviewHeight(height, minHeight, maxHeight)
 }
 
+// D2 keywords that configure a diagram or a shape instead of declaring one.
+// They take a scalar value (`direction: right`, `shape: cylinder`) and must not
+// be counted as shapes.
+const D2_DIRECTIVE_KEYS = new Set([
+  'direction',
+  'label',
+  'shape',
+  'icon',
+  'near',
+  'link',
+  'tooltip',
+  'width',
+  'height',
+  'grid-rows',
+  'grid-columns',
+  'grid-gap',
+  'vertical-gap',
+  'horizontal-gap',
+  'class',
+  'constraint',
+  'source-arrowhead',
+  'target-arrowhead',
+])
+
+// These open a block of settings, so every line up to the closing brace is a
+// setting as well (`vars: { d2-config: { layout-engine: elk } }`).
+const D2_DIRECTIVE_BLOCK_KEYS = new Set([
+  'vars',
+  'classes',
+  'style',
+  'layers',
+  'scenarios',
+  'steps',
+])
+
+function braceDepthDelta(line: string) {
+  let depth = 0
+  let inString = false
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index]
+    if (char === '"' || char === '\'') {
+      inString = !inString
+      continue
+    }
+    if (inString)
+      continue
+    if (char === '{')
+      depth += 1
+    else if (char === '}')
+      depth -= 1
+  }
+  return depth
+}
+
 /**
  * Estimates the height a D2 diagram will occupy before its runtime has produced
  * the SVG. The source panel is much shorter than the rendered diagram, so
@@ -97,21 +154,49 @@ export function clampD2PreviewHeight(
  * The estimate deliberately errs low: the renderer keeps the measured source
  * height as a floor as well, so a low estimate never shrinks the block, and any
  * residual growth is smaller than the un-reserved jump.
+ *
+ * `key: value` lines are shapes unless the key is a known directive. D2 declares
+ * a shape's label that way (`client: Web Client`) and containers use it as well
+ * (`server: {`), so treating every `key:` line as a directive — the first cut of
+ * this estimator — measured labelled diagrams as if they had no shapes at all
+ * and reserved the 240px floor for them.
  */
 export function estimateD2PreviewHeight(code: string) {
-  const { lineCount, nodeCount } = code
-    .split(/\r?\n/)
-    .reduce<{ lineCount: number, nodeCount: number }>((acc, rawLine) => {
-      const line = rawLine.trim()
-      if (!line || line.startsWith('#') || line.startsWith('...'))
-        return acc
-      // `direction`, `vars`, `style` and similar are directives, not shapes.
-      const isDirective = /^[A-Z_][\w-]*\s*:/i.test(line)
-      if (!isDirective)
-        acc.nodeCount += 1
-      acc.lineCount += 1
-      return acc
-    }, { lineCount: 0, nodeCount: 0 })
+  let lineCount = 0
+  let nodeCount = 0
+  let directiveBlockDepth = 0
+
+  for (const rawLine of code.split(/\r?\n/)) {
+    const line = rawLine.trim()
+
+    // Inside `vars`/`classes`/`style`/... every line is a setting, not a shape.
+    if (directiveBlockDepth > 0) {
+      directiveBlockDepth = Math.max(0, directiveBlockDepth + braceDepthDelta(line))
+      continue
+    }
+
+    if (!line || line.startsWith('#') || line.startsWith('...'))
+      continue
+    if (/^[}\]]+$/.test(line))
+      continue
+
+    const declaration = line.match(/^([A-Z_][\w-]*)\s*:(.*)$/i)
+    if (declaration) {
+      const key = declaration[1].toLowerCase()
+      if (D2_DIRECTIVE_BLOCK_KEYS.has(key)) {
+        lineCount += 1
+        directiveBlockDepth = Math.max(0, braceDepthDelta(declaration[2]))
+        continue
+      }
+      if (D2_DIRECTIVE_KEYS.has(key)) {
+        lineCount += 1
+        continue
+      }
+    }
+
+    nodeCount += 1
+    lineCount += 1
+  }
 
   // Rank-direction diagrams grow with depth, not with row count, so the node
   // count dominates; each node contributes a box plus surrounding spacing.

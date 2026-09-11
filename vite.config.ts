@@ -176,7 +176,11 @@ export default defineConfig(({ mode }) => {
     build,
     test: {
       environment: 'jsdom',
-      exclude: [...configDefaults.exclude, 'packages/markstream-octane/tests/**'],
+      // `.tmp` holds gitignored scratch copies of the suite (profiling and
+      // comparison runs). They duplicate the tests at a different path, so their
+      // scoped-style hashes differ and they fail in bulk; keep them out of the
+      // default run.
+      exclude: [...configDefaults.exclude, '.tmp/**', 'packages/markstream-octane/tests/**'],
       setupFiles: ['./test/setup/vitest.setup.ts'],
       restoreMocks: true,
       testTimeout: 10000,

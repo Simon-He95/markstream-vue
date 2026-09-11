@@ -10,4 +10,5 @@ packages:
   - playground-react18
   - playground-react19
   - playground-svelte
+  - playground-solid
   - packages/*

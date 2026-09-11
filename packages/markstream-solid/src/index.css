@@ -1,0 +1,2226 @@
+/*
+ * Keep button defaults minimal, but don't override Tailwind utilities.
+ * Use :where() to keep specificity low so `:is(.markstream-svelte, .markstream-solid) .<utility>` wins.
+ */
+:where(:is(.markstream-svelte, .markstream-solid)) button {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+}
+
+markstream-svelte {
+  display: block;
+  width: 100%;
+}
+
+/* Theme variables for renderer colors */
+:is(.markstream-svelte, .markstream-solid) {
+  --border: 214.3 31.8% 91.4%;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --secondary: 210 40% 96%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --ms-background: var(--background);
+  --ms-foreground: var(--foreground);
+  --ms-muted: var(--muted);
+  --ms-muted-foreground: var(--muted-foreground);
+  --ms-secondary: var(--secondary);
+  --ms-secondary-foreground: var(--foreground);
+  --ms-accent: 210 40% 91%;
+  --ms-accent-foreground: var(--foreground);
+  --ms-border: var(--border);
+  --ms-popover: var(--background);
+  --ms-popover-foreground: var(--foreground);
+  /* Unified default code surface; explicit editor themes may override it. */
+  --code-fg: hsl(0 0% 10%);
+  --code-bg: #fff;
+  --code-border: hsl(var(--ms-border));
+  --code-header-bg: hsl(var(--ms-secondary));
+  --code-line-number: hsl(var(--ms-muted-foreground));
+  --code-action-fg: hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg: hsl(var(--ms-accent));
+  --code-action-hover-fg: hsl(var(--ms-accent-foreground));
+  --diagram-bg: hsl(var(--ms-muted));
+  --diagram-border: hsl(var(--ms-border));
+  --diagram-header-bg: hsl(var(--ms-muted));
+  --blockquote-border: hsl(var(--ms-muted-foreground) / 0.2);
+  --modal-overlay: hsl(0 0% 0% / 0.7);
+  --modal-bg: hsl(var(--ms-popover));
+  --modal-fg: hsl(var(--ms-popover-foreground));
+  --ms-text-label: 0.75rem;
+  --ms-radius: 0.5rem;
+  --ms-gap-header: 1rem;
+  --ms-gap-header-main: 0.625rem;
+  --ms-action-btn-padding: 0.375rem;
+  --ms-action-btn-icon: 0.875rem;
+  --ms-inset-panel-x: 0.625rem;
+  --ms-inset-panel-y: 0.375rem;
+  --ms-inset-panel-body: 1rem;
+  --ms-gap-header-actions: 0.5rem;
+  --ms-flow-blockquote-y: 1.25em;
+  --ms-flow-blockquote-indent: 1.25em;
+  --ms-flow-diagram-y: 1.5em;
+  --ms-size-image-max-width: 24rem;
+  --ms-size-diagram-min-height: 360px;
+  --ms-size-code-max-height: 500px;
+  --ms-duration-standard: 180ms;
+  --ms-duration-fast: 120ms;
+  --ms-duration-emphasis: 220ms;
+  --ms-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ms-shadow-subtle: 0 1px 3px 0 hsl(var(--ms-foreground) / 0.06);
+  --ms-shadow-modal: 0 10px 15px -3px hsl(var(--ms-foreground) / 0.1), 0 4px 6px -4px hsl(var(--ms-foreground) / 0.1);
+  color: hsl(var(--foreground));
+  font:
+    400 16px/1.72 "IBM Plex Sans", "Segoe UI", sans-serif;
+  word-break: break-word;
+  position: relative;
+  contain: layout;
+  content-visibility: auto;
+  contain-intrinsic-size: 800px 600px;
+}
+
+:is(.markstream-svelte, .markstream-solid).virtualized {
+  content-visibility: visible;
+  contain-intrinsic-size: auto;
+}
+
+.dark :is(.markstream-svelte, .markstream-solid),
+:is(.markstream-svelte, .markstream-solid).dark {
+  --border: 217.2 32.6% 17.5%;
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --secondary: 217.2 32.6% 17.5%;
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+  --ms-accent: 217.2 32.6% 24%;
+  --code-fg: hsl(0 0% 93%);
+  --code-bg: #111827;
+  --code-header-bg: hsl(var(--ms-muted));
+}
+
+:is(.markstream-svelte, .markstream-solid) > :first-child {
+  margin-top: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) > :last-child {
+  margin-bottom: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .node-slot,
+:is(.markstream-svelte, .markstream-solid) .node-content {
+  width: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) markstream-svelte-blockquote-node,
+:is(.markstream-svelte, .markstream-solid) markstream-svelte-paragraph-node {
+  display: flow-root;
+  width: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) markstream-svelte-nested-renderer,
+:is(.markstream-svelte, .markstream-solid) markstream-svelte-node-outlet,
+:is(.markstream-svelte, .markstream-solid) markstream-svelte-image-node {
+  display: contents;
+}
+
+:is(.markstream-svelte, .markstream-solid) .node-placeholder {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  min-height: 1rem;
+  margin: 0.25rem 0;
+  border-radius: 0.5rem;
+  background: rgba(148, 163, 184, 0.18);
+}
+
+:is(.markstream-svelte, .markstream-solid) .node-placeholder::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 500%;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.18));
+  background-size: 40% 100%;
+  animation: node-placeholder-shimmer 1.1s ease-in-out infinite;
+}
+
+:is(.markstream-svelte, .markstream-solid) .node-spacer {
+  width: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) .typewriter-node,
+:is(.markstream-svelte, .markstream-solid) .fade-node {
+  opacity: 0;
+  animation: typewriter-fade var(--fade-duration, var(--typewriter-fade-duration, 280ms)) var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))) both;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-text-node, .markstream-solid-text-node) {
+  display: inline;
+  font-weight: inherit;
+  vertical-align: baseline;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-text--centered, .markstream-solid-text--centered) {
+  display: inline-flex;
+  justify-content: center;
+  width: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-text__stream-delta, .markstream-solid-text__stream-delta) {
+  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
+  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
+  animation-fill-mode: both;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-text__stream-delta--a, .markstream-solid-text__stream-delta--a) {
+  animation-name: markstream-svelte-text-stream-update-fade-a;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-text__stream-delta--b, .markstream-solid-text__stream-delta--b) {
+  animation-name: markstream-svelte-text-stream-update-fade-b;
+}
+
+:is(.markstream-svelte, .markstream-solid) h1,
+:is(.markstream-svelte, .markstream-solid) h2,
+:is(.markstream-svelte, .markstream-solid) h3,
+:is(.markstream-svelte, .markstream-solid) h4,
+:is(.markstream-svelte, .markstream-solid) h5,
+:is(.markstream-svelte, .markstream-solid) h6 {
+  margin: 1.8rem 0 0.8rem;
+  line-height: 1.15;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+:is(.markstream-svelte, .markstream-solid) h1 {
+  font-size: clamp(2rem, 4vw, 2.65rem);
+}
+
+:is(.markstream-svelte, .markstream-solid) h2 {
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}
+
+:is(.markstream-svelte, .markstream-solid) h3 {
+  font-size: 1.35rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) h4 {
+  font-size: 1.15rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) p,
+:is(.markstream-svelte, .markstream-solid) ul,
+:is(.markstream-svelte, .markstream-solid) ol,
+:is(.markstream-svelte, .markstream-solid) blockquote,
+:is(.markstream-svelte, .markstream-solid) pre,
+:is(.markstream-svelte, .markstream-solid) table,
+:is(.markstream-svelte, .markstream-solid) details,
+:is(.markstream-svelte, .markstream-solid) dl {
+  margin: 1rem 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) ul,
+:is(.markstream-svelte, .markstream-solid) ol {
+  padding-left: 1.45rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) li + li {
+  margin-top: 0.35rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) li > p {
+  margin: 0.35rem 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+:is(.markstream-svelte, .markstream-solid) .link-node {
+  color: var(--link-color, #0366d6);
+  text-decoration: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .link-node:hover {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .link-loading {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  color: var(--link-color, #0366d6);
+}
+
+:is(.markstream-svelte, .markstream-solid) .link-loading .link-text-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+:is(.markstream-svelte, .markstream-solid) .link-loading .link-text {
+  position: relative;
+  z-index: 2;
+}
+
+:is(.markstream-svelte, .markstream-solid) .link-loading-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--underline-height, 2px);
+  bottom: var(--underline-bottom, -3px);
+  background: currentColor;
+  border-radius: 999px;
+  opacity: var(--underline-rest-opacity, 0.18);
+  animation: markstream-svelte-link-loading-pulse var(--underline-duration, 1.6s) var(--underline-timing, ease-in-out) var(--underline-iteration, infinite);
+}
+
+@keyframes markstream-svelte-link-loading-pulse {
+  0%, 100% { opacity: var(--underline-rest-opacity, 0.18); }
+  50% { opacity: var(--underline-opacity, 0.35); }
+}
+
+@keyframes markstream-svelte-text-stream-update-fade-a {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes markstream-svelte-text-stream-update-fade-b {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+:is(.markstream-svelte, .markstream-solid) .typewriter-cursor {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-block;
+  width: 0.55em;
+  height: 1em;
+  margin-left: 0.08em;
+  vertical-align: -0.12em;
+  border-right: 2px solid currentColor;
+  pointer-events: none;
+  animation: typewriter-cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes typewriter-cursor-blink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.markstream-svelte, .markstream-solid) .node-placeholder::before {
+    animation: none !important;
+  }
+
+  :is(.markstream-svelte, .markstream-solid) .link-loading-indicator {
+    animation: none !important;
+    opacity: var(--underline-rest-opacity, 0.18);
+  }
+
+  :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-text__stream-delta, .markstream-solid-text__stream-delta) {
+    animation: none !important;
+  }
+
+  :is(.markstream-svelte, .markstream-solid) .typewriter-node,
+  :is(.markstream-svelte, .markstream-solid) .fade-node {
+    animation: none !important;
+    opacity: 1;
+  }
+
+  :is(.markstream-svelte, .markstream-solid) .typewriter-cursor {
+    animation: none !important;
+  }
+}
+
+:is(.markstream-svelte, .markstream-solid) strong {
+  font-weight: 700;
+}
+
+:is(.markstream-svelte, .markstream-solid) em {
+  font-style: italic;
+}
+
+:is(.markstream-svelte, .markstream-solid) code {
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.42rem;
+  background: rgba(15, 23, 42, 0.06);
+  font:
+    500 0.92em/1.5 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+:is(.markstream-svelte, .markstream-solid) pre {
+  overflow: auto;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.14);
+}
+
+:is(.markstream-svelte, .markstream-solid) pre code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+:is(.markstream-svelte, .markstream-solid) blockquote,
+:is(.markstream-svelte, .markstream-solid) .blockquote-node {
+  display: flow-root;
+  font-weight: 400;
+  font-style: normal;
+  color: var(--blockquote-fg, hsl(var(--ms-muted-foreground)));
+  border-left: 3px solid var(--blockquote-border);
+  quotes: "\201C" "\201D" "\2018" "\2019";
+  margin-top: var(--ms-flow-blockquote-y);
+  margin-bottom: var(--ms-flow-blockquote-y);
+  padding-left: var(--ms-flow-blockquote-indent);
+  background: transparent;
+  border-radius: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .blockquote-node :is(.markstream-svelte, .markstream-solid),
+:is(.markstream-svelte, .markstream-solid) blockquote :is(.markstream-svelte, .markstream-solid) {
+  content-visibility: visible;
+  contain: content;
+  contain-intrinsic-size: 0 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .blockquote-node > markstream-svelte-nested-renderer,
+:is(.markstream-svelte, .markstream-solid) blockquote > markstream-svelte-nested-renderer,
+:is(.markstream-svelte, .markstream-solid) .blockquote-node > markstream-svelte-node-outlet,
+:is(.markstream-svelte, .markstream-solid) blockquote > markstream-svelte-node-outlet {
+  display: block;
+  width: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+:is(.markstream-svelte, .markstream-solid) table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.08);
+}
+
+:is(.markstream-svelte, .markstream-solid) th,
+:is(.markstream-svelte, .markstream-solid) td {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+:is(.markstream-svelte, .markstream-solid) th {
+  position: relative;
+  background: rgba(15, 23, 42, 0.05);
+  font-weight: 700;
+}
+
+:is(.markstream-svelte, .markstream-solid) .table-node__resize-handle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  bottom: 0;
+  z-index: 1;
+  width: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .table-node__resize-handle::after {
+  content: '';
+  position: absolute;
+  top: 0.35em;
+  bottom: 0.35em;
+  left: 50%;
+  width: 2px;
+  border-radius: 9999px;
+  background: rgba(94, 104, 121, 0.55);
+  opacity: 0;
+  transform: translateX(-50%);
+  transition: opacity 0.12s ease;
+}
+
+:is(.markstream-svelte, .markstream-solid) .table-node__resize-handle:hover::after,
+:is(.markstream-svelte, .markstream-solid) .table-node__resize-handle:focus-visible::after {
+  opacity: 1;
+}
+
+:is(.markstream-svelte, .markstream-solid) table :is(.markstream-svelte-text-node, .markstream-solid-text-node),
+:is(.markstream-svelte, .markstream-solid) table code {
+  white-space: inherit;
+  overflow-wrap: inherit;
+  word-break: inherit;
+  max-width: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) img {
+  display: inline-block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.9rem;
+  vertical-align: middle;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-node-container {
+  display: inline-block;
+  vertical-align: middle;
+  max-width: var(--ms-size-image-max-width);
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-node__img {
+  display: inline-block;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  vertical-align: middle;
+  transition: opacity var(--ms-duration-emphasis) var(--ms-ease-standard);
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-node__img.is-loading {
+  opacity: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-node__img.is-loaded {
+  opacity: 1;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-placeholder {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 12rem;
+  min-height: 8rem;
+  max-width: var(--ms-size-image-max-width);
+  background: hsl(var(--ms-muted, 210 40% 96%));
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .image-loading,
+.dark :is(.markstream-svelte, .markstream-solid) .image-loading {
+  color: rgba(226, 232, 240, 0.8);
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-shimmer {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 8rem;
+  background: hsl(var(--ms-muted));
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-shimmer::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: -200%;
+  width: 300%;
+  background: linear-gradient(
+    90deg,
+    hsl(var(--ms-muted)) 0%,
+    hsl(var(--ms-muted-foreground) / 0.06) 50%,
+    hsl(var(--ms-muted)) 100%
+  );
+  background-position: 100% 0;
+  background-size: 66.6667% 100%;
+  animation: markstream-svelte-image-shimmer 1.5s ease-in-out infinite;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-error {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  min-height: 4rem;
+  max-width: var(--ms-size-image-max-width);
+  background: hsl(var(--ms-muted));
+  color: hsl(var(--ms-muted-foreground));
+  font-size: var(--ms-text-label);
+  vertical-align: middle;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-node__raw-text {
+  font-size: var(--ms-text-label);
+  color: hsl(var(--ms-muted-foreground));
+}
+
+@keyframes markstream-svelte-image-shimmer {
+  from { transform: translateX(0); }
+  to { transform: translateX(66.6667%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :is(.markstream-svelte, .markstream-solid) .image-shimmer::before {
+    animation: none !important;
+  }
+
+  :is(.markstream-svelte, .markstream-solid) .image-node__img {
+    transition: none !important;
+  }
+}
+
+:is(.markstream-svelte, .markstream-solid) details {
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+:is(.markstream-svelte, .markstream-solid) summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+:is(.markstream-svelte, .markstream-solid) dl {
+  display: grid;
+  gap: 0.45rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) dt {
+  font-weight: 700;
+}
+
+:is(.markstream-svelte, .markstream-solid) dd {
+  margin: 0 0 0.45rem 1rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) input[type='checkbox'] {
+  margin-right: 0.4rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) mark {
+  padding: 0.08rem 0.24rem;
+  border-radius: 0.3rem;
+  background: rgba(250, 204, 21, 0.28);
+}
+
+:is(.markstream-svelte, .markstream-solid) ins {
+  text-decoration-thickness: 0.08em;
+}
+
+:is(.markstream-svelte, .markstream-solid) del {
+  text-decoration-thickness: 0.08em;
+}
+
+/* Prevent mermaid temporary render containers from causing layout shift */
+body > div[id^="dmermaid-"] {
+  position: fixed;
+  top: -10000px;
+  left: 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-custom {
+  display: block;
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+  border-radius: 0.9rem;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-custom--thinking {
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.08), rgba(255, 255, 255, 0.92));
+  border-color: rgba(14, 165, 233, 0.18);
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-admonition {
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(37, 99, 235, 0.14);
+  background: rgba(37, 99, 235, 0.05);
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-admonition__title {
+  margin-bottom: 0.55rem;
+  font-weight: 700;
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-admonition--warning {
+  border-color: rgba(245, 158, 11, 0.24);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-admonition--error,
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-admonition--danger {
+  border-color: rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.07);
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-admonition--tip {
+  border-color: rgba(16, 185, 129, 0.2);
+  background: rgba(16, 185, 129, 0.07);
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-reference {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  margin: 0 0.125rem;
+  padding: 0 0.375rem;
+  border-radius: 0.375rem;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  vertical-align: baseline;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-node {
+  display: flex;
+  margin-top: var(--ms-flow-footnote-y);
+  margin-bottom: var(--ms-flow-footnote-y);
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--footnote-border);
+  font-size: 0.875rem;
+  line-height: 1.625;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-node__content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-node .paragraph-node {
+  margin: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-reference {
+  font-size: 0.75em;
+  line-height: 0;
+  vertical-align: super;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-link {
+  color: var(--link-color);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-link:hover {
+  text-decoration: underline;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-anchor {
+  margin-left: 0.35rem;
+  color: var(--link-color);
+  font-size: 0.875em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+:is(.markstream-svelte, .markstream-solid) .footnote-anchor:hover {
+  text-decoration: underline;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-inline-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-inline--hidden {
+  visibility: hidden;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-inline__loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-inline__spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(94, 104, 121, 0.25);
+  border-top-color: rgba(94, 104, 121, 0.8);
+  animation: spin 1s linear infinite;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-block,
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-math-block {
+  position: relative;
+  text-align: center;
+  overflow-x: auto;
+  min-height: 40px;
+  padding: 0.5rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .math-rendering {
+  opacity: 0.3;
+  transition: opacity 0.2s ease;
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-math[data-markstream-katex="1"] .markstream-nested-math__source,
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-math-block--rendered > .markstream-nested-math-block__source {
+  display: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .markstream-nested-math-block__render .katex-display {
+  margin: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-mermaid, .markstream-solid-mermaid) {
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-mermaid, .markstream-solid-mermaid),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-mermaid, .markstream-solid-mermaid) {
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-mermaid, .markstream-solid-mermaid) svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-block {
+  margin: var(--ms-flow-diagram-y) 0;
+  border: 1px solid var(--diagram-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+  box-shadow: var(--ms-shadow-subtle);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .mermaid-block,
+.dark :is(.markstream-svelte, .markstream-solid) .mermaid-block {
+  border-color: var(--diagram-border);
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+}
+
+:is(.markstream-svelte, .markstream-solid):is(.markstream-svelte-modal-root, .markstream-solid-modal-root) {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: auto;
+  contain: none;
+  content-visibility: visible;
+  pointer-events: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: var(--modal-overlay);
+  pointer-events: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-panel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+  box-shadow: var(--ms-shadow-modal);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-panel.is-dark {
+  background: var(--modal-bg);
+  color: var(--modal-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-close {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-close:hover {
+  opacity: 1;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-controls {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  transform-origin: center center;
+  overflow: hidden;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-modal-content svg,
+:is(.markstream-svelte, .markstream-solid) .infographic-modal-content svg {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .fullscreen {
+  width: 100%;
+  max-height: 100% !important;
+  height: 100% !important;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: var(--ms-inset-panel-y) var(--ms-inset-panel-x);
+  border-bottom: 1px solid var(--diagram-border);
+  background: var(--diagram-header-bg);
+  color: hsl(var(--ms-foreground));
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .mermaid-header,
+.dark :is(.markstream-svelte, .markstream-solid) .mermaid-header {
+  background: var(--diagram-header-bg);
+  border-color: var(--diagram-border);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-header__title,
+:is(.markstream-svelte, .markstream-solid) .icon-slot {
+  display: inline-flex;
+  align-items: center;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-header__title {
+  min-width: 0;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+:is(.markstream-svelte, .markstream-solid) .action-icon {
+  width: var(--ms-action-btn-icon);
+  height: var(--ms-action-btn-icon);
+  flex: 0 0 auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .icon-slot {
+  justify-content: center;
+}
+
+:is(.markstream-svelte, .markstream-solid) .icon-slot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-title__text {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ms-gap-header-actions);
+  grid-column: 3;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-action-btn,
+:is(.markstream-svelte, .markstream-solid) .mermaid-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  padding: var(--ms-action-btn-padding);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-btn--icon {
+  width: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+  height: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-action-btn svg,
+:is(.markstream-svelte, .markstream-solid) .mermaid-btn svg,
+:is(.markstream-svelte, .markstream-solid) .mermaid-toggle-btn svg {
+  display: block;
+  width: var(--ms-action-btn-icon);
+  height: var(--ms-action-btn-icon);
+  flex: 0 0 auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-action-btn:hover:not(:disabled),
+:is(.markstream-svelte, .markstream-solid) .mermaid-btn:hover:not(:disabled) {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .mermaid-btn:hover:not(:disabled),
+.dark :is(.markstream-svelte, .markstream-solid) .mermaid-btn:hover:not(:disabled) {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-action-btn:active,
+:is(.markstream-svelte, .markstream-solid) .mermaid-btn:active {
+  transform: scale(0.98);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  grid-column: 2;
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-action-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-toggle-btn:hover {
+  opacity: 0.9;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-toggle-btn--active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+  opacity: 1;
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .mermaid-toggle-btn--active,
+.dark :is(.markstream-svelte, .markstream-solid) .mermaid-toggle-btn--active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-body {
+  position: relative;
+  padding: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-zoom-controls, .markstream-solid-zoom-controls) {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-zoom-controls, .markstream-solid-zoom-controls),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-zoom-controls, .markstream-solid-zoom-controls) {
+  background: rgba(15, 23, 42, 0.78);
+  border-color: rgba(71, 85, 105, 0.65);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-preview {
+  width: 100%;
+  min-height: var(--ms-size-diagram-min-height);
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transform-origin: top center;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-preview svg {
+  width: 100%;
+  height: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-source {
+  margin: 0;
+  padding: var(--ms-inset-panel-body);
+  border-radius: 0;
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+  box-shadow: none;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  overflow-x: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-source code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-error {
+  padding: 0.85rem 1rem;
+  color: #b91c1c;
+  background: rgba(248, 113, 113, 0.15);
+  border-top: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.mermaid-loading, .d2-loading) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(15, 23, 42, 0.6);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.mermaid-loading, .d2-loading),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.mermaid-loading, .d2-loading) {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+:is(.markstream-svelte, .markstream-solid) .mermaid-spinner {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 9999px;
+  border: 2px solid rgba(59, 130, 246, 0.2);
+  border-top-color: #2563eb;
+  animation: spin 1s linear infinite;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block, .markstream-solid-enhanced-block) {
+  margin: var(--ms-flow-diagram-y) 0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  border: 1px solid var(--diagram-border);
+  background: var(--diagram-bg);
+  color: hsl(var(--ms-foreground));
+  box-shadow: var(--ms-shadow-subtle);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__header, .markstream-solid-enhanced-block__header) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: var(--ms-inset-panel-y) var(--ms-inset-panel-x);
+  border-bottom: 1px solid var(--diagram-border);
+  background: var(--diagram-header-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__actions, .markstream-solid-enhanced-block__actions) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+  grid-column: 3;
+  gap: var(--ms-gap-header-actions);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__title, .markstream-solid-enhanced-block__title) {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__title-icon, .markstream-solid-enhanced-block__title-icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__title-text, .markstream-solid-enhanced-block__title-text) {
+  overflow: hidden;
+  font:
+    500 var(--ms-text-label)/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ms-action-btn-padding);
+  border: 0;
+  border-radius: 0.25rem;
+  background: transparent;
+  box-shadow: none;
+  color: var(--code-action-fg);
+  font:
+    500 var(--ms-text-label)/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease, transform 0.15s ease;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action-content, .markstream-solid-enhanced-block__action-content) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action--icon, .markstream-solid-enhanced-block__action--icon) {
+  width: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+  height: calc(var(--ms-action-btn-icon) + var(--ms-action-btn-padding) + var(--ms-action-btn-padding));
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):hover {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):active {
+  transform: scale(0.98);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):disabled:hover {
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__badge, .markstream-solid-enhanced-block__badge) {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: #1d4ed8;
+  font:
+    700 0.72rem/1 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body, .markstream-solid-enhanced-block__body) {
+  position: relative;
+  overflow: auto;
+  padding: var(--ms-inset-panel-body);
+  background: var(--diagram-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body, .markstream-solid-enhanced-block__body) > :first-child {
+  margin-top: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body, .markstream-solid-enhanced-block__body) > :last-child {
+  margin-bottom: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body--code, .markstream-solid-enhanced-block__body--code) {
+  padding: 0;
+  background: #0b1220;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body--code, .markstream-solid-enhanced-block__body--code) .stream-diffs-shell,
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body--code, .markstream-solid-enhanced-block__body--code) diffs-container {
+  min-height: inherit;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__details, .markstream-solid-enhanced-block__details) {
+  margin: 0;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 0;
+  background: rgba(248, 250, 252, 0.92);
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__details, .markstream-solid-enhanced-block__details) summary {
+  padding: 0.8rem 0.95rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__source, .markstream-solid-enhanced-block__source) {
+  margin: 0;
+  border-radius: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block--d2, .markstream-solid-enhanced-block--d2) svg,
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block--infographic, .markstream-solid-enhanced-block--infographic) svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block, .markstream-solid-enhanced-block) :is(.markstream-svelte-enhanced-block__title-icon, .markstream-solid-enhanced-block__title-icon) svg,
+:is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block, .markstream-solid-enhanced-block) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action) svg {
+  width: var(--ms-action-btn-icon);
+  height: var(--ms-action-btn-icon);
+  flex: 0 0 auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-label {
+  color: hsl(var(--ms-muted-foreground));
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  grid-column: 2;
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-mode-btn {
+  color: var(--code-action-fg);
+  opacity: 0.6;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-mode-btn:hover {
+  opacity: 0.9;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-mode-btn.is-active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+  opacity: 1;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-action-btn,
+:is(.markstream-svelte, .markstream-solid) .infographic-zoom-reset {
+  font-family: inherit;
+  color: var(--code-action-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-action-btn:hover:not(:disabled),
+:is(.markstream-svelte, .markstream-solid) .infographic-zoom-reset:hover:not(:disabled) {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-block-body {
+  padding: 0;
+  background: var(--diagram-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-source {
+  padding: var(--ms-inset-panel-body);
+  background: var(--diagram-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-source-code {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+  box-shadow: none;
+  white-space: pre-wrap;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-source-code code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block, .markstream-solid-enhanced-block),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block, .markstream-solid-enhanced-block) {
+  border-color: var(--diagram-border);
+  background: var(--diagram-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__header, .markstream-solid-enhanced-block__header),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__header, .markstream-solid-enhanced-block__header) {
+  border-bottom-color: var(--diagram-border);
+  background: var(--diagram-header-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action) {
+  background: transparent;
+  box-shadow: none;
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):hover,
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):hover {
+  background: var(--code-action-hover-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):disabled:hover,
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__action, .markstream-solid-enhanced-block__action):disabled:hover {
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__badge, .markstream-solid-enhanced-block__badge),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__badge, .markstream-solid-enhanced-block__badge) {
+  background: rgba(96, 165, 250, 0.16);
+  color: #93c5fd;
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__body, .markstream-solid-enhanced-block__body),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__body, .markstream-solid-enhanced-block__body) {
+  background: var(--diagram-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark :is(.markstream-svelte-enhanced-block__details, .markstream-solid-enhanced-block__details),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.markstream-svelte-enhanced-block__details, .markstream-solid-enhanced-block__details) {
+  border-top-color: rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.96);
+}
+
+@keyframes node-placeholder-shimmer {
+  from { transform: translateX(0); }
+  to { transform: translateX(80%); }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes typewriter-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container {
+  --markstream-code-fallback-bg: var(--code-bg);
+  --markstream-code-fallback-fg: var(--code-fg);
+  --markstream-code-border-color: var(--code-border);
+  --markstream-diff-shell-fg: #0f172a;
+  --markstream-diff-shell-muted: #64748b;
+  --markstream-diff-shell-border: rgba(148, 163, 184, 0.24);
+  --markstream-diff-shell-bg: #ffffff;
+  --markstream-diff-header-border: rgba(148, 163, 184, 0.18);
+  --markstream-diff-editor-bg: #111111;
+  --markstream-diff-editor-fg: #d4d4d4;
+  --markstream-diff-unchanged-fg: #d4d4d4;
+  --markstream-diff-unchanged-bg: rgba(64, 64, 64, 0.92);
+  --markstream-diff-unchanged-divider: rgba(255, 255, 255, 0.18);
+  --markstream-diff-focus: rgba(96, 165, 250, 0.42);
+  --markstream-diff-widget-shadow: rgba(0, 0, 0, 0.72);
+  --markstream-diff-action-hover: rgba(148, 163, 184, 0.18);
+  --markstream-diff-pane-divider: rgba(82, 82, 91, 0.34);
+  --markstream-diff-gutter-gap: 8px;
+  --markstream-diff-line-number: rgba(161, 161, 170, 0.68);
+  --markstream-diff-line-number-active: rgba(228, 228, 231, 0.82);
+  --markstream-diff-added-fg: #5eead4;
+  --markstream-diff-removed-fg: #fda4af;
+  --markstream-diff-added-line: rgba(13, 148, 136, 0.18);
+  --markstream-diff-removed-line: rgba(225, 29, 72, 0.18);
+  --markstream-diff-added-inline: rgba(45, 212, 191, 0.24);
+  --markstream-diff-removed-inline: rgba(251, 113, 133, 0.24);
+  --markstream-diff-added-inline-border: transparent;
+  --markstream-diff-removed-inline-border: transparent;
+  --markstream-diff-added-line-fill: rgba(13, 148, 136, 0.18);
+  --markstream-diff-removed-line-fill: rgba(225, 29, 72, 0.18);
+  margin: 1rem 0;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 0.75rem;
+  background: var(--markstream-code-fallback-bg, var(--code-bg));
+  color: var(--markstream-code-fallback-fg, var(--code-fg));
+  box-shadow: 0 18px 38px -28px rgba(15, 23, 42, 0.45);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-dark,
+.dark :is(.markstream-svelte, .markstream-solid) .code-block-container {
+  --markstream-code-fallback-bg: #111827;
+  --markstream-code-fallback-fg: hsl(0 0% 93%);
+  --markstream-diff-shell-fg: #e2e8f0;
+  --markstream-diff-shell-muted: #94a3b8;
+  --markstream-diff-shell-border: rgba(82, 82, 91, 0.56);
+  --markstream-diff-shell-bg: rgba(10, 10, 11, 0.99);
+  --markstream-diff-header-border: rgba(63, 63, 70, 0.82);
+  --markstream-diff-editor-bg: rgba(12, 12, 14, 0.99);
+  --markstream-diff-editor-fg: #b6c2d3;
+  --markstream-diff-unchanged-fg: #cbd5e1;
+  --markstream-diff-unchanged-bg: rgba(24, 24, 27, 0.92);
+  --markstream-diff-unchanged-divider: rgba(255, 255, 255, 0.18);
+  --markstream-diff-action-hover: rgba(255, 255, 255, 0.08);
+  border-color: rgba(71, 85, 105, 0.55);
+  background: var(--markstream-code-fallback-bg, var(--code-bg));
+  color: var(--markstream-code-fallback-fg, var(--code-fg));
+  box-shadow: 0 22px 44px -30px rgba(2, 6, 23, 0.95);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-plain-text .stream-diffs-shell,
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-plain-text diffs-container {
+  background: var(--vscode-editor-background, var(--markstream-code-fallback-bg)) !important;
+  color: var(--vscode-editor-foreground, var(--markstream-code-fallback-fg)) !important;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ms-gap-header);
+  padding: var(--ms-inset-panel-y) var(--ms-inset-panel-x);
+  border-bottom: 1px solid var(--code-border);
+  background: var(--code-header-bg);
+  color: var(--code-fg);
+  border-radius: var(--ms-radius) var(--ms-radius) 0 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-header__meta {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: var(--ms-gap-header-main);
+  min-width: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-header__label {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--code-action-fg);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--ms-text-label);
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-header__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ms-gap-header-actions);
+  margin-left: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-language-icon {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 1rem;
+  color: #2563eb;
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .code-block-language-icon,
+.dark :is(.markstream-svelte, .markstream-solid) .code-block-language-icon {
+  color: #93c5fd;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-language-icon svg,
+:is(.markstream-svelte, .markstream-solid) .code-block-language-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-language-icon__image {
+  object-fit: contain;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-body {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--markstream-code-fallback-bg, var(--code-bg));
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-body > .code-editor-container,
+:is(.markstream-svelte, .markstream-solid) .code-block-body > .code-editor-fallback-surface {
+  grid-area: 1 / 1;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-editor-fallback-surface {
+  min-width: 0;
+  background: var(--markstream-code-fallback-bg, var(--code-bg));
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-editor-fallback-surface.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.code-block-body--expanded {
+  max-height: none;
+}
+
+.code-block-body--collapsed {
+  min-height: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ms-action-btn-padding);
+  border-radius: 0.375rem;
+  color: var(--code-action-fg);
+  transition: background-color 140ms ease, color 140ms ease, transform 140ms ease, opacity 140ms ease;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-action-btn:hover {
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-action-btn__icon,
+:is(.markstream-svelte, .markstream-solid) .code-action-btn svg {
+  display: block;
+  width: 0.8rem;
+  height: 0.8rem;
+  flex: 0 0 auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-action-btn:active {
+  transform: scale(0.98);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-action-btn:disabled:hover {
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-editor-container.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-pre-fallback {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--markstream-code-padding-y, 8px) var(--markstream-code-padding-x, 12px);
+  padding-left: var(--markstream-code-padding-left, 52px);
+  max-height: 500px;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--markstream-code-fallback-bg, var(--code-bg, #fff));
+  color: var(--markstream-code-fallback-fg, var(--code-fg));
+  font-family: var(--markstream-code-font-family, Menlo, Monaco, "Courier New", monospace);
+  font-size: var(--vscode-editor-font-size, 12px);
+  font-weight: 400;
+  line-height: var(--vscode-editor-line-height, 18px);
+  white-space: pre;
+  backface-visibility: visible;
+  transform: none;
+  -webkit-font-smoothing: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-pre-fallback code {
+  color: inherit;
+  font: inherit;
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-pre-fallback.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* ── Pre fallback: non-diff line numbers (aligned with markstream-vue PreCodeNode) ── */
+.markstream-solid .pre-code-node--with-line-numbers {
+  display: grid;
+  grid-template-columns: var(--markstream-pre-line-number-width, 2ch) minmax(0, 1fr);
+  column-gap: 1ch;
+}
+
+.markstream-solid .pre-code-node__line-numbers {
+  color: var(--markstream-code-line-number-color, #8b949e);
+  user-select: none;
+  text-align: right;
+}
+
+:is(.markstream-svelte, .markstream-solid) pre[class^='language-'],
+:is(.markstream-svelte, .markstream-solid) pre[class*=' language-'] {
+  white-space: pre;
+  overflow: auto;
+  tab-size: 2;
+  font-variant-ligatures: none;
+  contain: content;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+}
+:is(.markstream-svelte, .markstream-solid) pre[class^='language-'] > code,
+:is(.markstream-svelte, .markstream-solid) pre[class*=' language-'] > code {
+  display: block;
+}
+
+:is(.markstream-svelte, .markstream-solid) pre.markstream-pre--line-numbers {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--markstream-code-padding-y, 8px) var(--markstream-code-padding-x, 12px);
+  padding-left: var(--markstream-code-padding-left);
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  font-family: var(
+    --markstream-code-font-family,
+    Menlo,
+    Monaco,
+    Courier New,
+    monospace
+  );
+  font-size: var(--vscode-editor-font-size, 12px);
+  line-height: var(--vscode-editor-line-height, 18px);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-pre-fallback.markstream-pre--line-numbers {
+  background: var(--markstream-code-fallback-bg, var(--code-bg, #fff));
+  color: var(--markstream-code-fallback-fg, var(--code-fg));
+}
+
+:is(.markstream-svelte, .markstream-solid) pre[data-markstream-pre='1']:not(.code-pre-fallback):not(.markstream-pre--diff-preview) {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--code-bg, #fff);
+  color: var(--code-fg);
+  box-shadow: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 28px;
+}
+
+:is(.markstream-svelte, .markstream-solid) pre[data-markstream-pre='1']:not(.code-pre-fallback):not(.markstream-pre--diff-preview) > code {
+  color: inherit;
+  background: transparent;
+  font: inherit;
+}
+
+:is(.markstream-svelte, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__line-numbers {
+  position: absolute;
+  top: var(--markstream-pre-line-number-top, 0);
+  left: var(--markstream-pre-line-number-left, 0);
+  box-sizing: content-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: var(--markstream-pre-line-number-width, 2ch);
+  min-width: var(--markstream-pre-line-number-width, 2ch);
+  padding-left: var(--markstream-pre-line-number-padding-left, 2ch);
+  padding-right: var(--markstream-pre-line-number-padding-right, 1ch);
+  border-right: var(--markstream-pre-line-number-separator-width, 2px) solid transparent;
+  color: var(--code-line-number);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  pointer-events: none;
+  user-select: none;
+}
+
+:is(.markstream-svelte, .markstream-solid) pre.markstream-pre--line-numbers:not(.markstream-pre--diff-preview):not(.code-pre-fallback) > .markstream-pre__code {
+  box-sizing: border-box;
+  min-width: 100%;
+  padding-left: var(--markstream-code-padding-left, 52px);
+  padding-right: var(--markstream-code-padding-x, 12px);
+}
+
+:is(.markstream-svelte, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__line-numbers > .markstream-pre__line-numbers-text {
+  display: block;
+  min-height: 1lh;
+  text-align: right;
+  white-space: pre;
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-diff {
+  color: var(--markstream-diff-shell-fg);
+  border-color: var(--markstream-diff-shell-border);
+  background: var(--markstream-diff-shell-bg);
+  --vscode-editor-selectionBackground: var(--markstream-diff-action-hover);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-diff .code-block-header {
+  color: var(--markstream-diff-shell-fg);
+  border-bottom-color: var(--markstream-diff-header-border);
+  background: var(--markstream-diff-shell-bg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-diff .code-action-btn {
+  color: var(--markstream-diff-shell-muted);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-diff .code-block-body {
+  background: var(--markstream-diff-editor-bg);
+  --vscode-editor-background: var(--markstream-diff-editor-bg);
+  --vscode-editor-foreground: var(--markstream-diff-editor-fg);
+  --vscode-diffEditor-unchangedRegionForeground: var(--markstream-diff-unchanged-fg);
+  --vscode-diffEditor-unchangedRegionBackground: var(--markstream-diff-unchanged-bg);
+  --vscode-diffEditor-insertedTextBackground: var(--markstream-diff-added-inline);
+  --vscode-diffEditor-removedTextBackground: var(--markstream-diff-removed-inline);
+  --vscode-diffEditor-insertedLineBackground: var(--markstream-diff-added-line);
+  --vscode-diffEditor-removedLineBackground: var(--markstream-diff-removed-line);
+  --vscode-diffEditor-insertedTextBorder: var(--markstream-diff-added-inline-border);
+  --vscode-diffEditor-removedTextBorder: var(--markstream-diff-removed-inline-border);
+  --vscode-focusBorder: var(--markstream-diff-focus);
+  --vscode-widget-shadow: var(--markstream-diff-widget-shadow);
+}
+
+:is(.markstream-svelte, .markstream-solid) .code-block-container.is-diff .code-editor-container {
+  min-height: 0;
+  background: var(--markstream-diff-editor-bg);
+}
+
+.html-preview-frame__backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.html-preview-frame__backdrop--dark {
+  background-color: rgba(15, 23, 42, 0.8);
+}
+
+.html-preview-frame {
+  width: 80vw;
+  max-width: 960px;
+  height: 70vh;
+  background-color: #fff;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.html-preview-frame--dark {
+  background-color: #020617;
+  color: #e5e7eb;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+.html-preview-frame__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.html-preview-frame--dark .html-preview-frame__header {
+  border-bottom-color: rgba(148, 163, 184, 0.35);
+}
+
+.html-preview-frame__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.html-preview-frame__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: #22c55e;
+}
+
+.html-preview-frame--dark .html-preview-frame__dot {
+  background-color: #4ade80;
+}
+
+.html-preview-frame__label {
+  white-space: nowrap;
+}
+
+.html-preview-frame__close {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.html-preview-frame__close--dark {
+  color: #e5e7eb;
+}
+
+.html-preview-frame__iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .html-preview-frame {
+    width: 100vw;
+    height: 80vh;
+    border-radius: 0;
+  }
+}
+
+.ms-tooltip {
+  position: fixed;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  border-width: 1px;
+  border-style: solid;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 120ms linear, transform 220ms cubic-bezier(.16, 1, .3, 1);
+}
+
+.ms-tooltip[data-visible='true'] {
+  opacity: 1;
+}
+
+.ms-tooltip[data-dark='true'] {
+  background-color: #111827;
+  color: #f9fafb;
+  border-color: #374151;
+}
+
+.ms-tooltip[data-dark='false'],
+.ms-tooltip:not([data-dark='true']) {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+
+:is(.markstream-svelte, .markstream-solid) .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-block-body {
+  position: relative;
+  padding: 0;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-block-header {
+  display: flex;
+  grid-template-columns: none;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--diagram-border);
+  color: hsl(var(--ms-foreground));
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-header-title {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.5rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-label {
+  color: hsl(var(--ms-foreground));
+  font:
+    500 var(--ms-text-label)/1.2 "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-header-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: auto;
+  grid-column: auto;
+  gap: var(--ms-gap-header-actions);
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  background: transparent;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-mode-btn {
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  color: var(--code-action-fg);
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s, background-color 0.2s;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-mode-btn:hover {
+  opacity: 0.9;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-mode-btn.is-active {
+  background: hsl(var(--ms-foreground) / 0.08);
+  color: var(--code-fg);
+  opacity: 1;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-action-btn {
+  color: var(--code-action-fg);
+  opacity: 0.7;
+  transition: opacity 0.2s, background-color 0.15s, color 0.15s;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-action-btn:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--code-action-hover-bg);
+  color: var(--code-action-hover-fg);
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-action-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-source {
+  padding: var(--ms-inset-panel-body) var(--ms-inset-panel-x);
+  font-family: var(--vscode-editor-font-family, "Fira Code", "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-code {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: hsl(var(--ms-foreground));
+  box-shadow: none;
+  white-space: pre;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-code code {
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+
+/* Center the rendered diagram like the mermaid/infographic blocks: a
+   column flex container with margin:auto children stays centered while
+   remaining scroll-safe when content overflows. */
+:is(.markstream-svelte, .markstream-solid) .d2-render {
+  max-height: var(--ms-size-code-max-height);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* margin: auto (not justify-content: center) keeps overflow scrolling safe. */
+:is(.markstream-svelte, .markstream-solid) .d2-svg {
+  margin: auto;
+  width: 100%;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-render .d2-error {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-svg svg.markstream-d2-root-svg {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  /* Match the container cap so tall diagrams scale down to fit, mirroring
+     the mermaid block's max-height behavior. The inline maxHeight prop
+     exposes its value as --ms-d2-render-max-height so the svg cap always
+     tracks the effective container cap. The fallback is the shared token. */
+  max-height: var(--ms-d2-render-max-height, var(--ms-size-code-max-height));
+  display: block;
+}
+
+:is(.markstream-svelte, .markstream-solid) .d2-error {
+  color: #dc2626;
+  margin-top: 0.75rem;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-render {
+  position: relative;
+  width: 100%;
+  min-height: var(--ms-size-diagram-min-height);
+  overflow: auto;
+  text-align: center;
+}
+
+:is(.markstream-svelte, .markstream-solid) .infographic-pending-source {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: auto;
+  padding: var(--ms-inset-panel-body);
+  text-align: left;
+}
+
+/* The render host mirrors the mermaid/vue diagram layers: an inset-0
+   layer with a definite height (the inline min-height estimate on
+   .infographic-render) that flex-centers the rendered diagram. */
+:is(.markstream-svelte, .markstream-solid) .infographic-render > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 120ms ease;
+}
+
+/* Keep the diagram fully visible and centered like the mermaid block:
+   scale down proportionally inside the preview area. Scoped to the
+   preview container only; the fullscreen modal clone (portaled to body
+   without this wrapper) keeps its own sizing. */
+:is(.markstream-svelte, .markstream-solid) .infographic-render svg {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}

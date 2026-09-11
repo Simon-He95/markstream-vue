@@ -4,6 +4,8 @@ export default simon(
   {
     ignores: [
       '**/**/*.d.ts',
+      '**/dist/**',
+      '**/dist-ssr/**',
       'test/fixtures/unclosed-fence.md',
       'PERFORMANCE_ANALYSIS.md',
     ],

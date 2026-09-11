@@ -1,5 +1,5 @@
 export type TestLabSampleId = 'baseline' | 'thinking' | 'diff' | 'stress'
-export type TestLabFrameworkId = 'vue3' | 'vue2' | 'react' | 'angular' | 'svelte'
+export type TestLabFrameworkId = 'vue3' | 'vue2' | 'react' | 'angular' | 'svelte' | 'solid'
 
 export interface TestLabFrameworkCard {
   id: TestLabFrameworkId
@@ -52,6 +52,13 @@ export const TEST_LAB_FRAMEWORKS: ReadonlyArray<TestLabFrameworkCard> = [
     origin: 'https://markstream-svelte.pages.dev',
     localPort: 4176,
   },
+  {
+    id: 'solid',
+    label: 'Solid',
+    note: 'Solid / local playground',
+    origin: '',
+    localPort: 4177,
+  },
 ] as const
 
 export const TEST_LAB_SAMPLES: ReadonlyArray<TestLabSampleCard> = [
@@ -61,7 +68,7 @@ export const TEST_LAB_SAMPLES: ReadonlyArray<TestLabSampleCard> = [
     summary: '标题、强调、数学、Mermaid、infographic 和 D2 一次看全。',
     content: `# Markstream Test Lab
 
-在这里可以快速验证 **Vue 3 / Vue 2 / React / Angular / Svelte** 五套渲染器的表现是否一致。
+在这里可以快速验证 **Vue 3 / Vue 2 / React / Angular / Svelte / Solid** 渲染器的表现是否一致。
 
 ## 基础格式
 
@@ -257,6 +264,7 @@ export function TestHarness() {
 | React | \`/test\` | 跨框架对照 |
 | Angular | \`/test\` | baseline 对照 |
 | Svelte | \`/test\` | 新框架对照 |
+| Solid | \`/test\` | Solid 对照 |
 
 ## HTML
 

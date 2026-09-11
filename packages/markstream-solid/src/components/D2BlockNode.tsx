@@ -1,6 +1,7 @@
 import type { SolidRenderableNode, SolidRenderContext } from '../node-helpers'
 import { createEffect, createSignal, onCleanup } from 'solid-js'
 import { getD2 } from '../d2'
+import { useSafeI18n } from '../i18n/useSafeI18n'
 import { getString } from '../node-helpers'
 import { extractRenderedSvg, toSafeSvgMarkup } from '../sanitizeSvg'
 
@@ -69,6 +70,7 @@ export function D2BlockNode(props: D2BlockNodeProps) {
   let lastProgressiveRenderAt = 0
   const [progressiveTick, setProgressiveTick] = createSignal(0)
   let generation = 0
+  let lastRenderKey = ''
   createEffect(() => {
     const target = host()
     const source = getString((props.node as any).code)
@@ -79,15 +81,19 @@ export function D2BlockNode(props: D2BlockNodeProps) {
     const isCollapsed = collapsed()
     if (!target)
       return
-    const token = ++generation
     void progressiveTick()
     if (!source.trim() || sourceMode || isCollapsed) {
+      lastRenderKey = ''
+      generation += 1
       target.replaceChildren()
       setError('')
       if (!source.trim())
         setSvgMarkup('')
       return
     }
+    const renderKey = `${dark ? 'd' : 'l'}:${String(themeId ?? '')}:${String(darkThemeId ?? '')}:${source}`
+    if (renderKey === lastRenderKey)
+      return
     const isStreaming = props.loading ?? Boolean((props.node as any).loading)
     const interval = Math.max(0, props.progressiveIntervalMs ?? 120)
     if (props.progressiveRender !== false && isStreaming && interval > 0) {
@@ -106,6 +112,8 @@ export function D2BlockNode(props: D2BlockNodeProps) {
       clearTimeout(progressiveTimer)
       progressiveTimer = undefined
     }
+    lastRenderKey = renderKey
+    const token = ++generation
     lastProgressiveRenderAt = Date.now()
     void (async () => {
       try {
@@ -154,14 +162,17 @@ export function D2BlockNode(props: D2BlockNodeProps) {
     if (progressiveTimer)
       clearTimeout(progressiveTimer)
   })
+  const { t } = useSafeI18n()
   const resolvedShowHeader = () => props.showHeader ?? true
   const resolvedShowModeToggle = () => props.showModeToggle ?? true
   const resolvedShowCopyButton = () => props.showCopyButton ?? true
   const resolvedShowExportButton = () => props.showExportButton ?? true
   const resolvedShowCollapseButton = () => props.showCollapseButton ?? true
-  const fallbackVisible = () => showSource() || !!error() || !svgMarkup()
+  const isStreaming = () => props.loading ?? Boolean((props.node as any).loading)
+  const showLoading = () => !showSource() && !collapsed() && !svgMarkup() && isStreaming()
+  const fallbackVisible = () => !showLoading() && (showSource() || !!error() || !svgMarkup())
   return (
-    <div class={`markstream-solid-enhanced-block markstream-solid-enhanced-block--d2${(props.isDark ?? props.context?.isDark) ? ' dark' : ''}`} data-markstream-d2="1" data-markstream-mode={fallbackVisible() ? 'fallback' : 'preview'}>
+    <div class={`markstream-solid-enhanced-block markstream-solid-enhanced-block--d2${(props.isDark ?? props.context?.isDark) ? ' dark' : ''}${isStreaming() || showLoading() ? ' is-rendering' : ''}`} data-markstream-d2="1" data-markstream-mode={showLoading() ? 'loading' : fallbackVisible() ? 'fallback' : 'preview'}>
       {resolvedShowHeader() && (
         <div class="markstream-solid-enhanced-block__header d2-block-header">
           <span class="d2-label">D2</span>
@@ -226,10 +237,16 @@ export function D2BlockNode(props: D2BlockNodeProps) {
           </div>
         </div>
       )}
-      <div ref={setHost} class="d2-svg" hidden={fallbackVisible() || collapsed()} style={{ 'max-height': props.maxHeight || undefined, '--ms-d2-render-max-height': props.maxHeight || undefined }} />
+      <div ref={setHost} class="d2-svg" hidden={fallbackVisible() || collapsed() || showLoading()} style={{ 'max-height': props.maxHeight || undefined, '--ms-d2-render-max-height': props.maxHeight || undefined }} />
+      {showLoading() && (
+        <div class="d2-loading mermaid-loading" data-markstream-diagram-loading="d2">
+          <span class="mermaid-spinner" />
+          {t('common.preview')}
+        </div>
+      )}
       <pre class="d2-source-fallback" hidden={!fallbackVisible() || collapsed()}>
         {getString((props.node as any).code)}
-        {error() ? `\n${error()}` : ''}
+        {error() && !isStreaming() ? `\n${error()}` : ''}
       </pre>
     </div>
   )

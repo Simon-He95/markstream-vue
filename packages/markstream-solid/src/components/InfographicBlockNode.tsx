@@ -39,6 +39,7 @@ export function InfographicBlockNode(props: InfographicBlockNodeProps) {
   const [progressiveTick, setProgressiveTick] = createSignal(0)
   let instance: { render?: (source: string) => unknown, destroy?: () => unknown } | undefined
   let generation = 0
+  let lastRenderKey = ''
   createEffect(() => {
     const target = host()
     const source = getString((props.node as any).code)
@@ -47,9 +48,10 @@ export function InfographicBlockNode(props: InfographicBlockNodeProps) {
     const isCollapsed = collapsed()
     if (!target)
       return
-    const token = ++generation
     void progressiveTick()
     if (!source.trim() || sourceMode || isCollapsed) {
+      lastRenderKey = ''
+      generation += 1
       try {
         instance?.destroy?.()
       }
@@ -59,6 +61,9 @@ export function InfographicBlockNode(props: InfographicBlockNodeProps) {
       setError('')
       return
     }
+    const renderKey = `${dark ? 'd' : 'l'}:${source}`
+    if (renderKey === lastRenderKey)
+      return
     const isStreaming = props.loading ?? Boolean((props.node as any).loading)
     const interval = Math.max(0, props.progressiveIntervalMs ?? 120)
     if (props.progressiveRender !== false && isStreaming && interval > 0) {
@@ -78,6 +83,7 @@ export function InfographicBlockNode(props: InfographicBlockNodeProps) {
       progressiveTimer = undefined
     }
     lastProgressiveRenderAt = Date.now()
+    lastRenderKey = renderKey
     if (instance?.render) {
       try {
         instance.render(source)
@@ -88,6 +94,7 @@ export function InfographicBlockNode(props: InfographicBlockNodeProps) {
       }
       return
     }
+    const token = ++generation
     target.replaceChildren()
     void getInfographic().then((Constructor) => {
       if (token !== generation || !Constructor)

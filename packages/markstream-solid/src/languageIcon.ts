@@ -87,6 +87,7 @@ const LANGUAGE_LABEL_MAP: Record<string, string> = {
   'd2': 'D2',
   'go': 'Go',
   'html': 'HTML',
+  'infographic': 'Infographic',
   'java': 'Java',
   'javascript': 'JavaScript',
   'json': 'JSON',
@@ -174,6 +175,24 @@ export function resolveLanguageId(lang?: string | null): string {
   if (canonical === 'objectivecpp')
     return 'objective-cpp'
   return canonical
+}
+
+const HIGHLIGHTER_UNSUPPORTED_LANGUAGES = new Set(['mermaid', 'd2', 'd2lang', 'infographic', 'd3'])
+
+/** Map unbundled fence languages to plaintext before they reach the highlighter. */
+export function resolveHighlighterLanguage(lang?: string | null): string {
+  const id = resolveLanguageId(lang)
+  if (HIGHLIGHTER_UNSUPPORTED_LANGUAGES.has(id))
+    return 'plaintext'
+  const canonical = normalizeLanguageIdentifier(lang)
+  if (!canonical || HIGHLIGHTER_UNSUPPORTED_LANGUAGES.has(canonical))
+    return 'plaintext'
+  const known = canonical in LANGUAGE_ALIAS_MAP
+    || canonical in LANGUAGE_LABEL_MAP
+    || canonical in LANGUAGE_ICON_MAP
+    || LANGUAGE_PREFIX_CANDIDATES.includes(canonical)
+    || Object.values(LANGUAGE_ALIAS_MAP).includes(canonical)
+  return known ? id : 'plaintext'
 }
 
 export function isLikelyIncompleteLanguageIdentifier(lang?: string | null): boolean {

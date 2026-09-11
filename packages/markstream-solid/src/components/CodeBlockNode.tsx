@@ -1,7 +1,7 @@
 import type { SolidRenderableNode, SolidRenderContext } from '../node-helpers'
 import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes } from '../types/codeBlock'
 import { createEffect, createSignal, onCleanup } from 'solid-js'
-import { isLikelyIncompleteLanguageIdentifier, resolveLanguageId } from '../languageIcon'
+import { isLikelyIncompleteLanguageIdentifier, resolveHighlighterLanguage, resolveLanguageId } from '../languageIcon'
 import { getString } from '../node-helpers'
 import { getStreamDiffsRuntime } from '../optional-streamDiffs'
 import { copyTextToClipboard } from '../richBlockHelpers'
@@ -84,6 +84,12 @@ function captureTextSelection(root: HTMLElement): TextSelectionSnapshot | undefi
   return start == null || end == null ? undefined : { start, end }
 }
 
+function isMissingHighlighterLanguage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  return /not found in bundled or custom languages/i.test(message)
+    || /Language `[^`]+` is not included/i.test(message)
+}
+
 function restoreTextSelection(root: HTMLElement, snapshot: TextSelectionSnapshot | undefined) {
   if (!snapshot)
     return
@@ -136,11 +142,13 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
   let editorKind: 'single' | 'diff' | undefined
   let generation = 0
   let pendingSelection: TextSelectionSnapshot | undefined
+  const unsupportedHighlighterLanguages = new Set<string>()
 
   const code = () => getString((props.node as any).diff ? (props.node as any).updatedCode ?? (props.node as any).code : (props.node as any).code)
   const original = () => getString((props.node as any).originalCode)
   const rawLanguage = () => getString((props.node as any).language)
   const language = () => resolveLanguageId(getString((props.node as any).language) || 'plaintext')
+  const highlighterLanguage = () => resolveHighlighterLanguage(rawLanguage() || 'plaintext')
   const isLoading = () => props.loading ?? Boolean((props.node as any).loading)
   const shouldDeferStreamingLanguage = () => isLoading() && isLikelyIncompleteLanguageIdentifier(rawLanguage())
   const isDiff = () => Boolean((props.node as any).diff)
@@ -177,7 +185,7 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
     const target = host()
     const nextCode = code()
     const nextOriginal = original()
-    const nextLanguage = language()
+    const nextLanguage = highlighterLanguage()
     const nextDiff = isDiff()
     const theme = requestedTheme()
     if (!target || typeof window === 'undefined')
@@ -202,32 +210,46 @@ export function CodeBlockNode(props: CodeBlockNodeProps) {
       }
       if (!helpers)
         helpers = module.createCodeBlockRuntime(runtimeOptions()) as typeof helpers
-      await Promise.resolve(helpers?.setTheme?.(theme))
-      await Promise.resolve((helpers as any)?.updateOptions?.({ fontSize: fontSize() }))
-      if (task !== generation || !helpers)
+      const runtime = helpers
+      await Promise.resolve(runtime?.setTheme?.(theme))
+      await Promise.resolve((runtime as any)?.updateOptions?.({ fontSize: fontSize() }))
+      if (task !== generation || !runtime)
         return
-      const kind: 'single' | 'diff' = nextDiff ? 'diff' : 'single'
-      if (editorKind !== kind) {
-        if (editorKind) {
-          try {
-            helpers.safeClean?.() ?? helpers.cleanupEditor?.()
+      const applyEditor = async (highlighterLanguage: string) => {
+        const kind: 'single' | 'diff' = nextDiff ? 'diff' : 'single'
+        if (editorKind !== kind) {
+          if (editorKind) {
+            try {
+              runtime.safeClean?.() ?? runtime.cleanupEditor?.()
+            }
+            catch {}
           }
-          catch {}
+          target.replaceChildren()
+          if (kind === 'diff' && runtime.createDiffEditor)
+            await Promise.resolve(runtime.createDiffEditor(target, nextOriginal, nextCode, highlighterLanguage))
+          else
+            await Promise.resolve(runtime.createEditor?.(target, nextCode, highlighterLanguage))
+          if (task !== generation)
+            return
+          editorKind = kind
         }
-        target.replaceChildren()
-        if (kind === 'diff' && helpers.createDiffEditor)
-          await Promise.resolve(helpers.createDiffEditor(target, nextOriginal, nextCode, nextLanguage))
-        else
-          await Promise.resolve(helpers.createEditor?.(target, nextCode, nextLanguage))
         if (task !== generation)
           return
-        editorKind = kind
+        if (kind === 'diff' && runtime.updateDiff)
+          await Promise.resolve(runtime.updateDiff(nextOriginal, nextCode, highlighterLanguage))
+        else await Promise.resolve(runtime.updateCode?.(nextCode, highlighterLanguage))
       }
-      if (task !== generation)
-        return
-      if (kind === 'diff' && helpers.updateDiff)
-        await Promise.resolve(helpers.updateDiff(nextOriginal, nextCode, nextLanguage))
-      else await Promise.resolve(helpers.updateCode?.(nextCode, nextLanguage))
+      const highlighterLanguage = unsupportedHighlighterLanguages.has(nextLanguage) ? 'plaintext' : nextLanguage
+      try {
+        await applyEditor(highlighterLanguage)
+      }
+      catch (error) {
+        if (!isMissingHighlighterLanguage(error) || highlighterLanguage === 'plaintext')
+          throw error
+        unsupportedHighlighterLanguages.add(nextLanguage)
+        editorKind = undefined
+        await applyEditor('plaintext')
+      }
       if (task === generation) {
         setFallback(false)
         queueMicrotask(() => {

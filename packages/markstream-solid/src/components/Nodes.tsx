@@ -52,15 +52,15 @@ export interface PreCodeNodeProps extends NodeProps {
 }
 
 export function PreCodeNode(props: PreCodeNodeProps) {
-  const code = getString((props.node as any).code ?? (props.node as any).content ?? (props.node as any).raw)
-  const isDiff = Boolean((props.node as any).diff)
-  const lines = code.replace(/\r\n/g, '\n').split('\n')
-  const showGutter = props.showLineNumbers === true && !isDiff
-  const width = Math.max(2, String(lines.length).length)
+  const code = () => getString((props.node as any).code ?? (props.node as any).content ?? (props.node as any).raw)
+  const isDiff = () => Boolean((props.node as any).diff)
+  const lines = () => code().replace(/\r\n/g, '\n').split('\n')
+  const showGutter = () => props.showLineNumbers === true && !isDiff()
+  const width = () => Math.max(2, String(lines().length).length)
   return (
-    <pre class={`pre-code-node${showGutter ? ' pre-code-node--with-line-numbers' : ''}`} style={showGutter ? { '--markstream-pre-line-number-width': `${width}ch` } : undefined}>
-      {showGutter && <span class="pre-code-node__line-numbers" aria-hidden="true">{lines.map((_, index) => `${index + 1}\n`)}</span>}
-      <code>{code}</code>
+    <pre class={`pre-code-node${showGutter() ? ' pre-code-node--with-line-numbers' : ''}`} style={showGutter() ? { '--markstream-pre-line-number-width': `${width()}ch` } : undefined}>
+      {showGutter() && <span class="pre-code-node__line-numbers" aria-hidden="true">{lines().map((_, index) => `${index + 1}\n`).join('')}</span>}
+      <code>{code()}</code>
     </pre>
   )
 }

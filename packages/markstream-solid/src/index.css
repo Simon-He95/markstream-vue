@@ -513,15 +513,35 @@ markstream-svelte {
 }
 
 :is(.markstream-svelte, .markstream-solid) .image-placeholder {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 100%;
+  min-width: 12rem;
   min-height: 8rem;
   max-width: var(--ms-size-image-max-width);
-  background: hsl(var(--ms-muted));
+  background: hsl(var(--ms-muted, 210 40% 96%));
   overflow: hidden;
   vertical-align: middle;
+}
+
+:is(.markstream-svelte, .markstream-solid) .image-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: rgba(15, 23, 42, 0.7);
+}
+
+:is(.markstream-svelte, .markstream-solid).dark .image-loading,
+.dark :is(.markstream-svelte, .markstream-solid) .image-loading {
+  color: rgba(226, 232, 240, 0.8);
 }
 
 :is(.markstream-svelte, .markstream-solid) .image-shimmer {
@@ -1170,7 +1190,7 @@ body > div[id^="dmermaid-"] {
   border-top: 1px solid rgba(248, 113, 113, 0.25);
 }
 
-:is(.markstream-svelte, .markstream-solid) .mermaid-loading {
+:is(.markstream-svelte, .markstream-solid) :is(.mermaid-loading, .d2-loading) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1179,8 +1199,8 @@ body > div[id^="dmermaid-"] {
   color: rgba(15, 23, 42, 0.6);
 }
 
-:is(.markstream-svelte, .markstream-solid).dark .mermaid-loading,
-.dark :is(.markstream-svelte, .markstream-solid) .mermaid-loading {
+:is(.markstream-svelte, .markstream-solid).dark :is(.mermaid-loading, .d2-loading),
+.dark :is(.markstream-svelte, .markstream-solid) :is(.mermaid-loading, .d2-loading) {
   color: rgba(226, 232, 240, 0.7);
 }
 

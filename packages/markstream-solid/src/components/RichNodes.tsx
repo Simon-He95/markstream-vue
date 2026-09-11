@@ -2,6 +2,7 @@ import type { SolidRenderableNode, SolidRenderContext } from '../node-helpers'
 import { resolveStreamingTextState } from 'markstream-core'
 import { createEffect, createMemo, createSignal, on } from 'solid-js'
 import { sanitizeHtmlAttrs, sanitizeImageSrc, shouldOpenLinkInNewTab } from 'stream-markdown-parser'
+import { useSafeI18n } from '../i18n/useSafeI18n'
 import { getNodeList, getString } from '../node-helpers'
 import { renderNodeHtml } from '../renderNodeHtml'
 import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
@@ -67,24 +68,44 @@ export function LinkNode(props: RichNodeProps & { showTooltip?: boolean }) {
 }
 
 export function ImageNode(props: RichNodeProps & { fallbackSrc?: string, lazy?: boolean, usePlaceholder?: boolean }) {
+  const { t } = useSafeI18n()
   const [src, setSrc] = createSignal('')
   const [failed, setFailed] = createSignal(false)
   const primary = () => sanitizeImageSrc((props.node as any).src)
   const fallback = () => sanitizeImageSrc(props.fallbackSrc || '')
-  createEffect(on([primary, fallback, () => Boolean((props.node as any).loading)], () => {
+  const isLoading = () => Boolean((props.node as any).loading)
+  createEffect(on([primary, fallback, isLoading], () => {
     setSrc(primary() || fallback())
-    setFailed(!primary() && !fallback())
+    setFailed(!isLoading() && !primary() && !fallback())
   }, { defer: false }))
   const onError = () => {
+    if (isLoading())
+      return
     if (src() === primary() && fallback() && fallback() !== src())
       setSrc(fallback())
     else setFailed(true)
   }
   return (
-    <span class="image-node-container">
-      {!failed() && src()
+    <span class={`image-node-container${isLoading() ? ' is-rendering' : ''}`}>
+      {!isLoading() && !failed() && src()
         ? <img class="image-node__img is-loaded" src={src()} alt={getString((props.node as any).alt)} title={getString((props.node as any).title) || undefined} loading={props.lazy ? 'lazy' : undefined} decoding={props.lazy ? 'async' : 'sync'} onError={onError} />
-        : <span class={failed() ? 'image-error' : 'image-placeholder'}>{failed() ? 'Image failed to load' : (props.usePlaceholder === false ? getString((props.node as any).raw) : <span class="image-shimmer" />)}</span>}
+        : failed()
+          ? <span class="image-error">{t('image.loadError')}</span>
+          : (
+              <span class="image-placeholder" data-markstream-image-loading="1">
+                {props.usePlaceholder === false
+                  ? <span class="image-node__raw-text">{getString((props.node as any).raw)}</span>
+                  : (
+                      <>
+                        <span class="image-shimmer" />
+                        <span class="image-loading">
+                          <span class="mermaid-spinner" />
+                          {t('image.loading')}
+                        </span>
+                      </>
+                    )}
+              </span>
+            )}
     </span>
   )
 }

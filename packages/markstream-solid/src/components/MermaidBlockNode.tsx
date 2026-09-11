@@ -2,6 +2,7 @@ import type { SolidRenderableNode, SolidRenderContext } from '../node-helpers'
 import { createEffect, createSignal, onCleanup } from 'solid-js'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { clampPreviewHeight, estimateMermaidPreviewHeight, MERMAID_PREVIEW_MIN_HEIGHT, parsePositiveNumber, resolveDiagramMinPreviewHeight } from '../diagramHeight'
+import { useSafeI18n } from '../i18n/useSafeI18n'
 import { getString } from '../node-helpers'
 import { getMermaid } from '../optional-mermaid'
 import { canParseOffthread, findPrefixOffthread, hasMermaidWorker } from '../workers/mermaidWorkerClient'
@@ -33,6 +34,7 @@ export interface MermaidBlockNodeProps {
 }
 
 export function MermaidBlockNode(props: MermaidBlockNodeProps) {
+  const { t } = useSafeI18n()
   const [host, setHost] = createSignal<HTMLDivElement>()
   const [error, setError] = createSignal('')
   const [svgMarkup, setSvgMarkup] = createSignal('')
@@ -45,6 +47,7 @@ export function MermaidBlockNode(props: MermaidBlockNodeProps) {
   let copyTimer: ReturnType<typeof setTimeout> | undefined
   let renderTimer: ReturnType<typeof setTimeout> | undefined
   let generation = 0
+  let lastRenderKey = ''
 
   const normalizeMermaidSource = (value: string) => value
     .replace(/\]::([^:])/g, ']:::$1')
@@ -87,17 +90,30 @@ export function MermaidBlockNode(props: MermaidBlockNodeProps) {
     const isCollapsed = collapsed()
     if (!target)
       return
-    const token = ++generation
-    if (renderTimer) {
-      clearTimeout(renderTimer)
-      renderTimer = undefined
-    }
     if (!source.trim() || sourceMode || isCollapsed) {
+      lastRenderKey = ''
+      if (renderTimer) {
+        clearTimeout(renderTimer)
+        renderTimer = undefined
+      }
+      generation += 1
       target.replaceChildren()
       setError('')
       if (!source.trim())
         setSvgMarkup('')
       return
+    }
+    const renderKey = `${dark ? 'd' : 'l'}:${strict ? '1' : '0'}:${source}`
+    // Parser rebuilds the node object on every later token. Same source must
+    // not bump generation or an in-flight mermaid.render is cancelled until
+    // the whole stream stops.
+    if (renderKey === lastRenderKey)
+      return
+    lastRenderKey = renderKey
+    const token = ++generation
+    if (renderTimer) {
+      clearTimeout(renderTimer)
+      renderTimer = undefined
     }
     const render = async () => {
       try {
@@ -197,19 +213,22 @@ export function MermaidBlockNode(props: MermaidBlockNodeProps) {
     anchor.click()
     URL.revokeObjectURL(url)
   }
+  const isStreaming = () => props.loading ?? Boolean((props.node as any).loading)
+  const showLoading = () => !showSource() && !collapsed() && !svgMarkup() && !(error() && !isStreaming())
+  const sourceVisible = () => !collapsed() && !showLoading() && (showSource() || (!!error() && !svgMarkup()))
+  const previewHidden = () => collapsed() || showSource() || showLoading() || (!!error() && !svgMarkup())
   const toggleCollapsed = () => {
     const next = !collapsed()
     setCollapsed(next)
-    const sourceVisible = showSource() || !!error()
     const preview = host()
     const sourceFallback = sourceHost()
     if (preview)
-      preview.hidden = next || sourceVisible
+      preview.hidden = next || showSource() || (!!error() && !svgMarkup())
     if (sourceFallback)
-      sourceFallback.hidden = next || !sourceVisible
+      sourceFallback.hidden = next || !(showSource() || (!!error() && !svgMarkup()))
   }
   return (
-    <div ref={setRoot} class={`markstream-solid-enhanced-block markstream-solid-enhanced-block--mermaid${(props.isDark ?? props.context?.isDark) ? ' dark' : ''}`} data-markstream-mermaid="1">
+    <div ref={setRoot} class={`markstream-solid-enhanced-block markstream-solid-enhanced-block--mermaid${(props.isDark ?? props.context?.isDark) ? ' dark' : ''}${isStreaming() || showLoading() ? ' is-rendering' : ''}`} data-markstream-mermaid="1">
       {showHeader() && (
         <div class="markstream-solid-enhanced-block__header mermaid-block-header">
           <span class="mermaid-label">Mermaid</span>
@@ -253,10 +272,16 @@ export function MermaidBlockNode(props: MermaidBlockNodeProps) {
           </div>
         </div>
       )}
-      <div ref={setHost} class="mermaid-render" hidden={showSource() || !!error() || collapsed()} style={previewStyle()} />
-      <pre ref={setSourceHost} class="mermaid-source-fallback" hidden={!(showSource() || error()) || collapsed()}>
+      <div ref={setHost} class="mermaid-render" hidden={previewHidden()} style={previewStyle()} />
+      {showLoading() && (
+        <div class="mermaid-loading" data-markstream-diagram-loading="mermaid">
+          <span class="mermaid-spinner" />
+          {t('common.preview')}
+        </div>
+      )}
+      <pre ref={setSourceHost} class="mermaid-source-fallback" hidden={!sourceVisible()}>
         {source()}
-        {error() ? `\n${error()}` : ''}
+        {error() && !isStreaming() ? `\n${error()}` : ''}
       </pre>
     </div>
   )

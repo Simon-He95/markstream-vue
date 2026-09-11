@@ -2,7 +2,7 @@ import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { getMarkdown } from 'stream-markdown-parser'
 import { describe, expect, it, vi } from 'vitest'
-import MarkdownRender, { clearGlobalCustomComponents, clearKaTeXWorker, CodeBlockNode, computeLiveRange, D2BlockNode, disableD2, disableInfographic, disableKatex, disableMermaid, disableStreamDiffs, enableStreamDiffs, enhanceRenderedHtml, hideTooltip, InfographicBlockNode, isTooltipVisible, MathInlineNode, MermaidBlockNode, parseNestedMarkdownToNodes, renderKaTeXInWorker, resolveCssSize, resolveDeferNodes, resolveNodeOutletCodeMode, resolveNodeOutletCustomInputs, resolveParsedNodes, resolveVirtualizationEnabled, setCustomComponents, setD2Loader, setDefaultI18nMap, setInfographicLoader, setKatexLoader, setKaTeXWorker, setMermaidLoader, setMermaidWorker, setStreamDiffsLoader, showTooltipForAnchor, SolidCodeBlockNode, TextNode, useSafeI18n, useSmoothMarkdownStream } from '../src/index'
+import MarkdownRender, { clearGlobalCustomComponents, clearKaTeXWorker, CodeBlockNode, computeLiveRange, D2BlockNode, disableD2, disableInfographic, disableKatex, disableMermaid, disableStreamDiffs, enableStreamDiffs, enhanceRenderedHtml, hideTooltip, ImageNode, InfographicBlockNode, isTooltipVisible, MathInlineNode, MermaidBlockNode, parseNestedMarkdownToNodes, PreCodeNode, renderKaTeXInWorker, resolveCssSize, resolveDeferNodes, resolveNodeOutletCodeMode, resolveNodeOutletCustomInputs, resolveParsedNodes, resolveVirtualizationEnabled, setCustomComponents, setD2Loader, setDefaultI18nMap, setInfographicLoader, setKatexLoader, setKaTeXWorker, setMermaidLoader, setMermaidWorker, setStreamDiffsLoader, showTooltipForAnchor, SolidCodeBlockNode, TextNode, useSafeI18n, useSmoothMarkdownStream } from '../src/index'
 
 const flushAsyncRendering = () => new Promise<void>(resolve => setTimeout(resolve, 0))
 
@@ -46,6 +46,41 @@ describe('markstream-solid renderer foundation', () => {
     const dispose = render(() => <MarkdownRender content="<script>alert(1)</script><b>safe</b>" final />, container)
     expect(container.querySelector('script')).toBeNull()
     expect(container.textContent).toContain('safe')
+    dispose()
+  })
+
+  it('does not mount an img while a streaming image URL is still incomplete', () => {
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({ type: 'image', src: '/vue-markdown-icon.sv', alt: 'logo', loading: true })
+      setNode = set
+      return <MarkdownRender nodes={[node()]} final batchRendering={false} />
+    }
+    const dispose = render(() => <App />, container)
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('[data-markstream-image-loading]')).not.toBeNull()
+    expect(container.querySelector('.image-loading')?.textContent).toContain('Loading image')
+    setNode({ type: 'image', src: '/vue-markdown-icon.svg', alt: 'logo', loading: false })
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('/vue-markdown-icon.svg')
+    dispose()
+  })
+
+  it('keeps ImageNode off the network until loading clears on the same owner', () => {
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({ type: 'image', src: 'https://example.com/a.pn', alt: 'a', loading: true })
+      setNode = set
+      return <ImageNode node={node()} />
+    }
+    const dispose = render(() => <App />, container)
+    const owner = container.querySelector('.image-node-container')
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('[data-markstream-image-loading]')).not.toBeNull()
+    setNode({ type: 'image', src: 'https://example.com/a.png', alt: 'a', loading: false })
+    expect(container.querySelector('.image-node-container')).toBe(owner)
+    expect(container.querySelector('img')?.getAttribute('src')).toBe('https://example.com/a.png')
     dispose()
   })
 
@@ -300,6 +335,34 @@ describe('markstream-solid renderer foundation', () => {
     expect(computeLiveRange(1000, 500, 20, 10)).toEqual({ start: 491, end: 511 })
   })
 
+  it('does not cancel mermaid when later stream tokens only replace the node object', async () => {
+    let resolveLoader!: (value: unknown) => void
+    setMermaidLoader(() => new Promise((resolve) => {
+      resolveLoader = resolve
+    }))
+    const container = document.createElement('div')
+    let setNodes!: (nodes: any[]) => void
+    const mermaidNode = { type: 'code_block', language: 'mermaid', code: 'graph TD; A-->B', loading: true }
+    const App = () => {
+      const [nodes, set] = createSignal<any[]>([mermaidNode])
+      setNodes = set
+      return <MarkdownRender nodes={nodes()} final={false} batchRendering={false} mermaidProps={{ renderDebounceMs: 0 } as any} />
+    }
+    const dispose = render(() => <App />, container)
+    for (let index = 0; index < 8; index++) {
+      setNodes([
+        { type: 'code_block', language: 'mermaid', code: 'graph TD; A-->B', loading: true },
+        { type: 'paragraph', children: [{ type: 'text', content: `after ${index}` }] },
+      ])
+    }
+    resolveLoader({ render: () => '<svg><text>Mermaid</text></svg>' })
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    expect(container.querySelector('.mermaid-render svg')).not.toBeNull()
+    dispose()
+    disableMermaid()
+  })
+
   it('ignores stale Mermaid completion after the code changes', async () => {
     let resolveLoader!: (value: unknown) => void
     setMermaidLoader(() => new Promise((resolve) => {
@@ -493,6 +556,64 @@ describe('markstream-solid renderer foundation', () => {
     await flushAsyncRendering()
     expect(container.textContent).toContain('$x^2$')
     dispose()
+  })
+
+  it('shows mermaid loading while the diagram is still streaming', async () => {
+    const deferred = Promise.withResolvers<any>()
+    setMermaidLoader(() => deferred.promise)
+    const container = document.createElement('div')
+    const dispose = render(() => <MermaidBlockNode node={{ type: 'code_block', language: 'mermaid', code: 'graph TD; A-->B' } as any} loading renderDebounceMs={0} />, container)
+    await flushAsyncRendering()
+    expect(container.querySelector('[data-markstream-diagram-loading="mermaid"]')).not.toBeNull()
+    expect(container.querySelector('.mermaid-render svg')).toBeNull()
+    deferred.resolve({ render: () => '<svg><text>Mermaid</text></svg>' })
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    expect(container.querySelector('[data-markstream-diagram-loading="mermaid"]')).toBeNull()
+    expect(container.querySelector('.mermaid-render svg')).not.toBeNull()
+    dispose()
+    disableMermaid()
+  })
+
+  it('shows d2 loading while the diagram is still streaming', async () => {
+    const deferred = Promise.withResolvers<string>()
+    setD2Loader(() => ({ compile: (source: string) => ({ diagram: source }), render: () => deferred.promise }))
+    const container = document.createElement('div')
+    const dispose = render(() => <D2BlockNode node={{ type: 'code_block', language: 'd2', code: 'A -> B' } as any} loading />, container)
+    await flushAsyncRendering()
+    expect(container.querySelector('[data-markstream-diagram-loading="d2"]')).not.toBeNull()
+    expect(container.querySelector('[data-markstream-mode]')?.getAttribute('data-markstream-mode')).toBe('loading')
+    expect((container.querySelector('.d2-source-fallback') as HTMLElement).hidden).toBe(true)
+    deferred.resolve('<svg><text>A</text></svg>')
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    expect(container.querySelector('[data-markstream-diagram-loading="d2"]')).toBeNull()
+    expect(container.querySelector('.d2-svg svg')).not.toBeNull()
+    dispose()
+    disableD2()
+  })
+
+  it('does not show a diagram loading overlay for infographic while streaming', async () => {
+    const deferred = Promise.withResolvers<any>()
+    setInfographicLoader(() => deferred.promise)
+    const container = document.createElement('div')
+    const dispose = render(() => <InfographicBlockNode node={{ type: 'code_block', language: 'infographic', code: '- one\n- two' } as any} loading />, container)
+    await flushAsyncRendering()
+    expect(container.querySelector('[data-markstream-diagram-loading]')).toBeNull()
+    expect(container.querySelector('.mermaid-loading, .d2-loading')).toBeNull()
+    class Infographic {
+      constructor(private readonly options: { container: HTMLElement }) {}
+      render(source: string) {
+        this.options.container.innerHTML = `<svg><text>${source}</text></svg>`
+      }
+      destroy() {}
+    }
+    deferred.resolve(Infographic)
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    expect(container.querySelector('[data-markstream-diagram-loading]')).toBeNull()
+    dispose()
+    disableInfographic()
   })
 
   it('shows source fallbacks when optional diagram peers are unavailable', async () => {
@@ -800,6 +921,266 @@ describe('markstream-solid renderer foundation', () => {
     expect(updateCode).toHaveBeenCalledWith('two', 'typescript')
     dispose()
     expect(cleanupEditor).toHaveBeenCalledTimes(1)
+    enableStreamDiffs()
+  })
+
+  function installDiagramLoaders() {
+    setMermaidLoader(() => ({
+      render: (_id: string, source: string) => `<svg data-test-mermaid="1"><text>${source}</text></svg>`,
+    }))
+    setD2Loader(() => ({
+      compile: (source: string) => ({ diagram: source }),
+      render: (source: string) => `<svg data-test-d2="1"><text>${source}</text></svg>`,
+    }))
+    class Infographic {
+      constructor(private readonly options: { container: HTMLElement }) {}
+
+      render(source: string) {
+        this.options.container.innerHTML = `<svg data-test-infographic="1"><text>${source}</text></svg>`
+      }
+
+      destroy() {}
+    }
+    setInfographicLoader(() => Infographic)
+  }
+
+  function uninstallDiagramLoaders() {
+    disableMermaid()
+    disableD2()
+    disableInfographic()
+  }
+
+  function mountLiveCodeFence(initial: { language: string, code: string, loading?: boolean }, extra?: Record<string, unknown>) {
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({ type: 'code_block', loading: true, ...initial })
+      setNode = set
+      return <MarkdownRender nodes={[node()]} final batchRendering={false} {...extra} />
+    }
+    const dispose = render(() => <App />, container)
+    return {
+      container,
+      update(next: { language?: string, code?: string, loading?: boolean }) {
+        setNode((current: any) => ({ ...current, ...next }))
+      },
+      dispose,
+    }
+  }
+
+  it('switches a streamed language prefix onto the matching diagram renderer', async () => {
+    installDiagramLoaders()
+    setStreamDiffsLoader(() => ({ createCodeBlockRuntime: () => ({ createEditor: vi.fn(), updateCode: vi.fn() }) }))
+    const mermaidCode = 'flowchart LR\n A --> B'
+    const live = mountLiveCodeFence({ language: '', code: mermaidCode })
+    const root = live.container.querySelector('.markstream-solid')
+    expect(live.container.querySelector('.code-block-container')).not.toBeNull()
+    expect(live.container.querySelector('[data-markstream-mermaid]')).toBeNull()
+    live.update({ language: 'm' })
+    expect(live.container.querySelector('.code-block-container')).not.toBeNull()
+    expect(live.container.querySelector('[data-markstream-mermaid]')).toBeNull()
+    live.update({ language: 'mer' })
+    expect(live.container.querySelector('.code-block-container')).not.toBeNull()
+    expect(live.container.querySelector('[data-markstream-mermaid]')).toBeNull()
+    live.update({ language: 'mermaid' })
+    await vi.waitFor(() => {
+      expect(live.container.querySelector('[data-markstream-mermaid] svg, .markstream-solid-enhanced-block--mermaid svg')).not.toBeNull()
+    })
+    expect(live.container.querySelector('.code-block-container')).toBeNull()
+    expect(live.container.querySelector('.markstream-solid')).toBe(root)
+
+    live.update({ language: 'd', code: 'A -> B' })
+    expect(live.container.querySelector('[data-markstream-d2]')).toBeNull()
+    expect(live.container.querySelector('.code-block-container')).not.toBeNull()
+    live.update({ language: 'd2' })
+    await vi.waitFor(() => {
+      expect(live.container.querySelector('[data-markstream-d2] svg, .markstream-solid-enhanced-block--d2 svg')).not.toBeNull()
+    })
+    expect(live.container.querySelector('.code-block-container')).toBeNull()
+
+    live.update({ language: 'info', code: '- one\n- two' })
+    expect(live.container.querySelector('[data-markstream-infographic]')).toBeNull()
+    expect(live.container.querySelector('.code-block-container')).not.toBeNull()
+    live.update({ language: 'infographic' })
+    await vi.waitFor(() => {
+      expect(live.container.querySelector('[data-markstream-infographic] svg, .markstream-solid-enhanced-block--infographic svg')).not.toBeNull()
+    })
+    expect(live.container.querySelector('.code-block-container')).toBeNull()
+    expect(live.container.querySelector('.markstream-solid')).toBe(root)
+    live.dispose()
+    uninstallDiagramLoaders()
+    enableStreamDiffs()
+  })
+
+  it('keeps a d3 fence on the generic code block after a live language update', async () => {
+    installDiagramLoaders()
+    setStreamDiffsLoader(() => ({ createCodeBlockRuntime: () => ({ createEditor: vi.fn(), updateCode: vi.fn() }) }))
+    const live = mountLiveCodeFence({ language: 'mermaid', code: 'flowchart LR\n A --> B' })
+    await vi.waitFor(() => {
+      expect(live.container.querySelector('[data-markstream-mermaid]')).not.toBeNull()
+    })
+    live.update({ language: 'd3', code: 'd3.select("body")' })
+    await flushAsyncRendering()
+    expect(live.container.querySelector('.code-block-container')).not.toBeNull()
+    expect(live.container.querySelector('[data-markstream-mermaid]')).toBeNull()
+    expect(live.container.querySelector('[data-markstream-d2]')).toBeNull()
+    expect(live.container.querySelector('[data-markstream-infographic]')).toBeNull()
+    live.dispose()
+    uninstallDiagramLoaders()
+    enableStreamDiffs()
+  })
+
+  it('honors renderCodeBlocksAsPre and custom renderers over diagram builtins on a live slot', async () => {
+    installDiagramLoaders()
+    const container = document.createElement('div')
+    let setState!: (value: { language: string, asPre: boolean, custom: boolean }) => void
+    const App = () => {
+      const [state, set] = createSignal({ language: 'ts', asPre: false, custom: false })
+      setState = set
+      return (
+        <MarkdownRender
+          nodes={[{ type: 'code_block', language: state().language, code: 'flowchart LR\n A --> B', loading: true } as any]}
+          final
+          batchRendering={false}
+          renderCodeBlocksAsPre={state().asPre}
+          customComponents={state().custom
+            ? { mermaid: (props: any) => <output data-custom-mermaid>{props.node.code}</output> }
+            : undefined}
+        />
+      )
+    }
+    const dispose = render(() => <App />, container)
+    setState({ language: 'mermaid', asPre: true, custom: false })
+    await flushAsyncRendering()
+    expect(container.querySelector('.pre-code-node')?.textContent).toContain('flowchart LR')
+    expect(container.querySelector('[data-markstream-mermaid]')).toBeNull()
+    setState({ language: 'mermaid', asPre: false, custom: false })
+    await vi.waitFor(() => {
+      expect(container.querySelector('[data-markstream-mermaid] svg, .markstream-solid-enhanced-block--mermaid svg')).not.toBeNull()
+    })
+    setState({ language: 'mermaid', asPre: false, custom: true })
+    await vi.waitFor(() => {
+      expect(container.querySelector('[data-custom-mermaid]')?.textContent).toContain('flowchart LR')
+    })
+    expect(container.querySelector('[data-markstream-mermaid]')).toBeNull()
+    dispose()
+    uninstallDiagramLoaders()
+  })
+
+  it('updates PreCodeNode plaintext, line count, gutter width, and reset without remounting', () => {
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({ type: 'code_block', language: 'ts', code: '', loading: true })
+      setNode = set
+      return <PreCodeNode node={node()} showLineNumbers />
+    }
+    const dispose = render(() => <App />, container)
+    const pre = container.querySelector('.pre-code-node') as HTMLElement
+    expect(container.querySelector('pre code')?.textContent).toBe('')
+    setNode({ type: 'code_block', language: 'ts', code: 'const after = 123;', loading: false })
+    expect(container.querySelector('.pre-code-node')).toBe(pre)
+    expect(container.querySelector('pre code')?.textContent).toBe('const after = 123;')
+    expect(container.querySelector('.pre-code-node__line-numbers')?.textContent).toBe('1\n')
+    setNode({ type: 'code_block', language: 'ts', code: Array.from({ length: 100 }, (_, index) => `line${index}`).join('\n'), loading: false })
+    expect(container.querySelector('pre code')?.textContent).toContain('line99')
+    expect(container.querySelector('.pre-code-node__line-numbers')?.textContent).toContain('100')
+    expect((container.querySelector('.pre-code-node') as HTMLElement).style.getPropertyValue('--markstream-pre-line-number-width')).toBe('3ch')
+    setNode({ type: 'code_block', language: 'ts', code: 'reset', loading: false })
+    expect(container.querySelector('pre code')?.textContent).toBe('reset')
+    expect(container.querySelector('.pre-code-node__line-numbers')?.textContent).toBe('1\n')
+    expect((container.querySelector('.pre-code-node') as HTMLElement).style.getPropertyValue('--markstream-pre-line-number-width')).toBe('2ch')
+    dispose()
+  })
+
+  it('keeps CodeBlockNode fallback letters current while the runtime is delayed or missing', async () => {
+    const deferred = Promise.withResolvers<any>()
+    const createEditor = vi.fn()
+    const updateCode = vi.fn()
+    setStreamDiffsLoader(() => deferred.promise)
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({ type: 'code_block', language: 'typescript', code: '', loading: true })
+      setNode = set
+      return <CodeBlockNode node={node()} />
+    }
+    const dispose = render(() => <App />, container)
+    setNode({ type: 'code_block', language: 'typescript', code: 'const delayed = 1;', loading: true })
+    await flushAsyncRendering()
+    expect(container.querySelector('pre code')?.textContent).toContain('const delayed')
+    setNode({ type: 'code_block', language: 'typescript', code: 'const delayed = 1;\nconst extra = 2;', loading: true })
+    await flushAsyncRendering()
+    expect(container.querySelector('pre code')?.textContent).toContain('const extra')
+    deferred.resolve({ createCodeBlockRuntime: () => ({ createEditor, updateCode }) })
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    expect(createEditor).toHaveBeenCalledTimes(1)
+    setNode({ type: 'code_block', language: 'typescript', code: 'const delayed = 1;\nconst extra = 2;\nconst again = 3;', loading: false })
+    await flushAsyncRendering()
+    expect(createEditor).toHaveBeenCalledTimes(1)
+    expect(updateCode).toHaveBeenCalledWith(expect.stringContaining('const again'), 'typescript')
+    dispose()
+
+    disableStreamDiffs()
+    const missing = document.createElement('div')
+    let setMissing!: (node: any) => void
+    const Missing = () => {
+      const [node, set] = createSignal<any>({ type: 'code_block', language: 'typescript', code: '', loading: true })
+      setMissing = set
+      return <CodeBlockNode node={node()} />
+    }
+    const disposeMissing = render(() => <Missing />, missing)
+    setMissing({ type: 'code_block', language: 'typescript', code: 'export const table = 1', loading: false })
+    await flushAsyncRendering()
+    expect(missing.querySelector('pre code')?.textContent).toContain('export const table')
+    disposeMissing()
+    enableStreamDiffs()
+  })
+
+  it('degrades unbundled highlighter languages without repeating unhandled errors', async () => {
+    const thrown: unknown[] = []
+    const onError = (event: ErrorEvent) => {
+      thrown.push(event.error ?? event.message)
+    }
+    const onRejection = (event: PromiseRejectionEvent) => {
+      thrown.push(event.reason)
+    }
+    window.addEventListener('error', onError)
+    window.addEventListener('unhandledrejection', onRejection)
+    const createEditor = vi.fn((host: HTMLElement, code: string, language: string) => {
+      if (language === 'd3' || language === 'not-a-real-lang')
+        throw new Error(`resolveLanguage: "${language}" not found in bundled or custom languages`)
+      host.textContent = code
+    })
+    const updateCode = vi.fn((code: string) => code)
+    setStreamDiffsLoader(() => ({ createCodeBlockRuntime: () => ({ createEditor, updateCode }) }))
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({ type: 'code_block', language: 'd3', code: 'd3.select("body")', loading: false })
+      setNode = set
+      return <CodeBlockNode node={node()} />
+    }
+    const dispose = render(() => <App />, container)
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    setNode({ type: 'code_block', language: 'not-a-real-lang', code: 'd3.select("body").append("svg")', loading: false })
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    const unsupportedAttempts = createEditor.mock.calls.filter(call => call[2] === 'd3' || call[2] === 'not-a-real-lang').length
+    expect(unsupportedAttempts).toBe(0)
+    expect(createEditor.mock.calls.some(call => call[2] === 'plaintext')).toBe(true)
+    expect(container.querySelector('.code-block-container')).not.toBeNull()
+    const visible = container.querySelector('pre code')?.textContent
+      || container.querySelector('.code-block-node__editor')?.textContent
+      || container.querySelector('.code-block-container')?.textContent
+      || ''
+    expect(visible).toMatch(/d3\.select/)
+    expect(thrown.filter(value => String(value).includes('resolveLanguage'))).toEqual([])
+    dispose()
+    window.removeEventListener('error', onError)
+    window.removeEventListener('unhandledrejection', onRejection)
     enableStreamDiffs()
   })
 })

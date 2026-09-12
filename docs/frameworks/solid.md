@@ -36,4 +36,4 @@ export function Message(props: { content: string, final: boolean }) {
 
 Optional peers: `stream-diffs`, `katex`, `mermaid`, `@terrastruct/d2`, `@antv/infographic`.
 
-Support, limits, and how to re-run checks: [CAPABILITY.md](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/CAPABILITY.md) in the package. Virtualization props (`viewportPriority`, `deferNodesUntilVisible`, `liveNodeBuffer`) are compatibility no-ops.
+Support, limits, and how to re-run checks: `CAPABILITY.md` in the `markstream-solid` package. The main renderer does not virtualize.

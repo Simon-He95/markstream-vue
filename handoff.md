@@ -1,12 +1,12 @@
 # Solid 移植交接
 
-> Historical snapshot. The “尚无实现” claim is obsolete. Current status: [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md). Do not redo the port from this file.
+> Frozen 2026-09-10 snapshot from before the Solid package and playground landed. Current status: [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md). Do not redo the port, and do not undo the implementation because this file still says “尚无实现”.
 
 更新日期：2026-09-10。
 
 ## 接手时先看这里
 
-当前只交付准备文档，没有保留下来的 Solid 实现。用户曾启动实现，随后明确要求撤销全部实现改动、仅保留文档；已执行撤销。本轮用户只要求补充交接文件，不应据此自动恢复实现。
+**过时。** 写这份交接时仓库里只有准备文档。之后 `packages/markstream-solid/` 和 `playground-solid/` 已经提交。下面“没有保留下来的 Solid 实现 / 不要自动恢复实现”只描述当时工作区，不是现在的指令。
 
 阅读顺序：
 

@@ -3,7 +3,7 @@ import { createEffect, createSignal, onCleanup } from 'solid-js'
 import { getString } from '../node-helpers'
 import { normalizeKaTeXRenderInput } from '../normalizeKaTeXRenderInput'
 import { getKatex } from '../optional-katex'
-import { hasKaTeXWorker, renderKaTeXWithBackpressure } from '../workers/katexWorkerClient'
+import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from '../workers/katexWorkerClient'
 
 export interface MathNodeProps {
   node: SolidRenderableNode
@@ -11,77 +11,107 @@ export interface MathNodeProps {
   workerTimeoutMs?: number
 }
 
+async function resolveKatexMarkup(
+  content: string,
+  displayMode: boolean,
+  currentLoading: boolean,
+  useWorker: boolean,
+  workerTimeoutMs?: number,
+) {
+  if (useWorker) {
+    try {
+      return await renderKaTeXWithBackpressure(content, displayMode, {
+        timeout: workerTimeoutMs ?? (displayMode ? 3000 : 1500),
+        waitTimeout: displayMode ? 2000 : 0,
+        maxRetries: displayMode ? 1 : 0,
+      })
+    }
+    catch (error: any) {
+      const code = error?.code || error?.name
+      const isWorkerInitFailure = code === 'WORKER_INIT_ERROR' || error?.fallbackToRenderer
+      const isBusyOrTimeout = code === WORKER_BUSY_CODE || code === 'WORKER_TIMEOUT'
+      if (!isWorkerInitFailure && !isBusyOrTimeout)
+        return null
+    }
+  }
+
+  const katex = await getKatex()
+  if (!katex)
+    return null
+
+  try {
+    const html = katex.renderToString(content, {
+      throwOnError: currentLoading,
+      displayMode,
+    })
+    setKaTeXCache(content, displayMode, html)
+    return html
+  }
+  catch {
+    return null
+  }
+}
+
 function MathRender(props: MathNodeProps & { display: boolean }) {
   const [host, setHost] = createSignal<HTMLElement>()
   const [loading, setLoading] = createSignal(true)
-  let version = 0
-  let activeRequest: AbortController | undefined
+  let destroyed = false
+  let renderVersion = 0
+  let hasRenderedOnce = false
+
   createEffect(() => {
     const target = host()
-    const source = normalizeKaTeXRenderInput(getString((props.node as any).content || (props.node as any).markup || (props.node as any).raw))
+    const source = getString((props.node as any).content || (props.node as any).markup || (props.node as any).raw)
     const raw = getString((props.node as any).raw || source)
     const nodeLoading = Boolean((props.node as any).loading)
+    const displayMode = props.display
     if (!target)
       return
-    const token = ++version
-    activeRequest?.abort()
-    const request = new AbortController()
-    activeRequest = request
-    if (!source) {
-      target.textContent = ''
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
     void (async () => {
-      try {
-        let html = ''
-        if (props.useWorker !== false && hasKaTeXWorker()) {
-          try {
-            html = await renderKaTeXWithBackpressure(source, props.display, {
-              signal: request.signal,
-              timeout: props.workerTimeoutMs,
-            })
-          }
-          catch (error: any) {
-            if (error?.name === 'AbortError')
-              return
-          }
-        }
-        if (!html) {
-          const katex = await getKatex()
-          if (token !== version || request.signal.aborted)
-            return
-          html = katex?.renderToString(source, { throwOnError: nodeLoading, displayMode: props.display }) || ''
-        }
-        if (token !== version || request.signal.aborted)
-          return
-        if (html)
-          target.innerHTML = html
-        else if (!nodeLoading)
-          target.textContent = raw || source
+      const content = normalizeKaTeXRenderInput(source)
+      const version = ++renderVersion
+      if (!content) {
+        target.textContent = ''
+        setLoading(false)
+        return
       }
-      catch {
-        if (token === version && !request.signal.aborted && !nodeLoading)
-          target.textContent = raw || source
+      if (!hasRenderedOnce)
+        setLoading(true)
+      const html = await resolveKatexMarkup(content, displayMode, nodeLoading, props.useWorker !== false, props.workerTimeoutMs)
+      if (destroyed || version !== renderVersion)
+        return
+      if (html) {
+        target.innerHTML = html
+        hasRenderedOnce = true
+        setLoading(false)
       }
-      finally {
-        if (token === version && !request.signal.aborted)
-          setLoading(false)
+      else if (!nodeLoading) {
+        target.textContent = raw || content
+        setLoading(false)
       }
     })()
   })
+
   onCleanup(() => {
-    version += 1
-    activeRequest?.abort()
+    destroyed = true
+    renderVersion += 1
   })
+
   return props.display
-    ? <div class="math-block markstream-nested-math-block" data-markstream-katex-managed="1"><div ref={setHost as any} class={`markstream-nested-math-block__render${loading() ? ' math-rendering' : ''}`} /></div>
+    ? (
+        <div class="math-block markstream-nested-math-block" data-markstream-katex-managed="1">
+          <div ref={setHost as any} class={`markstream-nested-math-block__render${loading() ? ' math-rendering' : ''}`} />
+        </div>
+      )
     : (
         <span class="math-inline-wrapper markstream-nested-math" data-display="inline" data-markstream-katex-managed="1">
           <span ref={setHost as any} class={`math-inline${loading() ? ' math-inline--hidden' : ''}`} />
-          {loading() && <span class="math-inline__loading" role="status">Loading</span>}
+          {loading() && (
+            <span class="math-inline__loading" role="status" aria-live="polite">
+              <span class="math-inline__spinner" aria-hidden="true" />
+              <span class="sr-only">Loading</span>
+            </span>
+          )}
         </span>
       )
 }

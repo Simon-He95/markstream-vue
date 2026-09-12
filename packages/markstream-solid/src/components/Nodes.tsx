@@ -1,6 +1,6 @@
 import type { JSX } from 'solid-js'
 import type { SolidRenderableNode, SolidRenderContext } from '../node-helpers'
-import { Index } from 'solid-js'
+import { Index, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { clampHeadingLevel, getNodeList, getString, splitParagraphChildren } from '../node-helpers'
 import { NodeOutlet } from './NodeOutlet'
@@ -49,18 +49,41 @@ export const EmojiNode = (props: NodeProps) => <span class="emoji-node">{getStri
 export const FallbackComponent = (props: NodeProps) => <span>{getString((props.node as any).content ?? (props.node as any).raw)}</span>
 export interface PreCodeNodeProps extends NodeProps {
   showLineNumbers?: boolean
+  enhanceable?: boolean
+  class?: string
+  style?: string
 }
 
 export function PreCodeNode(props: PreCodeNodeProps) {
   const code = () => getString((props.node as any).code ?? (props.node as any).content ?? (props.node as any).raw)
   const isDiff = () => Boolean((props.node as any).diff)
-  const lines = () => code().replace(/\r\n/g, '\n').split('\n')
+  const isLoading = () => Boolean((props.node as any).loading)
+  const displayCode = () => isLoading() ? code() : code().replace(/\r\n$|\n$|\r$/, '')
+  const lines = () => displayCode().replace(/\r\n/g, '\n').split('\n')
   const showGutter = () => props.showLineNumbers === true && !isDiff()
   const width = () => Math.max(2, String(lines().length).length)
+  const gutterStyle = () => showGutter()
+    ? `--markstream-pre-line-number-width: ${width()}ch; --markstream-pre-diff-line-number-width: ${width()}ch; --markstream-code-padding-left: calc(var(--markstream-pre-line-number-padding-left, 2ch) + var(--markstream-pre-line-number-width, 2ch) + var(--markstream-pre-line-number-padding-right, 1ch) + var(--markstream-pre-line-number-separator-width, 2px) + var(--markstream-pre-line-number-gap-to-code, 1ch));`
+    : ''
+  const mergedStyle = () => [gutterStyle(), props.style].filter(Boolean).join(' ')
+  const className = () => [
+    'pre-code-node',
+    showGutter() ? 'pre-code-node--with-line-numbers markstream-pre--line-numbers' : '',
+    props.class,
+  ].filter(Boolean).join(' ')
   return (
-    <pre class={`pre-code-node${showGutter() ? ' pre-code-node--with-line-numbers' : ''}`} style={showGutter() ? { '--markstream-pre-line-number-width': `${width()}ch` } : undefined}>
-      {showGutter() && <span class="pre-code-node__line-numbers" aria-hidden="true">{lines().map((_, index) => `${index + 1}\n`).join('')}</span>}
-      <code>{code()}</code>
-    </pre>
+    <Show when={!(isLoading() && !code().trim())}>
+      <pre
+        class={className()}
+        style={mergedStyle() || undefined}
+        data-markstream-code-block={props.enhanceable === false ? undefined : '1'}
+        data-markstream-pre="1"
+        data-markstream-line-numbers={showGutter() ? '1' : undefined}
+        aria-busy={isLoading() ? 'true' : undefined}
+      >
+        {showGutter() && <span class="pre-code-node__line-numbers markstream-pre__line-numbers" aria-hidden="true">{lines().map((_, index) => `${index + 1}\n`).join('')}</span>}
+        <code class="markstream-pre__code" translate="no">{displayCode()}</code>
+      </pre>
+    </Show>
   )
 }

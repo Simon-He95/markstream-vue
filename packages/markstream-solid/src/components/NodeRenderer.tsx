@@ -1,5 +1,5 @@
 import type { NodeRendererEvents, NodeRendererProps } from '../node-helpers'
-import { createEffect, createMemo, createSignal, onCleanup, onMount, untrack, useContext } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, onMount, Show, untrack, useContext } from 'solid-js'
 import { useSmoothMarkdownStream } from '../composables/useSmoothMarkdownStream'
 import { SMOOTH_STREAMING_CONTEXT } from '../context/smoothStreaming'
 import { getCustomComponentsRevision, subscribeCustomComponents } from '../customComponents'
@@ -96,7 +96,25 @@ export function NodeRenderer(props: MarkdownRenderProps) {
       onHandleArtifactClick: props.onHandleArtifactClick,
     }, textStreamState, renderVersion())
   })
-  const nodes = createMemo(() => resolveParsedNodes({ ...props, content: renderContent(), final: effectiveFinal() }))
+  const nodes = createMemo(() => {
+    const content = renderContent()
+    const debug = props.debugPerformance
+    const canLog = Boolean(debug)
+      && typeof console !== 'undefined'
+      && typeof console.info === 'function'
+      && typeof performance !== 'undefined'
+      && typeof performance.now === 'function'
+    const startedAt = canLog ? performance.now() : 0
+    const parsed = resolveParsedNodes({ ...props, content, final: effectiveFinal() })
+    if (canLog) {
+      console.info('[markstream-solid][perf] parse(sync)', {
+        ms: Math.round(performance.now() - startedAt),
+        nodes: parsed.length,
+        contentLength: content.length,
+      })
+    }
+    return parsed
+  })
   const [renderedCount, setRenderedCount] = createSignal(0)
 
   createEffect(() => {
@@ -161,17 +179,157 @@ export function NodeRenderer(props: MarkdownRenderProps) {
   })
   const renderedNodes = createMemo(() => nodes().slice(0, typeof window === 'undefined' ? nodes().length : renderedCount()))
   const [root, setRoot] = createSignal<HTMLDivElement>()
+  const [typewriterCursorEl, setTypewriterCursorEl] = createSignal<HTMLSpanElement>()
+  const [showTypewriterCursor, setShowTypewriterCursor] = createSignal(false)
+  let typewriterCursorTimeout: ReturnType<typeof setTimeout> | undefined
+  let lastTypewriterContentLength = 0
+  const TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES = new Set(['code_block', 'admonition', 'table', 'math_block', 'html_block', 'image'])
+
+  function hasLoadingNodes(list: readonly any[]): boolean {
+    for (const node of list) {
+      if ((node as any)?.loading === true)
+        return true
+      if (hasLoadingNodes(((node as any)?.children || []) as any))
+        return true
+      if (hasLoadingNodes(((node as any)?.items || []) as any))
+        return true
+    }
+    return false
+  }
+
+  function shouldSkipTypewriterCursorForNode(node: unknown) {
+    if (!node || typeof node !== 'object')
+      return false
+    const type = (node as Record<string, unknown>).type
+    return typeof type === 'string' && TYPEWRITER_CURSOR_EXCLUDED_NODE_TYPES.has(type)
+  }
+
+  function getNodeTextLength(node: unknown): number {
+    if (!node || typeof node !== 'object')
+      return 0
+    const record = node as Record<string, unknown>
+    const direct = record.raw ?? record.content ?? record.code
+    if (typeof direct === 'string')
+      return direct.length
+    const children = record.children
+    if (Array.isArray(children))
+      return children.reduce((total: number, child: unknown) => total + getNodeTextLength(child), 0)
+    const items = record.items
+    if (Array.isArray(items))
+      return items.reduce((total: number, item: unknown) => total + getNodeTextLength(item), 0)
+    return 0
+  }
+
+  function getTypewriterContentLength() {
+    if (Array.isArray(props.nodes))
+      return props.nodes.reduce((total: number, node: unknown) => total + getNodeTextLength(node), 0)
+    return (props.content ?? '').length
+  }
+
+  function getLastTextNode(rootEl: HTMLElement) {
+    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const text = node.textContent ?? ''
+        if (!text.trim())
+          return NodeFilter.FILTER_REJECT
+        const parent = node.parentElement
+        if (!parent)
+          return NodeFilter.FILTER_REJECT
+        if (parent.closest('.typewriter-cursor, .height-estimation-probes, [data-node-type="code_block"], [data-node-type="admonition"], [data-node-type="table"], [data-node-type="math_block"], [data-node-type="html_block"], [data-node-type="image"], script, style'))
+          return NodeFilter.FILTER_REJECT
+        return NodeFilter.FILTER_ACCEPT
+      },
+    })
+    let last: Text | null = null
+    let current = walker.nextNode()
+    while (current) {
+      last = current as Text
+      current = walker.nextNode()
+    }
+    return last
+  }
+
+  function updateTypewriterCursorPosition() {
+    const rootEl = root()
+    const cursor = typewriterCursorEl()
+    if (typeof window === 'undefined' || !showTypewriterCursor() || !rootEl || !cursor)
+      return
+    const lastText = getLastTextNode(rootEl)
+    const rootRect = rootEl.getBoundingClientRect()
+    let left = 0
+    let top = 0
+    let height = 20
+    if (lastText?.textContent) {
+      const range = document.createRange()
+      const end = lastText.textContent.length
+      range.setStart(lastText, Math.max(0, end - 1))
+      range.setEnd(lastText, end)
+      const rects = typeof range.getClientRects === 'function' ? range.getClientRects() : undefined
+      const rect = rects?.[rects.length - 1] ?? lastText.parentElement?.getBoundingClientRect()
+      if (rect) {
+        left = rect.right - rootRect.left + rootEl.scrollLeft
+        top = rect.top - rootRect.top + rootEl.scrollTop
+        height = rect.height || height
+      }
+      range.detach()
+    }
+    cursor.style.transform = `translate(${Math.max(0, left)}px, ${Math.max(0, top)}px)`
+    cursor.style.height = `${height}px`
+  }
+
+  createEffect(() => {
+    void renderContent()
+    void props.nodes
+    void props.typewriter
+    void nodes().length
+    void effectiveFinal()
+    if (typeof window === 'undefined' || hasNodes())
+      return
+    if (effectiveFinal()) {
+      setShowTypewriterCursor(false)
+      if (typewriterCursorTimeout)
+        clearTimeout(typewriterCursorTimeout)
+      return
+    }
+    const nextLength = getTypewriterContentLength()
+    const parsed = nodes()
+    const cursorAllowed = !shouldSkipTypewriterCursorForNode(parsed[parsed.length - 1])
+    if (props.typewriter !== true || !cursorAllowed || nextLength <= lastTypewriterContentLength) {
+      if (props.typewriter !== true || !cursorAllowed)
+        setShowTypewriterCursor(false)
+      lastTypewriterContentLength = nextLength
+      return
+    }
+    lastTypewriterContentLength = nextLength
+    setShowTypewriterCursor(true)
+    if (typewriterCursorTimeout)
+      clearTimeout(typewriterCursorTimeout)
+    queueMicrotask(() => updateTypewriterCursorPosition())
+    typewriterCursorTimeout = setTimeout(() => setShowTypewriterCursor(false), 3000)
+  })
+
+  createEffect(() => {
+    if (!showTypewriterCursor())
+      return
+    queueMicrotask(() => updateTypewriterCursorPosition())
+  })
+
+  onCleanup(() => {
+    if (typewriterCursorTimeout)
+      clearTimeout(typewriterCursorTimeout)
+  })
 
   createEffect(() => {
     const element = root()
     const currentNodes = renderedNodes()
     const currentContext = context()
-    if (!element || effectiveFinal() === false)
+    const enhancementFinal = typeof effectiveFinal() === 'boolean' ? effectiveFinal() : !hasLoadingNodes(nodes())
+    if (!element || enhancementFinal === false)
       return
     let cancelled = false
     let handle: { dispose: () => void } | undefined
     void enhanceRenderedHtml(element, {
-      final: effectiveFinal(),
+      final: enhancementFinal,
       isDark: props.isDark,
       renderCodeBlocksAsPre: props.renderCodeBlocksAsPre,
       codeBlockOptions: props.codeBlockOptions,
@@ -182,6 +340,7 @@ export function NodeRenderer(props: MarkdownRenderProps) {
       mermaidProps: props.mermaidProps,
       d2Props: props.d2Props,
       infographicProps: props.infographicProps,
+      showTooltips: props.showTooltips,
       onCopy: props.onCopy,
       isCancelled: () => cancelled,
     }).then((next) => {
@@ -202,8 +361,11 @@ export function NodeRenderer(props: MarkdownRenderProps) {
 
   return (
     <SMOOTH_STREAMING_CONTEXT.Provider value={smoothEnabled}>
-      <div ref={setRoot} class={`markstream-solid ${props.className || props.class || ''}`} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
+      <div ref={setRoot} class={`markstream-solid markdown-renderer ${props.className || props.class || ''}`} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
         <RenderChildren nodes={renderedNodes()} context={context()} prefix="root" />
+        <Show when={showTypewriterCursor()}>
+          <span ref={setTypewriterCursorEl} class="typewriter-cursor" aria-hidden="true" />
+        </Show>
       </div>
     </SMOOTH_STREAMING_CONTEXT.Provider>
   )

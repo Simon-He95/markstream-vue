@@ -1,5 +1,5 @@
-import { NodeRenderer, removeCustomComponents, setCustomComponents } from 'markstream-solid'
-import { createSignal, onCleanup, Show } from 'solid-js'
+import { NodeRenderer } from 'markstream-solid'
+import { createSignal, Show } from 'solid-js'
 import { ThinkingNode } from '../components/ThinkingNode'
 import { SCOPED_SAMPLE } from '../shared/demoSamples'
 import { PLAYGROUND_CUSTOM_HTML_TAGS } from '../shared/markstreamPlayground'
@@ -28,13 +28,6 @@ function RightMarker(props: any) {
 export function ScopedRenderersDemo(props: { isDark: boolean, content?: string }) {
   const [showRight, setShowRight] = createSignal(true)
 
-  setCustomComponents(LEFT_ID, { thinking: LeftThinking })
-  setCustomComponents(RIGHT_ID, { thinking: RightMarker })
-  onCleanup(() => {
-    removeCustomComponents(LEFT_ID)
-    removeCustomComponents(RIGHT_ID)
-  })
-
   return (
     <div data-demo="scoped" class="grid gap-4 lg:grid-cols-2">
       <section data-scoped-pane="left">
@@ -43,6 +36,7 @@ export function ScopedRenderersDemo(props: { isDark: boolean, content?: string }
           content={props.content ?? SCOPED_SAMPLE}
           isDark={props.isDark}
           customId={LEFT_ID}
+          customComponents={{ thinking: LeftThinking }}
           customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
           typewriter={false}
         />
@@ -64,6 +58,7 @@ export function ScopedRenderersDemo(props: { isDark: boolean, content?: string }
             content={props.content ?? SCOPED_SAMPLE}
             isDark={!props.isDark}
             customId={RIGHT_ID}
+            customComponents={{ thinking: RightMarker }}
             customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
             typewriter={false}
           />

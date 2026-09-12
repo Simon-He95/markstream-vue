@@ -35,3 +35,33 @@
 当前文档入口不含互相矛盾的实现状态；长期说明与 README 链接有效；运行证据可通过 scripts/CI 找到，不依赖维护者的临时目录；所有范围外改动有处理决定。PR 描述中的每项验证都有对应实际结果，未实现能力明确列出。
 
 检查 Markdown 链接、`git diff --check` 和最终 diff 范围即可；仅文档整理不要求重跑全部应用测试。若移动/删除文件影响测试或构建路径，运行对应检查。
+
+## 执行记录（2026-09-11）
+
+已做、不删除文件：历史横幅改为“冻结快照 / 不要当现行指令”；去掉 VitePress 里指向 `main` 上尚不存在的 `CAPABILITY.md` 链接；`playground-solid/VERIFICATION.md` 不再依赖 `/tmp` scratch，也不再写“全部已验证”。
+
+### 文件级去向（等授权再移出 git）
+
+| 文件 | 建议 | 内容去向 |
+| --- | --- | --- |
+| `GOAL.md`、`GOAL-PLAYGROUND.md` | 移出最终产品 PR | 任务历史；能力以 `packages/markstream-solid/CAPABILITY.md` 为准 |
+| `handoff.md`、`HANDOFF-PLAYGROUND.md` | 移出最终产品 PR | 过时 agent 指令；实现后不要按“尚无实现”重做 |
+| `HANDOFF-PLAYGROUND-BUGS.md`、`diagnostics/` | 保持未跟踪 | 图表分发 / fallback 延迟的原始复现；有效断言已进测试 |
+| `SOLID_PORTING.md`、`playground-solid/PORTING.md` | 保留 | 长期设计约定（Svelte 行为基线、资源所有权、响应式映射） |
+| 两份 `PORTING_STATUS.md`、两份 `VERIFICATION.md` | 可再收成 CAPABILITY + scripts | 当前已降级为历史台账/日志 |
+| `plans/` | 过程材料，通常不进最终产品 diff | 本目录；完成后只留 CAPABILITY / SYNC / README |
+| 包与 playground README、`docs/frameworks/solid.md` | 保留 | 产品入口 |
+
+未授权：删除这些文件、改写 Git 历史、更新 GitHub PR 标题/正文、push。
+
+### 建议的 PR 标题和正文（草稿，未发布）
+
+标题：`feat: add markstream-solid renderer and playground`
+
+正文要点：
+
+- Solid 渲染器，行为基线是 Svelte；playground 从 React 18 搬过来，用来展示稳定流式更新、代码块实例保留、自定义节点、图表/Worker。
+- `stream` / `codeBlockStream` 与嵌套 auto-smooth 对齐 Svelte；虚拟化 props 是兼容 no-op。
+- 验证：`pnpm check:solid`、packed smoke（有/无 optional peers）、SSR hydration e2e、playground 浏览器 e2e。Ubuntu CI 已接线；需确认 GitHub Actions 真正跑过 PR head。
+- 已知限制见 `packages/markstream-solid/CAPABILITY.md`。
+- 非 Solid：Vue playground 打印测试 30s timeout 保留在本分支，因为根 Vitest job 需要它。

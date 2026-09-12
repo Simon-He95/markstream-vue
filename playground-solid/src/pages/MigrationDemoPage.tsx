@@ -5,6 +5,7 @@ import controllerUsageSource from '../examples/controller-usage.tsx?raw'
 import customComponentsUsageSource from '../examples/custom-components-usage.tsx?raw'
 import workerUsageSource from '../examples/worker-usage.tsx?raw'
 import { PLAYGROUND_CUSTOM_HTML_TAGS, PLAYGROUND_CUSTOM_ID } from '../shared/markstreamPlayground'
+import { PLAYGROUND_CUSTOM_COMPONENTS } from '../shared/playgroundComponents'
 
 interface MigrationDemoPageProps {
   isDark: boolean
@@ -54,7 +55,7 @@ This page shows **typecheckable** \`markstream-solid\` call sites:
 
 - \`NodeRenderer\` + \`content\`
 - \`useSmoothMarkdownStream\` accessors
-- scoped \`setCustomComponents\`
+- renderer-local \`customComponents\`
 - Worker injection on an app owner
 
 \`render-window\` is **not** virtualization in this renderer.
@@ -117,7 +118,7 @@ export function MigrationDemoPage(props: MigrationDemoPageProps) {
                 <CodePanel
                   badge="Solid"
                   title="Component registration"
-                  description="Scoped setCustomComponents plus ThinkingNode nested Markdown."
+                  description="Renderer-local customComponents plus ThinkingNode nested Markdown."
                   code={customComponentsUsageSource}
                 />
                 <CodePanel
@@ -153,10 +154,9 @@ export function MigrationDemoPage(props: MigrationDemoPageProps) {
                   content={SOLID_LIVE_MARKDOWN}
                   isDark={props.isDark}
                   customId={PLAYGROUND_CUSTOM_ID}
+                  customComponents={PLAYGROUND_CUSTOM_COMPONENTS}
                   customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
                   renderCodeBlocksAsPre
-                  viewportPriority={false}
-                  deferNodesUntilVisible={false}
                   maxLiveNodes={0}
                 />
               </div>

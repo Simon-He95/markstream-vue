@@ -1,7 +1,8 @@
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import MarkdownRender, { disableStreamDiffs, enableStreamDiffs, setStreamDiffsLoader, SMOOTH_STREAMING_CONTEXT } from '../src/index'
+import MarkdownRender, { SMOOTH_STREAMING_CONTEXT } from '../src/index'
+import { disableStreamDiffs, enableStreamDiffs, setStreamDiffsLoader } from '../src/optional-streamDiffs'
 
 const flushAsyncRendering = () => new Promise<void>(resolve => setTimeout(resolve, 0))
 
@@ -223,7 +224,8 @@ describe('markstream-solid stream mapping and nested smooth', () => {
     disableStreamDiffs()
   })
 
-  it('does not change short-document markup when virtualization compatibility props are set', () => {
+  it('does not change short-document markup when debugPerformance is set', () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
     const content = '# Heading\n\nHello **world**'
     const left = document.createElement('div')
     const right = document.createElement('div')
@@ -232,9 +234,6 @@ describe('markstream-solid stream mapping and nested smooth', () => {
       <MarkdownRender
         content={content}
         final
-        viewportPriority
-        deferNodesUntilVisible
-        liveNodeBuffer={200}
         debugPerformance
       />
     ), right)
@@ -242,6 +241,52 @@ describe('markstream-solid stream mapping and nested smooth', () => {
     expect(left.querySelector('strong')?.textContent).toBe(right.querySelector('strong')?.textContent)
     disposeLeft()
     disposeRight()
+    info.mockRestore()
+  })
+
+  it('logs parse(sync) only when debugPerformance is true and again after content updates', () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {})
+    const container = document.createElement('div')
+    const disposeQuiet = render(() => <MarkdownRender content="# Quiet" final />, container)
+    expect(info.mock.calls.some(call => call[0] === '[markstream-solid][perf] parse(sync)')).toBe(false)
+    disposeQuiet()
+    info.mockClear()
+
+    let setContent!: (value: string) => void
+    const App = () => {
+      const [content, set] = createSignal('# Heading\n\nHello')
+      setContent = set
+      return <MarkdownRender content={content()} final debugPerformance />
+    }
+    const dispose = render(() => <App />, container)
+    const first = info.mock.calls.filter(call => call[0] === '[markstream-solid][perf] parse(sync)')
+    expect(first.length).toBeGreaterThan(0)
+    const payload = first[0][1] as { ms: number, nodes: number, contentLength: number }
+    expect(Number.isFinite(payload.ms)).toBe(true)
+    expect(payload.nodes).toBeGreaterThan(0)
+    expect(payload.contentLength).toBe('# Heading\n\nHello'.length)
+    setContent('# Heading\n\nHello **world**')
+    const next = info.mock.calls.filter(call => call[0] === '[markstream-solid][perf] parse(sync)')
+    expect(next.length).toBeGreaterThan(first.length)
+    const last = next[next.length - 1][1] as { contentLength: number }
+    expect(last.contentLength).toBe('# Heading\n\nHello **world**'.length)
+    dispose()
+    info.mockRestore()
+  })
+
+  it('does not throw when debugPerformance is on but performance is unavailable', () => {
+    const original = globalThis.performance
+    Object.defineProperty(globalThis, 'performance', { configurable: true, value: {} })
+    const container = document.createElement('div')
+    try {
+      expect(() => {
+        const dispose = render(() => <MarkdownRender content="# x" final debugPerformance />, container)
+        dispose()
+      }).not.toThrow()
+    }
+    finally {
+      Object.defineProperty(globalThis, 'performance', { configurable: true, value: original })
+    }
   })
 
   it('uses stream ?? context.codeBlockStream ?? true and lets an explicit stream override context', async () => {

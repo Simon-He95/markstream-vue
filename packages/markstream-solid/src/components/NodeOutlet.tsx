@@ -33,7 +33,10 @@ export function NodeOutlet(props: NodeOutletProps) {
   const type = () => getString((props.node as any).type)
   const codeMode = () => resolveNodeOutletCodeMode(props.node, props.context)
   const custom = () => {
-    const mapping = props.context?.customComponents || getCustomNodeComponents(props.context?.customId)
+    const mapping = {
+      ...getCustomNodeComponents(props.context?.customId),
+      ...(props.context?.customComponents || {}),
+    }
     return resolveNodeOutletCustomComponent(props.node, props.context, mapping)
   }
   const htmlTag = () => resolveHtmlTag(props.node)

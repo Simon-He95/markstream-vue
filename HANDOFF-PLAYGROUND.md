@@ -1,8 +1,8 @@
 # Solid Playground 实施交接
 
-> Historical agent handoff. Current playground behavior and checks: [`playground-solid/README.md`](./playground-solid/README.md) and [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md).
+> Frozen 2026-09-10 agent handoff from before `playground-solid/` existed. Current playground behavior and checks: [`playground-solid/README.md`](./playground-solid/README.md) and [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md). Do not follow the “not started / no playground in git” body as current instructions.
 
-更新时间：2026-09-10。此文件供之后接手的 agent 使用，不表示已开始实施或已完成验证。
+更新时间：2026-09-10。仓库路径、当时 HEAD、以及“没有被跟踪的 playground-solid”都是写交接时的快照。
 
 ## 接手任务
 

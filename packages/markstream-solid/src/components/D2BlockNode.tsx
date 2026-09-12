@@ -3,7 +3,9 @@ import { createEffect, createSignal, onCleanup } from 'solid-js'
 import { getD2 } from '../d2'
 import { useSafeI18n } from '../i18n/useSafeI18n'
 import { getString } from '../node-helpers'
+import { copyTextToClipboard, downloadSvgMarkup } from '../richBlockHelpers'
 import { extractRenderedSvg, toSafeSvgMarkup } from '../sanitizeSvg'
+import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
 
 const DARK_THEME_OVERRIDES: Record<string, string> = {
   N1: '#E5E7EB',
@@ -171,6 +173,14 @@ export function D2BlockNode(props: D2BlockNodeProps) {
   const isStreaming = () => props.loading ?? Boolean((props.node as any).loading)
   const showLoading = () => !showSource() && !collapsed() && !svgMarkup() && isStreaming()
   const fallbackVisible = () => !showLoading() && (showSource() || !!error() || !svgMarkup())
+  const resolvedIsDark = () => props.isDark ?? props.context?.isDark ?? false
+  const showButtonTooltip = (event: MouseEvent | FocusEvent, text: string) => {
+    const target = event.currentTarget as HTMLElement | null
+    if (!target || (target instanceof HTMLButtonElement && target.disabled))
+      return
+    showTooltipForAnchor(target, text, 'top', false, undefined, resolvedIsDark())
+  }
+  const hideBtnTooltip = () => hideTooltip()
   return (
     <div class={`markstream-solid-enhanced-block markstream-solid-enhanced-block--d2${(props.isDark ?? props.context?.isDark) ? ' dark' : ''}${isStreaming() || showLoading() ? ' is-rendering' : ''}`} data-markstream-d2="1" data-markstream-mode={showLoading() ? 'loading' : fallbackVisible() ? 'fallback' : 'preview'}>
       {resolvedShowHeader() && (
@@ -179,59 +189,60 @@ export function D2BlockNode(props: D2BlockNodeProps) {
           <div class="markstream-solid-enhanced-block__actions d2-header-actions">
             {resolvedShowModeToggle() && (
               <div class="d2-mode-toggle">
-                <button type="button" class={`d2-mode-btn${!showSource() ? ' is-active' : ''}`} onClick={() => setShowSource(false)}>Preview</button>
-                <button type="button" class={`d2-mode-btn${showSource() ? ' is-active' : ''}`} onClick={() => setShowSource(true)}>Source</button>
+                <button type="button" class={`d2-mode-btn${!showSource() ? ' is-active' : ''}`} onBlur={hideBtnTooltip} onClick={() => setShowSource(false)} onFocus={event => showButtonTooltip(event, t('common.preview') || 'Preview')} onMouseLeave={hideBtnTooltip} onMouseEnter={event => showButtonTooltip(event, t('common.preview') || 'Preview')}>{t('common.preview')}</button>
+                <button type="button" class={`d2-mode-btn${showSource() ? ' is-active' : ''}`} onBlur={hideBtnTooltip} onClick={() => setShowSource(true)} onFocus={event => showButtonTooltip(event, t('common.source') || 'Source')} onMouseLeave={hideBtnTooltip} onMouseEnter={event => showButtonTooltip(event, t('common.source') || 'Source')}>{t('common.source')}</button>
               </div>
             )}
             {resolvedShowCopyButton() && (
               <button
                 type="button"
                 class="d2-action-btn"
-                aria-label={copied() ? 'Copied' : 'Copy'}
+                aria-label={copied() ? t('common.copied') : t('common.copy')}
+                onBlur={hideBtnTooltip}
                 onClick={() => {
                   const source = getString((props.node as any).code)
-                  void navigator.clipboard?.writeText(source)
-                  props.context?.events.onCopy?.(source)
+                  void copyTextToClipboard(source)
+                  props.context?.events?.onCopy?.(source)
                   setCopied(true)
                   if (copyTimer)
                     clearTimeout(copyTimer)
                   copyTimer = setTimeout(() => setCopied(false), 1000)
                 }}
+                onFocus={event => showButtonTooltip(event, copied() ? (t('common.copied') || 'Copied') : (t('common.copy') || 'Copy'))}
+                onMouseLeave={hideBtnTooltip}
+                onMouseEnter={event => showButtonTooltip(event, copied() ? (t('common.copied') || 'Copied') : (t('common.copy') || 'Copy'))}
               >
-                {copied() ? 'Copied' : 'Copy'}
+                {copied() ? t('common.copied') : t('common.copy')}
               </button>
             )}
             {resolvedShowExportButton() && (
               <button
                 type="button"
                 class="d2-action-btn"
-                aria-label="Export"
+                aria-label={t('common.export')}
                 disabled={!svgMarkup() || showSource() || collapsed()}
-                onClick={() => {
-                  const blob = new Blob([svgMarkup()], { type: 'image/svg+xml' })
-                  const url = URL.createObjectURL(blob)
-                  const anchor = document.createElement('a')
-                  anchor.href = url
-                  anchor.download = `d2-diagram-${Date.now()}.svg`
-                  anchor.click()
-                  URL.revokeObjectURL(url)
-                }}
+                onBlur={hideBtnTooltip}
+                onClick={() => downloadSvgMarkup(svgMarkup(), `d2-diagram-${Date.now()}.svg`)}
+                onFocus={event => showButtonTooltip(event, t('common.export') || 'Export')}
+                onMouseLeave={hideBtnTooltip}
+                onMouseEnter={event => showButtonTooltip(event, t('common.export') || 'Export')}
               >
-                Export
+                {t('common.export')}
               </button>
             )}
             {resolvedShowCollapseButton() && (
               <button
                 type="button"
                 class="d2-action-btn"
-                aria-label={collapsed() ? 'Expand' : 'Collapse'}
+                aria-label={collapsed() ? t('common.expand') : t('common.collapse')}
                 aria-pressed={collapsed() ? 'true' : 'false'}
-                onClick={() => {
-                  const next = !collapsed()
-                  setCollapsed(next)
-                }}
+                onBlur={hideBtnTooltip}
+                onClick={() => setCollapsed(value => !value)}
+                onFocus={event => showButtonTooltip(event, collapsed() ? (t('common.expand') || 'Expand') : (t('common.collapse') || 'Collapse'))}
+                onMouseLeave={hideBtnTooltip}
+                onMouseEnter={event => showButtonTooltip(event, collapsed() ? (t('common.expand') || 'Expand') : (t('common.collapse') || 'Collapse'))}
               >
-                {collapsed() ? 'Expand' : 'Collapse'}
+                {collapsed() ? t('common.expand') : t('common.collapse')}
               </button>
             )}
           </div>

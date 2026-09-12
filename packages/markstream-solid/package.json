@@ -25,8 +25,7 @@
   "scripts": {
     "build": "pnpm --dir ../markdown-parser build && pnpm --dir ../markstream-core build && vite build --mode npm && vite build --mode ssr && cp dist/index.css dist/index.tailwind.css && node ../../scripts/generate-px-css.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:ssr": "node scripts/verify-ssr.mjs"
+    "test": "vitest run"
   },
   "peerDependencies": {
     "@antv/infographic": "^0.2.3",

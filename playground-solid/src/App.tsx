@@ -1,12 +1,9 @@
 import type { StreamSliceMode, StreamTransportMode } from './shared/useStreamSimulator'
-import { removeCustomComponents, setCustomComponents } from 'markstream-solid'
 import { createEffect, createSignal, onCleanup, onMount, Show } from 'solid-js'
-import { ThinkingNode } from './components/ThinkingNode'
 import { HomePage } from './pages/HomePage'
 import { LineNumberHandoffCheck } from './pages/LineNumberHandoffCheck'
 import { MigrationDemoPage } from './pages/MigrationDemoPage'
 import { TestLab } from './pages/TestLab'
-import { PLAYGROUND_CUSTOM_ID } from './shared/markstreamPlayground'
 import {
   DARK_MODE_KEY,
   normalizePath,
@@ -54,9 +51,6 @@ export default function App() {
   const isTestPage = () => currentPath() === '/test'
   const isMigrationDemoPage = () => currentPath() === '/migration-demo'
   const isLineNumberHandoffCheck = () => currentPath() === '/line-number-handoff-check'
-
-  setCustomComponents(PLAYGROUND_CUSTOM_ID, { thinking: ThinkingNode })
-  onCleanup(() => removeCustomComponents(PLAYGROUND_CUSTOM_ID))
 
   onMount(() => {
     if (!isLineNumberHandoffCheck())

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { NodeRenderer, removeCustomComponents, setCustomComponents } from 'markstream-solid'
+import { NodeRenderer } from 'markstream-solid'
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -14,22 +14,24 @@ import { useStreamSimulator } from '../src/shared/useStreamSimulator'
 describe('solid playground scoped components and cleanup', () => {
   afterEach(() => {
     document.body.innerHTML = ''
-    removeCustomComponents('left-scope')
-    removeCustomComponents('right-scope')
   })
 
   it('keeps two renderer custom-component mappings isolated', () => {
-    setCustomComponents('left-scope', {
-      thinking: () => <aside data-left>left</aside>,
-    })
-    setCustomComponents('right-scope', {
-      thinking: () => <aside data-right>right</aside>,
-    })
     const host = document.createElement('div')
     const dispose = render(() => (
       <>
-        <NodeRenderer content="<thinking>nested **md**</thinking>" customId="left-scope" customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS} final />
-        <NodeRenderer content="<thinking>other</thinking>" customId="right-scope" customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS} final />
+        <NodeRenderer
+          content="<thinking>nested **md**</thinking>"
+          customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
+          customComponents={{ thinking: () => <aside data-left>left</aside> }}
+          final
+        />
+        <NodeRenderer
+          content="<thinking>other</thinking>"
+          customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
+          customComponents={{ thinking: () => <aside data-right>right</aside> }}
+          final
+        />
       </>
     ), host)
     expect(host.querySelector('[data-left]')?.textContent).toBe('left')
@@ -39,12 +41,11 @@ describe('solid playground scoped components and cleanup', () => {
   })
 
   it('renders nested markdown through ThinkingNode without losing the nested renderer', () => {
-    setCustomComponents('left-scope', { thinking: ThinkingNode })
     const host = document.createElement('div')
     const dispose = render(() => (
       <NodeRenderer
         content={'<thinking>\n**bold inside**\n</thinking>'}
-        customId="left-scope"
+        customComponents={{ thinking: ThinkingNode }}
         customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
         final
       />

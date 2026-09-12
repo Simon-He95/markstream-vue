@@ -16,6 +16,7 @@ export interface ThinkingNodeProps {
     customId?: string
     isDark?: boolean
     typewriter?: boolean
+    customComponents?: Record<string, unknown>
     codeBlockThemes?: {
       themes?: string | string[]
       darkTheme?: string
@@ -86,6 +87,7 @@ export function ThinkingNode(props: ThinkingNodeProps) {
                   <NodeRenderer
                     content={String(node().content ?? '')}
                     customId={inheritedCustomId()}
+                    customComponents={props.ctx?.customComponents as any}
                     customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
                     isDark={inheritedIsDark()}
                     themes={props.ctx?.codeBlockThemes?.themes as any}
@@ -98,8 +100,6 @@ export function ThinkingNode(props: ThinkingNodeProps) {
                     renderCodeBlocksAsPre={props.ctx?.renderCodeBlocksAsPre}
                     typewriter={inheritedTypewriter()}
                     smoothStreaming="auto"
-                    viewportPriority={false}
-                    deferNodesUntilVisible={false}
                     batchRendering={false}
                     maxLiveNodes={0}
                   />

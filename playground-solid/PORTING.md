@@ -24,7 +24,7 @@ Baseline: React 18 playground at `playground-react18/` (HEAD `1f51247e` plus aut
 | Auto-scroll rAF | `createChatAutoScroll.scheduleScrollToBottom` | Content key and ResizeObserver | `detach` / owner `onCleanup` |
 | ResizeObserver | attach on the messages container and `.chatbot-renderer-shell` | Height growth while sticky | `disconnect` on detach |
 | KaTeX / Mermaid Workers | App owner in `src/workers.ts` (`ensurePlaygroundWorkers`) | Shared for the page lifetime | Never terminate from a child unmount; process teardown only |
-| Custom component registration | `setCustomComponents(PLAYGROUND_CUSTOM_ID, …)` in App owner | Isolated per `customId` | `removeCustomComponents` on App `onCleanup` |
+| Custom component registration | Renderer `customComponents={{ thinking: ThinkingNode }}` | Isolated per renderer prop | Unmount drops the local map; no scoped registry |
 | stream-diffs editor runtime | `preloadCodeBlockRuntime` from the app owner (skipped on `/line-number-handoff-check`) | CodeBlockNode reuses the instance on ordinary append | CodeBlockNode owner cleanup; app does not disable peers on demo leave |
 | Smooth stream controller | `useSmoothMarkdownStream` inside the demo that owns it | Accessors `source` / `visible` / `pendingChars` / `caughtUp` / `final` | `onCleanup` → `unsubscribe` + `controller.destroy()` |
 | Hydration fixture | `hydration:generate` renders `HydrationApp` with `renderToString` + `generateHydrationScript` | Client `hydrate` on the same component | No leftover server timers; post-hydrate append uses client signals |

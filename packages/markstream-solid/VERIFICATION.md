@@ -10,7 +10,7 @@ Last historical snapshot: 2026-09-10. Current checks live in Ubuntu CI (`pnpm ch
 | `pnpm exec eslint packages/markstream-solid/src packages/markstream-solid/test packages/markstream-solid/scripts` | passed |
 | `pnpm --filter markstream-solid test` | passed, 50 tests |
 | `pnpm --filter markstream-solid build` | passed; ESM, declarations, CSS and Worker subpaths emitted |
-| `pnpm --filter markstream-solid test:ssr` | passed; Node resolves the SSR condition and renders Markdown HTML |
+| `pnpm --filter markstream-solid test:ssr` | **removed**; SSR now `pnpm test:e2e:solid-hydration` |
 | `pnpm --filter markstream-solid-playground build` | **historical / unreproducible** from git `1f51247e` (no `playground-solid/` source). Not this playground-migration run. See `playground-solid/VERIFICATION.md`. |
 | `pnpm --filter markstream-solid-playground hydration:generate` | **historical / unreproducible** from git `1f51247e`. See `playground-solid/VERIFICATION.md`. |
 | `npx agent-browser --args "--no-sandbox"` against `http://127.0.0.1:5174/` | passed; page loaded, **Append token** appended `· next token`; HTML Preview produced an iframe with the source; Collapse added `is-collapsed` and hid code content; CodeBlock font control changed 12px to 13px; real Mermaid, D2 and Infographic rendered SVG output, KaTeX rendered `.katex`; injected Vite `katexRenderer.worker` and `mermaidParser.worker` resources completed; real stream-diffs retained its shell, constrained scroll position and native `Solid` selection through **Append code line**; Mermaid and Infographic Source showed their source, and their Collapse controls hid both source and SVG/render regions; no enhanced-block fallback was shown |

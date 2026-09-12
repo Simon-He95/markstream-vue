@@ -15,8 +15,28 @@
 | [03 修正 Playground 观察与完成状态](./03-playground-observability.md) | 合并前 | 可独立于 02 开始；外部/内部平滑边界遵循 02 的结论 |
 | [04 整理文档与 PR 范围](./04-documentation-and-pr-scope.md) | 合并前收尾 | 先盘点，等 01–03 的实际结果确定后更新能力与验证说明 |
 | [05 降低长期维护成本](./05-solid-maintainability.md) | 可后续 | 发布前先审核不必要的公开导出；内部拆分和重复逻辑治理可另开 PR |
+| [06 去掉 scoped 注册表](./06-solid-drop-scoped-registry.md) | 合并前 | 公开形状跟 React：隔离只用 renderer `customComponents`；不引入 `streamingComponents` |
+| [07 实现 `showTooltips`](./07-solid-show-tooltips.md) | 合并前 | 链接、代码块工具栏、HTML 增强共用一个开关 |
+| [08 实现 `debugPerformance`](./08-solid-debug-performance.md) | 合并前 | 只打 parse(sync) 日志，与 React 源码一致 |
+| [09 按点名收口公开 API](./09-solid-api-honesty.md) | 合并前 | 删空虚拟化 props、测试钩子退出入口、加回 scoped 注册、工具栏 i18n、按 Svelte 收导出。`renderWindow` 用户自删 |
 
 01–03 可以交错推进，不代表自动授权启动多个 agent。多人执行时分别认领文件；共享配置与最终整合由明确的负责人处理。
+
+## 执行状态（2026-09-11，HEAD `bd7d5121`）
+
+| 计划 | 状态 | 证据 |
+| --- | --- | --- |
+| 01 CI 与可重复验证 | 代码已接入，GitHub 尚未证明 | 根脚本 `check:solid` / `test:smoke:solid*` / `test:e2e:solid-*`；`.github/workflows/ci.yml` Ubuntu 步骤。HEAD 上没有对应 GitHub Actions run；上一笔 CI（`a5dfbac5`）停在 `action_required` |
+| 02 公开 API 与行为 | 已落地主要缺口 | `stream ?? codeBlockStream ?? true`、嵌套 auto-smooth、live theme/line-numbers；未接线虚拟化标为 known limit |
+| 03 Playground 观察 | 已落地 | 资源计数走 `resourceEpoch`；暂停 / 传输完成 / stop-reveal 分开；未覆盖项显示 `uncovered` |
+| 04 文档与 PR 范围 | 进行中 | 入口改指向 CAPABILITY.md；过程文件仍在 PR diff 里。删除或移出 git 需用户授权 |
+| 05 长期维护 | 部分预研 | `CAPABILITY.md`、`SYNC.md`、exports 分类测试。类型收紧和文件拆分仍可后续 |
+| 06 去掉 scoped 注册表 | 未开始 | 计划已写。playground 隔离 demo 要改成 `customComponents` prop |
+| 07 `showTooltips` | 未开始 | 计划已写。可与 08 并行；与 06 无代码依赖 |
+| 08 `debugPerformance` | 代码已落地 | parse(sync) 日志与测试 |
+| 09 公开 API 收口 | 待执行 | 用户点名：1/3/5/6/8 + 观察面板回归。2 用户自删 renderWindow |
+
+未跟踪：`HANDOFF-PLAYGROUND-BUGS.md`、`diagnostics/`。不要 `git add`。
 
 ## 已有事实与边界
 

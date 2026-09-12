@@ -1,19 +1,13 @@
-import { NodeRenderer, setCustomComponents } from 'markstream-solid'
-import { ThinkingNode } from '../components/ThinkingNode'
+import { NodeRenderer } from 'markstream-solid'
 import { PLAYGROUND_CUSTOM_HTML_TAGS } from '../shared/markstreamPlayground'
-
-const SCOPE = 'solid-usage-thinking'
-
-export function registerSolidThinkingExample() {
-  setCustomComponents(SCOPE, { thinking: ThinkingNode })
-}
+import { PLAYGROUND_CUSTOM_COMPONENTS } from '../shared/playgroundComponents'
 
 export function SolidCustomComponentsUsage(props: { content: string, isDark?: boolean }) {
   return (
     <NodeRenderer
       content={props.content}
       isDark={props.isDark}
-      customId={SCOPE}
+      customComponents={PLAYGROUND_CUSTOM_COMPONENTS}
       customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
       final
     />

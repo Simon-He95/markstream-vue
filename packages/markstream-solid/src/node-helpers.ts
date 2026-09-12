@@ -53,12 +53,10 @@ export interface NodeRendererProps {
   final?: boolean
   parseOptions?: ParseOptions
   customMarkdownIt?: (md: MarkdownIt) => MarkdownIt
-  /** Compatibility no-op: the main Solid renderer does not attach a performance monitor. */
+  /** When true, NodeRenderer logs `[markstream-solid][perf] parse(sync)` for each parse. Not a virtualization monitor. */
   debugPerformance?: boolean
   customHtmlTags?: readonly string[]
   htmlPolicy?: HtmlPolicy
-  /** Compatibility no-op: render-window virtualization is exported as a tool, not used by NodeRenderer. */
-  viewportPriority?: boolean
   codeBlockStream?: boolean
   codeBlockDarkTheme?: CodeBlockTheme
   codeBlockLightTheme?: CodeBlockTheme
@@ -84,11 +82,7 @@ export interface NodeRendererProps {
   renderBatchDelay?: number
   renderBatchBudgetMs?: number
   renderBatchIdleTimeoutMs?: number
-  /** Compatibility no-op: nodes are not deferred with IntersectionObserver. */
-  deferNodesUntilVisible?: boolean
   maxLiveNodes?: number
-  /** Compatibility no-op: virtualization window is not used by the main renderer. */
-  liveNodeBuffer?: number
   allowHtml?: boolean
   smoothStreaming?: boolean | 'auto'
   /** Options are read when the renderer mounts; the core controller does not hot-swap them. */
@@ -175,7 +169,10 @@ export function buildRenderContext(
     parseOptions: props.parseOptions,
     customMarkdownIt: props.customMarkdownIt,
     codeBlockOptions: props.codeBlockOptions,
-    codeBlockProps: props.codeBlockProps,
+    codeBlockProps: {
+      ...(typeof props.showTooltips === 'boolean' ? { showTooltips: props.showTooltips } : {}),
+      ...(props.codeBlockProps || {}),
+    },
     mermaidProps: props.mermaidProps,
     d2Props: props.d2Props,
     infographicProps: props.infographicProps,

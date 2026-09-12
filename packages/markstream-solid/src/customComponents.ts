@@ -22,7 +22,7 @@ export type MarkstreamSolidComponent = Component<MarkstreamSolidNodeProps>
 export type CustomComponentMap = Record<string, Component<any>>
 
 const globalKey = '__global__'
-const storeKey = '__MARKSTREAM_SOLID_CUSTOM_COMPONENTS_STORE__'
+const storeKey = '__MARKSTREAM_SOLID_CUSTOM_COMPONENTS_STORE_V3__'
 
 interface Store {
   scopedComponents: Record<string, CustomComponentMap>
@@ -59,14 +59,19 @@ export const getCustomComponentsRevision = () => store.revision
 export function setCustomComponents(id: string, mapping: CustomComponentMap): void
 export function setCustomComponents(mapping: CustomComponentMap): void
 export function setCustomComponents(idOrMapping: string | CustomComponentMap, mapping?: CustomComponentMap) {
-  store.scopedComponents[typeof idOrMapping === 'string' ? idOrMapping : globalKey]
-    = { ...(typeof idOrMapping === 'string' ? mapping : idOrMapping) }
+  if (typeof idOrMapping === 'string')
+    store.scopedComponents[idOrMapping] = { ...(mapping || {}) }
+  else
+    store.scopedComponents[globalKey] = { ...idOrMapping }
   notify()
 }
 
 export function getCustomNodeComponents(customId?: string): CustomComponentMap {
   const global = store.scopedComponents[globalKey] || {}
-  return customId ? { ...global, ...(store.scopedComponents[customId] || {}) } : global
+  if (!customId)
+    return global
+  const scoped = store.scopedComponents[customId] || {}
+  return { ...global, ...scoped }
 }
 
 export function removeCustomComponents(id: string) {

@@ -4,7 +4,7 @@
 
 开始于 2026-09-10。基线 React 18 `playground-react18/` at git `1f51247e`，自动滚动行为来自 `f808226c`。
 
-历史 `packages/markstream-solid/PORTING_STATUS.md` / `VERIFICATION.md` 中 `markstream-solid-playground` 构建、浏览器、hydration “通过”行在当前 git 中没有对应源码，已标为 **historical / unreproducible**。本台账才是 playground 迁移的记录。
+下面的“已验证”是 2026-09-10 迁移台账状态，不是当前 CI 证明。当前重跑入口见 [`CAPABILITY.md`](../packages/markstream-solid/CAPABILITY.md)。包内更早的 playground “通过”行（写于 git `1f51247e`、当时还没有 `playground-solid/` 源码）仍是 **historical / unreproducible**。
 
 ## 页面 / 按钮 / 设置 / 样例
 
@@ -26,12 +26,12 @@
 | 平滑 / typewriter / fade；传输完成 ≠ 显示追平 | demo `smooth` | renderer `smoothStreaming` | 已验证 |
 | `useSmoothMarkdownStream` enqueue/pause/resume/finish/flush/reset | `ControllerDemo.tsx` | 外部 controller，renderer 关闭重复平滑 | 已验证 |
 | 代码块普通追加保留 DOM shell | demo `code-identity` + 单测 | CodeBlockNode 身份 | 已验证 |
-| 两个 renderer + ThinkingNode 隔离，卸载清理 | `ScopedRenderersDemo.tsx` | `removeCustomComponents` onCleanup | 已验证 |
+| 两个 renderer + ThinkingNode 隔离，卸载清理 | `ScopedRenderersDemo.tsx` | 左右栏 `customComponents` prop | 已验证 |
 | Mermaid / D2 / Infographic / KaTeX | demo `diagrams` | App worker owner | 已验证 |
 | 批量渲染（非虚拟列表） | demo `batch` | NodeRenderer `batchRendering` | 已验证 |
 | 观察面板 | `ObservationPanel.tsx` | resourceTracker 计数 | 已验证 |
 | SSR/hydration fixture | `src/hydration/*` + `hydration:generate` | `generateHydrationScript` + 同组件 hydrate | 已验证 |
-| 缺 peer 降级 | `fixtures/missing-peer/render.mjs` + `test/missing-peer.test.tsx` | disableKatex/disableMermaid | 已验证 |
+| 缺 peer 降级 | `fixtures/missing-peer/render.mjs` + packed smoke | 真实缺 peer 看 `pnpm test:smoke:solid`；in-process `disable*()` 不是缺 peer 证明 | 已实现；以 packed smoke 为准 |
 
 ## React 19
 

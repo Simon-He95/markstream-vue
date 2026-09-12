@@ -1,21 +1,19 @@
 # 将 React Playground 搬到 Solid，并展示本次移植的实际能力
 
-> Historical task brief. Current playground status: [`playground-solid/README.md`](./playground-solid/README.md).
+> Historical task brief written before `playground-solid/` existed. The playground is in git. Current status: [`playground-solid/README.md`](./playground-solid/README.md) and [`packages/markstream-solid/CAPABILITY.md`](./packages/markstream-solid/CAPABILITY.md). Do not re-run this migration from this file. Sentences below that say “plan only”, “no playground in git”, or “workspace is unregistered” are obsolete.
 
-本文件是待执行的目标与验收合同。此次只编写计划，不启动 goal，不实施迁移，不设置默认 token、轮数或时间预算。
+## 目标与当时基线
 
-## 目标与当前基线
+当时的目标是在 `playground-solid/` 交付一个可以独立启动、生产构建和浏览器验证的 Solid playground：保留 React playground 的主要页面、样例和交互，用 Solid 响应式实现，并提供一条可以亲手操作、观察结果的 Solid 特性演示路径。完成意味着页面功能、稳定更新、真实依赖集成和消费方式都有可复现证据，不能以改了品牌、页面能打开或截图正常代替迁移完成。
 
-在 `playground-solid/` 交付一个可以独立启动、生产构建和浏览器验证的 Solid playground：保留 React playground 的主要页面、样例和交互，用 Solid 响应式实现，并提供一条可以亲手操作、观察结果的 Solid 特性演示路径。完成意味着页面功能、稳定更新、真实依赖集成和消费方式都有可复现证据，不能以改了品牌、页面能打开或截图正常代替迁移完成。
+规划基线为当时 `main` 的 `1f51247eb98615a6c9451fbb5e8ad21c0647ca78`（`feat: add Solid renderer package`），连同前一提交 `df1dade0` 的移植约定；保留 `f808226c` 中快速流式输出自动滚动的修复。下文是编写合同时的调查记录，不是当前产品状态。
 
-规划基线为当前 `main` 的 `1f51247eb98615a6c9451fbb5e8ad21c0647ca78`（`feat: add Solid renderer package`），连同前一提交 `df1dade0` 的移植约定；保留 `f808226c` 中快速流式输出自动滚动的修复。开始实施时记录 HEAD 和工作区差异，后续新增提交不自动改变本计划的行为基线。
-
-本次检查到的事实：
+当时检查到的事实（2026-09-10，HEAD `1f51247e`）：
 
 - `playground-react18/` 作为页面和交互主基线；`playground-react19/` 复用了前者的 Test Lab、流模拟器、自动滚动、预设及行号检查页，作为补充核对来源，不重复迁移两套应用。
 - `packages/markstream-solid/` 已有 renderer、流式 controller、自定义组件、代码块、KaTeX、Mermaid、D2、Infographic、HTML 工具、CSS 和 Worker 导出。能力边界仍遵循 [SOLID_PORTING.md](./SOLID_PORTING.md)：以 Svelte 实际行为为包基线，React 提供页面及共同能力参考。
-- 当前版本没有被 Git 跟踪的 `playground-solid/`，`pnpm-workspace.yaml` 也没有登记该目录。Solid 的 `PORTING_STATUS.md` 和 `VERIFICATION.md` 却记录了 `markstream-solid-playground` 构建、浏览器及 hydration 通过。这些历史记录不能充当本次完成证据，须补齐可复现源码、脚本和新运行结果，并澄清记录对应版本。
-- Solid 台账仍有部分实现和待验证项目；`render-window` 工具存在，但主渲染器未接入虚拟化。不能宣称完整 React parity、虚拟化已可用或性能优于 React。
+- **当时** git 没有跟踪 `playground-solid/`，workspace 也未登记。包内 `PORTING_STATUS.md` / `VERIFICATION.md` 却记录了 playground 构建、浏览器及 hydration 通过。那些行不能充当当时的完成证据。
+- `render-window` 工具存在，但主渲染器未接入虚拟化。不能宣称完整 React parity、虚拟化已可用或性能优于 React。该限制仍然成立，见 CAPABILITY.md。
 
 ## 方法与执行合同
 

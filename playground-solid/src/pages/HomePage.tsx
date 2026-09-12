@@ -9,6 +9,7 @@ import { ObservationPanel } from '../demos/ObservationPanel'
 import { ScopedRenderersDemo } from '../demos/ScopedRenderersDemo'
 import { getSolidDemo, SOLID_DEMOS } from '../shared/demoSamples'
 import { PLAYGROUND_CUSTOM_HTML_TAGS, PLAYGROUND_CUSTOM_ID } from '../shared/markstreamPlayground'
+import { PLAYGROUND_CUSTOM_COMPONENTS } from '../shared/playgroundComponents'
 import { formatThemeName, THEMES } from '../shared/settings'
 import { CUSTOM_STREAM_PRESET_ID, findMatchingStreamPreset, getStreamPreset, STREAM_PRESETS } from '../shared/streamPresets'
 import { useChatAutoScroll } from '../shared/useChatAutoScroll'
@@ -435,11 +436,9 @@ export function HomePage(props: HomePageProps) {
                   themes={[props.selectedTheme, props.selectedTheme] as any}
                   isDark={props.isDark}
                   customId={PLAYGROUND_CUSTOM_ID}
+                  customComponents={PLAYGROUND_CUSTOM_COMPONENTS}
                   customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
-                  deferNodesUntilVisible={false}
                   maxLiveNodes={2000}
-                  liveNodeBuffer={200}
-                  viewportPriority={false}
                   smoothStreaming={smoothEnabled()}
                   typewriter={smoothEnabled()}
                   fade={smoothEnabled()}

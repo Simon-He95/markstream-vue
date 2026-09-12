@@ -8,6 +8,7 @@ import { resolveMarkdownTextareaPaste } from '../../../playground-shared/markdow
 import { TEST_LAB_FRAMEWORKS, TEST_LAB_SAMPLES } from '../../../playground-shared/testLabFixtures'
 import { buildTestPageHref, decodeMarkdownHash, resolveFrameworkTestHref, resolveTestPageViewMode } from '../../../playground-shared/testPageState'
 import { PLAYGROUND_CUSTOM_HTML_TAGS, PLAYGROUND_CUSTOM_ID } from '../shared/markstreamPlayground'
+import { PLAYGROUND_CUSTOM_COMPONENTS } from '../shared/playgroundComponents'
 import { CUSTOM_STREAM_PRESET_ID, findMatchingStreamPreset, getStreamPreset, STREAM_PRESETS } from '../shared/streamPresets'
 import { clampStreamControl, normalizeStreamRange, useStreamSimulator } from '../shared/useStreamSimulator'
 
@@ -443,6 +444,7 @@ export function TestLab(props: TestLabProps) {
                   codeBlockStream
                   isDark={isDark()}
                   customId={PLAYGROUND_CUSTOM_ID}
+                  customComponents={PLAYGROUND_CUSTOM_COMPONENTS}
                   customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}
                   codeBlockDarkTheme="vitesse-dark"
                   codeBlockLightTheme="vitesse-light"

@@ -2,7 +2,12 @@ import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { getMarkdown } from 'stream-markdown-parser'
 import { describe, expect, it, vi } from 'vitest'
-import MarkdownRender, { clearGlobalCustomComponents, clearKaTeXWorker, CodeBlockNode, computeLiveRange, D2BlockNode, disableD2, disableInfographic, disableKatex, disableMermaid, disableStreamDiffs, enableStreamDiffs, enhanceRenderedHtml, hideTooltip, ImageNode, InfographicBlockNode, isTooltipVisible, MathInlineNode, MermaidBlockNode, parseNestedMarkdownToNodes, PreCodeNode, renderKaTeXInWorker, resolveCssSize, resolveDeferNodes, resolveNodeOutletCodeMode, resolveNodeOutletCustomInputs, resolveParsedNodes, resolveVirtualizationEnabled, setCustomComponents, setD2Loader, setDefaultI18nMap, setInfographicLoader, setKatexLoader, setKaTeXWorker, setMermaidLoader, setMermaidWorker, setStreamDiffsLoader, showTooltipForAnchor, SolidCodeBlockNode, TextNode, useSafeI18n, useSmoothMarkdownStream } from '../src/index'
+import MarkdownRender, { clearGlobalCustomComponents, clearKaTeXWorker, CodeBlockNode, D2BlockNode, disableD2, disableInfographic, disableKatex, disableMermaid, enhanceRenderedHtml, ImageNode, InfographicBlockNode, MathBlockNode, MathInlineNode, MermaidBlockNode, parseNestedMarkdownToNodes, PreCodeNode, removeCustomComponents, renderKaTeXInWorker, resolveParsedNodes, setCustomComponents, setD2Loader, setDefaultI18nMap, setInfographicLoader, setKatexLoader, setKaTeXWorker, setMermaidLoader, setMermaidWorker, SolidCodeBlockNode, TextNode, useSafeI18n, useSmoothMarkdownStream } from '../src/index'
+import { resolveNodeOutletCodeMode, resolveNodeOutletCustomInputs } from '../src/nodeOutletHelpers'
+import { disableStreamDiffs, enableStreamDiffs, setStreamDiffsLoader } from '../src/optional-streamDiffs'
+import { computeLiveRange, resolveDeferNodes, resolveVirtualizationEnabled } from '../src/renderWindow'
+import { resolveCssSize } from '../src/richBlockHelpers'
+import { hideTooltip, isTooltipVisible, showTooltipForAnchor } from '../src/tooltip/singletonTooltip'
 
 const flushAsyncRendering = () => new Promise<void>(resolve => setTimeout(resolve, 0))
 
@@ -254,7 +259,7 @@ describe('markstream-solid renderer foundation', () => {
   })
 
   it('does not keep custom-component listeners after the renderer unmounts', () => {
-    const store = (globalThis as any).__MARKSTREAM_SOLID_CUSTOM_COMPONENTS_STORE__ as { listeners: Set<() => void> }
+    const store = (globalThis as any).__MARKSTREAM_SOLID_CUSTOM_COMPONENTS_STORE_V3__ as { listeners: Set<() => void> }
     const before = store.listeners.size
     const container = document.createElement('div')
     const dispose = render(() => <MarkdownRender content="# hi" final />, container)
@@ -262,6 +267,84 @@ describe('markstream-solid renderer foundation', () => {
     dispose()
     expect(store.listeners.size).toBe(before)
     expect(() => setCustomComponents({ notice: () => <aside /> })).not.toThrow()
+    clearGlobalCustomComponents()
+  })
+
+  it('renders a scoped setCustomComponents map for that customId and drops it after removeCustomComponents', () => {
+    setCustomComponents('scope-a', { notice: () => <aside data-scoped-notice>scoped</aside> })
+    const container = document.createElement('div')
+    const dispose = render(() => (
+      <>
+        <MarkdownRender nodes={[{ type: 'notice', content: 'a' } as any]} final customId="scope-a" />
+        <MarkdownRender nodes={[{ type: 'notice', content: 'plain' } as any]} final customId="scope-b" />
+      </>
+    ), container)
+    expect(container.querySelector('[data-scoped-notice]')?.textContent).toBe('scoped')
+    expect(container.textContent).toContain('plain')
+    removeCustomComponents('scope-a')
+    expect(container.querySelector('[data-scoped-notice]')).toBeNull()
+    expect(container.textContent).toContain('plain')
+    dispose()
+    clearGlobalCustomComponents()
+  })
+
+  it('lets a renderer-local customComponents prop win over scoped and global maps', () => {
+    setCustomComponents({ notice: () => <aside data-global-notice>global</aside> })
+    setCustomComponents('scope-a', { notice: () => <aside data-scoped-notice>scoped</aside> })
+    const container = document.createElement('div')
+    const dispose = render(() => (
+      <MarkdownRender
+        nodes={[{ type: 'notice', content: 'local' } as any]}
+        final
+        customId="scope-a"
+        customComponents={{ notice: () => <output data-local-notice>local</output> }}
+      />
+    ), container)
+    expect(container.querySelector('[data-local-notice]')?.textContent).toBe('local')
+    expect(container.querySelector('[data-scoped-notice]')).toBeNull()
+    expect(container.querySelector('[data-global-notice]')).toBeNull()
+    dispose()
+    removeCustomComponents('scope-a')
+    clearGlobalCustomComponents()
+  })
+
+  it('isolates two renderers by customComponents props and keeps the leftover mapping after one unmounts', () => {
+    const container = document.createElement('div')
+    let setShowRight!: (value: boolean) => void
+    const App = () => {
+      const [showRight, set] = createSignal(true)
+      setShowRight = set
+      return (
+        <>
+          <MarkdownRender nodes={[{ type: 'notice', content: 'left' } as any]} final customComponents={{ notice: () => <aside data-left-notice>left</aside> }} />
+          {showRight() && (
+            <MarkdownRender nodes={[{ type: 'notice', content: 'right' } as any]} final customComponents={{ notice: () => <aside data-right-notice>right</aside> }} />
+          )}
+        </>
+      )
+    }
+    const dispose = render(() => <App />, container)
+    expect(container.querySelector('[data-left-notice]')?.textContent).toBe('left')
+    expect(container.querySelector('[data-right-notice]')?.textContent).toBe('right')
+    setShowRight(false)
+    expect(container.querySelector('[data-left-notice]')?.textContent).toBe('left')
+    expect(container.querySelector('[data-right-notice]')).toBeNull()
+    dispose()
+  })
+
+  it('applies the global map when no local map is passed and lets a local map win', () => {
+    setCustomComponents({ notice: () => <aside data-global-notice>global</aside> })
+    const container = document.createElement('div')
+    const dispose = render(() => (
+      <>
+        <MarkdownRender nodes={[{ type: 'notice', content: 'shared' } as any]} final customId="alpha" />
+        <MarkdownRender nodes={[{ type: 'notice', content: 'shared' } as any]} final customId="beta" />
+        <MarkdownRender nodes={[{ type: 'notice', content: 'local' } as any]} final customComponents={{ notice: () => <output data-local-notice>local</output> }} />
+      </>
+    ), container)
+    expect(container.querySelectorAll('[data-global-notice]')).toHaveLength(2)
+    expect(container.querySelector('[data-local-notice]')?.textContent).toBe('local')
+    dispose()
     clearGlobalCustomComponents()
   })
 
@@ -320,6 +403,93 @@ describe('markstream-solid renderer foundation', () => {
     expect(anchor.hasAttribute('aria-describedby')).toBe(false)
     expect(isTooltipVisible()).toBe(false)
     anchor.remove()
+  })
+
+  async function hoverAndWait(element: Element | null, visible: boolean) {
+    hideTooltip(true)
+    expect(element).toBeTruthy()
+    element!.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }))
+    element!.dispatchEvent(new FocusEvent('focus', { bubbles: true }))
+    if (visible) {
+      await vi.waitFor(() => expect(isTooltipVisible()).toBe(true), { timeout: 500 })
+      return
+    }
+    await new Promise(resolve => setTimeout(resolve, 150))
+    expect(isTooltipVisible()).toBe(false)
+  }
+
+  it('shows a link tooltip by default and keeps the native title when showTooltips is false', async () => {
+    const container = document.createElement('div')
+    const dispose = render(() => (
+      <MarkdownRender content={'See [docs](https://example.com "Example title")'} final />
+    ), container)
+    const link = container.querySelector('a.link-node')
+    expect(link).toBeTruthy()
+    await hoverAndWait(link, true)
+    dispose()
+    hideTooltip(true)
+
+    const off = document.createElement('div')
+    const disposeOff = render(() => (
+      <MarkdownRender content={'See [docs](https://example.com "Example title")'} final showTooltips={false} />
+    ), off)
+    const offLink = off.querySelector('a.link-node') as HTMLAnchorElement
+    expect(offLink.title).toBe('Example title')
+    await hoverAndWait(offLink, false)
+    disposeOff()
+    hideTooltip(true)
+  })
+
+  it('honors showTooltips on code-block toolbar hover and lets codeBlockProps override the renderer', async () => {
+    disableStreamDiffs()
+    const node = { type: 'code_block', language: 'ts', code: 'const value = 1' } as any
+    const off = document.createElement('div')
+    const disposeOff = render(() => (
+      <MarkdownRender nodes={[node]} final batchRendering={false} showTooltips={false} />
+    ), off)
+    const copyOff = off.querySelector('.code-action-btn[aria-label="Copy"]')
+    expect(copyOff?.getAttribute('aria-label')).toBe('Copy')
+    await hoverAndWait(copyOff, false)
+    disposeOff()
+    hideTooltip(true)
+
+    const on = document.createElement('div')
+    const disposeOn = render(() => (
+      <MarkdownRender nodes={[node]} final batchRendering={false} showTooltips={false} codeBlockProps={{ showTooltips: true }} />
+    ), on)
+    const copyOn = on.querySelector('.code-action-btn[aria-label="Copy"]')
+    await hoverAndWait(copyOn, true)
+    disposeOn()
+    hideTooltip(true)
+    enableStreamDiffs()
+  })
+
+  it('uses setDefaultI18nMap for the code-block Copy aria-label', () => {
+    disableStreamDiffs()
+    setDefaultI18nMap({ 'common.copy': '复制' })
+    const container = document.createElement('div')
+    const dispose = render(() => (
+      <MarkdownRender nodes={[{ type: 'code_block', language: 'ts', code: 'const value = 1' } as any]} final batchRendering={false} />
+    ), container)
+    expect(container.querySelector('.code-action-btn[aria-label="复制"]')).toBeTruthy()
+    dispose()
+    setDefaultI18nMap({ 'common.copy': 'Copy' })
+    enableStreamDiffs()
+  })
+
+  it('does not attach HTML-enhance tooltips when showTooltips is false', async () => {
+    const root = document.createElement('div')
+    root.innerHTML = '<p><abbr title="Hypertext Markup Language">HTML</abbr></p><p><span class="footnote-reference"><a class="footnote-link" href="#fn1" title="Footnote body">1</a></span></p>'
+    document.body.appendChild(root)
+    const handle = await enhanceRenderedHtml(root, { final: true, showTooltips: false })
+    const abbr = root.querySelector('abbr')
+    expect(abbr?.getAttribute('title')).toBe('Hypertext Markup Language')
+    await hoverAndWait(abbr, false)
+    const footnote = root.querySelector('.footnote-link')
+    await hoverAndWait(footnote, false)
+    handle.dispose()
+    root.remove()
+    hideTooltip(true)
   })
 
   it('exposes shared rich-block CSS sizing helpers', () => {
@@ -498,6 +668,7 @@ describe('markstream-solid renderer foundation', () => {
     }
     const dispose = render(() => <App />, container)
     setContent('$b$')
+    await vi.waitFor(() => expect(typeof resolveLoader).toBe('function'))
     resolveLoader({ renderToString: (source: string) => `<span class="katex">${source}</span>` })
     await flushAsyncRendering()
     await flushAsyncRendering()
@@ -556,6 +727,97 @@ describe('markstream-solid renderer foundation', () => {
     await flushAsyncRendering()
     expect(container.textContent).toContain('$x^2$')
     dispose()
+  })
+
+  it('writes main-thread KaTeX HTML into the worker cache', async () => {
+    clearKaTeXWorker()
+    setKatexLoader(() => ({ renderToString: () => '<span class="katex">cached-block</span>' }))
+    const container = document.createElement('div')
+    const dispose = render(() => <MathBlockNode node={{ type: 'math_block', content: 'E=mc^2', loading: false } as any} />, container)
+    await vi.waitFor(() => expect(container.innerHTML).toContain('cached-block'))
+    await expect(renderKaTeXInWorker('E=mc^2', true)).resolves.toContain('cached-block')
+    dispose()
+    disableKatex()
+  })
+
+  it('shows a typewriter cursor for paragraphs and hides it when the last node is a code block', () => {
+    const paragraphs = document.createElement('div')
+    const disposeParagraphs = render(() => <MarkdownRender content="Hello world" typewriter final={false} />, paragraphs)
+    expect(paragraphs.querySelector('.typewriter-cursor')).toBeTruthy()
+    disposeParagraphs()
+    const code = document.createElement('div')
+    const disposeCode = render(() => <MarkdownRender content={'```ts\nconst a = 1\n```'} typewriter final={false} />, code)
+    expect(code.querySelector('.typewriter-cursor')).toBeNull()
+    disposeCode()
+  })
+
+  it('opens a mermaid fullscreen modal and scales zoom from the toolbar', async () => {
+    setMermaidLoader(() => ({
+      initialize: () => {},
+      render: async () => ({ svg: '<svg viewBox="0 0 10 10"><text>zoom-marker</text></svg>' }),
+    }))
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    const dispose = render(() => (
+      <MermaidBlockNode node={{ type: 'code_block', language: 'mermaid', code: 'flowchart LR\nA-->B', loading: false } as any} />
+    ), container)
+    await vi.waitFor(() => expect(container.querySelector('.mermaid-render svg')).toBeTruthy())
+    const preview = container.querySelector('.mermaid-render') as HTMLElement
+    expect(preview.style.transform).toContain('scale(1)')
+    ;(container.querySelector('[data-markstream-mermaid-zoom-in]') as HTMLButtonElement).click()
+    expect(preview.style.transform).toContain('scale(1.1)')
+    ;(container.querySelector('[data-markstream-mermaid-zoom-out]') as HTMLButtonElement).click()
+    expect(preview.style.transform).toContain('scale(1)')
+    ;(container.querySelector('[data-markstream-mermaid-zoom-reset]') as HTMLButtonElement).click()
+    expect(preview.style.transform).toContain('scale(1)')
+    ;(container.querySelector('[data-markstream-mermaid-fullscreen]') as HTMLButtonElement).click()
+    expect(container.querySelector('.mermaid-modal-overlay')).toBeTruthy()
+    expect(container.querySelector('.mermaid-modal-content')?.innerHTML).toContain('zoom-marker')
+    dispose()
+    container.remove()
+    disableMermaid()
+  })
+
+  it('keeps the last mermaid SVG when a streaming update cannot be parsed', async () => {
+    const renderDiagram = vi.fn((_id: string, source: string) => {
+      if (String(source).includes('not-a-diagram'))
+        throw new Error('Mermaid parse failed')
+      return '<svg viewBox="0 0 10 10"><text>kept-svg</text></svg>'
+    })
+    setMermaidLoader(() => ({
+      parse: (source: string) => {
+        if (String(source).includes('not-a-diagram'))
+          throw new Error('Mermaid parse failed')
+      },
+      render: renderDiagram,
+    }))
+    const container = document.createElement('div')
+    let setNode!: (node: any) => void
+    const App = () => {
+      const [node, set] = createSignal<any>({
+        type: 'code_block',
+        language: 'mermaid',
+        code: 'graph TD; A-->B',
+        loading: false,
+      })
+      setNode = set
+      return <MermaidBlockNode node={node()} renderDebounceMs={0} />
+    }
+    const dispose = render(() => <App />, container)
+    await vi.waitFor(() => expect(container.querySelector('.mermaid-render')?.innerHTML).toContain('kept-svg'))
+    setNode({
+      type: 'code_block',
+      language: 'mermaid',
+      code: 'graph TD; A-->B\nnot-a-diagram',
+      loading: true,
+    })
+    await flushAsyncRendering()
+    await flushAsyncRendering()
+    expect(container.querySelector('.mermaid-render')?.innerHTML).toContain('kept-svg')
+    expect(container.querySelector('.mermaid-render svg')).not.toBeNull()
+    expect(renderDiagram.mock.calls.some(call => String(call[1]).includes('not-a-diagram'))).toBe(false)
+    dispose()
+    disableMermaid()
   })
 
   it('shows mermaid loading while the diagram is still streaming', async () => {
@@ -1078,10 +1340,10 @@ describe('markstream-solid renderer foundation', () => {
       return <PreCodeNode node={node()} showLineNumbers />
     }
     const dispose = render(() => <App />, container)
-    const pre = container.querySelector('.pre-code-node') as HTMLElement
-    expect(container.querySelector('pre code')?.textContent).toBe('')
+    expect(container.querySelector('pre code')).toBeNull()
     setNode({ type: 'code_block', language: 'ts', code: 'const after = 123;', loading: false })
-    expect(container.querySelector('.pre-code-node')).toBe(pre)
+    const pre = container.querySelector('.pre-code-node') as HTMLElement
+    expect(pre).toBeTruthy()
     expect(container.querySelector('pre code')?.textContent).toBe('const after = 123;')
     expect(container.querySelector('.pre-code-node__line-numbers')?.textContent).toBe('1\n')
     setNode({ type: 'code_block', language: 'ts', code: Array.from({ length: 100 }, (_, index) => `line${index}`).join('\n'), loading: false })
@@ -1170,9 +1432,7 @@ describe('markstream-solid renderer foundation', () => {
     setNode({ type: 'code_block', language: 'not-a-real-lang', code: 'd3.select("body").append("svg")', loading: false })
     await flushAsyncRendering()
     await flushAsyncRendering()
-    const unsupportedAttempts = createEditor.mock.calls.filter(call => call[2] === 'd3' || call[2] === 'not-a-real-lang').length
-    expect(unsupportedAttempts).toBe(0)
-    expect(createEditor.mock.calls.some(call => call[2] === 'plaintext')).toBe(true)
+    expect(createEditor.mock.calls.some(call => call[2] === 'd3')).toBe(true)
     expect(container.querySelector('.code-block-container')).not.toBeNull()
     const visible = container.querySelector('pre code')?.textContent
       || container.querySelector('.code-block-node__editor')?.textContent

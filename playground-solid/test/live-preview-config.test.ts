@@ -20,10 +20,13 @@ describe('playground-solid live preview config', () => {
     const thinkingSource = readSource('src/components/ThinkingNode.tsx')
 
     expect(homeSource).toContain('customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}')
+    expect(homeSource).toContain('customComponents={PLAYGROUND_CUSTOM_COMPONENTS}')
     expect(testLabSource).toContain('customId={PLAYGROUND_CUSTOM_ID}')
     expect(testLabSource).toContain('customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}')
+    expect(testLabSource).toContain('customComponents={PLAYGROUND_CUSTOM_COMPONENTS}')
     expect(migrationSource).toContain('customId={PLAYGROUND_CUSTOM_ID}')
     expect(migrationSource).toContain('customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}')
+    expect(migrationSource).toContain('customComponents={PLAYGROUND_CUSTOM_COMPONENTS}')
     expect(thinkingSource).toContain('customHtmlTags={PLAYGROUND_CUSTOM_HTML_TAGS}')
     expect(thinkingSource).toContain('props.children')
   })

@@ -127,13 +127,13 @@ export async function renderKaTeXInWorker(content: string, displayMode = true, t
     return Promise.reject(error)
   }
 
-  if (workerInitError)
-    return Promise.reject(workerInitError)
-
   const cacheKey = `${displayMode ? 'd' : 'i'}:${normalizedContent}`
   const cached = cache.get(cacheKey)
   if (cached)
     return cached
+
+  if (workerInitError)
+    return Promise.reject(workerInitError)
 
   const activeWorker = ensureWorker()
   if (!activeWorker)

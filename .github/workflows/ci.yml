@@ -104,6 +104,17 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run test:e2e:virtual-scroll:ci
 
+      - name: Mermaid fit-height e2e (Ubuntu only)
+        # Guards the *rendered* geometry of MermaidBlockNode's `fitPreviewHeight`.
+        # The component's bare unit test runs in jsdom, which has no layout and
+        # never applies the SFC styles, so it only sees the inline height the
+        # block writes — not the box the browser lays out. The preview area's
+        # scoped `min-height: var(--ms-size-diagram-min-height)` (360px) wins over
+        # that inline height, which pins a fitted box back to 360px around a ~77px
+        # diagram (measured), so this is the only check that catches it.
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm run test:e2e:mermaid-fit-height
+
       - name: Code block handoff e2e (Ubuntu only)
         # Guards the pre -> enhanced code-block handoff: asserts the surfaces
         # agree on line metrics, that the fallback never disappears before the

@@ -491,6 +491,16 @@ function scheduleRenderRetry(delayMs = 600) {
 
 const containerHeight = ref<string>(resolveInitialContainerHeight())
 const contentHeight = ref<string>(containerHeight.value)
+// `.mermaid-preview-area` ships `min-height: var(--ms-size-diagram-min-height)`
+// (360px by default) in this component's scoped styles, and CSS `min-height`
+// wins over the inline `height` the block writes. A fitted height is
+// deliberately below that reservation floor, so the token would pin the box back
+// open and the fit would never be visible — the box stays 360px tall around a
+// ~77px diagram. The fitted floor replaces it while the flag is on; without the
+// flag the token is left untouched.
+const previewAreaMinHeight = computed(() => {
+  return props.fitPreviewHeight ? `${MERMAID_FITTED_PREVIEW_MIN_HEIGHT}px` : undefined
+})
 let resizeObserver: ResizeObserver | null = null
 
 // rendering state management
@@ -2550,7 +2560,7 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
         <div
           ref="mermaidContainer"
           class="mermaid-preview-area relative overflow-hidden block transition-[height] ease-out"
-          :style="{ height: containerHeight }"
+          :style="{ height: containerHeight, minHeight: previewAreaMinHeight }"
           v-on="wheelListeners"
           @mousedown="startDrag"
           @mousemove="onDrag"

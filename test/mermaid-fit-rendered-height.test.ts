@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import MermaidBlockNode from '../src/components/MermaidBlockNode/MermaidBlockNode.vue'
+import { MERMAID_FITTED_PREVIEW_MIN_HEIGHT } from '../src/utils/diagramHeight'
 
 const mounted: Array<ReturnType<typeof mount>> = []
 
@@ -114,5 +115,26 @@ describe('mermaid fitted preview height', () => {
     // Without the flag the estimate itself (clamped to the 360px reservation
     // floor) would keep the box at 360px.
     expect(container.style.height).toBe('120px')
+  })
+
+  // jsdom has no layout and never applies the SFC styles, so these two cases only
+  // guard the mechanism: `.mermaid-preview-area` carries
+  // `min-height: var(--ms-size-diagram-min-height)` (360px by default) in scoped
+  // CSS, and CSS `min-height` wins over the inline `height` above. Without the
+  // inline override the browser lays the box out at 360px, not at the fitted
+  // height. The rendered geometry is covered by
+  // scripts/e2e-mermaid-fit-height.mjs, which measures a real browser.
+  it('overrides the CSS reservation floor while fitting', async () => {
+    const wrapper = await mountBlock({ fitPreviewHeight: true })
+    const container = await commitDiagram(wrapper, FLAT_DIAGRAM)
+
+    expect(container.style.minHeight).toBe(`${MERMAID_FITTED_PREVIEW_MIN_HEIGHT}px`)
+  })
+
+  it('leaves the CSS reservation floor alone without the flag', async () => {
+    const wrapper = await mountBlock()
+    const container = await commitDiagram(wrapper, FLAT_DIAGRAM)
+
+    expect(container.style.minHeight).toBe('')
   })
 })

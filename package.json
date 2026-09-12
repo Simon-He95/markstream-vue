@@ -131,6 +131,7 @@
     "test:e2e:virtual-scroll:stress": "node scripts/e2e-virtual-scroll.mjs --mode=stress",
     "test:e2e:virtual-scroll:ci": "pnpm run test:e2e:virtual-scroll",
     "test:e2e:virtual-scroll:ci:stress": "pnpm run test:e2e:virtual-scroll:stress",
+    "test:e2e:mermaid-fit-height": "node scripts/e2e-mermaid-fit-height.mjs",
     "benchmark:streaming-split": "node scripts/benchmark-streaming-split.mjs",
     "benchmark:heavy-restore": "node scripts/benchmark-heavy-restore.mjs",
     "benchmark:parser-perf": "pnpm run build:parser && node --expose-gc scripts/benchmark-parser-performance.mjs --profile=deep",

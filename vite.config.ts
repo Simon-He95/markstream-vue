@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module'
+import { resolve } from 'node:path'
 import process from 'node:process'
 /// <reference types="vitest" />
 
@@ -5,7 +7,7 @@ import Vue from '@vitejs/plugin-vue'
 import { visualizer } from 'rollup-plugin-visualizer'
 import UnpluginClassExtractor from 'unplugin-class-extractor/vite'
 import Components from 'unplugin-vue-components/vite'
-import { defineConfig } from 'vite'
+import { defineConfig, transformWithEsbuild } from 'vite'
 import dts from 'vite-plugin-dts'
 import { configDefaults } from 'vitest/config'
 import { name } from './package.json'
@@ -168,6 +170,35 @@ export default defineConfig(({ mode }) => {
     alias['stream-markdown-parser/*'] = '/packages/markdown-parser/src/*'
     alias['markstream-core'] = '/packages/markstream-core/src/index.ts'
     alias['markstream-core/*'] = '/packages/markstream-core/src/*'
+  }
+
+  // `test/svelte-*.test.ts` mounts the markstream-svelte components, so the test
+  // run needs a Svelte compiler for `.svelte` files. The workspace root does not
+  // depend on Svelte itself, so the compiler and the client runtime are resolved
+  // from the svelte package's own node_modules, and only while testing.
+  if (mode === 'test') {
+    const requireSvelte = createRequire(resolve(process.cwd(), 'packages/markstream-svelte/package.json'))
+    const { compile } = requireSvelte('svelte/compiler')
+    const svelteRuntime = resolve(process.cwd(), 'packages/markstream-svelte/node_modules/svelte/src')
+
+    // A string alias also matches subpaths, so the internal runtime directory is
+    // listed first: `svelte/internal/*` must not resolve to the entry file.
+    alias['svelte/internal'] = `${svelteRuntime}/internal`
+    alias.svelte = `${svelteRuntime}/index-client.js`
+
+    plugins.push({
+      name: 'markstream-svelte-components',
+      enforce: 'pre',
+      async transform(code, id) {
+        if (!id.endsWith('.svelte'))
+          return null
+        const { js } = compile(code, { filename: id, generate: 'client' })
+        // The components are TypeScript; esbuild strips the types the same way
+        // `vitePreprocess` would.
+        const stripped = await transformWithEsbuild(js.code, `${id}.ts`, { loader: 'ts' })
+        return { code: stripped.code, map: null }
+      },
+    })
   }
 
   return {

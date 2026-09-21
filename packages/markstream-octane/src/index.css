@@ -837,6 +837,13 @@
   text-align: center;
 }
 
+/* The pan surface takes the touch gesture instead of letting the page scroller
+   claim it, which would fire pointercancel and stop the drag mid-gesture. */
+:where(.markstream-octane) .mermaid-pan-touch,
+:where(.markstream-octane) .infographic-pan-touch {
+  touch-action: none;
+}
+
 :where(.markstream-octane) .mermaid-preview svg {
   width: 100%;
   height: auto;

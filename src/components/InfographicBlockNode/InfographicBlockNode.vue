@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InfographicBlockNodeProps } from '../../types/component-props'
+import { createPanGesture } from 'markstream-core'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useAttrs, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -193,7 +194,6 @@ const zoom = ref(1)
 const translateX = ref(0)
 const translateY = ref(0)
 const isDragging = ref(false)
-const dragStart = ref({ x: 0, y: 0 })
 
 const renderSignature = computed(() => baseCode.value)
 
@@ -387,78 +387,31 @@ function resetZoom() {
 // is the intended gesture there, and the page behind it is locked anyway.
 const panSurfaceClaimsTouch = computed(() => isModalOpen.value || zoom.value > 1)
 
-// Drag functionality
-//
-// Pointer events cover mouse, pen and touch with one code path, and the move/up
-// listeners live on `window` for the duration of the gesture. Container-bound
-// listeners stopped at the edge of the preview box, so panning to the far side of
-// a wide diagram took several drags. The window listeners are only attached while
-// a drag is in progress, so an idle block keeps no extra handlers.
-let dragPointerId: number | null = null
+// Drag functionality. The gesture lifecycle (window listeners, pointer identity,
+// lost releases) lives in markstream-core so every package pans identically.
+const panGesture = createPanGesture({
+  getTranslate: () => ({ x: translateX.value, y: translateY.value }),
+  setTranslate: (next) => {
+    translateX.value = next.x
+    translateY.value = next.y
+  },
+  canStart: (e) => {
+    // Nothing to pan until the diagram exists. Without this the pending/error
+    // source panel would be claimed by the gesture, and `preventDefault` would
+    // take text selection away from it.
+    if (!hasPreview.value)
+      return false
 
-function startDrag(e: PointerEvent) {
-  // Primary button only, and never a second pointer joining an active gesture.
-  if (e.button !== 0 || dragPointerId != null)
-    return
+    // Touch pans only where the surface claims the gesture. Elsewhere the page
+    // keeps the swipe for scrolling, and panning along with it would shift the
+    // diagram by a few pixels before the browser takes the gesture over.
+    return e.pointerType !== 'touch' || panSurfaceClaimsTouch.value
+  },
+  onActiveChange: active => (isDragging.value = active),
+})
 
-  // Nothing to pan until the diagram exists. Without this the pending/error
-  // source panel would be claimed by the gesture, and `preventDefault` below
-  // would take text selection away from it.
-  if (!hasPreview.value)
-    return
-
-  // Touch pans only where the surface claims the gesture. Elsewhere the page
-  // keeps the swipe for scrolling, and panning along with it would shift the
-  // diagram by a few pixels before the browser takes the gesture over.
-  if (e.pointerType === 'touch' && !panSurfaceClaimsTouch.value)
-    return
-
-  // Suppresses text selection and the compatibility mouse events for the drag.
-  e.preventDefault()
-
-  dragPointerId = e.pointerId
-  isDragging.value = true
-  dragStart.value = {
-    x: e.clientX - translateX.value,
-    y: e.clientY - translateY.value,
-  }
-
-  window.addEventListener('pointermove', onDrag)
-  window.addEventListener('pointerup', stopDrag)
-  window.addEventListener('pointercancel', stopDrag)
-  // Releasing the button outside the window fires no pointerup, and the drag
-  // would otherwise keep following the pointer.
-  window.addEventListener('blur', stopDrag)
-}
-
-function onDrag(e: PointerEvent) {
-  if (dragPointerId == null || e.pointerId !== dragPointerId)
-    return
-
-  // No button (or finger) is down any more: the release happened outside the
-  // window, where no pointerup is delivered.
-  if (e.buttons === 0) {
-    stopDrag()
-    return
-  }
-
-  translateX.value = e.clientX - dragStart.value.x
-  translateY.value = e.clientY - dragStart.value.y
-}
-
-function stopDrag(e?: Event) {
-  // A second finger lifting must not end the gesture that is in progress.
-  const pointerId = (e as PointerEvent | undefined)?.pointerId
-  if (pointerId != null && pointerId !== dragPointerId)
-    return
-
-  dragPointerId = null
-  isDragging.value = false
-  window.removeEventListener('pointermove', onDrag)
-  window.removeEventListener('pointerup', stopDrag)
-  window.removeEventListener('pointercancel', stopDrag)
-  window.removeEventListener('blur', stopDrag)
-}
+const startDrag = panGesture.start
+const stopDrag = panGesture.stop
 
 let infographicInstance: any | null = null
 let renderInFlight = false

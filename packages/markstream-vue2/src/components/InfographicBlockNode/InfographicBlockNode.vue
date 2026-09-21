@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { createPanGesture } from 'markstream-core'
 // import type { InfographicBlockNodeProps } from '../../types/component-props'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
@@ -105,7 +106,6 @@ const zoom = ref(1)
 const translateX = ref(0)
 const translateY = ref(0)
 const isDragging = ref(false)
-const dragStart = ref({ x: 0, y: 0 })
 
 watch(
   estimatedPreviewHeight,
@@ -298,46 +298,39 @@ function resetZoom() {
   translateY.value = 0
 }
 
-// Drag functionality
-function startDrag(e: MouseEvent | TouchEvent) {
-  isDragging.value = true
-  if (e instanceof MouseEvent) {
-    dragStart.value = {
-      x: e.clientX - translateX.value,
-      y: e.clientY - translateY.value,
-    }
-  }
-  else {
-    dragStart.value = {
-      x: e.touches[0].clientX - translateX.value,
-      y: e.touches[0].clientY - translateY.value,
-    }
-  }
-}
+// The chart is scaled to fit the preview box, so at fit zoom nothing is
+// off-screen and panning only shifts it inside the box. Touch therefore keeps
+// scrolling the page at that zoom and only claims the gesture once the chart is
+// zoomed in and actually overflows the box. The fullscreen modal always claims
+// it: panning is the intended gesture there.
+const panSurfaceClaimsTouch = computed(() => isModalOpen.value || zoom.value > 1)
 
-function onDrag(e: MouseEvent | TouchEvent) {
-  if (!isDragging.value)
-    return
+// Drag functionality. The gesture lifecycle (window listeners, pointer identity,
+// lost releases) lives in markstream-core so every package pans identically.
+const panGesture = createPanGesture({
+  getTranslate: () => ({ x: translateX.value, y: translateY.value }),
+  setTranslate: (next) => {
+    translateX.value = next.x
+    translateY.value = next.y
+  },
+  canStart: (e) => {
+    // Nothing to pan until the chart exists, so the pending/error source panel
+    // keeps its own text selection and scrolling.
+    if (!hasPreview.value)
+      return false
 
-  let clientX: number
-  let clientY: number
+    // Touch pans only where the surface claims the gesture. Elsewhere the page
+    // keeps the swipe for scrolling, and panning along with it would shift the
+    // chart by a few pixels before the browser takes the gesture over.
+    return e.pointerType !== 'touch' || panSurfaceClaimsTouch.value
+  },
+  onActiveChange: active => (isDragging.value = active),
+})
 
-  if (e instanceof MouseEvent) {
-    clientX = e.clientX
-    clientY = e.clientY
-  }
-  else {
-    clientX = e.touches[0].clientX
-    clientY = e.touches[0].clientY
-  }
+const startDrag = panGesture.start
+const stopDrag = panGesture.stop
 
-  translateX.value = clientX - dragStart.value.x
-  translateY.value = clientY - dragStart.value.y
-}
-
-function stopDrag() {
-  isDragging.value = false
-}
+onBeforeUnmount(stopDrag)
 
 let infographicInstance: any | null = null
 let renderInFlight = false
@@ -737,15 +730,9 @@ watch(
         </div>
         <div
           class="infographic-preview min-h-[var(--ms-size-diagram-min-height,360px)] relative transition-all duration-100 overflow-hidden block"
-          :class="props.isDark ? 'bg-gray-900' : 'bg-gray-50'"
+          :class="[props.isDark ? 'bg-gray-900' : 'bg-gray-50', { 'infographic-pan-touch': panSurfaceClaimsTouch }]"
           :style="{ height: containerHeight, maxHeight: props.maxHeight ?? undefined }"
-          @mousedown="startDrag"
-          @mousemove="onDrag"
-          @mouseup="stopDrag"
-          @mouseleave="stopDrag"
-          @touchstart.passive="startDrag"
-          @touchmove.passive="onDrag"
-          @touchend.passive="stopDrag"
+          @pointerdown="startDrag"
         >
           <pre
             v-if="!hasPreview && !hasRenderError"
@@ -807,14 +794,8 @@ watch(
               <div
                 ref="modalContent"
                 class="w-full h-full flex items-center justify-center p-4 overflow-hidden"
-                :class="{ 'cursor-grab': !isDragging, 'cursor-grabbing': isDragging }"
-                @mousedown="startDrag"
-                @mousemove="onDrag"
-                @mouseup="stopDrag"
-                @mouseleave="stopDrag"
-                @touchstart.passive="startDrag"
-                @touchmove.passive="onDrag"
-                @touchend.passive="stopDrag"
+                :class="{ 'cursor-grab': !isDragging, 'cursor-grabbing': isDragging, 'infographic-pan-touch': panSurfaceClaimsTouch }"
+                @pointerdown="startDrag"
               />
             </div>
           </div>
@@ -825,6 +806,12 @@ watch(
 </template>
 
 <style scoped>
+/* The pan surface takes the touch gesture instead of letting the page scroller
+   claim it, which would fire pointercancel and stop the drag mid-gesture. */
+.infographic-pan-touch {
+  touch-action: none;
+}
+
 .infographic-action-btn {
   font-family: inherit;
 }

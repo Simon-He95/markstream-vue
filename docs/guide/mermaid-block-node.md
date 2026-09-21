@@ -24,7 +24,7 @@ keywords:
 - Header / control props (all optional, default `true`):
   - `showHeader`, `showModeToggle`, `showCopyButton`, `showExportButton`, `showFullscreenButton`, `showCollapseButton`, `showZoomControls`, `showTooltips`
 - `enableWheelZoom?: boolean` — enable Ctrl/Cmd + wheel zoom in the canvas (default `false`)
-- Panning: drag anywhere in the preview to move the diagram, and keep dragging past the edge of the preview box — the gesture follows the pointer after it leaves the box. Touch pans only once the diagram is zoomed in (at fit zoom the whole diagram is visible, so a swipe keeps scrolling the page); the fullscreen modal always pans on touch.
+- Panning: drag anywhere in the preview to move the diagram, and keep dragging past the edge of the preview box — the gesture follows the pointer after it leaves the box. Touch pans only once the diagram is zoomed in (at fit zoom the whole diagram is visible, so a swipe keeps scrolling the page); the fullscreen modal always pans on touch. This is shared by every framework package (Vue 3, Vue 2, React, Svelte, Angular, Octane) through `createPanGesture` from `markstream-core`.
 - Timeouts (ms): `workerTimeoutMs`, `parseTimeoutMs`, `renderTimeoutMs`, `fullRenderTimeoutMs` (defaults: `1400/1800/2500/4000`)
 - Streaming tuning: `renderDebounceMs`, `contentStableDelayMs`, `previewPollDelayMs`, `previewPollMaxDelayMs`, `previewPollMaxAttempts`
 

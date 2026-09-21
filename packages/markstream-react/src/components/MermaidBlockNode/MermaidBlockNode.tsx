@@ -1,6 +1,8 @@
+import type { PanGesture } from 'markstream-core'
 import type { VisibilityHandle } from '../../context/viewportPriority'
 import type { MermaidBlockEvent, MermaidBlockNodeProps } from '../../types/component-props'
 import clsx from 'clsx'
+import { createPanGesture } from 'markstream-core'
 import React, {
   useCallback,
   useEffect,
@@ -171,7 +173,7 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
   const modeContainerRef = useRef<HTMLDivElement | null>(null)
   const modalContentRef = useRef<HTMLDivElement | null>(null)
   const modalCloneWrapperRef = useRef<HTMLElement | null>(null)
-  const dragStartRef = useRef({ x: 0, y: 0 })
+  const panGestureRef = useRef<PanGesture | null>(null)
   const renderTokenRef = useRef(0)
   const svgCacheRef = useRef<{ light?: CachedSvg, dark?: CachedSvg }>({})
   const lastMermaidBindFunctionsRef = useRef<((element: Element) => unknown) | null>(null)
@@ -185,6 +187,15 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
     translateY: 0,
     containerHeight: containerHeight || '360px',
   })
+
+  // Latest-value mirrors the pan gesture reads at pointerdown, so the instance
+  // above can stay stable for the life of the component.
+  const translateRef = useRef(translate)
+  translateRef.current = translate
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
+  const modalOpenRef = useRef(modalOpen)
+  modalOpenRef.current = modalOpen
 
   const registerViewport = useViewportPriority()
   const streaming = Boolean(props.node?.loading ?? props.loading)
@@ -728,26 +739,39 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
     setZoom(nextZoom)
   }, [translate, zoom])
 
-  const startDrag = useCallback((clientX: number, clientY: number) => {
-    setIsDragging(true)
-    dragStartRef.current = {
-      x: clientX - translate.x,
-      y: clientY - translate.y,
-    }
-  }, [translate.x, translate.y])
+  // The gesture lifecycle (window listeners, pointer identity, lost releases)
+  // lives in markstream-core so every package pans identically. It is created
+  // once and reads the current values through refs, so re-renders during a drag
+  // cannot swap the instance out from under an in-flight gesture.
+  if (!panGestureRef.current) {
+    panGestureRef.current = createPanGesture({
+      getTranslate: () => translateRef.current,
+      setTranslate: next => setTranslate(next),
+      canStart: (event) => {
+        // Nothing to pan until the diagram exists, so the error/source text the
+        // block renders in the preview keeps its own selection.
+        if (!contentRef.current?.querySelector('svg'))
+          return false
 
-  const onDrag = useCallback((clientX: number, clientY: number) => {
-    if (!isDragging)
-      return
-    setTranslate({
-      x: clientX - dragStartRef.current.x,
-      y: clientY - dragStartRef.current.y,
+        // Touch pans only where the surface claims the gesture; elsewhere the
+        // page keeps the swipe for scrolling.
+        return event.pointerType !== 'touch'
+          || modalOpenRef.current
+          || zoomRef.current > 1
+      },
+      onActiveChange: active => setIsDragging(active),
     })
-  }, [isDragging])
+  }
+  const panGesture = panGestureRef.current
 
-  const stopDrag = useCallback(() => {
-    setIsDragging(false)
-  }, [])
+  useEffect(() => () => panGesture.stop(), [panGesture])
+
+  // The diagram is scaled to fit the preview box, so at fit zoom nothing is
+  // off-screen and panning only shifts it inside the box. Touch therefore keeps
+  // scrolling the page at that zoom and only claims the gesture once the diagram
+  // is zoomed in and actually overflows the box. The fullscreen modal always
+  // claims it: panning is the intended gesture there.
+  const panSurfaceClaimsTouch = modalOpen || zoom > 1
 
   const previewContent = (
     <div className="relative">
@@ -807,30 +831,12 @@ export function MermaidBlockNode(rawProps: MermaidBlockNodeProps & MermaidBlockN
           height: containerHeight,
           maxHeight: props.maxHeight ?? undefined,
           minHeight: 'var(--ms-size-diagram-min-height, 360px)',
+          // Claim the swipe only where panning can reveal something: at fit zoom
+          // the whole diagram is visible, so the page keeps scrolling.
+          touchAction: panSurfaceClaimsTouch ? 'none' : undefined,
         }}
         onWheel={handleWheel}
-        onMouseDown={(event) => {
-          if (event.button !== 0)
-            return
-          event.preventDefault()
-          startDrag(event.clientX, event.clientY)
-        }}
-        onMouseMove={event => onDrag(event.clientX, event.clientY)}
-        onMouseUp={stopDrag}
-        onMouseLeave={stopDrag}
-        onTouchStart={(event) => {
-          const touch = event.touches[0]
-          if (!touch)
-            return
-          startDrag(touch.clientX, touch.clientY)
-        }}
-        onTouchMove={(event) => {
-          const touch = event.touches[0]
-          if (!touch)
-            return
-          onDrag(touch.clientX, touch.clientY)
-        }}
-        onTouchEnd={stopDrag}
+        onPointerDown={event => panGesture.start(event.nativeEvent)}
       >
         <div
           ref={wrapperRef}

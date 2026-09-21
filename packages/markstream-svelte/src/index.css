@@ -1141,6 +1141,14 @@ body > div[id^="dmermaid-"] {
   height: auto;
 }
 
+/* The pan surface takes the touch gesture instead of letting the page scroller
+   claim it, which would fire pointercancel and stop the drag mid-gesture. The
+   class is only bound while panning can reveal something (zoomed in, or in the
+   fullscreen modal), so at fit zoom a swipe keeps scrolling the page. */
+.markstream-svelte .markstream-svelte-pan-touch {
+  touch-action: none;
+}
+
 .markstream-svelte .mermaid-source {
   margin: 0;
   padding: var(--ms-inset-panel-body);

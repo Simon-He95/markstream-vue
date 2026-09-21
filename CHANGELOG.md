@@ -1,3 +1,35 @@
+## [2.0.13](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.12...markstream-vue@2.0.13) (2026-09-21)
+
+
+### Bug Fixes
+
+* **e2e:** close the browser on the failure path so the harness exits ([01549a1](https://github.com/Simon-He95/markstream-vue/commit/01549a190c187fc2ed1434e227779cbfd79d9315))
+* **infographic:** keep panning after the pointer leaves the preview box ([6211548](https://github.com/Simon-He95/markstream-vue/commit/6211548c420f5bd2a46a2885b32e9c3646df9d44)), closes [#768](https://github.com/Simon-He95/markstream-vue/issues/768)
+* **mermaid:** apply the fitted preview floor over the CSS reservation ([7502288](https://github.com/Simon-He95/markstream-vue/commit/7502288b067989ecfa8deaf7771885b8cc20113c))
+* **mermaid:** fit the preview box to the rendered diagram ([cf5ccea](https://github.com/Simon-He95/markstream-vue/commit/cf5cceac022a3012d1764eeabaca3fb202c39df3))
+* **mermaid:** keep panning after the pointer leaves the preview box ([9c4a9fb](https://github.com/Simon-He95/markstream-vue/commit/9c4a9fb708e38aa57e3225aa02c04e30416ef0f2)), closes [#768](https://github.com/Simon-He95/markstream-vue/issues/768)
+* **pan:** clip the svelte/angular pan surfaces with overflow: clip so touch swipes keep scrolling the app ([dec789a](https://github.com/Simon-He95/markstream-vue/commit/dec789a66dbb65c8702503d774a19a4b208ac0e7))
+* **playground:** pin the image node box so streamed images stop resizing the page ([28d6905](https://github.com/Simon-He95/markstream-vue/commit/28d690593176d65a75ac4590ba674bea9634db6f)), closes [#766](https://github.com/Simon-He95/markstream-vue/issues/766)
+
+
+### Features
+
+* **pan:** share one pan gesture across every framework package ([6fe4e8f](https://github.com/Simon-He95/markstream-vue/commit/6fe4e8f93a5b50405a577dd9b332afd14efd581d)), closes [#768](https://github.com/Simon-He95/markstream-vue/issues/768)
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.16`
+* `markstream-core@2.0.13`
+* `markstream-vue@2.0.13`
+* `markstream-react@2.0.13`
+* `markstream-octane@2.0.13`
+* `markstream-svelte@2.0.13`
+* `markstream-angular@2.0.13`
+* `markstream-vue2@2.0.13`
+
+
+
 ## [2.0.12](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.11...markstream-vue@2.0.12) (2026-09-11)
 
 

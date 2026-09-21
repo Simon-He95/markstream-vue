@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { mount, tick, unmount } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import InfographicBlockNode from '../packages/markstream-svelte/src/components/InfographicBlockNode.svelte'
@@ -323,3 +325,25 @@ function panSuite(kind: DiagramKind) {
 
 panSuite('mermaid')
 panSuite('infographic')
+
+describe('markstream-svelte pan surfaces stylesheet', () => {
+  it('clips the panned diagram without becoming a scroll container a touch swipe could latch on', () => {
+    // Source-level CSS check, matching the angular suite: the browser probe
+    // showed an overflow:auto pan surface latches touch scrolling onto a box
+    // that cannot scroll (the page stops scrolling at fit zoom). clip clips the
+    // same and is no scroll container at all, so the swipe keeps scrolling the
+    // app; it is also what clips the panned diagram back into the preview area
+    // for the mermaid/infographic bodies, whose child carries the transform.
+    const css = readFileSync(resolve(process.cwd(), 'packages/markstream-svelte/src/index.css'), 'utf8')
+
+    for (const selector of ['.mermaid-preview', '.infographic-render']) {
+      const rule = css.match(new RegExp(`\\.markstream-svelte ${selector.replace('.', '\\.')} \{[^}]*\}`, 'g'))?.join('\n') ?? ''
+      expect(rule, selector).toContain('overflow: clip')
+      expect(rule, selector).not.toContain('overflow: auto')
+    }
+    for (const selector of ['.mermaid-body', '.infographic-block-body']) {
+      const rule = css.match(new RegExp(`\\.markstream-svelte ${selector.replace('.', '\\.')} \{[^}]*\}`, 'g'))?.join('\n') ?? ''
+      expect(rule, selector).toContain('overflow: clip')
+    }
+  })
+})

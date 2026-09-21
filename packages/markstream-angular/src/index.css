@@ -875,9 +875,14 @@ body > div[id^="dmermaid-"] {
   color: #bfdbfe;
 }
 
+/* The pan transform is applied to `.mermaid-preview` itself, and a transformed
+   element paints above the header it overlaps; the body is what clips the panned
+   diagram back into the preview area. clip (not auto/hidden) means it is not a
+   scroll container at all, so a touch swipe keeps scrolling the page. */
 .markstream-angular .mermaid-body {
   position: relative;
   padding: 1rem;
+  overflow: clip;
 }
 
 .markstream-angular .mermaid-preview {
@@ -1536,7 +1541,9 @@ body > div[id^="dmermaid-"] {
   position: relative;
   width: 100%;
   min-height: var(--ms-size-diagram-min-height);
-  overflow: auto;
+  /* clip, not auto — a scrollable pan surface latches touch swipes and stops
+     the page from scrolling at fit zoom; clip is never a scroll container. */
+  overflow: clip;
   display: flex;
   flex-direction: column;
 }
@@ -1552,6 +1559,14 @@ body > div[id^="dmermaid-"] {
   width: auto;
   height: auto;
   margin: auto;
+}
+
+/* The pan transform is applied to .infographic-render itself, so the body is
+   what clips the panned diagram back into the preview area. clip (not the base
+   __body's auto) so it is not a scroll container a swipe could latch on — with
+   maxHeight the auto body has a hidden scroll range that eats the gesture. */
+.markstream-angular .markstream-angular-enhanced-block--infographic .markstream-angular-enhanced-block__body {
+  overflow: clip;
 }
 
 .markstream-angular .infographic-pending-source {

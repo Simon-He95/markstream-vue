@@ -366,3 +366,22 @@ describe('markstream-angular pan surfaces', () => {
     }
   })
 })
+
+describe('markstream-angular pan surfaces stylesheet', () => {
+  it('clips the panned diagram without becoming a scroll container a touch swipe could latch on', () => {
+    // Source-level CSS check, same rationale as the template wiring check above:
+    // the browser probe showed an overflow:auto pan surface latches touch
+    // scrolling onto a box that cannot scroll (the page stops scrolling at fit
+    // zoom), and overflow:hidden still latches once maxHeight gives the body a
+    // hidden scroll range. clip clips the same and is no scroll container at all.
+    const css = readFileSync(resolve(process.cwd(), 'packages/markstream-angular/src/index.css'), 'utf8')
+
+    const mermaidBody = css.match(/\.markstream-angular \.mermaid-body \{[^}]*\}/)?.[0]
+    expect(mermaidBody).toContain('overflow: clip')
+    const infographicRender = css.match(/\.markstream-angular \.infographic-render \{[^}]*\}/)?.[0]
+    expect(infographicRender).toContain('overflow: clip')
+    expect(infographicRender).not.toContain('overflow: auto')
+    const infographicBody = css.match(/\.markstream-angular \.markstream-angular-enhanced-block--infographic \.markstream-angular-enhanced-block__body \{[^}]*\}/)?.[0]
+    expect(infographicBody).toContain('overflow: clip')
+  })
+})

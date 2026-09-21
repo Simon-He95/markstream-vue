@@ -1,7 +1,7 @@
 {
   "name": "markstream-vue",
   "type": "module",
-  "version": "2.0.12",
+  "version": "2.0.13",
   "packageManager": "pnpm@10.34.5",
   "description": "Vue/Nuxt streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, and stream-diffs powered code blocks.",
   "author": "Simon He",
@@ -332,7 +332,7 @@
     }
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.8",
+    "@chenglou/pretext": "^0.0.9",
     "@floating-ui/dom": "^1.8.0",
     "markstream-core": "workspace:*",
     "stream-markdown-parser": "workspace:*"

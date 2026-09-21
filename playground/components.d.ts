@@ -11,6 +11,7 @@ declare module 'vue' {
     Discussion765Message: typeof import('./src/components/Discussion765Message.vue')['default']
     Footer: typeof import('./src/components/Footer.vue')['default']
     LabSelect: typeof import('./src/components/LabSelect.vue')['default']
+    PinnedImageNode: typeof import('./src/components/PinnedImageNode.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     StreamSpeedPanel: typeof import('./src/components/StreamSpeedPanel.vue')['default']

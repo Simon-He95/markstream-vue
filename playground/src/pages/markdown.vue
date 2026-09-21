@@ -11,6 +11,7 @@ import KatexWorker from '../../../src/workers/katexRenderer.worker?worker&inline
 import { setKaTeXWorker } from '../../../src/workers/katexWorkerClient'
 import MermaidWorker from '../../../src/workers/mermaidParser.worker?worker&inline'
 import { setMermaidWorker } from '../../../src/workers/mermaidWorkerClient'
+import PinnedImageNode from '../components/PinnedImageNode.vue'
 import ThinkingNode from '../components/ThinkingNode.vue'
 import { CUSTOM_STREAM_PRESET_ID, findMatchingStreamPreset, getStreamPreset, STREAM_PRESETS } from '../composables/streamPresets'
 import { clampStreamControl, normalizeStreamRange, useStreamSimulator } from '../composables/useStreamSimulator'
@@ -128,7 +129,10 @@ watchEffect(() => {
     streamBurstiness.value = boundedBurstiness
 })
 
-setCustomComponents('playground-demo', { thinking: ThinkingNode })
+// Pin the image node to one fixed box so the placeholder and the rendered image
+// keep the same height (issue #766: the bottom used to jump when the 8rem
+// placeholder was swapped for the image's natural size).
+setCustomComponents('playground-demo', { image: PinnedImageNode, thinking: ThinkingNode })
 const parseOptions = {
   preTransformTokens: (tokens: any[]) => {
     // Example: Log tokens during parsing

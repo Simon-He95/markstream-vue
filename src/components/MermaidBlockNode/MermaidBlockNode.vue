@@ -1292,46 +1292,90 @@ function resetZoom() {
   translateY.value = 0
 }
 
-// Drag functionality
-function startDrag(e: MouseEvent | TouchEvent) {
-  isDragging.value = true
-  if (e instanceof MouseEvent) {
-    dragStart.value = {
-      x: e.clientX - translateX.value,
-      y: e.clientY - translateY.value,
-    }
-  }
-  else {
-    dragStart.value = {
-      x: e.touches[0].clientX - translateX.value,
-      y: e.touches[0].clientY - translateY.value,
-    }
-  }
-}
+// The diagram is scaled to fit the preview box, so at fit zoom nothing is
+// off-screen and panning only shifts it inside the box. Touch therefore keeps
+// scrolling the page at that zoom (a chat is mostly scrolling) and only claims
+// the gesture once the diagram is zoomed in and actually overflows the box.
+// The fullscreen modal always claims it: the surface fills the viewport, panning
+// is the intended gesture there, and the page behind it is locked anyway.
+const panSurfaceClaimsTouch = computed(() => isModalOpen.value || zoom.value > 1)
 
-function onDrag(e: MouseEvent | TouchEvent) {
-  if (!isDragging.value)
+// Drag functionality
+//
+// Pointer events cover mouse, pen and touch with one code path, and the move/up
+// listeners live on `window` for the duration of the gesture. Container-bound
+// listeners stopped at the edge of the preview box, so panning to the far side of
+// a wide diagram took several drags (measured: one edge-to-edge gesture moved the
+// content 248px inside a 504px box). The window listeners are only attached while
+// a drag is in progress, so an idle block keeps no extra handlers.
+let dragPointerId: number | null = null
+
+function startDrag(e: PointerEvent) {
+  // Primary button only, and never a second pointer joining an active gesture.
+  if (e.button !== 0 || dragPointerId != null)
     return
 
-  let clientX: number
-  let clientY: number
+  // Nothing to pan until the diagram exists. Without this the error message the
+  // block renders in the preview would be claimed by the gesture, and
+  // `preventDefault` below would take text selection away from it.
+  if (!hasPreviewSvg())
+    return
 
-  if (e instanceof MouseEvent) {
-    clientX = e.clientX
-    clientY = e.clientY
-  }
-  else {
-    clientX = e.touches[0].clientX
-    clientY = e.touches[0].clientY
+  // Touch pans only where the surface claims the gesture. Elsewhere the page
+  // keeps the swipe for scrolling, and panning along with it would shift the
+  // diagram by a few pixels before the browser takes the gesture over (measured:
+  // 24px of drift before the scroll started).
+  if (e.pointerType === 'touch' && !panSurfaceClaimsTouch.value)
+    return
+
+  // Suppresses text selection and the compatibility mouse events for the drag.
+  e.preventDefault()
+
+  dragPointerId = e.pointerId
+  isDragging.value = true
+  dragStart.value = {
+    x: e.clientX - translateX.value,
+    y: e.clientY - translateY.value,
   }
 
-  translateX.value = clientX - dragStart.value.x
-  translateY.value = clientY - dragStart.value.y
+  window.addEventListener('pointermove', onDrag)
+  window.addEventListener('pointerup', stopDrag)
+  window.addEventListener('pointercancel', stopDrag)
+  // Releasing the button outside the window fires no pointerup, and the drag
+  // would otherwise keep following the pointer.
+  window.addEventListener('blur', stopDrag)
 }
 
-function stopDrag() {
+function onDrag(e: PointerEvent) {
+  if (dragPointerId == null || e.pointerId !== dragPointerId)
+    return
+
+  // No button (or finger) is down any more: the release happened outside the
+  // window, where no pointerup is delivered.
+  if (e.buttons === 0) {
+    stopDrag()
+    return
+  }
+
+  translateX.value = e.clientX - dragStart.value.x
+  translateY.value = e.clientY - dragStart.value.y
+}
+
+function stopDrag(e?: Event) {
+  // A second finger lifting must not end the gesture that is in progress.
+  const pointerId = (e as PointerEvent | undefined)?.pointerId
+  if (pointerId != null && pointerId !== dragPointerId)
+    return
+
+  dragPointerId = null
   isDragging.value = false
+  window.removeEventListener('pointermove', onDrag)
+  window.removeEventListener('pointerup', stopDrag)
+  window.removeEventListener('pointercancel', stopDrag)
+  window.removeEventListener('blur', stopDrag)
 }
+
+onBeforeUnmount(stopDrag)
 
 // Wheel zoom functionality
 function handleWheel(event: WheelEvent) {
@@ -2560,15 +2604,10 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
         <div
           ref="mermaidContainer"
           class="mermaid-preview-area relative overflow-hidden block transition-[height] ease-out"
+          :class="{ 'mermaid-pan-touch': panSurfaceClaimsTouch }"
           :style="{ height: containerHeight, minHeight: previewAreaMinHeight }"
           v-on="wheelListeners"
-          @mousedown="startDrag"
-          @mousemove="onDrag"
-          @mouseup="stopDrag"
-          @mouseleave="stopDrag"
-          @touchstart.passive="startDrag"
-          @touchmove.passive="onDrag"
-          @touchend.passive="stopDrag"
+          @pointerdown="startDrag"
         >
           <div
             data-mermaid-wrapper
@@ -2624,14 +2663,9 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
                   <div
                     ref="modalContent"
                     class="w-full h-full flex items-center justify-center p-4 overflow-hidden"
+                    :class="{ 'mermaid-pan-touch': panSurfaceClaimsTouch }"
                     v-on="wheelListeners"
-                    @mousedown="startDrag"
-                    @mousemove="onDrag"
-                    @mouseup="stopDrag"
-                    @mouseleave="stopDrag"
-                    @touchstart.passive="startDrag"
-                    @touchmove.passive="onDrag"
-                    @touchend.passive="stopDrag"
+                    @pointerdown="startDrag"
                   />
                 </div>
               </div>
@@ -2735,6 +2769,12 @@ const computedButtonStyle = 'mermaid-action-btn p-[var(--ms-action-btn-padding)]
   background: var(--diagram-bg);
   min-height: var(--ms-size-diagram-min-height);
   transition-duration: var(--ms-duration-standard);
+}
+
+/* The pan surface takes the touch gesture instead of letting the page scroller
+   claim it, which would fire pointercancel and stop the drag mid-gesture. */
+.mermaid-pan-touch {
+  touch-action: none;
 }
 
 /* ── Modal overlay ── */

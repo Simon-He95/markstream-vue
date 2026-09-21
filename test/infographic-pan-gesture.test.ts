@@ -1,31 +1,44 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { enableMermaid } from '../src/components/MermaidBlockNode/mermaid'
-import MermaidBlockNode from '../src/components/MermaidBlockNode/MermaidBlockNode.vue'
+import { enableInfographic } from '../src/components/InfographicBlockNode/infographic'
+import InfographicBlockNode from '../src/components/InfographicBlockNode/InfographicBlockNode.vue'
 
 // The gesture is only claimed when there is a diagram to pan, so the tests need a
-// real render. The loader is stubbed rather than mocked per module, matching the
-// playground's deterministic mermaid page: rendering stays off the network and
-// off mermaid's layout engine.
+// real render. The loader is stubbed rather than mocked per module: the stub draws
+// a fixed node into the container, which is what marks the preview as rendered.
 const STUB_SVG
   = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 220" width="100%">'
     + '<rect x="0" y="0" width="1440" height="220" fill="#e5e7eb" /></svg>'
 
+class StubInfographic {
+  container: HTMLElement
+  constructor(options: { container: HTMLElement }) {
+    this.container = options.container
+  }
+
+  on() {}
+
+  destroy() {}
+
+  render() {
+    this.container.innerHTML = STUB_SVG
+    return Promise.resolve()
+  }
+}
+
+class NeverRenderingInfographic extends StubInfographic {
+  render() {
+    return new Promise(() => {})
+  }
+}
+
 function useRenderedDiagram() {
-  enableMermaid(() => ({
-    initialize() {},
-    parse: async () => true,
-    render: async () => ({ svg: STUB_SVG }),
-  }))
+  enableInfographic(() => StubInfographic as any)
 }
 
 function useDiagramThatNeverResolves() {
-  enableMermaid(() => ({
-    initialize() {},
-    parse: async () => true,
-    render: () => new Promise(() => {}),
-  }))
+  enableInfographic(() => NeverRenderingInfographic as any)
 }
 
 // jsdom has no PointerEvent constructor, so build a plain event carrying the
@@ -55,16 +68,17 @@ async function flush() {
   await nextTick()
 }
 
-function mountBlock() {
-  return mount(MermaidBlockNode as any, {
+function mountBlock(extraProps: Record<string, unknown> = {}) {
+  return mount(InfographicBlockNode as any, {
     props: {
       node: {
         type: 'code_block',
-        language: 'mermaid',
-        code: 'graph LR\nA-->B\n',
-        raw: '```mermaid\ngraph LR\nA-->B\n```',
+        language: 'infographic',
+        code: 'infographic list-row-simple\n- one\n- two\n',
+        raw: '```infographic\ninfographic list-row-simple\n- one\n- two\n```',
       },
       loading: false,
+      ...extraProps,
     },
     attachTo: document.body,
   })
@@ -74,10 +88,10 @@ async function waitForDiagram(wrapper: ReturnType<typeof mountBlock>, timeoutMs 
   const startedAt = Date.now()
   while (Date.now() - startedAt < timeoutMs) {
     await flush()
-    if (wrapper.find('div._mermaid svg').exists())
+    if (wrapper.find('div.absolute svg').exists())
       return
   }
-  throw new Error('The stubbed mermaid render never reached the preview.')
+  throw new Error('The stubbed infographic render never reached the preview.')
 }
 
 async function mountPreview() {
@@ -88,13 +102,13 @@ async function mountPreview() {
   ;(wrapper.vm as any).showSource = false
   await waitForDiagram(wrapper)
 
-  const surface = wrapper.get('.mermaid-preview-area').element as HTMLElement
-  const transform = () => (wrapper.get('[data-mermaid-wrapper]').element as HTMLElement).style.transform
+  const surface = wrapper.get('.infographic-preview').element as HTMLElement
+  const transform = () => (wrapper.get('.infographic-preview > div').element as HTMLElement).style.transform
 
   return { wrapper, surface, transform }
 }
 
-describe('mermaid block pan gesture', () => {
+describe('infographic block pan gesture', () => {
   it('keeps panning after the pointer leaves the preview box', async () => {
     const { wrapper, surface, transform } = await mountPreview()
 
@@ -170,17 +184,20 @@ describe('mermaid block pan gesture', () => {
     wrapper.unmount()
   })
 
-  it('leaves the surface alone while the diagram is still missing', async () => {
+  it('leaves the pending source panel alone while the diagram is missing', async () => {
     useDiagramThatNeverResolves()
-    const wrapper = mountBlock()
+    // Still streaming: the block keeps showing the pending source panel instead
+    // of settling into its error state.
+    const wrapper = mountBlock({ loading: true })
     ;(wrapper.vm as any).showSource = false
     await flush()
 
-    // No svg yet: the block renders the pending source there, and that text stays
-    // selectable because the gesture is not claimed.
-    const surface = wrapper.get('.mermaid-preview-area').element as HTMLElement
-    const transform = () => (wrapper.get('[data-mermaid-wrapper]').element as HTMLElement).style.transform
-    expect(wrapper.find('div._mermaid svg').exists()).toBe(false)
+    // No diagram yet: the preview area renders the pending source text, which
+    // must keep its own selection/scrolling instead of being claimed by the pan.
+    const surface = wrapper.get('.infographic-preview').element as HTMLElement
+    const transform = () => (wrapper.get('.infographic-preview > div').element as HTMLElement).style.transform
+    expect(wrapper.find('.infographic-pending-source').exists()).toBe(true)
+    expect(wrapper.find('.infographic-preview svg').exists()).toBe(false)
 
     surface.dispatchEvent(pointerEvent('pointerdown', { clientX: 200, clientY: 200 }))
     window.dispatchEvent(pointerEvent('pointermove', { clientX: 40, clientY: 200 }))
@@ -219,11 +236,11 @@ describe('mermaid block pan gesture', () => {
     const { wrapper, surface } = await mountPreview()
 
     // At fit zoom the diagram is fully visible, so a swipe must keep scrolling the page.
-    expect(surface.classList.contains('mermaid-pan-touch')).toBe(false)
+    expect(surface.classList.contains('infographic-pan-touch')).toBe(false)
 
     ;(wrapper.vm as any).zoom = 2
     await nextTick()
-    expect(surface.classList.contains('mermaid-pan-touch')).toBe(true)
+    expect(surface.classList.contains('infographic-pan-touch')).toBe(true)
 
     wrapper.unmount()
   })
@@ -260,10 +277,9 @@ describe('mermaid block pan gesture', () => {
     const { wrapper } = await mountPreview()
 
     ;(wrapper.vm as any).isModalOpen = true
-    await nextTick()
-    await nextTick()
+    await flush()
 
-    const modalSurface = document.querySelector('.mermaid-modal-panel .mermaid-pan-touch')
+    const modalSurface = document.querySelector('.infographic-modal-panel .infographic-pan-touch')
     expect(modalSurface).not.toBeNull()
 
     wrapper.unmount()

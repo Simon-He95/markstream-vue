@@ -54,6 +54,8 @@ data
 
 ![Infographic demo](/screenshots/infographic-demo.png)
 
+Panning works the same way as the Mermaid block: drag anywhere in the preview to move the chart, and keep dragging past the edge of the preview box — the gesture follows the pointer after it leaves the box. Touch pans only once the chart is zoomed in (at fit zoom the whole chart is visible, so a swipe keeps scrolling the page); the fullscreen modal always pans on touch.
+
 ## 3. Resources
 
 - [AntV Infographic Official Website](https://infographic.antv.vision/) - Explore more chart templates and syntax details.

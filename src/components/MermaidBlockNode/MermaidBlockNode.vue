@@ -1315,6 +1315,12 @@ function startDrag(e: PointerEvent) {
   if (e.button !== 0 || dragPointerId != null)
     return
 
+  // Nothing to pan until the diagram exists. Without this the error message the
+  // block renders in the preview would be claimed by the gesture, and
+  // `preventDefault` below would take text selection away from it.
+  if (!hasPreviewSvg())
+    return
+
   // Touch pans only where the surface claims the gesture. Elsewhere the page
   // keeps the swipe for scrolling, and panning along with it would shift the
   // diagram by a few pixels before the browser takes the gesture over (measured:

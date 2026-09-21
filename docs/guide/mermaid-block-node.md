@@ -17,6 +17,7 @@ keywords:
 - `loading?: boolean` — initial loading placeholder
 - `maxHeight?: string | null` — maximum height
 - `estimatedPreviewHeightPx?: number` — first-preview height reserved before Mermaid finishes rendering; `MarkdownRender` fills this automatically for Mermaid fences
+- `fitPreviewHeight?: boolean` — defaults to `false`; once the diagram has resolved and the render is at rest, drop the pre-render reservation and fit the box to the rendered diagram (clamped to a 120px floor and `maxHeight`). Without it, wide/flat diagrams (gantt, sequence, …) keep the reserved height — e.g. 500px reserved around a 77px diagram in a 506px-wide column. Enabling it makes the block shrink once, which reflows the content below it; streaming renders keep the reservation either way.
 - `isStrict?: boolean` — defaults to `true`; runs Mermaid in `securityLevel: 'strict'` with DOMPurify + HTML-label hardening. Set `false` only for trusted diagrams that need Mermaid's loose parse/render config. The rendered SVG is still sanitized before mounting and export.
 - `enableMermaidInteractions?: boolean` — defaults to `false`; enables Mermaid-generated click bindings after sanitized SVG mount. Use only for trusted diagrams.
 - `onRenderError?: (error: unknown, code: string, container: HTMLElement) => boolean | void` — custom error handler called when mermaid rendering fails. Return `true` to prevent the default error display. Receives the error, the raw mermaid source code, and the container DOM element so you can render custom content.

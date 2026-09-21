@@ -1,5 +1,11 @@
 export const MERMAID_PREVIEW_MIN_HEIGHT = 360
 export const MERMAID_PREVIEW_MAX_HEIGHT = 500
+// Floor for the *fitted* preview height (MermaidBlockNode's `fitPreviewHeight`).
+// MERMAID_PREVIEW_MIN_HEIGHT above is a pre-render reservation and also backs
+// --ms-size-diagram-min-height, so reusing it after the diagram has resolved
+// would keep the blank space that fitting exists to remove; a 0 floor would let
+// a one-line diagram collapse into a sliver.
+export const MERMAID_FITTED_PREVIEW_MIN_HEIGHT = 120
 export const INFOGRAPHIC_PREVIEW_MIN_HEIGHT = 360
 export const INFOGRAPHIC_PREVIEW_MAX_HEIGHT = 500
 export const D2_PREVIEW_MIN_HEIGHT = 240
@@ -70,6 +76,19 @@ export function clampPreviewHeight(
 export function clampMermaidPreviewHeight(
   height: number,
   minHeight = MERMAID_PREVIEW_MIN_HEIGHT,
+  maxHeight: number | null = MERMAID_PREVIEW_MAX_HEIGHT,
+) {
+  return clampPreviewHeight(height, minHeight, maxHeight)
+}
+
+/**
+ * Clamps a height measured from the rendered diagram to the fitted range: the
+ * max still caps the preview at what it can occupy, the floor is the fitted
+ * floor rather than the pre-render reservation.
+ */
+export function clampFittedMermaidPreviewHeight(
+  height: number,
+  minHeight = MERMAID_FITTED_PREVIEW_MIN_HEIGHT,
   maxHeight: number | null = MERMAID_PREVIEW_MAX_HEIGHT,
 ) {
   return clampPreviewHeight(height, minHeight, maxHeight)

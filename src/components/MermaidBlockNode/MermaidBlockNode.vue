@@ -6,7 +6,7 @@ import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useOffscreenHeavyNodeDeferral, useViewportPriority, useViewportPriorityOptions } from '../../composables/viewportPriority'
 import mermaidIcon from '../../icon/mermaid.svg?raw'
-import { clampMermaidPreviewHeight, estimateMermaidPreviewHeight, getMermaidDiagramKind, parsePositiveNumber } from '../../utils/diagramHeight'
+import { clampFittedMermaidPreviewHeight, clampMermaidPreviewHeight, estimateMermaidPreviewHeight, getMermaidDiagramKind, MERMAID_FITTED_PREVIEW_MIN_HEIGHT, parsePositiveNumber } from '../../utils/diagramHeight'
 import { resolveLifecycleIndexKey } from '../../utils/lifecycleIndexKey'
 import { escapeSequenceTextSemicolons } from '../../utils/mermaidSequenceSemicolons'
 import { MARKSTREAM_NODE_LIFECYCLE_KEY } from '../../utils/nodeLifecycle'
@@ -43,6 +43,7 @@ const props = withDefaults(
     isStrict: true,
     enableMermaidInteractions: false,
     showTooltips: true,
+    fitPreviewHeight: false,
   },
 )
 
@@ -1098,8 +1099,21 @@ function updateContainerHeight(newContainerWidth?: number, options?: { force?: b
     const maxHeight = resolveMaxContainerHeight()
     const newHeight = effectiveWidth * aspectRatio
     const resolvedHeight = maxHeight == null ? newHeight : Math.min(newHeight, maxHeight)
-    const previewHeight = Math.max(resolvedHeight, resolveEstimatedPreviewHeight())
-    if (!freezePreviewHeight && !hasExternalPreviewHeightEstimate())
+    // The estimate is a reservation: it keeps the block from collapsing while
+    // the diagram is still resolving, and it carries the streaming floor. It is
+    // also what leaves wide/flat diagrams (gantt, sequence, …) inside a box
+    // several times their rendered height — e.g. 500px reserved against a 77px
+    // diagram in a 506px-wide chat column, so ~80% of the block is blank.
+    // With `fitPreviewHeight` the reservation is dropped once the diagram has
+    // resolved and the render is at rest, and the box ends up the size of the
+    // diagram (clamped to the fitted floor). It also covers the host-supplied
+    // estimate, which is the worst case: the host can only guess before the
+    // render, while the block reports its real height through the node
+    // lifecycle once it has one.
+    const previewHeight = props.fitPreviewHeight
+      ? clampFittedMermaidPreviewHeight(resolvedHeight, MERMAID_FITTED_PREVIEW_MIN_HEIGHT, maxHeight)
+      : Math.max(resolvedHeight, resolveEstimatedPreviewHeight())
+    if (!freezePreviewHeight && (props.fitPreviewHeight || !hasExternalPreviewHeightEstimate()))
       containerHeight.value = `${previewHeight}px`
     contentHeight.value = containerHeight.value
   }

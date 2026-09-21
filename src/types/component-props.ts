@@ -186,6 +186,10 @@ export interface MermaidBlockNodeProps {
   // Defaults to false. Set true only for trusted diagrams that need Mermaid-generated click bindings after sanitized SVG mount.
   enableMermaidInteractions?: boolean
   showTooltips?: boolean
+  // Fit the preview box to the rendered diagram once the render is at rest,
+  // instead of holding the pre-render reservation. Opt-in: the block shrinks
+  // once, which reflows the content below it.
+  fitPreviewHeight?: boolean
   // Custom error handler called when mermaid rendering fails.
   // Receives the error, the raw mermaid code, and the container element.
   // Return true to prevent the default error display.

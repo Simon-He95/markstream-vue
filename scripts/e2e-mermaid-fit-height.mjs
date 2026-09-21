@@ -160,9 +160,10 @@ async function run() {
   process.on('SIGTERM', cleanup)
   process.on('exit', cleanup)
 
+  let browser = null
   try {
     await waitForPort(port)
-    const browser = await chromium.launch(resolveChromeLaunchOptions())
+    browser = await chromium.launch(resolveChromeLaunchOptions())
     const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } })
     await page.goto(`http://${host}:${port}/mermaid-fit-height`, { waitUntil: 'load' })
     // Vite's dep optimizer can force a reload right after the first load, which
@@ -205,8 +206,6 @@ async function run() {
         `[markdown-render-default] Expected the CSS token to stay in effect without the flag, got "${measured.reserved?.computedMinHeight}".`,
       )
     }
-
-    await browser.close()
   }
   catch (error) {
     console.error('[e2e-mermaid-fit-height] failed')
@@ -215,6 +214,13 @@ async function run() {
     process.exitCode = 1
   }
   finally {
+    // Closing only on the success path left a live Chromium behind on failure,
+    // and that keeps the event loop alive: the harness never exited and the CI
+    // job hung until its timeout instead of reporting the failure. Same shape as
+    // scripts/e2e-virtual-scroll.mjs.
+    if (browser)
+      await browser.close().catch(() => {})
+
     cleanup()
   }
 }

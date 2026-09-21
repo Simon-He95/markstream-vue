@@ -10,6 +10,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
+import { createPanGesture } from 'markstream-core'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getMermaid } from '../../optional/mermaid'
 import { canParseOffthread, findPrefixOffthread } from '../../workers/mermaidWorkerClient'
@@ -137,6 +138,9 @@ function enqueueMermaidRender<T>(run: () => Promise<T>) {
           [style.minHeight.px]="estimatedPreviewHeightPx"
           [style.height.px]="estimatedPreviewHeightPx"
           [style.transform]="previewTransform"
+          [style.touch-action]="panSurfaceClaimsTouch ? 'none' : null"
+          [style.cursor]="isDragging ? 'grabbing' : 'grab'"
+          (pointerdown)="onPanStart($event)"
         >
           <div #previewHost class="markstream-angular-mermaid" [class.is-empty]="!svgMarkup"></div>
         </div>
@@ -169,6 +173,9 @@ function enqueueMermaidRender<T>(run: () => Promise<T>) {
           <div
             class="mermaid-modal-content"
             [style.transform]="modalTransform"
+            [style.touch-action]="panSurfaceClaimsTouch ? 'none' : null"
+            [style.cursor]="isDragging ? 'grabbing' : 'grab'"
+            (pointerdown)="onPanStart($event)"
             (wheel)="handleModalWheel($event)"
           >
             <div #modalHost class="markstream-angular-mermaid fullscreen"></div>
@@ -195,6 +202,9 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   showSource = false
   modalOpen = false
   zoom = 1
+  translateX = 0
+  translateY = 0
+  isDragging = false
   svgMarkup = ''
   error = ''
 
@@ -203,6 +213,33 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   private renderToken = 0
   private copyTimer: number | null = null
   private lastMermaidBindFunctions: MermaidBindFunctions | null = null
+
+  // Drag functionality. The gesture lifecycle (window listeners, pointer identity,
+  // lost releases) lives in markstream-core so every package pans identically.
+  private readonly panGesture = createPanGesture({
+    getTranslate: () => ({ x: this.translateX, y: this.translateY }),
+    setTranslate: (next) => {
+      this.translateX = next.x
+      this.translateY = next.y
+      this.cdr.markForCheck()
+    },
+    canStart: (event) => {
+      // Nothing to pan until the diagram exists. Without this the error message the
+      // block renders in the preview would be claimed by the gesture, and
+      // `preventDefault` would take text selection away from it.
+      if (!this.hasDiagramSvg())
+        return false
+
+      // Touch pans only where the surface claims the gesture. Elsewhere the page
+      // keeps the swipe for scrolling, and panning along with it would shift the
+      // diagram by a few pixels before the browser takes the gesture over.
+      return event.pointerType !== 'touch' || this.panSurfaceClaimsTouch
+    },
+    onActiveChange: (active) => {
+      this.isDragging = active
+      this.cdr.markForCheck()
+    },
+  })
 
   get mergedProps() {
     return {
@@ -319,12 +356,34 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
     return this.mergedProps.progressiveRender === true
   }
 
+  /**
+   * The diagram is scaled to fit the preview box, so at fit zoom nothing is
+   * off-screen and panning only shifts it inside the box. Touch therefore keeps
+   * scrolling the page at that zoom (a chat is mostly scrolling) and only claims
+   * the gesture once the diagram is zoomed in and actually overflows the box.
+   * The fullscreen modal always claims it: the surface fills the viewport, panning
+   * is the intended gesture there, and the page behind it is locked anyway.
+   */
+  get panSurfaceClaimsTouch() {
+    return this.modalOpen || this.zoom > 1
+  }
+
   get previewTransform() {
-    return `scale(${this.zoom})`
+    return `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoom})`
   }
 
   get modalTransform() {
-    return `scale(${Math.max(1, this.zoom)})`
+    return `translate(${this.translateX}px, ${this.translateY}px) scale(${Math.max(1, this.zoom)})`
+  }
+
+  /**
+   * Whether a pan surface holds a rendered diagram. The modal renders its own
+   * copy of the SVG, so it is checked as well: the source panel may have taken
+   * the inline preview's place while the modal is open.
+   */
+  private hasDiagramSvg() {
+    return !!this.previewHost?.nativeElement?.querySelector('svg')
+      || !!this.modalHost?.nativeElement?.querySelector('svg')
   }
 
   ngAfterViewInit() {
@@ -341,6 +400,7 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   ngOnDestroy() {
     this.destroyed = true
     this.renderToken += 1
+    this.panGesture.stop()
     if (this.copyTimer != null && typeof window !== 'undefined')
       window.clearTimeout(this.copyTimer)
   }
@@ -414,7 +474,13 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
 
   resetZoom() {
     this.zoom = 1
+    this.translateX = 0
+    this.translateY = 0
     this.cdr.markForCheck()
+  }
+
+  onPanStart(event: PointerEvent) {
+    this.panGesture.start(event)
   }
 
   handleModalWheel(event: WheelEvent) {

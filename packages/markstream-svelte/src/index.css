@@ -1099,9 +1099,14 @@ body > div[id^="dmermaid-"] {
   color: var(--code-fg);
 }
 
+/* The pan transform is applied to `.mermaid-preview` itself, and a transformed
+   element paints above the header it overlaps; the body is what clips the panned
+   diagram back into the preview area. clip (not auto/hidden) means it is not a
+   scroll container at all, so a touch swipe keeps scrolling the page. */
 .markstream-svelte .mermaid-body {
   position: relative;
   padding: 0;
+  overflow: clip;
 }
 
 .markstream-svelte .markstream-svelte-zoom-controls {
@@ -1128,7 +1133,11 @@ body > div[id^="dmermaid-"] {
 .markstream-svelte .mermaid-preview {
   width: 100%;
   min-height: var(--ms-size-diagram-min-height);
-  overflow: auto;
+  /* clip, not auto: an overflow:auto pan surface is a "user-scrollable" box,
+     so a touch swipe latches onto it and, when nothing can scroll there, the
+     page does not scroll either. clip is never a scroll container and clips
+     the same (the diagram is scaled to fit). */
+  overflow: clip;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1139,6 +1148,14 @@ body > div[id^="dmermaid-"] {
 .markstream-svelte .mermaid-preview svg {
   width: 100%;
   height: auto;
+}
+
+/* The pan surface takes the touch gesture instead of letting the page scroller
+   claim it, which would fire pointercancel and stop the drag mid-gesture. The
+   class is only bound while panning can reveal something (zoomed in, or in the
+   fullscreen modal), so at fit zoom a swipe keeps scrolling the page. */
+.markstream-svelte .markstream-svelte-pan-touch {
+  touch-action: none;
 }
 
 .markstream-svelte .mermaid-source {
@@ -1401,6 +1418,10 @@ body > div[id^="dmermaid-"] {
 .markstream-svelte .infographic-block-body {
   padding: 0;
   background: var(--diagram-bg);
+  /* The pan transform is applied to .infographic-render itself, so the body is
+     what clips the panned diagram back into the preview area. clip (not the
+     base __body's auto) so it is not a scroll container a swipe could latch on. */
+  overflow: clip;
 }
 
 .markstream-svelte .infographic-source {
@@ -2157,7 +2178,9 @@ body > div[id^="dmermaid-"] {
   position: relative;
   width: 100%;
   min-height: var(--ms-size-diagram-min-height);
-  overflow: auto;
+  /* clip, not auto — same reason as .mermaid-preview: a scrollable pan surface
+     would latch touch swipes and stop the page from scrolling. */
+  overflow: clip;
   text-align: center;
 }
 

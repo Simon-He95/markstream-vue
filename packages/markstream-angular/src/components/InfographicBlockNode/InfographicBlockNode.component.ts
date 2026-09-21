@@ -10,6 +10,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
+import { createPanGesture } from 'markstream-core'
 import { getInfographic } from '../../optional/infographic'
 import { clampPreviewHeight, estimateInfographicPreviewHeight, INFOGRAPHIC_PREVIEW_MIN_HEIGHT, parsePositiveNumber } from '../shared/diagram-height'
 import { getString } from '../shared/node-helpers'
@@ -118,6 +119,10 @@ import {
           #previewHost
           class="infographic-render"
           [style.minHeight]="resolvedContainerMinHeight"
+          [style.transform]="previewTransform"
+          [style.touch-action]="panSurfaceClaimsTouch ? 'none' : null"
+          [style.cursor]="isDragging ? 'grabbing' : 'grab'"
+          (pointerdown)="onPanStart($event)"
         >
           <pre *ngIf="!svgMarkup && !error" class="markstream-angular-enhanced-block__source infographic-pending-source"><code translate="no">{{ code }}</code></pre>
         </div>
@@ -147,7 +152,13 @@ import {
           <button type="button" class="mermaid-modal-close" (click)="closeModal()">Close</button>
         </div>
         <div class="mermaid-modal-body">
-          <div class="mermaid-modal-content" [style.transform]="modalTransform">
+          <div
+            class="mermaid-modal-content"
+            [style.transform]="modalTransform"
+            [style.touch-action]="panSurfaceClaimsTouch ? 'none' : null"
+            [style.cursor]="isDragging ? 'grabbing' : 'grab'"
+            (pointerdown)="onPanStart($event)"
+          >
             <div #modalHost class="fullscreen"></div>
           </div>
         </div>
@@ -172,6 +183,9 @@ export class InfographicBlockNodeComponent implements AfterViewInit, OnChanges, 
   showSource = false
   modalOpen = false
   zoom = 1
+  translateX = 0
+  translateY = 0
+  isDragging = false
   error = ''
   containerMinHeight = ''
   svgMarkup = ''
@@ -182,6 +196,33 @@ export class InfographicBlockNodeComponent implements AfterViewInit, OnChanges, 
   private renderScheduled = false
   private copyTimer: number | null = null
   private infographicInstance: any = null
+
+  // Drag functionality. The gesture lifecycle (window listeners, pointer identity,
+  // lost releases) lives in markstream-core so every package pans identically.
+  private readonly panGesture = createPanGesture({
+    getTranslate: () => ({ x: this.translateX, y: this.translateY }),
+    setTranslate: (next) => {
+      this.translateX = next.x
+      this.translateY = next.y
+      this.cdr.markForCheck()
+    },
+    canStart: (event) => {
+      // Nothing to pan until the diagram exists. Without this the pending/error
+      // source panel would be claimed by the gesture, and `preventDefault` would
+      // take text selection away from it.
+      if (!this.hasDiagramSvg())
+        return false
+
+      // Touch pans only where the surface claims the gesture. Elsewhere the page
+      // keeps the swipe for scrolling, and panning along with it would shift the
+      // diagram by a few pixels before the browser takes the gesture over.
+      return event.pointerType !== 'touch' || this.panSurfaceClaimsTouch
+    },
+    onActiveChange: (active) => {
+      this.isDragging = active
+      this.cdr.markForCheck()
+    },
+  })
 
   get mergedProps() {
     return {
@@ -293,8 +334,34 @@ export class InfographicBlockNodeComponent implements AfterViewInit, OnChanges, 
     return this.mergedProps.progressiveRender === true
   }
 
+  /**
+   * The diagram is scaled to fit the preview box, so at fit zoom nothing is
+   * off-screen and panning only shifts it inside the box. Touch therefore keeps
+   * scrolling the page at that zoom (a chat is mostly scrolling) and only claims
+   * the gesture once the diagram is zoomed in and actually overflows the box.
+   * The fullscreen modal always claims it: the surface fills the viewport, panning
+   * is the intended gesture there, and the page behind it is locked anyway.
+   */
+  get panSurfaceClaimsTouch() {
+    return this.modalOpen || this.zoom > 1
+  }
+
+  get previewTransform() {
+    return `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoom})`
+  }
+
   get modalTransform() {
-    return `scale(${this.zoom})`
+    return `translate(${this.translateX}px, ${this.translateY}px) scale(${this.zoom})`
+  }
+
+  /**
+   * Whether a pan surface holds a rendered diagram. The modal renders its own
+   * copy of the SVG, so it is checked as well: the source panel may have taken
+   * the inline preview's place while the modal is open.
+   */
+  private hasDiagramSvg() {
+    return !!this.previewHost?.nativeElement?.querySelector('svg')
+      || !!this.modalHost?.nativeElement?.querySelector('svg')
   }
 
   ngAfterViewInit() {
@@ -313,6 +380,7 @@ export class InfographicBlockNodeComponent implements AfterViewInit, OnChanges, 
     this.destroyed = true
     this.renderToken += 1
     this.renderScheduled = false
+    this.panGesture.stop()
     if (this.copyTimer != null && typeof window !== 'undefined')
       window.clearTimeout(this.copyTimer)
     this.destroyInfographic()
@@ -390,7 +458,13 @@ export class InfographicBlockNodeComponent implements AfterViewInit, OnChanges, 
 
   resetZoom() {
     this.zoom = 1
+    this.translateX = 0
+    this.translateY = 0
     this.cdr.markForCheck()
+  }
+
+  onPanStart(event: PointerEvent) {
+    this.panGesture.start(event)
   }
 
   private scheduleInfographicRender() {

@@ -4,6 +4,8 @@ import clsx from 'clsx'
 import * as Octane from 'octane'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'octane'
 import { createPortal } from 'octane'
+import { createPanGesture } from 'markstream-core'
+import type { PanGesture } from 'markstream-core'
 import { useViewportPriority } from '../../context/viewportPriority.tsrx'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
@@ -80,8 +82,19 @@ export function InfographicBlockNode(rawProps: InfographicBlockNodeProps & Infog
   const viewportHandleRef = useRef<VisibilityHandle | null>(null)
   const modalContentRef = useRef<HTMLDivElement | null>(null)
   const modalCloneWrapperRef = useRef<HTMLElement | null>(null)
-  const dragStartRef = useRef({ x: 0, y: 0 })
+  const panGestureRef = useRef<PanGesture | null>(null)
   const instanceRef = useRef<any>(null)
+
+  // Latest-value mirrors the pan gesture reads at pointerdown, so the instance
+  // created below can stay stable for the life of the component.
+  const translateRef = useRef(translate)
+  translateRef.current = translate
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
+  const modalOpenRef = useRef(modalOpen)
+  modalOpenRef.current = modalOpen
+  const hasPreviewRef = useRef(hasPreview)
+  hasPreviewRef.current = hasPreview
   const renderGenerationRef = useRef(0)
   const registerViewport = useViewportPriority()
 
@@ -329,32 +342,45 @@ export function InfographicBlockNode(rawProps: InfographicBlockNodeProps & Infog
     URL.revokeObjectURL(url)
   }, [])
 
-  // Drag logic
-  const onMouseDown = (e: MouseEvent | TouchEvent) => {
-    setIsDragging(true)
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY
-    dragStartRef.current = { x: clientX - translate.x, y: clientY - translate.y }
-  }
+  // The gesture lifecycle (window listeners, pointer identity, lost releases)
+  // lives in markstream-core so every package pans identically. It is created
+  // once and reads the current values through refs, so re-renders during a drag
+  // cannot swap the instance out from under an in-flight gesture.
+  if (!panGestureRef.current) {
+    panGestureRef.current = createPanGesture({
+      getTranslate: () => translateRef.current,
+      setTranslate: next => setTranslate(next),
+      canStart: (event) => {
+        // Nothing to pan until the chart exists, so the pending/error source
+        // panel keeps its own text selection and scrolling.
+        if (!hasPreviewRef.current)
+          return false
 
-  const onMouseMove = (e: MouseEvent | TouchEvent) => {
-    if (!isDragging)
-      return
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY
-    setTranslate({
-      x: clientX - dragStartRef.current.x,
-      y: clientY - dragStartRef.current.y,
+        // Touch pans only where the surface claims the gesture; elsewhere the
+        // page keeps the swipe for scrolling.
+        return event.pointerType !== 'touch'
+          || modalOpenRef.current
+          || zoomRef.current > 1
+      },
+      onActiveChange: active => setIsDragging(active),
     })
   }
+  const panGesture = panGestureRef.current
 
-  const stopDrag = () => setIsDragging(false)
+  useEffect(() => () => panGesture.stop(), [panGesture])
 
   const computedButtonClass = props.isDark
     ? 'p-2 text-xs rounded text-gray-400 hover:bg-gray-700 hover:text-gray-200'
     : 'p-2 text-xs rounded text-gray-600 hover:bg-gray-200 hover:text-gray-700'
 
   const isFullscreenDisabled = showSource || isCollapsed
+
+  // The chart is scaled to fit the preview box, so at fit zoom nothing is
+  // off-screen and panning only shifts it inside the box. Touch therefore keeps
+  // scrolling the page at that zoom and only claims the gesture once the chart is
+  // zoomed in and actually overflows the box. The fullscreen modal always claims
+  // it: panning is the intended gesture there.
+  const panSurfaceClaimsTouch = modalOpen || zoom > 1
 
   // JSX Structure mirroring Vue template
   return (
@@ -510,15 +536,9 @@ export function InfographicBlockNode(rawProps: InfographicBlockNodeProps & Infog
                       </div>
                     )}
                     <div
-                      className={clsx('infographic-preview min-h-[360px] relative transition-all duration-100 overflow-hidden block', props.isDark ? 'bg-gray-900' : 'bg-gray-50')}
+                      className={clsx('infographic-preview min-h-[360px] relative transition-all duration-100 overflow-hidden block', props.isDark ? 'bg-gray-900' : 'bg-gray-50', { 'infographic-pan-touch': panSurfaceClaimsTouch })}
                       style={{ height: containerHeight, maxHeight: props.maxHeight ?? undefined }}
-                      onMouseDown={onMouseDown}
-                      onMouseMove={onMouseMove}
-                      onMouseUp={stopDrag}
-                      onMouseLeave={stopDrag}
-                      onTouchStart={onMouseDown}
-                      onTouchMove={onMouseMove}
-                      onTouchEnd={stopDrag}
+                      onPointerDown={event => panGesture.start(event)}
                     >
                       {!hasPreview && !hasRenderError && (
                         <pre className={clsx('absolute inset-0 overflow-auto p-4 text-left text-sm font-mono whitespace-pre-wrap', props.isDark ? 'text-gray-300' : 'text-gray-700')}>{baseCode}</pre>
@@ -554,14 +574,8 @@ export function InfographicBlockNode(rawProps: InfographicBlockNodeProps & Infog
             </div>
             <div
               ref={modalContentRef}
-              className={clsx('w-full h-full flex items-center justify-center p-4 overflow-hidden', !isDragging && 'cursor-grab', isDragging && 'cursor-grabbing')}
-              onMouseDown={onMouseDown}
-              onMouseMove={onMouseMove}
-              onMouseUp={stopDrag}
-              onMouseLeave={stopDrag}
-              onTouchStart={onMouseDown}
-              onTouchMove={onMouseMove}
-              onTouchEnd={stopDrag}
+              className={clsx('w-full h-full flex items-center justify-center p-4 overflow-hidden', !isDragging && 'cursor-grab', isDragging && 'cursor-grabbing', { 'infographic-pan-touch': panSurfaceClaimsTouch })}
+              onPointerDown={event => panGesture.start(event)}
             />
           </div>
         </div>,

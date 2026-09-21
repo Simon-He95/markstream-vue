@@ -54,7 +54,7 @@ data
 
 ![Infographic demo](/screenshots/infographic-demo.png)
 
-平移行为与 Mermaid 块一致：在预览区任意位置拖拽即可移动图表，指针移出预览框后手势仍继续跟随。触摸仅在图表放大后平移（fit 缩放下图表完整可见，滑动仍用于页面滚动）；全屏弹窗中触摸始终平移。
+平移行为与 Mermaid 块一致：在预览区任意位置拖拽即可移动图表，指针移出预览框后手势仍继续跟随。触摸仅在图表放大后平移（fit 缩放下图表完整可见，滑动仍用于页面滚动）；全屏弹窗中触摸始终平移。所有框架包（Vue 3 / Vue 2 / React / Svelte / Angular / Octane）共用 `markstream-core` 的 `createPanGesture` 同一实现。
 
 ## 3. 更多资源
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
+  import { createPanGesture } from 'markstream-core'
   import { onMount, tick, untrack } from 'svelte'
   import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
   import { useSafeI18n } from '../i18n/useSafeI18n'
@@ -77,6 +78,9 @@
   let showSource = $state(false)
   let modalOpen = $state(false)
   let zoom = $state(1)
+  let translateX = $state(0)
+  let translateY = $state(0)
+  let isDragging = $state(false)
   let blockHost: HTMLElement | null = $state(null)
   let previewHost: HTMLElement | null = $state(null)
   let modalHost: HTMLElement | null = $state(null)
@@ -100,10 +104,18 @@
   let previewStyle = $derived([
     `min-height: ${previewHeight}px`,
     maxHeight && maxHeight !== 'none' ? `max-height: ${maxHeight}` : '',
-    `transform: scale(${zoom})`,
+    `transform: translate(${translateX}px, ${translateY}px) scale(${zoom})`,
+    `cursor: ${isDragging ? 'grabbing' : 'grab'}`,
   ].filter(Boolean).join('; '))
   let shouldRender = $derived(!(resolvedLoading && !source.trim()))
   let canUsePreview = $derived(Boolean(svgMarkup && !showSource))
+
+  // The diagram is scaled to fit the preview box, so at fit zoom nothing is
+  // off-screen and panning only shifts it inside the box. Touch therefore keeps
+  // scrolling the page at that zoom (a chat is mostly scrolling) and only claims
+  // the gesture once the diagram is zoomed in and actually overflows the box.
+  // The fullscreen modal always claims it.
+  let panSurfaceClaimsTouch = $derived(modalOpen || zoom > 1)
 
   onMount(() => {
     mounted = true
@@ -113,6 +125,8 @@
       mounted = false
       renderToken += 1
       clearRenderTimer()
+      // A drag in progress must not keep its window listeners after unmount.
+      panGesture.stop()
       if (copyTimer)
         clearTimeout(copyTimer)
     }
@@ -460,6 +474,39 @@
     zoom = Math.max(0.5, Math.round((zoom - 0.1) * 10) / 10)
   }
 
+  function resetZoom() {
+    zoom = 1
+    translateX = 0
+    translateY = 0
+  }
+
+  // Drag functionality. The gesture lifecycle (window listeners, pointer identity,
+  // lost releases) lives in markstream-core so every package pans identically.
+  const panGesture = createPanGesture({
+    getTranslate: () => ({ x: translateX, y: translateY }),
+    setTranslate: (next) => {
+      translateX = next.x
+      translateY = next.y
+    },
+    canStart: (event) => {
+      // Nothing to pan until the diagram exists. Without this the pending/error
+      // source panel the block renders in the preview would be claimed by the
+      // gesture, and `preventDefault` would take text selection away from it.
+      if (!svgMarkup)
+        return false
+
+      // Touch pans only where the surface claims the gesture. Elsewhere the page
+      // keeps the swipe for scrolling, and panning along with it would shift the
+      // diagram by a few pixels before the browser takes the gesture over.
+      return event.pointerType !== 'touch' || panSurfaceClaimsTouch
+    },
+    onActiveChange: active => (isDragging = active),
+  })
+
+  function startDrag(event: PointerEvent) {
+    panGesture.start(event)
+  }
+
   function showButtonTooltip(event: MouseEvent | FocusEvent, text: string, placement: TooltipPlacement = 'top') {
     const target = event.currentTarget as HTMLElement | null
     if (!target || (target instanceof HTMLButtonElement && target.disabled))
@@ -568,10 +615,11 @@
               <button type="button" class="mermaid-btn mermaid-action-btn mermaid-btn--icon" aria-label={t('common.zoomOut')} onblur={() => hideTooltip()} onclick={zoomOut} onfocus={(event) => showButtonTooltip(event, t('common.zoomOut') || 'Zoom out')} onmouseleave={() => hideTooltip()} onmouseenter={(event) => showButtonTooltip(event, t('common.zoomOut') || 'Zoom out')}>
                 <svg aria-hidden="true" role="img" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21l-4.35-4.35M8 11h6"/></g></svg>
               </button>
-              <button type="button" class="mermaid-btn mermaid-action-btn mermaid-zoom-reset" aria-label={t('common.resetZoom')} onblur={() => hideTooltip()} onclick={() => (zoom = 1)} onfocus={(event) => showButtonTooltip(event, t('common.resetZoom') || 'Reset zoom')} onmouseleave={() => hideTooltip()} onmouseenter={(event) => showButtonTooltip(event, t('common.resetZoom') || 'Reset zoom')}>{Math.round(zoom * 100)}%</button>
+              <button type="button" class="mermaid-btn mermaid-action-btn mermaid-zoom-reset" aria-label={t('common.resetZoom')} onblur={() => hideTooltip()} onclick={resetZoom} onfocus={(event) => showButtonTooltip(event, t('common.resetZoom') || 'Reset zoom')} onmouseleave={() => hideTooltip()} onmouseenter={(event) => showButtonTooltip(event, t('common.resetZoom') || 'Reset zoom')}>{Math.round(zoom * 100)}%</button>
             </div>
           {/if}
-          <div bind:this={previewHost} class="mermaid-preview markstream-svelte-mermaid" style={previewStyle}>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div bind:this={previewHost} class="mermaid-preview markstream-svelte-mermaid" class:markstream-svelte-pan-touch={panSurfaceClaimsTouch} style={previewStyle} onpointerdown={startDrag}>
             {#if svgMarkup}
               {@html svgMarkup}
             {:else if renderError}
@@ -598,13 +646,14 @@
               <button type="button" class="mermaid-btn mermaid-action-btn mermaid-btn--icon" aria-label={t('common.zoomOut')} onclick={zoomOut}>
                 <svg aria-hidden="true" role="img" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21l-4.35-4.35M8 11h6"/></g></svg>
               </button>
-              <button type="button" class="mermaid-btn mermaid-action-btn mermaid-zoom-reset" aria-label={t('common.resetZoom')} onclick={() => (zoom = 1)}>{Math.round(zoom * 100)}%</button>
+              <button type="button" class="mermaid-btn mermaid-action-btn mermaid-zoom-reset" aria-label={t('common.resetZoom')} onclick={resetZoom}>{Math.round(zoom * 100)}%</button>
               <button type="button" class="mermaid-btn mermaid-action-btn mermaid-btn--icon" aria-label={t('common.close')} onclick={closeModal}>
                 <svg aria-hidden="true" role="img" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            <div class="mermaid-modal-body">
-              <div bind:this={modalHost} class="mermaid-modal-content markstream-svelte-mermaid" style={`transform: scale(${zoom});`}>{@html svgMarkup}</div>
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="mermaid-modal-body" class:markstream-svelte-pan-touch={panSurfaceClaimsTouch} style={`cursor: ${isDragging ? 'grabbing' : 'grab'}`} onpointerdown={startDrag}>
+              <div bind:this={modalHost} class="mermaid-modal-content markstream-svelte-mermaid" style={`transform: translate(${translateX}px, ${translateY}px) scale(${zoom});`}>{@html svgMarkup}</div>
             </div>
           </div>
         </div>

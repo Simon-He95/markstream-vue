@@ -54,7 +54,7 @@ data
 
 ![Infographic demo](/screenshots/infographic-demo.png)
 
-Panning works the same way as the Mermaid block: drag anywhere in the preview to move the chart, and keep dragging past the edge of the preview box — the gesture follows the pointer after it leaves the box. Touch pans only once the chart is zoomed in (at fit zoom the whole chart is visible, so a swipe keeps scrolling the page); the fullscreen modal always pans on touch.
+Panning works the same way as the Mermaid block: drag anywhere in the preview to move the chart, and keep dragging past the edge of the preview box — the gesture follows the pointer after it leaves the box. Touch pans only once the chart is zoomed in (at fit zoom the whole chart is visible, so a swipe keeps scrolling the page); the fullscreen modal always pans on touch. Every framework package (Vue 3, Vue 2, React, Svelte, Angular, Octane) shares one implementation through `createPanGesture` from `markstream-core`.
 
 ## 3. Resources
 

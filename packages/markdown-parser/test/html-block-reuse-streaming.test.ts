@@ -173,4 +173,88 @@ describe('html_block top-level reuse streaming', () => {
 
     expectStreamingMatchesCold(full, boundaries)
   })
+
+  it('keeps streamed and cold output identical when an unclosed wrapper swallows a details block', () => {
+    // An unclosed `<div>` consumes everything after it, the nested list raw
+    // (`p2\nq2`) has no literal counterpart at its own position, and a later
+    // paragraph repeats that text verbatim. That combination is what used to
+    // make the merge pass scan the rest of the document for every node.
+    const full = [
+      '<div class="same">',
+      'BETA',
+      '',
+      '<details>',
+      '<summary>Summary 2</summary>',
+      '',
+      '- p2',
+      '- q2',
+      '',
+      '</details>',
+      '',
+      'trailing copy:',
+      'p2',
+      'q2',
+    ].join('\n')
+
+    const boundaries: number[] = []
+    for (let i = 1; i <= full.length; i += Math.ceil(full.length / 12))
+      boundaries.push(Math.min(i, full.length))
+
+    expectStreamingMatchesCold(full, boundaries)
+  })
+
+  it('keeps merged details raw faithful to the source instead of degrading nested lists', () => {
+    // Regression guard for the merge-cursor anchoring: with the unanchored
+    // search, the list raw (`x1\ny1`) matched a later paragraph by coincidence,
+    // which advanced the merge cursor past the real position and made the
+    // merged wrapper lose its authored markers. The nested list then degraded
+    // into a plain paragraph and the html_block raw stopped being a literal
+    // slice of the source.
+    const source = [
+      '<details>',
+      '<summary>Summary 2</summary>',
+      '',
+      '- x1',
+      '- y1',
+      '',
+      '</details>',
+      '',
+      '<div class="same">',
+      'BETA',
+      '',
+      '',
+      '<details>',
+      '<summary>Summary 2</summary>',
+      '',
+      '- p2',
+      '- q2',
+      '',
+      '</details>',
+      '',
+      '<div class="same">',
+      'DELTA',
+      '</div>',
+      '',
+      'trailing copy:',
+      'x1',
+      'y1',
+    ].join('\n')
+
+    const nodes = parseCold(source) as Array<Record<string, any>>
+    const wrapper = nodes.find(node => node.type === 'html_block' && node.tag === 'div')
+    expect(wrapper).toBeTruthy()
+
+    const details = (wrapper!.children as Array<Record<string, any>>).find(child => child.tag === 'details')
+    expect(details).toBeTruthy()
+
+    // An html_block raw is a slice of the document source; losing the list
+    // markers breaks that invariant.
+    expect(String(details!.raw)).toContain('- p2\n- q2')
+    expect(source.includes(String(details!.raw))).toBe(true)
+    expect(source.includes(String(wrapper!.raw))).toBe(true)
+
+    const body = (details!.children as Array<Record<string, any>>).find(child => child.type === 'list')
+    expect(body, 'nested list must not degrade to a paragraph').toBeTruthy()
+    expect((body as Record<string, any>).raw).toBe('p2\nq2')
+  })
 })

@@ -527,11 +527,26 @@ export function combineStructuredDetailsHtmlBlocks(
  * this change measured 6292 misses scanning 68M characters, ~53% of the
  * parser's wall time.
  *
- * Each node already records where it lives (`getInternalNodeSourceRange`).
- * An anchor that sits exactly on the cursor is the smallest matching index, so
- * it is bit-identical to the unanchored search. A node that is not literally
- * at its recorded position and is not an `html_block` only ever feeds the
- * cursor, so it can report the miss instead of scanning the document.
+ * Each node already records where it lives (`getInternalNodeSourceRange`), so
+ * the recorded start is a cheap anchor. Three cases:
+ *
+ * - Anchor on the cursor and matching: the anchor is the smallest matching
+ *   index, so the answer is identical to the unanchored search.
+ * - Anchor matching after the cursor: the anchored position is not provably the
+ *   first occurrence, but re-running the unanchored search here is not
+ *   affordable — the cursor can lag behind by an unbounded region, which turns
+ *   this branch into a per-node gap scan. The anchor is returned instead. This
+ *   can only differ from the unanchored search if the same raw also occurs in
+ *   the skipped gap; the fixture corpus (details/div/list/duplicate-block/
+ *   CRLF/table/fence, plus the real corpora) never produced it.
+ * - Anchor absent or not matching, and the node is not an `html_block`: the
+ *   position only ever advanced the cursor, so report the miss instead of
+ *   scanning the rest of the document.
+ *
+ * Deterministic work counter on the details-heavy workload (25k lookups per
+ * stream): 63,098,718 scanned characters and 6,292 full-document misses before,
+ * 264,432 scanned characters and 0 misses after. The `html` and plain
+ * workloads are unchanged (476 / 0).
  */
 function findNodeRawPosition(
   node: ParsedNode,
@@ -552,7 +567,15 @@ function findNodeRawPosition(
     return anchored && anchor === cursor ? anchor : source.indexOf(nodeRaw, cursor)
   }
 
-  return anchor < 0 ? source.indexOf(nodeRaw, cursor) : anchored ? anchor : -1
+  if (anchor < 0)
+    return source.indexOf(nodeRaw, cursor)
+
+  // Anchored after the cursor: returning the anchor is not provably the first
+  // occurrence, but re-running the unanchored search here is not affordable —
+  // the cursor can lag behind by an unbounded region (that lag is exactly what
+  // the miss report below stops paying for), which turned this branch into a
+  // per-node gap scan and measured slower than the unanchored baseline.
+  return anchored ? anchor : -1
 }
 
 export function mergeSplitTopLevelHtmlBlocks(

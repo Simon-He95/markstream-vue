@@ -85,6 +85,46 @@ const fixtures = [
     restartSource: '重启：**[新链接 \\*字\\* 与 `code`](https://example.com/restart)**，以及 $a+b$。\n',
     options: { requireClosingStrong: true },
   },
+  {
+    // An unclosed wrapper swallows a <details> block, the nested list raw has no
+    // literal counterpart at its own position, and a later paragraph repeats
+    // that text verbatim (plus a second <details> block with the same summary).
+    // Before the merge cursor was anchored on node source ranges, this shape made
+    // the HTML merge pass scan the rest of the document for every list node.
+    id: 'html-wrapper-details-duplicate-raw',
+    seed: 63402,
+    source: [
+      '<details>',
+      '<summary>Summary 2</summary>',
+      '',
+      '- x1',
+      '- y1',
+      '',
+      '</details>',
+      '',
+      '<div class="same">',
+      'BETA',
+      '',
+      '',
+      '<details>',
+      '<summary>Summary 2</summary>',
+      '',
+      '- p2',
+      '- q2',
+      '',
+      '</details>',
+      '',
+      '<div class="same">',
+      'DELTA',
+      '</div>',
+      '',
+      'trailing copy:',
+      'x1',
+      'y1',
+    ].join('\n'),
+    restartSource: '<div class="same">\nRESTART\n\n<details>\n<summary>S</summary>\n\n- r1\n- r2\n\n</details>\n',
+    options: {},
+  },
 ]
 
 function readArg(name) {

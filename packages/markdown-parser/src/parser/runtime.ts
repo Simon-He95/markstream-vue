@@ -110,12 +110,20 @@ export function getCachedSourceLineOffsets(runtime: ParserRuntime, source: strin
     return offsets
   }
 
+  const offsets = computeSourceLineOffsets(source)
+  runtime.sourceLineOffsets = { source, offsets }
+  return offsets
+}
+
+/**
+ * Line-start offsets for one source string. Pure, no caching.
+ */
+export function computeSourceLineOffsets(source: string): number[] {
   const offsets = [0]
   for (let i = 0; i < source.length; i++) {
     if (source.charCodeAt(i) === 10)
       offsets.push(i + 1)
   }
-  runtime.sourceLineOffsets = { source, offsets }
   return offsets
 }
 

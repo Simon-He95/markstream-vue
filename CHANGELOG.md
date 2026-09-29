@@ -1,3 +1,29 @@
+## [2.0.14](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.13...markstream-vue@2.0.14) (2026-09-29)
+
+
+### Performance Improvements
+
+* **parser:** anchor the HTML merge pass on node source ranges ([e255e6c](https://github.com/Simon-He95/markstream-vue/commit/e255e6ca206bb06373b048243f1ef2775e4fa93e)), closes [#772](https://github.com/Simon-He95/markstream-vue/pull/772)
+
+
+### Tests
+
+* **parser:** cover the merge-cursor behaviour and document it precisely ([a7b93b7](https://github.com/Simon-He95/markstream-vue/commit/a7b93b71b849888c94a646ba96691a0e48e60c1c))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.17`
+* `markstream-core@2.0.14`
+* `markstream-vue@2.0.14`
+* `markstream-react@2.0.14`
+* `markstream-octane@2.0.14`
+* `markstream-svelte@2.0.14`
+* `markstream-angular@2.0.14`
+* `markstream-vue2@2.0.14`
+
+
+
 ## [2.0.13](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.12...markstream-vue@2.0.13) (2026-09-21)
 
 

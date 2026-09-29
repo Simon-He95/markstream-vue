@@ -15,7 +15,7 @@ import { applyPostTransformNodes, finalizeHtmlBlockLoading } from './nodes/final
 import { getInternalNodeSourceRange, processTokensWithContext } from './nodes/token-to-nodes'
 import { createParseContext, ensureParseContext } from './parse-context'
 import { processTopLevelTokensWithReuse } from './reuse/structured-node-reuse'
-import { getCachedSourceLineOffsets, getParserRuntime } from './runtime'
+import { computeSourceLineOffsets, getCachedSourceLineOffsets, getParserRuntime } from './runtime'
 import { createSourceLineMapper } from './source-line-mapper'
 import { getSafeMarkdown } from './streaming/safe-markdown'
 import {
@@ -168,7 +168,11 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
     // Line-start offsets are a pure function of the source; cache them on the
     // runtime and extend incrementally across streaming appends so the
     // per-commit O(document) newline scan only touches the appended tail.
-    sourceLineOffsets: getCachedSourceLineOffsets(runtime, safeMarkdown),
+    // Fragment parses are not prefixes of the document, so they must not evict
+    // that cache: a fragment gets its own offsets without touching the runtime.
+    sourceLineOffsets: options.isFragment
+      ? computeSourceLineOffsets(safeMarkdown)
+      : getCachedSourceLineOffsets(runtime, safeMarkdown),
     customHtmlBlockCursor: 0,
   }
   let result = processTopLevelTokensWithReuse(runtime, safeMarkdown, transformedTokens, internalOptions, {

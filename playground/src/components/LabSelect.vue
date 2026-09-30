@@ -301,7 +301,7 @@ useEventListener(window, 'scroll', () => {
 }
 
 .lab-select__trigger:hover {
-  border-color: rgba(15, 118, 110, 0.18);
+  border-color: rgba(13, 148, 136, 0.18);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.88),
     0 14px 28px rgba(15, 23, 42, 0.08);
@@ -317,7 +317,7 @@ useEventListener(window, 'scroll', () => {
 }
 
 .lab-select--open .lab-select__trigger {
-  border-color: rgba(15, 118, 110, 0.24);
+  border-color: rgba(13, 148, 136, 0.24);
   box-shadow:
     0 0 0 3px var(--lab-accent-soft),
     0 18px 36px rgba(15, 23, 42, 0.12);
@@ -430,43 +430,47 @@ useEventListener(window, 'scroll', () => {
 .lab-select--top .lab-select-menu-leave-to {
   transform: translateY(-6px);
 }
+</style>
 
-:global(.test-lab--dark) .lab-select__trigger {
+<!-- Dark overrides live outside the scoped block: the ancestor .test-lab--dark
+     sits above this component, and scoped `:global()` selectors get dropped. -->
+<style>
+.test-lab--dark .lab-select__trigger {
   border-color: rgba(148, 163, 184, 0.16);
   background:
-    linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.76));
+    linear-gradient(180deg, rgba(16, 24, 34, 0.94), rgba(13, 20, 28, 0.82));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
     0 12px 28px rgba(2, 6, 23, 0.26);
 }
 
-:global(.test-lab--dark) .lab-select__trigger:hover {
-  border-color: rgba(34, 211, 238, 0.22);
+.test-lab--dark .lab-select__trigger:hover {
+  border-color: rgba(45, 212, 191, 0.3);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
     0 16px 32px rgba(2, 6, 23, 0.3);
 }
 
-:global(.test-lab--dark) .lab-select--open .lab-select__trigger,
-:global(.test-lab--dark) .lab-select__trigger:focus-visible {
-  border-color: rgba(34, 211, 238, 0.28);
+.test-lab--dark .lab-select--open .lab-select__trigger,
+.test-lab--dark .lab-select__trigger:focus-visible {
+  border-color: rgba(45, 212, 191, 0.36);
   box-shadow:
-    0 0 0 3px rgba(34, 211, 238, 0.16),
+    0 0 0 3px rgba(45, 212, 191, 0.16),
     0 18px 36px rgba(2, 6, 23, 0.34);
 }
 
-:global(.test-lab--dark) .lab-select__menu {
+.test-lab--dark .lab-select__menu {
   border-color: rgba(148, 163, 184, 0.12);
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(13, 20, 28, 0.94);
   box-shadow: 0 28px 64px rgba(2, 6, 23, 0.44);
 }
 
-:global(.test-lab--dark) .lab-select__option--active {
+.test-lab--dark .lab-select__option--active {
   background: rgba(148, 163, 184, 0.08);
 }
 
-:global(.test-lab--dark) .lab-select__option--selected {
-  background: rgba(34, 211, 238, 0.14);
-  color: #67e8f9;
+.test-lab--dark .lab-select__option--selected {
+  background: rgba(45, 212, 191, 0.14);
+  color: #5eead4;
 }
 </style>

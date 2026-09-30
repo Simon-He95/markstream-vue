@@ -639,4 +639,25 @@ Term 2
   border-top: 1px solid hsl(var(--ms-border));
   margin: 2rem 0;
 }
+
+/* Header chrome polish — the demo body intentionally keeps pure --ms-* tokens */
+.markstream-vue > header {
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+}
+.markstream-vue > header button,
+.markstream-vue > header select {
+  font-family: inherit;
+  letter-spacing: 0.01em;
+}
+.markstream-vue > header button {
+  transition: transform 160ms cubic-bezier(0.34, 1.4, 0.64, 1), background-color 160ms ease, color 160ms ease;
+}
+.markstream-vue > header button:active {
+  transform: scale(0.96);
+}
+.markstream-vue > header button:focus-visible,
+.markstream-vue > header select:focus-visible {
+  outline: 2px solid hsl(var(--ms-primary));
+  outline-offset: 2px;
+}
 </style>

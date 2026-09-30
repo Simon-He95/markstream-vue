@@ -105,9 +105,10 @@ function applyCustomSpeed(event: Event) {
 
 <style scoped>
 .speed-panel {
-  padding: 16px 20px;
+  padding: 18px 22px;
   border-bottom: 1px solid var(--speed-border);
   color: var(--speed-text);
+  font-family: var(--play-font-display, 'Space Grotesk', sans-serif);
 }
 
 .speed-panel__heading {
@@ -115,54 +116,62 @@ function applyCustomSpeed(event: Event) {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
-h2 { margin: 0; font-size: 0.85rem; font-weight: 700; letter-spacing: -0.01em; }
-.speed-panel__heading p { margin: 4px 0 0; font-size: 0.72rem; color: var(--speed-muted); }
+h2 { margin: 0; font-size: 0.92rem; font-weight: 700; letter-spacing: -0.02em; }
+.speed-panel__heading p { margin: 3px 0 0; font-size: 0.72rem; color: var(--speed-muted); }
 
 .speed-mode {
   display: flex;
   flex-shrink: 0;
   gap: 3px;
   padding: 3px;
-  border-radius: 10px;
+  border-radius: 11px;
+  border: 1px solid var(--speed-border);
   background: var(--speed-subtle);
 }
 
-button { cursor: pointer; font: inherit; transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
+button { cursor: pointer; font: inherit; transition: background-color 0.18s, border-color 0.18s, color 0.18s, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--speed-accent); outline-offset: 3px; }
-.speed-mode button { padding: 6px 10px; border: 0; border-radius: 8px; background: transparent; color: var(--speed-muted); font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
-.speed-mode button[aria-pressed="true"] { background: var(--speed-surface); color: var(--speed-text); box-shadow: 0 1px 4px rgb(15 23 42 / 0.08); }
+button:active { transform: scale(0.96); }
+.speed-mode button { padding: 6px 12px; border: 0; border-radius: 8px; background: transparent; color: var(--speed-muted); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+.speed-mode button[aria-pressed="true"] { background: var(--speed-surface); color: var(--speed-accent); box-shadow: 0 1px 6px rgb(15 23 42 / 0.1), inset 0 0 0 1px var(--speed-border); }
 
-.speed-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; }
-.speed-presets button { display: grid; gap: 4px; padding: 10px 12px; text-align: left; border: 1px solid var(--speed-border); border-radius: 10px; background: var(--speed-surface); color: var(--speed-text); }
-.speed-presets button:hover { border-color: var(--speed-accent); background: var(--speed-subtle); }
-.speed-presets button[aria-pressed="true"] { border-color: var(--play-accent); background: var(--play-accent); color: #f8fafc; }
-.speed-presets__rate { font-size: 1rem; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.speed-presets__rate small { font-size: 0.6rem; font-weight: 500; letter-spacing: 0; color: var(--speed-muted); }
-.speed-presets__time { font-size: 0.65rem; color: var(--speed-muted); font-variant-numeric: tabular-nums; }
+.speed-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.speed-presets button { display: grid; gap: 4px; padding: 11px 13px; text-align: left; border: 1px solid var(--speed-border); border-radius: 12px; background: var(--speed-surface); color: var(--speed-text); }
+.speed-presets button:hover { transform: translateY(-2px); border-color: var(--speed-accent); box-shadow: 0 8px 20px rgb(13 148 136 / 0.14); }
+.speed-presets button[aria-pressed="true"] { border-color: transparent; background: linear-gradient(140deg, var(--play-accent, #0d9488), #0e7490); color: #f0fdfa; box-shadow: 0 8px 22px rgb(13 148 136 / 0.3), inset 0 1px 0 rgb(255 255 255 / 0.22); }
+.speed-presets__rate { font-family: var(--play-font-mono, 'JetBrains Mono', monospace); font-size: 1.02rem; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.speed-presets__rate small { font-size: 0.58rem; font-weight: 500; letter-spacing: 0.06em; color: var(--speed-muted); }
+.speed-presets__time { font-family: var(--play-font-mono, 'JetBrains Mono', monospace); font-size: 0.64rem; color: var(--speed-muted); font-variant-numeric: tabular-nums; }
 .speed-presets button[aria-pressed="true"] .speed-presets__rate small,
-.speed-presets button[aria-pressed="true"] .speed-presets__time { color: #e0f2f1; }
+.speed-presets button[aria-pressed="true"] .speed-presets__time { color: #ccfbf1; }
 
-.speed-custom { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 0.7rem; color: var(--speed-muted); }
-.speed-custom__input { display: flex; align-items: center; gap: 6px; padding: 5px 8px; border: 1px solid var(--speed-border); border-radius: 8px; background: var(--speed-surface); }
-.speed-custom input { width: 58px; border: 0; padding: 0; font: inherit; color: var(--speed-text); background: transparent; font-variant-numeric: tabular-nums; }
-.speed-custom__input span { font-size: 0.6rem; }
+.speed-custom { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 0.7rem; color: var(--speed-muted); }
+.speed-custom__input { display: flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid var(--speed-border); border-radius: 9px; background: var(--speed-surface); transition: border-color 0.18s; }
+.speed-custom__input:focus-within { border-color: var(--speed-accent); }
+.speed-custom input { width: 58px; border: 0; padding: 0; font-family: var(--play-font-mono, 'JetBrains Mono', monospace); font-size: 0.74rem; color: var(--speed-text); background: transparent; font-variant-numeric: tabular-nums; }
+.speed-custom__input span { font-size: 0.6rem; letter-spacing: 0.06em; }
 .speed-custom__hint { margin-left: auto; font-size: 0.65rem; }
 
-.speed-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0 12px; padding: 12px; border-radius: 10px; background: var(--speed-subtle); }
+.speed-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0 12px; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--speed-border); background: var(--speed-subtle); }
 .speed-metrics > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 5px 8px; }
-dt { font-size: 0.66rem; color: var(--speed-muted); }
-dd { margin: 0; font-size: 0.88rem; font-weight: 650; font-variant-numeric: tabular-nums; }
-dd small { font-size: 0.6rem; font-weight: 500; color: var(--speed-muted); }
+dt { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--speed-muted); }
+dd { margin: 0; font-family: var(--play-font-mono, 'JetBrains Mono', monospace); font-size: 0.92rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+dd small { font-size: 0.58rem; font-weight: 500; letter-spacing: 0.06em; color: var(--speed-muted); }
 .speed-metrics__target dd { color: var(--speed-accent); }
 
 .speed-status { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; font-size: 0.65rem; color: var(--speed-muted); }
-.speed-status__state { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--speed-text); }
-.speed-status__dot { width: 5px; height: 5px; border-radius: 50%; background: var(--speed-muted); }
-.speed-status__dot--active { background: var(--speed-accent); }
-.speed-panel__note { margin: 8px 0 0; font-size: 0.65rem; line-height: 1.5; color: var(--speed-muted); }
+.speed-status__state { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; color: var(--speed-text); }
+.speed-status__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--speed-muted); }
+.speed-status__dot--active { background: var(--speed-accent); animation: speedPulse 1.6s ease-out infinite; }
+@keyframes speedPulse {
+  0% { box-shadow: 0 0 0 0 rgb(20 184 166 / 0.4); }
+  70% { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.speed-panel__note { margin: 9px 0 0; font-size: 0.65rem; line-height: 1.55; color: var(--speed-muted); }
 
 @media (max-width: 640px) {
   .speed-panel { padding: 14px 16px; }
@@ -178,12 +187,13 @@ dd small { font-size: 0.6rem; font-weight: 500; color: var(--speed-muted); }
   .speed-custom__hint { width: 100%; margin: 0; }
   .speed-metrics { gap: 8px; padding: 10px; }
   .speed-metrics > div { display: block; }
-  dt { font-size: 0.6rem; min-height: 2.6em; }
+  dt { font-size: 0.58rem; min-height: 2.6em; }
   dd { margin-top: 3px; font-size: 0.85rem; }
   dd small { font-size: 0.55rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   button { transition: none; }
+  .speed-status__dot--active { animation: none; }
 }
 </style>

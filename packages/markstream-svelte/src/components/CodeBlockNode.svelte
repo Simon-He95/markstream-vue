@@ -137,6 +137,8 @@
   let lifecycleId = $state(0)
   let heightSyncRaf: number | null = $state(null)
   let heightSyncDisposables: Array<{ dispose?: () => void } | (() => void)> = $state([])
+  let editorSurfaceResizeObserver: ResizeObserver | null = $state(null)
+  let editorSurfaceResizeTarget: HTMLElement | null = $state(null)
   let lastLayoutWidth: number | null = $state(null)
   let lastLayoutHeight: number | null = $state(null)
   let lastThemeRequest = $state('')
@@ -706,6 +708,10 @@ ${configuredUnsafeCSS}`.trim(),
   function nextAnimationFrame() {
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function')
       return Promise.resolve()
+    // Animation frames never run in hidden tabs; fall back to a timer so the
+    // editor handoff loop cannot stall indefinitely while the page is hidden.
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden')
+      return new Promise<void>(resolve => setTimeout(() => resolve(), 0))
     return new Promise<void>(resolve => window.requestAnimationFrame(() => resolve()))
   }
 
@@ -843,6 +849,39 @@ ${configuredUnsafeCSS}`.trim(),
     catch {}
   }
 
+  function bindEditorSurfaceResizeSync() {
+    if (typeof ResizeObserver === 'undefined' || !editorHost)
+      return
+    const surface = getVisualEditorSurface()
+    if (editorSurfaceResizeObserver && surface === editorSurfaceResizeTarget)
+      return
+    unbindEditorSurfaceResizeSync()
+    if (!surface)
+      return
+    // The diff surface re-renders at a different height when unchanged regions
+    // collapse/expand and when a settled stream replaces the partial layout.
+    // Those changes do not always surface through the editor events bound
+    // above, so observe the rendered surface and re-sync the host height when
+    // the rendered height no longer matches the host.
+    editorSurfaceResizeObserver = new ResizeObserver(() => {
+      if (!editorHost || collapsed)
+        return
+      const renderedHeight = measureRenderedDiffHeight(editorHost)
+      const hostHeight = Math.ceil(editorHost.getBoundingClientRect().height || 0)
+      if (renderedHeight == null || Math.abs(renderedHeight - hostHeight) <= 1)
+        return
+      scheduleEditorHeightSync()
+    })
+    editorSurfaceResizeObserver.observe(surface)
+    editorSurfaceResizeTarget = surface
+  }
+
+  function unbindEditorSurfaceResizeSync() {
+    editorSurfaceResizeObserver?.disconnect()
+    editorSurfaceResizeObserver = null
+    editorSurfaceResizeTarget = null
+  }
+
   function bindEditorHeightSync() {
     clearEditorHeightSyncBindings()
     const bind = (source: any, eventName: 'onDidContentSizeChange' | 'onDidLayoutChange') => {
@@ -871,6 +910,7 @@ ${configuredUnsafeCSS}`.trim(),
       bind(modifiedEditor, 'onDidContentSizeChange')
       bind(originalEditor, 'onDidLayoutChange')
       bind(modifiedEditor, 'onDidLayoutChange')
+      bindEditorSurfaceResizeSync()
       return
     }
 
@@ -880,6 +920,7 @@ ${configuredUnsafeCSS}`.trim(),
   }
 
   function clearEditorHeightSyncBindings() {
+    unbindEditorSurfaceResizeSync()
     for (const disposable of heightSyncDisposables) {
       try {
         if (typeof disposable === 'function')
@@ -911,22 +952,33 @@ ${configuredUnsafeCSS}`.trim(),
     editorHost.style.height = `${nextHeight}px`
     editorHost.style.minHeight = `${nextHeight}px`
     editorHost.style.maxHeight = expanded || !Number.isFinite(maxHeight) ? 'none' : `${Math.ceil(maxHeight)}px`
-    editorHost.style.overflow = diff ? 'hidden' : (contentHeight > nextHeight ? 'auto' : 'hidden')
+    editorHost.style.overflow = contentHeight > nextHeight ? 'auto' : 'hidden'
     layoutEditor(nextHeight)
+    if (diff)
+      bindEditorSurfaceResizeSync()
   }
 
   function getEditorHostMinHeight() {
     if (!editorHost || typeof window === 'undefined')
       return 0
-    const values = [
-      window.getComputedStyle(editorHost.parentElement || editorHost).minHeight,
-      window.getComputedStyle(editorHost).minHeight,
-    ]
-    for (const value of values) {
-      const parsed = Number.parseFloat(value)
-      if (Number.isFinite(parsed) && parsed > 0)
-        return Math.ceil(parsed)
-    }
+    // A consumer-configured min-height on the body element is a real floor.
+    const parentMinHeight = window.getComputedStyle(editorHost.parentElement || editorHost).minHeight
+    const parsedParentMinHeight = Number.parseFloat(parentMinHeight)
+    if (Number.isFinite(parsedParentMinHeight) && parsedParentMinHeight > 0)
+      return Math.ceil(parsedParentMinHeight)
+    // `syncEditorHostHeight` writes the host's inline min-height, so reading the
+    // computed value back would pin the host at its largest historical height
+    // and stop the container from shrinking when the diff surface collapses
+    // unchanged regions. Temporarily drop the inline value so the computed
+    // min-height reflects only a consumer/CSS-configured floor.
+    const inlineMinHeight = editorHost.style.minHeight
+    if (inlineMinHeight)
+      editorHost.style.minHeight = ''
+    const configuredMinHeight = Number.parseFloat(window.getComputedStyle(editorHost).minHeight)
+    if (inlineMinHeight)
+      editorHost.style.minHeight = inlineMinHeight
+    if (Number.isFinite(configuredMinHeight) && configuredMinHeight > 0)
+      return Math.ceil(configuredMinHeight)
     return 0
   }
 
@@ -1101,7 +1153,7 @@ ${configuredUnsafeCSS}`.trim(),
         {#if !shouldDelayEditor}
           <div bind:this={editorHost} class:is-hidden={!editorRevealed} class="code-editor-container"></div>
         {/if}
-        <div class:is-hidden={fallbackRetired} class="code-editor-fallback-surface">
+        <div class:is-retired={fallbackRetired} class="code-editor-fallback-surface">
           <PreCodeNode
             class="code-pre-fallback"
             enhanceable={false}

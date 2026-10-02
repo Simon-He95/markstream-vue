@@ -1,5 +1,6 @@
 import type { NodeComponentProps } from '../../types/node-component'
 import React, { useCallback, useMemo } from 'react'
+import { findFootnoteElement } from '../../utils/footnoteTarget'
 
 export function FootnoteReferenceNode(props: NodeComponentProps<{ type: 'footnote_reference', id: string }>) {
   const { node } = props
@@ -9,10 +10,10 @@ export function FootnoteReferenceNode(props: NodeComponentProps<{ type: 'footnot
     event.preventDefault()
     if (typeof document === 'undefined')
       return
-    const target = document.querySelector(href)
+    const target = findFootnoteElement(event.currentTarget, `fnref--${node.id}`)
     if (target)
       target.scrollIntoView({ behavior: 'smooth' })
-  }, [href])
+  }, [node.id])
 
   return (
     <sup id={`fnref-${node.id}`} className="footnote-reference" onClick={handleScroll}>

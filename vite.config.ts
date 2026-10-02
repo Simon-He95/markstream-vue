@@ -211,7 +211,7 @@ export default defineConfig(({ mode }) => {
       // comparison runs). They duplicate the tests at a different path, so their
       // scoped-style hashes differ and they fail in bulk; keep them out of the
       // default run.
-      exclude: [...configDefaults.exclude, '.tmp/**', 'packages/markstream-octane/tests/**'],
+      exclude: [...configDefaults.exclude, '.tmp/**', 'packages/markstream-octane/tests/**', 'packages/markstream-svelte/tests/**'],
       setupFiles: ['./test/setup/vitest.setup.ts'],
       restoreMocks: true,
       testTimeout: 10000,

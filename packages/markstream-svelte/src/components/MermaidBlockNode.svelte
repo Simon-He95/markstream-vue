@@ -7,6 +7,7 @@
   import { getMermaid } from '../optional/mermaid'
   import { hideTooltip, showTooltipForAnchor, type TooltipPlacement } from '../tooltip/singletonTooltip'
   import { getLanguageIcon } from '../utils/languageIcon'
+  import { createMermaidRenderId } from '../utils/mermaidRenderId'
   import { canParseOffthread, findPrefixOffthread } from '../workers/mermaidWorkerClient'
   import { clampPreviewHeight, estimateMermaidPreviewHeight, getMermaidDiagramKind, MERMAID_PREVIEW_MIN_HEIGHT, parsePositiveNumber, resolveDiagramMinPreviewHeight } from './shared/diagram-height'
   import { copyTextToClipboard, downloadSvgMarkup } from './shared/rich-block-helpers'
@@ -257,7 +258,7 @@
       }
 
       const rendered = await withTimeout(
-        () => Promise.resolve(mermaid.render(`markstream-svelte-mermaid-${token}`, applyMermaidThemeTo(renderSource, theme))),
+        () => Promise.resolve(mermaid.render(createMermaidRenderId(), applyMermaidThemeTo(renderSource, theme))),
         fullRender ? fullRenderTimeoutMs : renderTimeoutMs,
       )
       if (!mounted || token !== renderToken)
@@ -315,7 +316,7 @@
       await withTimeout(() => Promise.resolve(mermaid.parse(themedSource)), parseTimeoutMs)
       return true
     }
-    await withTimeout(() => Promise.resolve(mermaid.render(`markstream-svelte-mermaid-parse-${renderToken}`, themedSource)), parseTimeoutMs)
+    await withTimeout(() => Promise.resolve(mermaid.render(createMermaidRenderId('markstream-svelte-mermaid-parse'), themedSource)), parseTimeoutMs)
     return true
   }
 

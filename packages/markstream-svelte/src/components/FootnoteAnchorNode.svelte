@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SvelteRenderableNode } from './shared/node-helpers'
   import { getString } from './shared/node-helpers'
+  import { findFootnoteElement } from '../utils/footnoteTarget'
 
   interface Props {
     node: SvelteRenderableNode
@@ -15,7 +16,7 @@
     event.preventDefault()
     if (typeof document === 'undefined' || !id)
       return
-    const target = document.getElementById(`fnref-${id}`)
+    const target = findFootnoteElement(event.currentTarget, `fnref-${id}`)
     target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 </script>

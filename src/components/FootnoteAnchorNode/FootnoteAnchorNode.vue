@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import { findFootnoteElement } from '../../utils/footnoteTarget'
+
 const props = defineProps<{ node: { type: 'footnote_anchor', id: string, raw?: string } }>()
 
 function scrollToReference(e: MouseEvent) {
   e.preventDefault()
   if (typeof document === 'undefined')
     return
-  const id = `fnref-${String(props.node.id ?? '')}`
-  const anchors = document.getElementById(id)
+  const anchors = findFootnoteElement(e.currentTarget, `fnref-${String(props.node.id ?? '')}`)
   if (anchors) {
     anchors.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }

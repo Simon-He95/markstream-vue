@@ -4,6 +4,7 @@ import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useAttrs, 
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { useOffscreenHeavyNodeDeferral, useViewportPriority, useViewportPriorityOptions } from '../../composables/viewportPriority'
+import { createD2RenderSalt } from '../../utils/d2RenderSalt'
 import { parsePositiveNumber } from '../../utils/diagramHeight'
 import { resolveLifecycleIndexKey } from '../../utils/lifecycleIndexKey'
 import { MARKSTREAM_NODE_LIFECYCLE_KEY } from '../../utils/nodeLifecycle'
@@ -461,6 +462,7 @@ async function renderDiagram() {
         ...(baseOverrides || {}),
       }
     }
+    renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
     const renderResult = await instance.render(diagram, renderOptions)
     if (isStaleRender(token))
       return

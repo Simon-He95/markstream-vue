@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { findFootnoteElement } from '../../utils/footnoteTarget'
+
 // 定义脚注引用节点
 interface FootnoteReferenceNode {
   type: 'footnote_reference'
@@ -11,12 +13,12 @@ const props = defineProps<{
   node: FootnoteReferenceNode
 }>()
 const href = `#fnref--${props.node.id}`
-function handleScroll() {
+function handleScroll(event: MouseEvent) {
   if (typeof document === 'undefined') {
     // SSR: nothing to do
     return
   }
-  const element = document.querySelector(href)
+  const element = findFootnoteElement(event.currentTarget, `fnref--${props.node.id}`)
   if (element) {
     element.scrollIntoView({ behavior: 'smooth' })
   }

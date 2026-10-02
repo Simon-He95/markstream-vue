@@ -78,6 +78,7 @@
     "dev": "vite dev",
     "preview": "vite preview",
     "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
     "prepublishOnly": "pnpm run build && pnpm run check:workspace-deps-published",
     "check:core-published": "node ../../scripts/check-core-published.mjs --package-json package.json --core-package-json ../markstream-core/package.json",
     "check:workspace-deps-published": "node ../../scripts/check-workspace-deps-published.mjs --package-json package.json",

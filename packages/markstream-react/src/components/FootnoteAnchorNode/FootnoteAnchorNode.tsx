@@ -1,5 +1,6 @@
 import type { NodeComponentProps } from '../../types/node-component'
 import React, { useCallback } from 'react'
+import { findFootnoteElement } from '../../utils/footnoteTarget'
 
 export function FootnoteAnchorNode(props: NodeComponentProps<{ type: 'footnote_anchor', id: string }>) {
   const { node } = props
@@ -7,7 +8,7 @@ export function FootnoteAnchorNode(props: NodeComponentProps<{ type: 'footnote_a
     event.preventDefault()
     if (typeof document === 'undefined')
       return
-    const target = document.getElementById(`fnref-${String(node.id ?? '')}`)
+    const target = findFootnoteElement(event.currentTarget, `fnref-${String(node.id ?? '')}`)
     if (target)
       target.scrollIntoView({ behavior: 'smooth' })
   }, [node.id])

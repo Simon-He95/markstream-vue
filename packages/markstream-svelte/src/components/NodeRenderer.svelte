@@ -340,12 +340,17 @@
     }
 
     const requestIdle = typeof window !== 'undefined' ? (window as any).requestIdleCallback as ((callback: (deadline: { timeRemaining?: () => number }) => void, options?: { timeout?: number }) => number) | undefined : undefined
-    if (requestIdle) {
+    // Idle callbacks and animation frames never run in hidden tabs, which
+    // would freeze batch rendering until the page becomes visible again. Fall
+    // back to a timer so background rendering keeps progressing (the browser
+    // clamps hidden-tab timers, trading pace for progress).
+    const documentHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (requestIdle && !documentHidden) {
       renderBatchIdle = requestIdle(run, { timeout: Math.max(0, Number(renderBatchIdleTimeoutMs) || 120) })
       return
     }
 
-    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function' && !documentHidden) {
       renderBatchFrame = window.requestAnimationFrame(() => {
         renderBatchFrame = null
         if (delay > 0)

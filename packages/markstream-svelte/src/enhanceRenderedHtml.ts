@@ -886,6 +886,12 @@ function normalizeVisibleCodeText(value: string) {
 async function waitForRenderFrame() {
   if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function')
     return
+  // Animation frames never run in hidden tabs; resolve on a timer so block
+  // enhancement keeps progressing while the page is in the background.
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    await new Promise<void>(resolve => setTimeout(resolve, 0))
+    return
+  }
   await new Promise<void>(resolve => window.requestAnimationFrame(() => resolve()))
 }
 

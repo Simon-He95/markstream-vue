@@ -11,6 +11,7 @@ import {
 } from '@angular/core'
 import { getD2 } from '../../optional/d2'
 import { extractRenderedSvg, toSafeSvgMarkup } from '../../sanitizeSvg'
+import { createD2RenderSalt } from '../../utils/d2RenderSalt'
 import { getString } from '../shared/node-helpers'
 import {
   copyTextToClipboard,
@@ -323,6 +324,7 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
         }
       }
 
+      renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
       const renderResult = await instance.render(diagram, renderOptions)
       if (this.destroyed || token !== this.renderToken)
         return

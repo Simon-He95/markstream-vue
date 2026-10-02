@@ -5,6 +5,7 @@
   import { getD2 } from '../optional/d2'
   import { extractRenderedSvg, toSafeSvgMarkup } from '../sanitizeSvg'
   import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
+  import { createD2RenderSalt } from '../utils/d2RenderSalt'
   import { copyTextToClipboard, downloadSvgMarkup } from './shared/rich-block-helpers'
   import { getString } from './shared/node-helpers'
 
@@ -153,6 +154,7 @@
         }
       }
 
+      renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
       const rendered = await instance.render(diagram, renderOptions)
       if (!mounted || token !== renderToken)
         return

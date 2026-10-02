@@ -8,6 +8,7 @@ import { getMermaid } from './optional/mermaid'
 import { getStreamDiffsRuntime } from './optional/streamDiffs'
 import { extractRenderedSvg, toSafeSvgMarkup } from './sanitizeSvg'
 import { hideTooltip, showTooltipForAnchor } from './tooltip/singletonTooltip'
+import { createD2RenderSalt } from './utils/d2RenderSalt'
 import { createMermaidRenderId } from './utils/mermaidRenderId'
 import { normalizeKaTeXRenderInput } from './utils/normalizeKaTeXRenderInput'
 import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from './workers/katexWorkerClient'
@@ -599,6 +600,7 @@ async function renderD2(
         }
       }
 
+      renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
       const renderResult = await instance.render(diagram, renderOptions)
       if (!isActive())
         return

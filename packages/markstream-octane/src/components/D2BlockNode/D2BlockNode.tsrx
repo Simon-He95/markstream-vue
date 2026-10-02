@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'octane'
 import { useViewportPriority } from '../../context/viewportPriority.tsrx'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
+import { createD2RenderSalt } from '../../utils/d2RenderSalt'
 import { getD2 } from './d2'
 
 const DEFAULTS = {
@@ -322,6 +323,7 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
         }
       }
 
+      renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
       const renderResult = await instance.render(diagram, renderOptions)
       if (token !== renderTokenRef.current)
         return

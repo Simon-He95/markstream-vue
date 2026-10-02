@@ -7,6 +7,7 @@ import { getKatex } from './optional/katex'
 import { getMermaid } from './optional/mermaid'
 import { getStreamDiffsRuntime } from './optional/streamDiffs'
 import { extractRenderedSvg, toSafeSvgMarkup } from './sanitizeSvg'
+import { createD2RenderSalt } from './utils/d2RenderSalt'
 import { resolveLanguageId } from './utils/languageIcon'
 import { createMermaidRenderId } from './utils/mermaidRenderId'
 import { normalizeKaTeXRenderInput } from './utils/normalizeKaTeXRenderInput'
@@ -569,6 +570,7 @@ async function renderD2(
         }
       }
 
+      renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
       const renderResult = await instance.render(diagram, renderOptions)
       if (!isActive())
         return

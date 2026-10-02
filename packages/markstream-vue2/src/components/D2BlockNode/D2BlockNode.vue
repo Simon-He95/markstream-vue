@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
+import { createD2RenderSalt } from '../../utils/d2RenderSalt'
 import { getD2 } from './d2'
 
 interface D2BlockNodeProps {
@@ -321,6 +322,7 @@ async function renderDiagram() {
         ...(baseOverrides || {}),
       }
     }
+    renderOptions.salt = renderOptions.salt ?? createD2RenderSalt()
     const renderResult = await instance.render(diagram, renderOptions)
     if (token !== renderToken.value)
       return

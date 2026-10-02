@@ -8,11 +8,11 @@ import { getMermaid } from './optional/mermaid'
 import { getStreamDiffsRuntime } from './optional/streamDiffs'
 import { extractRenderedSvg, toSafeSvgMarkup } from './sanitizeSvg'
 import { resolveLanguageId } from './utils/languageIcon'
+import { createMermaidRenderId } from './utils/mermaidRenderId'
 import { normalizeKaTeXRenderInput } from './utils/normalizeKaTeXRenderInput'
 import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from './workers/katexWorkerClient'
 import { canParseOffthread, findPrefixOffthread } from './workers/mermaidWorkerClient'
 
-let mermaidRenderId = 0
 const rootHandles = new WeakMap<HTMLElement, RenderedHtmlEnhancementHandle>()
 type MermaidTheme = 'light' | 'dark'
 
@@ -318,7 +318,7 @@ async function renderMermaid(
         }
       }
 
-      const renderId = `markstream-angular-mermaid-${++mermaidRenderId}`
+      const renderId = createMermaidRenderId()
       const rendered = await withTimeout(
         () => Promise.resolve(mermaid.render(renderId, applyMermaidThemeTo(sourceToRender, theme))),
         options.final === false
@@ -385,7 +385,7 @@ async function canParseMermaidWithFallback(
     return true
   }
 
-  const renderId = `markstream-angular-mermaid-parse-${++mermaidRenderId}`
+  const renderId = createMermaidRenderId('markstream-angular-mermaid-parse')
   await withTimeout(() => Promise.resolve(mermaid.render(renderId, themedSource)), parseTimeout)
   return true
 }

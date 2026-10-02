@@ -81,6 +81,10 @@ jobs:
           pnpm --filter markstream-octane test
           pnpm run test:smoke:octane
 
+      - name: Svelte package tests (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm --filter markstream-svelte test
+
       - name: Octane playground browser smoke (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run test:e2e:octane-playground

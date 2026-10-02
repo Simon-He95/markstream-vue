@@ -13,6 +13,7 @@ import {
 import { createPanGesture } from 'markstream-core'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getMermaid } from '../../optional/mermaid'
+import { createMermaidRenderId } from '../../utils/mermaidRenderId'
 import { canParseOffthread, findPrefixOffthread } from '../../workers/mermaidWorkerClient'
 import { clampPreviewHeight, estimateMermaidPreviewHeight, MERMAID_PREVIEW_MIN_HEIGHT, parsePositiveNumber } from '../shared/diagram-height'
 import { getString } from '../shared/node-helpers'
@@ -24,7 +25,6 @@ import {
   setElementHtml,
 } from '../shared/rich-block-helpers'
 
-let mermaidRenderSequence = 0
 let mermaidRenderQueue: Promise<void> = Promise.resolve()
 
 type MermaidTheme = 'light' | 'dark'
@@ -559,7 +559,7 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
         }
       }
 
-      const renderId = `markstream-angular-mermaid-${++mermaidRenderSequence}`
+      const renderId = createMermaidRenderId()
       const themedSource = this.applyThemeTo(renderSource, theme)
       const rendered = await enqueueMermaidRender(() => this.withTimeout(
         () => Promise.resolve(mermaid.render(renderId, themedSource)),
@@ -666,7 +666,7 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
       return true
     }
 
-    const renderId = `markstream-angular-mermaid-parse-${++mermaidRenderSequence}`
+    const renderId = createMermaidRenderId('markstream-angular-mermaid-parse')
     await this.withTimeout(() => Promise.resolve(anyMermaid.render(renderId, themedSource)), this.resolvedParseTimeout)
     if (this.destroyed || token !== this.renderToken)
       throw new DOMException('Aborted', 'AbortError')

@@ -1919,7 +1919,6 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
 }
 
 .code-block-container.is-diff .code-block-header {
-  padding: 18px 20px 14px;
   color: var(--markstream-diff-shell-fg);
   background: transparent;
   border-bottom-color: var(--markstream-diff-header-border);
@@ -2066,10 +2065,6 @@ pre.code-pre-fallback.markstream-pre--diff-preview,
 }
 
 @container (max-width: 640px) {
-  .code-block-container.is-diff .code-block-header {
-    padding: 16px 16px 12px;
-  }
-
   .code-block-container.is-diff .code-editor-layer {
     padding: 4px 4px 8px;
   }

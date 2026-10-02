@@ -1664,9 +1664,11 @@ body > div[id^="dmermaid-"] {
   background: var(--markstream-code-fallback-bg, var(--code-bg));
 }
 
-.markstream-svelte .code-editor-fallback-surface.is-hidden {
-  visibility: hidden;
-  pointer-events: none;
+/* Once the enhanced editor owns the grid row, the retired fallback must leave
+   layout entirely: visibility-only hiding keeps the row at the fallback's
+   (uncollapsed) height, so collapsed diffs reserve space they no longer use. */
+.markstream-svelte .code-editor-fallback-surface.is-retired {
+  display: none;
 }
 
 .code-block-body--expanded {

@@ -231,8 +231,12 @@ export function useBatchRenderingScheduler(
     if (scheduleId != null)
       return // Already scheduled
 
-    // Prioritize idle callback for smooth UX
-    if (!isTestEnv && hasIdleCallback && window.requestIdleCallback) {
+    // Prioritize idle callback for smooth UX. Idle callbacks and animation
+    // frames never run in hidden tabs, which would freeze batch rendering
+    // until the page becomes visible again; use a timer when hidden so
+    // background rendering keeps progressing.
+    const documentHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden'
+    if (!isTestEnv && !documentHidden && hasIdleCallback && window.requestIdleCallback) {
       const timeout = Math.max(0, props.renderBatchIdleTimeoutMs ?? 120)
       scheduleType = 'idle'
       scheduleId = window.requestIdleCallback(() => run(), { timeout })
@@ -240,7 +244,7 @@ export function useBatchRenderingScheduler(
     }
 
     // Use RAF with optional delay - preserve frame alignment like original
-    if (requestFrame && !isTestEnv) {
+    if (requestFrame && !isTestEnv && !documentHidden) {
       scheduleType = 'raf'
       scheduleId = requestFrame(() => {
         if (delay === 0) {

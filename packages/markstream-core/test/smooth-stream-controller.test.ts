@@ -782,4 +782,89 @@ describe('smoothMarkdownStreamController', () => {
       controller.destroy()
     })
   })
+
+  describe('hidden document fallback', () => {
+    const setHidden = (hidden: boolean) => {
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        value: hidden ? 'hidden' : 'visible',
+      })
+      document.dispatchEvent(new Event('visibilitychange'))
+    }
+
+    afterEach(() => {
+      Reflect.deleteProperty(document, 'visibilityState')
+    })
+
+    it('keeps revealing on a timer while the document is hidden', async () => {
+      vi.useFakeTimers()
+      const controller = createController({
+        minCharsPerSecond: 1000,
+        maxCharsPerSecond: 1000,
+        maxCharsPerCommit: 40,
+        maxCommitFps: 60,
+        startDelayMs: 0,
+      })
+
+      setHidden(true)
+      controller.enqueue('a'.repeat(400))
+
+      // Animation frames never run in hidden tabs; the timer fallback keeps
+      // the reveal moving instead of freezing at the last visible position.
+      await vi.advanceTimersByTimeAsync(1200)
+
+      const visibleLength = controller.getSnapshot().visible.length
+      expect(visibleLength).toBeGreaterThan(0)
+      expect(visibleLength).toBeLessThan(controller.getSnapshot().source.length)
+
+      controller.destroy()
+      setHidden(false)
+    })
+
+    it('returns to animation frames when the document becomes visible again', async () => {
+      vi.useFakeTimers()
+      const raf = createRafHarness()
+      const controller = createController(FAST_ATOMIC_TEST_OPTIONS)
+
+      setHidden(true)
+      controller.enqueue('a'.repeat(400))
+
+      await vi.advanceTimersByTimeAsync(600)
+      expect(raf.pendingFrames).toBe(0)
+      expect(controller.getSnapshot().visible.length).toBeGreaterThan(0)
+
+      setHidden(false)
+      // The pending timer is swapped for an animation frame so the reveal
+      // resumes at full cadence.
+      expect(raf.pendingFrames).toBe(1)
+
+      controller.destroy()
+      setHidden(false)
+    })
+
+    it('releases the visibilitychange listener when the loop is cancelled', () => {
+      const add = vi.spyOn(document, 'addEventListener')
+      const remove = vi.spyOn(document, 'removeEventListener')
+
+      try {
+        const controller = createController(FAST_ATOMIC_TEST_OPTIONS)
+        controller.enqueue('a'.repeat(400))
+
+        const attached = add.mock.calls.find(([type]) => type === 'visibilitychange')
+        expect(attached).toBeTruthy()
+
+        // React/Octane release the controller with pause() instead of destroy(),
+        // so a document-level listener left behind would pin it forever.
+        controller.pause()
+        expect(remove.mock.calls.some(([type, handler]) => type === 'visibilitychange' && handler === attached?.[1])).toBe(true)
+
+        controller.destroy()
+        setHidden(false)
+      }
+      finally {
+        add.mockRestore()
+        remove.mockRestore()
+      }
+    })
+  })
 })

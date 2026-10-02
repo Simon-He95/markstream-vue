@@ -46,6 +46,14 @@ function toNonNegativeFiniteNumber(value: unknown, fallback: number) {
  */
 const BURST_REVEAL_THRESHOLD_CHARS = 2048
 
+/**
+ * Animation frames never run in hidden tabs, so the reveal loop falls back to
+ * this timer cadence while the document is hidden. Browsers clamp background
+ * timers (typically to 1s), but the stream keeps rendering instead of freezing
+ * until the tab becomes visible again.
+ */
+const HIDDEN_TICK_MS = 200
+
 function now() {
   return typeof performance !== 'undefined' ? performance.now() : Date.now()
 }
@@ -71,6 +79,8 @@ class SmoothMarkdownStreamControllerImpl {
   private readonly listeners = new Set<SmoothStreamNotify>()
 
   private rafId = 0
+  private timerId: ReturnType<typeof setTimeout> | null = null
+  private visibilityListener: (() => void) | null = null
   private startedAt = 0
   private lastTick = 0
   private charBudget = 0
@@ -129,6 +139,20 @@ class SmoothMarkdownStreamControllerImpl {
     if (notify)
       this.listeners.add(notify)
     this.currentCps = this.minCharsPerSecond
+  }
+
+  private attachVisibilityListener(): void {
+    if (this.visibilityListener || typeof document === 'undefined' || typeof document.addEventListener !== 'function')
+      return
+    this.visibilityListener = this.handleVisibilityChange
+    document.addEventListener('visibilitychange', this.visibilityListener)
+  }
+
+  private detachVisibilityListener(): void {
+    if (!this.visibilityListener || typeof document === 'undefined' || typeof document.removeEventListener !== 'function')
+      return
+    document.removeEventListener('visibilitychange', this.visibilityListener)
+    this.visibilityListener = null
   }
 
   get pendingChars(): number {
@@ -300,6 +324,7 @@ class SmoothMarkdownStreamControllerImpl {
 
     this.destroyed = true
     this.cancelLoop()
+    this.detachVisibilityListener()
     this.listeners.clear()
   }
 
@@ -515,12 +540,33 @@ class SmoothMarkdownStreamControllerImpl {
     }
   }
 
+  private isDocumentHidden(): boolean {
+    return typeof document !== 'undefined' && document.visibilityState === 'hidden'
+  }
+
   private ensureLoop(): void {
-    if (this.destroyed || this.rafId || this.paused || !this.hasRevealableChars())
+    if (this.destroyed || this.rafId || this.timerId != null || this.paused || !this.hasRevealableChars())
       return
 
     if (typeof requestAnimationFrame !== 'function') {
       this.flush()
+      return
+    }
+
+    // The listener only lives while a loop is pending, so a controller that is
+    // paused without being destroyed (the React/Octane hooks release theirs
+    // with `pause()` and rely on collection) is not pinned by a document-level
+    // listener.
+    this.attachVisibilityListener()
+
+    // Hidden tabs never run animation frames: keep revealing on a timer so a
+    // stream that continues in the background keeps rendering instead of
+    // freezing at the last visible position until the tab is shown again.
+    if (this.isDocumentHidden() && typeof setTimeout === 'function') {
+      this.timerId = setTimeout(() => {
+        this.timerId = null
+        this.tick(now())
+      }, HIDDEN_TICK_MS)
       return
     }
 
@@ -529,6 +575,7 @@ class SmoothMarkdownStreamControllerImpl {
 
   private tick = (timestamp: number): void => {
     this.rafId = 0
+    this.timerId = null
 
     if (this.destroyed)
       return
@@ -545,7 +592,7 @@ class SmoothMarkdownStreamControllerImpl {
     }
 
     if (timestamp - this.startedAt < this.normalizedStartDelayMs) {
-      this.rafId = requestAnimationFrame(this.tick)
+      this.ensureLoop()
       return
     }
 
@@ -573,7 +620,7 @@ class SmoothMarkdownStreamControllerImpl {
     const dt = Math.min(100, Math.max(0, timestamp - this.lastTick))
 
     if (dt < minFrameMs) {
-      this.rafId = requestAnimationFrame(this.tick)
+      this.ensureLoop()
       return
     }
 
@@ -608,13 +655,39 @@ class SmoothMarkdownStreamControllerImpl {
   }
 
   private cancelLoop(): void {
-    if (!this.rafId)
+    if (this.rafId) {
+      if (typeof cancelAnimationFrame === 'function')
+        cancelAnimationFrame(this.rafId)
+      this.rafId = 0
+    }
+
+    if (this.timerId != null) {
+      clearTimeout(this.timerId)
+      this.timerId = null
+    }
+
+    this.detachVisibilityListener()
+  }
+
+  private handleVisibilityChange = (): void => {
+    if (this.destroyed)
       return
 
-    if (typeof cancelAnimationFrame === 'function')
-      cancelAnimationFrame(this.rafId)
+    if (this.isDocumentHidden()) {
+      // A pending animation frame will never fire while hidden; move the
+      // reveal loop onto the timer path.
+      this.cancelLoop()
+      this.ensureLoop()
+      return
+    }
 
-    this.rafId = 0
+    // Visible again: swap a pending timer for an animation frame so the
+    // reveal resumes at full cadence, and restart the loop if it had
+    // nothing scheduled.
+    if (this.timerId != null || !this.rafId) {
+      this.cancelLoop()
+      this.ensureLoop()
+    }
   }
 
   private emit(): void {

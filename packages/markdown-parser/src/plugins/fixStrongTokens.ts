@@ -46,7 +46,12 @@ function fixStrongTokens(tokens: MarkdownToken[]): MarkdownToken[] {
       }
       const postToken = tokens[k]
 
-      if (markup === '__' && (preToken?.content?.endsWith('_') || postToken?.content?.startsWith('_') || postToken?.markup?.includes('_'))) {
+      // Only *literal* underscore text next to the delimiter means the run was
+      // meant literally (e.g. the intraword underscores of `HR_负责人`). A
+      // neighbouring `_`/`__` token is the other delimiter of a real pair, so
+      // nesting such as `___text___` / `**___text___**` must keep its
+      // emphasis/strong tokens instead of degrading to literal text.
+      if (markup === '__' && (preToken?.content?.endsWith('_') || postToken?.content?.startsWith('_'))) {
         t.type = 'text'
         t.tag = ''
         t.content = markup
@@ -88,7 +93,9 @@ function fixStrongTokens(tokens: MarkdownToken[]): MarkdownToken[] {
         k++
       }
       const postToken = tokens[k]
-      if (markup === '_' && (preToken?.content?.endsWith('_') || postToken?.content?.startsWith('_') || postToken?.markup?.includes('_'))) {
+      // Same rule as the `strong_open` branch above: a neighbouring `_`/`__`
+      // delimiter token is a real pairing delimiter, not a literal underscore.
+      if (markup === '_' && (preToken?.content?.endsWith('_') || postToken?.content?.startsWith('_'))) {
         t.type = 'text'
         t.tag = ''
         t.content = markup

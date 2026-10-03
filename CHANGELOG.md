@@ -1,3 +1,29 @@
+## [2.0.16](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.15...markstream-vue@2.0.16) (2026-10-03)
+
+
+### Bug Fixes
+
+* **parser:** keep triple-underscore emphasis instead of literalizing it ([55b4d7e](https://github.com/Simon-He95/markstream-vue/commit/55b4d7ec728f6e074969c20e1b0c4de26933b67c)), closes [#778](https://github.com/Simon-He95/markstream-vue/issues/778)
+
+
+### Tests
+
+* **parser:** cover triple-underscore emphasis ([15f41c8](https://github.com/Simon-He95/markstream-vue/commit/15f41c8af7399523eda4aadd885516cb5cba3c0c))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.18`
+* `markstream-core@2.0.16`
+* `markstream-vue@2.0.16`
+* `markstream-react@2.0.16`
+* `markstream-octane@2.0.16`
+* `markstream-svelte@2.0.16`
+* `markstream-angular@2.0.16`
+* `markstream-vue2@2.0.16`
+
+
+
 ## [2.0.15](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.14...markstream-vue@2.0.15) (2026-10-03)
 
 

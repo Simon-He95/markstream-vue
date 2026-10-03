@@ -1,3 +1,28 @@
+## [2.0.15](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.14...markstream-vue@2.0.15) (2026-10-03)
+
+
+### Bug Fixes
+
+* **d2:** give every diagram its own render salt ([caf2875](https://github.com/Simon-He95/markstream-vue/commit/caf28751d6e9b3bc85232775c6fde75ebf13ee7a)), closes [#775](https://github.com/Simon-He95/markstream-vue/issues/775)
+* **footnote:** resolve footnote targets inside their own render tree ([55a46d6](https://github.com/Simon-He95/markstream-vue/commit/55a46d646e3a38eae71ed9dd8df08a1ae868c221))
+* **mermaid:** keep diagram render ids unique across the page ([3960c3c](https://github.com/Simon-He95/markstream-vue/commit/3960c3c18d126be41f7124e6711c76fa8d3f20b6)), closes [#775](https://github.com/Simon-He95/markstream-vue/issues/775)
+* **render:** keep rendering alive while the document is hidden ([93ac956](https://github.com/Simon-He95/markstream-vue/commit/93ac956e88dd9113d88276a2352183785a1e6c7a))
+* **svelte:** keep the diff editor height in sync when the surface resizes ([27dd2e0](https://github.com/Simon-He95/markstream-vue/commit/27dd2e00f1a3f93f957d5a1884d41773a7b72e05))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.17`
+* `markstream-core@2.0.15`
+* `markstream-vue@2.0.15`
+* `markstream-react@2.0.15`
+* `markstream-octane@2.0.15`
+* `markstream-svelte@2.0.15`
+* `markstream-angular@2.0.15`
+* `markstream-vue2@2.0.15`
+
+
+
 ## [2.0.14](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.13...markstream-vue@2.0.14) (2026-09-29)
 
 

@@ -547,8 +547,15 @@ export function handleTextToken(state: InlineParseState, token: MarkdownToken) {
     }
   }
   const nextToken = state.tokens[state.index + 1]
-  if (((content === '`' || content === '|' || content === '$') && !hasEscapedMarkup(token, `\\${content}`))
-    || (/^\*+$/.test(content) && !hasEscapedMarkup(token, '\\*'))) {
+  // A text token made up exclusively of inline markers is a mid-state artifact
+  // while streaming (the user is still typing `***`, `` ` `` or `$x$`), so the
+  // streaming path keeps dropping it. A final parse is authoritative: the
+  // trailing `*` of `**bold***`, a lone `$` or a stray backtick are real
+  // characters and must stay visible, so they are only dropped when the parse
+  // is not final.
+  if (state.options?.final !== true
+    && (((content === '`' || content === '|' || content === '$') && !hasEscapedMarkup(token, `\\${content}`))
+      || (/^\*+$/.test(content) && !hasEscapedMarkup(token, '\\*')))) {
     state.index++
     return
   }

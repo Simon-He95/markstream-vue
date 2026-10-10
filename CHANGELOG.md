@@ -1,3 +1,24 @@
+## [2.0.17](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.16...markstream-vue@2.0.17) (2026-10-10)
+
+
+### Bug Fixes
+
+* **parser:** keep literal marker-only text tokens in a final parse ([da93f26](https://github.com/Simon-He95/markstream-vue/commit/da93f2671effa936ca13cf20ff01028dd94a86b5))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.19`
+* `markstream-core@2.0.17`
+* `markstream-vue@2.0.17`
+* `markstream-react@2.0.17`
+* `markstream-octane@2.0.17`
+* `markstream-svelte@2.0.17`
+* `markstream-angular@2.0.17`
+* `markstream-vue2@2.0.17`
+
+
+
 ## [2.0.16](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.15...markstream-vue@2.0.16) (2026-10-03)
 
 

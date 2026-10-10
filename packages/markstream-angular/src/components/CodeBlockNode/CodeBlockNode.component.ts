@@ -1,6 +1,6 @@
 import type { AfterViewInit, ElementRef, OnChanges, OnDestroy } from '@angular/core'
 import type { CodeBlockOptions, CodeBlockTheme } from '../../types/codeBlock'
-import type { AngularRenderableNode, AngularRenderContext } from '../shared/node-helpers'
+import type { AngularRenderableNode, AngularRenderContext, NodeRendererCodeBlockProps } from '../shared/node-helpers'
 import { CommonModule } from '@angular/common'
 import {
   ChangeDetectionStrategy,
@@ -286,6 +286,7 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
   @Input({ required: true }) node!: AngularRenderableNode
   @Input() context?: AngularRenderContext
   @Input() codeBlockOptions?: CodeBlockOptions
+  @Input() clipboardWriter?: NodeRendererCodeBlockProps['clipboardWriter']
   @Input() props?: Record<string, any>
 
   useFallback = false
@@ -657,14 +658,25 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
 
   async copyCode() {
     const text = this.resolvedCode
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText)
-        await navigator.clipboard.writeText(text)
-      else
-        this.copyUsingTextarea(text)
+    const clipboardWriter = this.clipboardWriter ?? this.mergedProps.clipboardWriter
+    if (clipboardWriter) {
+      try {
+        await clipboardWriter(text)
+      }
+      catch {
+        return
+      }
     }
-    catch {
-      this.copyUsingTextarea(text)
+    else {
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText)
+          await navigator.clipboard.writeText(text)
+        else
+          this.copyUsingTextarea(text)
+      }
+      catch {
+        this.copyUsingTextarea(text)
+      }
     }
     this.copied = true
     this.context?.events.onCopy?.(text)

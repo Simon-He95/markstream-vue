@@ -22,6 +22,7 @@ Refer to `src/types/component-props.ts` for full signature. Key props:
 - `codeBlockOptions` — renderer-neutral typography, layout, File/FileDiff, interaction, annotation, and callback options. The same prop is also available at the `NodeRenderer` / `MarkdownRender` top level.
 - `theme` — a registered string name or `{ dark, light }`; `themes` is the `[dark, light]` name pair to load.
 - Header controls: `showHeader`, `showCollapseButton`, `showCopyButton`, `showExpandButton`, `showPreviewButton`, `showFontSizeButtons`, `showTooltips`
+- `clipboardWriter` — custom sync or async clipboard writer; defaults to the browser clipboard.
 - HTML preview sandbox: `htmlPreviewAllowScripts` defaults to `false`, and `htmlPreviewSandbox` lets you override the iframe sandbox tokens directly
 
 Built-in inline HTML preview uses `sandbox=""` by default so untrusted preview documents do not run scripts or inherit the host origin. `htmlPreviewSandbox` takes precedence over `htmlPreviewAllowScripts`; passing `htmlPreviewSandbox=""` keeps the iframe fully sandboxed, omitting `htmlPreviewSandbox` leaves `htmlPreviewAllowScripts` in control, and invalid non-string overrides such as `null` fall back to the safe default. Only opt into `htmlPreviewAllowScripts` for trusted demos, and avoid combining `allow-scripts` with `allow-same-origin` for untrusted preview content.
@@ -46,7 +47,7 @@ Diff blocks also show `- / +` line counts in the built-in header.
 - `loading` — customize placeholder when streaming is disabled
 
 ## Emits
-- `copy(text: string)` — when copy pressed
+- `copy(text: string)` — after the clipboard write succeeds
 - `previewCode(payload)` — only emitted when you attach a `@preview-code` listener; payload is `{ node, artifactType, artifactTitle, id }`
 
 ## Examples

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { CodeBlockNode as ParsedCodeBlockNode } from 'stream-markdown-parser'
 import type { PropType } from 'vue-demi'
-import type { CodeBlockOptions, CodeBlockPreviewPayload, CodeBlockThemeProp, CodeBlockThemes } from '../../types/component-props'
+import type { CodeBlockNodeProps, CodeBlockOptions, CodeBlockPreviewPayload, CodeBlockThemeProp, CodeBlockThemes } from '../../types/component-props'
 // Avoid static import of `stream-diffs` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
-import { computed, getCurrentInstance, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue-demi'
+import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 // Tooltip is provided as a singleton via composable to avoid many DOM nodes
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -21,6 +21,7 @@ const props = defineProps({
   loading: { type: Boolean, default: true },
   stream: { type: Boolean, default: true },
   codeBlockOptions: { type: Object as () => CodeBlockOptions | undefined, default: undefined },
+  clipboardWriter: { type: Function as PropType<CodeBlockNodeProps['clipboardWriter']>, default: undefined },
   showLineNumbers: { type: Boolean, default: undefined },
   theme: { type: [Object, String] as PropType<CodeBlockThemeProp>, default: undefined },
   darkTheme: { type: String, default: undefined },
@@ -68,6 +69,7 @@ const { t } = useSafeI18n()
 const codeEditor = ref<HTMLElement | null>(null)
 const container = ref<HTMLElement | null>(null)
 const copyText = ref(false)
+const inheritedClipboardWriter = inject<{ value?: CodeBlockNodeProps['clipboardWriter'] } | undefined>('markstreamClipboardWriter', undefined)
 // local tooltip logic removed; use shared `showTooltipForAnchor` / `hideTooltip`
 
 const codeLanguage = ref(normalizeLanguageIdentifier(props.node.language))
@@ -714,12 +716,17 @@ const tooltipsEnabled = computed(() => props.showTooltips !== false)
 
 // 复制代码
 async function copy() {
+  const code = props.node.code
+  const clipboardWriter = props.clipboardWriter ?? inheritedClipboardWriter?.value
   try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      await navigator.clipboard.writeText(props.node.code)
+    if (clipboardWriter) {
+      await clipboardWriter(code)
+    }
+    else if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      await navigator.clipboard.writeText(code)
     }
     copyText.value = true
-    emits('copy', props.node.code)
+    emits('copy', code)
     setTimeout(() => {
       copyText.value = false
     }, 1000)

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes } from '../types/codeBlock'
-  import type { SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
+  import type { NodeRendererCodeBlockProps, SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
   import { onDestroy, onMount, tick } from 'svelte'
   import { useSafeI18n } from '../i18n/useSafeI18n'
   import { getStreamDiffsRuntime } from '../optional/streamDiffs'
@@ -18,6 +18,7 @@
     loading?: boolean | undefined
     stream?: boolean | undefined
     codeBlockOptions?: CodeBlockOptions | undefined
+    clipboardWriter?: NodeRendererCodeBlockProps['clipboardWriter']
     theme?: CodeBlockThemeProp | undefined
     darkTheme?: CodeBlockTheme | undefined
     lightTheme?: CodeBlockTheme | undefined
@@ -44,6 +45,7 @@
     loading = undefined,
     stream = undefined,
     codeBlockOptions = undefined,
+    clipboardWriter = undefined,
     theme = undefined,
     darkTheme = undefined,
     lightTheme = undefined,
@@ -1048,8 +1050,20 @@ ${configuredUnsafeCSS}`.trim(),
   }
 
   async function copy() {
-    await copyTextToClipboard(code)
-    context?.events?.onCopy?.(code)
+    const text = code
+    const writer = clipboardWriter ?? context?.codeBlockProps?.clipboardWriter
+    if (writer) {
+      try {
+        await writer(text)
+      }
+      catch {
+        return
+      }
+    }
+    else {
+      await copyTextToClipboard(text)
+    }
+    context?.events?.onCopy?.(text)
     copied = true
     if (copyTimer)
       clearTimeout(copyTimer)

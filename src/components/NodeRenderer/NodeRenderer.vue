@@ -5601,6 +5601,8 @@ const preCodeBlockBindings = computed(() => {
 
   bindings.showHeader = pickBoolean(source.showHeader) ?? true
   bindings.showCopyButton = pickBoolean(source.showCopyButton) ?? true
+  if (typeof source.clipboardWriter === 'function')
+    bindings.clipboardWriter = source.clipboardWriter
   const showTooltips = pickBoolean(source.showTooltips) ?? resolvedShowTooltips.value
   if (typeof showTooltips === 'boolean')
     bindings.showTooltips = showTooltips

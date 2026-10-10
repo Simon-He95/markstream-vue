@@ -1391,11 +1391,14 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctane
   }, [tooltipsEnabled])
 
   const copy = useCallback(async () => {
+    const code = String(resolvedCode)
     try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function')
-        await navigator.clipboard.writeText(String(resolvedCode))
+      if (props.clipboardWriter)
+        await props.clipboardWriter(code)
+      else if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function')
+        await navigator.clipboard.writeText(code)
       setCopied(true)
-      props.onCopy?.(String(resolvedCode))
+      props.onCopy?.(code)
       setTimeout(() => setCopied(false), 1000)
     }
     catch {}

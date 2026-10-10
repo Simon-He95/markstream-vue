@@ -25,6 +25,7 @@ keywords:
 - `codeBlockOptions` — 与 renderer 无关的排版、布局、File/FileDiff、交互、annotation 与 callback 配置；`NodeRenderer` / `MarkdownRender` 顶层也提供同名 prop。
 - `theme` — 已注册的 string 名称或 `{ dark, light }`；`themes` 是要加载的 `[dark, light]` 名称对。
 - 头部控制：`showHeader`、`showCollapseButton`、`showCopyButton`、`showExpandButton`、`showPreviewButton`、`showFontSizeButtons`、`showTooltips`
+- `clipboardWriter` — 自定义剪贴板写入函数，支持同步或异步；不传时使用浏览器剪贴板。
 - HTML preview sandbox：`htmlPreviewAllowScripts` 默认 `false`，`htmlPreviewSandbox` 可直接覆盖 iframe sandbox token
 
 内置 inline HTML preview 默认使用 `sandbox=""`，因此不可信预览文档不会默认执行脚本，也不会继承宿主页面 origin。`htmlPreviewSandbox` 的优先级高于 `htmlPreviewAllowScripts`；传入 `htmlPreviewSandbox=""` 会保留完整 sandbox，不传 `htmlPreviewSandbox` 时由 `htmlPreviewAllowScripts` 控制，而 `null` 这类无效非 string override 会回退到安全默认值。只有在可信 demo 场景下才建议显式开启 `htmlPreviewAllowScripts`；对于不可信预览内容，不要把 `allow-scripts` 和 `allow-same-origin` 组合在一起。
@@ -51,7 +52,7 @@ Diff 代码块的内置 header 现在也会显示 `- / +` 行数统计。
 
 ## Emits 事件
 
-- `copy(text: string)` — 点击复制时触发
+- `copy(text: string)` — 剪贴板写入成功后触发
 - `previewCode(payload)` — 仅在你监听 `@preview-code` 时才会触发；payload 为 `{ node, artifactType, artifactTitle, id }`
 
 ## 示例

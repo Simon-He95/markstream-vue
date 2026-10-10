@@ -77,6 +77,8 @@ export interface CodeBlockOptions {
 export interface CodeBlockNodeProps extends CommonCodeBlockProps {
   node: CodeBlockNode
   codeBlockOptions?: CodeBlockOptions
+  /** Overrides browser clipboard writes. Copy feedback and events wait for completion. */
+  clipboardWriter?: (text: string) => void | Promise<void>
   isDark?: boolean
   loading?: boolean
   stream?: boolean

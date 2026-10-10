@@ -936,7 +936,7 @@ function createEnhancedBlockShell(
     badge.textContent = label
 
     header.appendChild(badge)
-    header.appendChild(createHeaderActions(source, options))
+    header.appendChild(createHeaderActions(source, options, kind === 'code' ? options.codeBlockProps?.clipboardWriter : undefined))
     wrapper.appendChild(header)
   }
 
@@ -965,7 +965,7 @@ function createEnhancedBlockShell(
   return { wrapper, body }
 }
 
-function createHeaderActions(source: string, options: EnhanceRenderedHtmlOptions) {
+function createHeaderActions(source: string, options: EnhanceRenderedHtmlOptions, clipboardWriter?: NodeRendererCodeBlockProps['clipboardWriter']) {
   const actions = document.createElement('div')
   actions.className = 'markstream-svelte-enhanced-block__actions'
 
@@ -976,8 +976,18 @@ function createHeaderActions(source: string, options: EnhanceRenderedHtmlOptions
   if (options.showTooltips !== false)
     copyButton.title = 'Copy source'
 
-  copyButton.addEventListener('click', () => {
-    void copyText(source)
+  copyButton.addEventListener('click', async () => {
+    if (clipboardWriter) {
+      try {
+        await clipboardWriter(source)
+      }
+      catch {
+        return
+      }
+    }
+    else {
+      void copyText(source)
+    }
     options.onCopy?.(source)
   })
 

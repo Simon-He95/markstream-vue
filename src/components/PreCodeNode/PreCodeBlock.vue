@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CSSProperties } from 'vue'
-import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes, PreCodeNodeProps } from '../../types/component-props'
+import type { CodeBlockNodeProps, CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes, PreCodeNodeProps } from '../../types/component-props'
 import type { ResolvedPreCodeVisualOptions } from './preCodeVisual'
 import { computed, inject, onBeforeUnmount, ref, useAttrs } from 'vue'
 import { languageIconsRevision, languageMap, normalizeLanguageIdentifier } from '../../utils'
@@ -14,6 +14,7 @@ import { resolvePreCodeVisualOptions } from './preCodeVisual'
 
 interface PreCodeBlockProps extends PreCodeNodeProps {
   codeBlockOptions?: CodeBlockOptions
+  clipboardWriter?: CodeBlockNodeProps['clipboardWriter']
   darkTheme?: CodeBlockTheme
   isDark?: boolean
   lightTheme?: CodeBlockTheme
@@ -193,6 +194,11 @@ function codeText() {
 }
 
 async function writeClipboardText(text: string) {
+  if (props.clipboardWriter) {
+    await props.clipboardWriter(text)
+    return
+  }
+
   if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
     await navigator.clipboard.writeText(text)
     return

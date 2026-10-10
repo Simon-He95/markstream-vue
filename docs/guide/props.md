@@ -252,6 +252,19 @@ const codeBlockProps: NonNullable<NodeRendererProps['codeBlockProps']> = {
 
 Pass both at the renderer top level: `:code-block-options="codeBlockOptions"` and `:code-block-props="codeBlockProps"`. A directly mounted `CodeBlockNode` accepts the same `codeBlockOptions` object. Direct `CodeBlockNode.theme` accepts a registered string name or `{ dark, light }`; register old Monaco JSON theme objects with `registerCustomTheme` from `stream-diffs/pierre`, then reference the registered name.
 
+### Custom clipboard writer
+
+Set `codeBlockProps.clipboardWriter` to a custom clipboard function of type `(text: string) => void | Promise<void>`. Supported by Vue 3, Vue 2, React, Svelte, Angular, and Octane:
+
+```vue
+<MarkdownRender
+  :content="md"
+  :code-block-props="{ clipboardWriter }"
+/>
+```
+
+The callback receives the original code. Copied feedback and copy events wait for success; errors do not retry the browser clipboard. Omit it to use the default copy behavior.
+
 ## Diagram node props forwarded from `MarkdownRender`
 
 Use these to control specialized block renderers without overriding components manually:

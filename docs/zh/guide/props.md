@@ -242,6 +242,19 @@ const codeBlockProps: NonNullable<NodeRendererProps['codeBlockProps']> = {
 
 两者都从 renderer 顶层传入：`:code-block-options="codeBlockOptions"` 与 `:code-block-props="codeBlockProps"`。直接挂载的 `CodeBlockNode` 接收相同的 `codeBlockOptions` object。直接 `CodeBlockNode.theme` 接收已注册的 string 名称或 `{ dark, light }`；旧 Monaco JSON theme object 需先调用 `stream-diffs/pierre` 的 `registerCustomTheme`，再通过注册名称引用。
 
+### 自定义剪贴板写入
+
+通过 `codeBlockProps.clipboardWriter` 自定义剪贴板写入，类型为 `(text: string) => void | Promise<void>`。Vue 3、Vue 2、React、Svelte、Angular 和 Octane 均支持：
+
+```vue
+<MarkdownRender
+  :content="md"
+  :code-block-props="{ clipboardWriter }"
+/>
+```
+
+回调接收原始代码，成功后才显示复制成功状态并触发复制事件；失败时不会回退到浏览器剪贴板。不传时使用默认复制行为。
+
 ## 图表节点全局下发参数
 
 如果你希望统一控制 Mermaid / D2 / Infographic 的工具栏、渐进渲染参数或交互细节，而不手动覆盖组件，可直接在 `MarkdownRender` 上传这些对象：

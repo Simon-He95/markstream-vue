@@ -31,6 +31,7 @@ export interface CodeBlockPreviewPayload {
 }
 
 export type NodeRendererCodeBlockProps = Partial<{
+  clipboardWriter: (text: string) => void | Promise<void>
   stream: boolean
   theme: CodeBlockThemeProp
   darkTheme: CodeBlockTheme

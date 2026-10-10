@@ -2725,12 +2725,16 @@ const tooltipsEnabled = computed(() => props.showTooltips !== false)
 
 // 复制代码
 async function copy() {
+  const code = props.node.code
   try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      await navigator.clipboard.writeText(props.node.code)
+    if (props.clipboardWriter) {
+      await props.clipboardWriter(code)
+    }
+    else if (typeof navigator !== 'undefined' && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+      await navigator.clipboard.writeText(code)
     }
     copyText.value = true
-    emits('copy', props.node.code)
+    emits('copy', code)
     setTimeout(() => {
       copyText.value = false
     }, 1000)
@@ -3794,7 +3798,9 @@ onUnmounted(() => {
     :themes="props.themes"
     :show-header="props.showHeader"
     :show-copy-button="props.showCopyButton"
+    :clipboard-writer="props.clipboardWriter"
     :show-tooltips="props.showTooltips"
+    @copy="emits('copy', $event)"
   >
     <template v-if="$slots['header-left']" #header-left>
       <slot name="header-left" />

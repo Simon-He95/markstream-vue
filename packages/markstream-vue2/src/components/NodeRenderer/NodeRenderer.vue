@@ -224,8 +224,10 @@ const resolvedShowTooltips = computed<boolean | undefined>(() => {
 })
 const inheritedHtmlPolicy = inject<{ value?: HtmlPolicy } | undefined>('markstreamHtmlPolicy', undefined)
 const inheritedSmoothStreaming = inject<{ value?: boolean } | undefined>('markstreamSmoothStreaming', undefined)
+const inheritedClipboardWriter = inject<{ value?: CodeBlockNodeProps['clipboardWriter'] } | undefined>('markstreamClipboardWriter', undefined)
 const resolvedHtmlPolicy = computed<HtmlPolicy>(() => props.htmlPolicy ?? inheritedHtmlPolicy?.value ?? 'safe')
 
+provide('markstreamClipboardWriter', computed(() => props.codeBlockProps?.clipboardWriter ?? inheritedClipboardWriter?.value))
 provide('markstreamShowTooltips', resolvedShowTooltips)
 provide('markstreamHtmlPolicy', resolvedHtmlPolicy)
 provide('markstreamTypewriter', computed(() => props.typewriter === true))

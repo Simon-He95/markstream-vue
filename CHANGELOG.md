@@ -1,3 +1,24 @@
+## [2.0.18](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.17...markstream-vue@2.0.18) (2026-10-11)
+
+
+### Features
+
+* support custom code block clipboard writers ([f3edfe4](https://github.com/Simon-He95/markstream-vue/commit/f3edfe42e29004432db18406bbc3976fd162c50e))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.19`
+* `markstream-core@2.0.18`
+* `markstream-vue@2.0.18`
+* `markstream-react@2.0.18`
+* `markstream-octane@2.0.18`
+* `markstream-svelte@2.0.18`
+* `markstream-angular@2.0.18`
+* `markstream-vue2@2.0.18`
+
+
+
 ## [2.0.17](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.16...markstream-vue@2.0.17) (2026-10-10)
 
 

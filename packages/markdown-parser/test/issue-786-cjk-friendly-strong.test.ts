@@ -69,8 +69,8 @@ describe('issue 786: CJK punctuation directly next to emphasis markers', () => {
     expect(collectText(nodes)).toBe(expectedHtml.replace(/<\/?(strong|em)>/g, ''))
   })
 
-  // The amended flanking rules differ from CommonMark only for runs next to a CJK
-  // character, so non-CJK documents must parse byte-for-byte as before.
+  // The amended flanking rules reduce to CommonMark's whenever no CJK character
+  // sits next to the run, so ASCII input keeps the result it had before.
   it.each([
     ['**foo**', '<p><strong>foo</strong></p>'],
     ['*foo bar*', '<p><em>foo bar</em></p>'],
@@ -88,6 +88,45 @@ describe('issue 786: CJK punctuation directly next to emphasis markers', () => {
     const md = getMarkdown(`issue-786-ascii-${markdown}`)
 
     expect(md.render(markdown).trim()).toBe(expectedHtml)
+  })
+
+  // The neighbour of a run is classified as a whole code point, not a single
+  // UTF-16 code unit, so non-BMP characters are read as the punctuation or symbol
+  // they are. These expectations are `markdown-it` + `markdown-it-cjk-friendly`
+  // output for the same input, and they differ from the pre-change parser, which
+  // paired `a*😀*a` — hence the explicit coverage.
+  it.each([
+    ['a*😀*a', '<p>a*😀*a</p>'],
+    ['a**😀**a', '<p>a**😀**a</p>'],
+    ['a***😀***a', '<p>a***😀***a</p>'],
+    ['word**😀**', '<p>word**😀**</p>'],
+    ['a*𐄀*a', '<p>a*𐄀*a</p>'],
+    ['a**𑁇**a', '<p>a**𑁇**a</p>'],
+    ['中文**😀**字', '<p>中文<strong>😀</strong>字</p>'],
+  ])('classifies non-BMP neighbours as whole code points for %s', (markdown, expectedHtml) => {
+    const md = getMarkdown(`issue-786-non-bmp-${markdown}`)
+
+    expect(md.render(markdown).trim()).toBe(expectedHtml)
+  })
+
+  // `md.core.parse` never hands `md` to the inline parser, so the rule runs with
+  // markdown-it-ts's internal fallback object, which has no `utils`. Emphasis has
+  // to keep pairing there instead of degrading every `*`/`_` run to plain text.
+  it('keeps emphasis pairing on core entry points that do not pass md down', () => {
+    const md = getMarkdown('issue-786-core-entry') as any
+    const state = md.core.parse('**a** and *b*', {})
+    const inline = state.tokens.find((token: any) => token.type === 'inline')
+
+    expect(inline.children.map((child: any) => child.type)).toEqual([
+      'text',
+      'strong_open',
+      'text',
+      'strong_close',
+      'text',
+      'em_open',
+      'text',
+      'em_close',
+    ])
   })
 
   it('keeps spans that already paired around CJK punctuation', () => {

@@ -14,7 +14,14 @@ import type { MarkdownToken } from '../types'
 // this is the common case rather than an edge case. The specification amends the
 // flanking definitions to treat CJK punctuation as text; for input without a CJK
 // character next to the run the amended rules are identical to CommonMark, so
-// English (and every other non-CJK) document parses exactly as before.
+// English (and every other non-CJK) document keeps the flanking result it had.
+//
+// One deliberate exception, which brings the parser in line with markdown-it: the
+// neighbour of a run is classified as a whole code point instead of a single
+// UTF-16 code unit. Non-BMP characters are therefore read as the punctuation or
+// symbol they are, so `a*😀*a` / `word**😀**` now stay literal, exactly like
+// `markdown-it` + `markdown-it-cjk-friendly`. markdown-it's own `scanDelims`
+// already combines surrogate pairs this way; markdown-it-ts's did not.
 //
 // The upstream `markdown-it-cjk-friendly` plugin swaps `md.inline.State`, which
 // markdown-it-ts does not read (its inline parser constructs its state class
@@ -77,6 +84,7 @@ interface InlineStateLike {
   delimiters: DelimiterLike[]
   tokens: MarkdownToken[]
   md?: { utils?: MarkdownUtils }
+  scanDelims?: (start: number, canSplitWord: boolean) => ScannedDelims
   push: (type: string, tag: string, nesting: number) => MarkdownToken
 }
 
@@ -129,8 +137,16 @@ function getPreviousCodePoint(src: string, pos: number): [number, number] {
  */
 export function scanCjkFriendlyDelims(state: InlineStateLike, start: number, canSplitWord: boolean): ScannedDelims {
   const utils = state.md?.utils
-  if (!utils)
+  if (!utils) {
+    // markdown-it-ts's core entry points that do not hand `md` to the inline
+    // parser (e.g. `md.core.parse(src, env)`) run the rules against an internal
+    // fallback object that has no `utils`. Fall back to the host's own scanner so
+    // emphasis keeps working there instead of silently losing every `*`/`_` pair;
+    // `state.scanDelims` never reads `utils` itself.
+    if (typeof state.scanDelims === 'function')
+      return state.scanDelims(start, canSplitWord)
     return { can_open: false, can_close: false, length: 0 }
+  }
 
   const { src, posMax } = state
   const marker = src.charCodeAt(start)

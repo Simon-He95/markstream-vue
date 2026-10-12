@@ -68,6 +68,32 @@ describe('link markup source in custom components', () => {
     }
   })
 
+  it('keeps the source inside tables, lists, quotes and containers', async () => {
+    const source = [
+      '| a | b |',
+      '|---|---|',
+      '| see summary.md | [x](http://s) |',
+      '',
+      '- item see notes.sh',
+      '',
+      '> quote [y](http://t)',
+      '',
+      '## heading report.ai',
+      '',
+      '::: tip',
+      '<https://example.com>',
+      ':::',
+    ].join('\n')
+    const { probes, cleanup } = await mountWithProbe(source)
+    try {
+      expect(probes.map(probe => probe.attributes('data-markup')))
+        .toEqual(['linkify', '', 'linkify', '', 'linkify', 'autolink'])
+    }
+    finally {
+      cleanup()
+    }
+  })
+
   it('updates a custom link component when only the link source changes', async () => {
     const { wrapper, cleanup } = await mountWithProbe('see summary.md')
     try {

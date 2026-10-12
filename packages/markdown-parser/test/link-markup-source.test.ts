@@ -38,7 +38,7 @@ describe('link markup source', () => {
   it('marks linkified bare text as linkify', () => {
     // `.md` / `.sh` / `.ai` are real TLDs, so these stay links by design and
     // must be distinguishable from hand written links.
-    for (const source of ['see summary.md', 'see notes.sh', 'run report.ai now']) {
+    for (const source of ['see summary.md', 'see notes.sh', 'run report.ai now', '| a |\n|---|\n| see summary.md |']) {
       const link = firstLink(parseMarkdownToStructure(source, md, { final: true }))
       expect(link.markup).toBe('linkify')
     }
@@ -51,7 +51,7 @@ describe('link markup source', () => {
   })
 
   it('keeps explicit markdown links on an empty markup', () => {
-    for (const source of ['[summary.md](http://summary.md)', '[guide](https://example.com/a.md)', 'see [label](https://example.com) end']) {
+    for (const source of ['[summary.md](http://summary.md)', '[guide](https://example.com/a.md)', 'see [label](https://example.com) end', '- item [x](http://s)\n- two', '| a |\n|---|\n| [x](http://s) |']) {
       const node = parseMarkdownToStructure(source, md, { final: true })
       for (const link of collectLinks(node))
         expect(link.markup).toBe('')

@@ -330,13 +330,14 @@ describe('parseMarkdownToStructure stream parser integration', () => {
       href: 'https://example.com',
       loading: false,
     })
-    expect(readSyntheticLinkOrigin(synthetic)).toBe('linkify')
+    expect(readSyntheticLinkOrigin(synthetic)).toBe('explicit')
     expect(second).toEqual(parseMarkdownToStructure(source, coldMd, {
       final: false,
       streamParse: false,
     }))
-    // Linkify-derived `link` single tokens produce deterministic nodes from
-    // their inline group, so stable prefixes containing them are reusable.
+    // The folded token takes its label from the hand-written `[site](` text in
+    // front of the matched destination, so it records the explicit origin,
+    // which is reusable for the same reason as a linkify-derived one.
     expect(second[0]).toBe(first[0])
     expect(timing.processTokensReusedTopLevelNodes ?? 0).toBe(41)
   })
@@ -408,7 +409,7 @@ describe('parseMarkdownToStructure stream parser integration', () => {
         const inlineChildren = (md as any).stream.peek().flatMap((token: any) => token.children ?? [])
         const synthetic = inlineChildren.find((token: any) => token.type === 'link')
         expect(JSON.stringify(streamed)).toContain('"loading":true')
-        expect(readSyntheticLinkOrigin(synthetic)).toBe('linkify')
+        expect(readSyntheticLinkOrigin(synthetic)).toBe('explicit')
         expect(timing.processTokensReusedTopLevelNodes ?? 0).toBe(0)
       }
     }

@@ -1,5 +1,6 @@
 import type { MarkdownToken, ParsedNode, TextNode } from '../../types'
 import type { InlineParseState } from './inline-parser-state'
+import { resolveLinkMarkup } from '../../plugins/linkTokenMetadata'
 import { isDecodedFromRawPunycode, shouldDemoteFilenameLikeLinkify } from '../linkifyHeuristics'
 import { cloneTokenWithMutableChildren } from '../token-copy'
 import { parseEmphasisToken } from './emphasis-parser'
@@ -186,6 +187,7 @@ function recoverMarkdownLinkFromTrailingText(state: InlineParseState, token: Mar
     text: label,
     children: [{ type: 'text', content: label, raw: label }],
     raw: String(`[${label}](${href}${linkToken.title ? ` "${linkToken.title}"` : ''})`),
+    markup: resolveLinkMarkup(token),
   } as ParsedNode)
   return true
 }
@@ -310,6 +312,7 @@ function buildLoadingOuterImageLinkNode(
     children: [imageNode as ParsedNode],
     raw: String(`[${text}](${href}${title ? ` "${title}"` : ''})`),
     loading: true,
+    markup: '',
   } as ParsedNode
 }
 
@@ -536,6 +539,7 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
           text,
           children: [{ type: 'text', content: text, raw: text }],
           loading,
+          markup: '',
         } as ParsedNode)
       }
       state.index += index
@@ -573,6 +577,7 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
         text,
         children: [{ type: 'text', content: text, raw: text }],
         loading,
+        markup: '',
       })
       if (type === 1) {
         newTokens.push({ type: 'em_close', tag: 'em', nesting: -1 })
@@ -607,6 +612,7 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
           text,
           children: [{ type: 'text', content: text, raw: text }],
           loading,
+          markup: '',
         } as ParsedNode)
       }
     }

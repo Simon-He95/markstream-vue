@@ -1,4 +1,5 @@
 import type { MarkdownToken } from '../types'
+import { copySyntheticLinkOrigin } from '../plugins/linkTokenMetadata'
 
 export function cloneTokenWithMutableChildren<T extends MarkdownToken>(token: T): T {
   const copy = Object.assign(Object.create(Object.getPrototypeOf(token)), token) as MarkdownToken
@@ -11,6 +12,8 @@ export function cloneTokenWithMutableChildren<T extends MarkdownToken>(token: T)
 
   if (Array.isArray(token.children))
     copy.children = token.children.map(child => cloneTokenWithMutableChildren(child))
+
+  copySyntheticLinkOrigin(token, copy)
 
   return copy as T
 }

@@ -269,7 +269,9 @@ setCustomComponents('docs', {
 
 - **适合**：文档站、聊天界面、需要和设计系统统一交互样式的链接
 - **关键 props**：`color`、`underlineHeight`、`showTooltip`
+- **节点字段**：`node.href`、`node.title`、`node.text` 与 `node.markup` —— `[文本](url)` 为 `''`，自动识别的裸链接、域名与邮箱为 `'linkify'`，`<https://…>` 为 `'autolink'`，行内 `<a href="…">` 为 `'html'`
 - **常见问题**：浏览器默认样式或 reset 顺序不对时，看起来会像“组件失效”，先检查 CSS 顺序
+- **小技巧**：自定义 `link` 组件可以读取 `node.markup`，把自动识别出的链接（例如 `summary.md` 这类裸文件名）和手写链接区分渲染
 
 ## VmrContainerNode
 

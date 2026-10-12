@@ -360,7 +360,15 @@ function fixLinkToken(tokens: MarkdownToken[], raw?: string): MarkdownToken[] {
       if (match) {
         let beforeText = curToken.content!.slice(0, match.index)
         const emphasisMatch = beforeText.match(/(\*+)$/)
-        const origin = getSyntheticLinkOrigin(tokens[i + 1]?.markup)
+        // A label directly in front of the trailing `](` is hand-written link
+        // syntax whose destination is still arriving: linkify only matched the
+        // partial URL, so the folded node must stay an explicit link.
+        const linkOpenMarkup = tokens[i + 1]?.markup
+        const handWrittenLink = (linkOpenMarkup === 'linkify' || linkOpenMarkup === 'autolink')
+          && (match.index ?? 0) + match[0].length === curToken.content!.length - 1
+        const origin: SyntheticLinkOrigin = handWrittenLink
+          ? 'explicit'
+          : getSyntheticLinkOrigin(linkOpenMarkup)
         const replacerTokens = []
         if (emphasisMatch) {
           beforeText = beforeText.slice(0, emphasisMatch.index)

@@ -219,6 +219,7 @@ interface LinkNode extends BaseNode {
         string
     ][];
     children: ParsedNode[];
+    markup?: string;
 }
 interface ImageNode extends BaseNode {
     type: 'image';

@@ -455,6 +455,8 @@ The parser exports various node types representing different markdown elements:
 - `MathBlockNode`, `MathInlineNode`
 - And many more...
 
+`LinkNode` also reports where the link came from — `node.markup` is `''` for `[text](url)`, `'linkify'` for auto-detected bare URLs, domains and e-mails, `'autolink'` for `<https://…>`, and `'html'` for inline `<a href="…">`. Custom `link` renderers can use it to treat auto-detected links (such as bare file names like `summary.md`) differently from hand-written ones.
+
 ## Default Plugins
 
 This package comes with the following markdown-it plugins pre-configured:

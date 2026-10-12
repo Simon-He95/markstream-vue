@@ -113,6 +113,7 @@ export interface LinkNode extends BaseNode {
     text: string;
     attrs?: [string, string][];
     children: ParsedNode[];
+    markup?: string;
 }
 export interface ImageNode extends BaseNode {
     type: 'image';

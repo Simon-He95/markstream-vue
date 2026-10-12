@@ -5,9 +5,10 @@ import { getMarkdown, parseMarkdownToStructure } from '../src'
 // punctuation, so `**`/`*` markers sit directly next to CJK punctuation
 // (`「」《》。，`). CommonMark counts that punctuation as Unicode punctuation and
 // refuses the run, which either pairs the wrong markers with each other or
-// leaves the markers visible. The parser now applies the `markdown-cjk-friendly`
-// flanking rules, so every expected span below matches
-// `markdown-it` + `markdown-it-cjk-friendly` output for the same input.
+// leaves the markers visible. `factory()` installs `markdown-it-cjk-friendly`,
+// which amends the flanking definitions, so every expected span below is
+// `markdown-it` + `markdown-it-cjk-friendly` output for the same input —
+// including GFM strikethrough, which shares the same delimiter scanner.
 
 function collectText(value: any): string {
   if (!value || typeof value !== 'object')
@@ -127,6 +128,22 @@ describe('issue 786: CJK punctuation directly next to emphasis markers', () => {
       'text',
       'em_close',
     ])
+  })
+
+  // `factory()` installs the plugin, which subclasses `md.inline.State`; these
+  // expectations are `markdown-it` + `markdown-it-cjk-friendly` output. GFM
+  // strikethrough goes through the same delimiter scanner, so it is covered here too.
+  it.each([
+    ['说明~~「A」~~。', '<p>说明<s>「A」</s>。</p>'],
+    ['依据~~《民法典》~~第五条', '<p>依据<s>《民法典》</s>第五条</p>'],
+    ['**快。**与~~慢。~~', '<p><strong>快。</strong>与<s>慢。</s></p>'],
+    ['~~快。~~Pi', '<p><s>快。</s>Pi</p>'],
+    ['说明~~A~~。', '<p>说明<s>A</s>。</p>'],
+    ['a~~b~~c', '<p>a<s>b</s>c</p>'],
+  ])('pairs GFM strikethrough next to CJK punctuation for %s', (markdown, expectedHtml) => {
+    const md = getMarkdown(`issue-786-strikethrough-${markdown}`)
+
+    expect(md.render(markdown).trim()).toBe(expectedHtml)
   })
 
   it('keeps spans that already paired around CJK punctuation', () => {

@@ -1,9 +1,9 @@
 import type { MathOptions } from './config'
 import type { MarkdownIt as MarkdownItInstance, Token } from './markdown-it-types'
+import markdownItCjkFriendly from 'markdown-it-cjk-friendly'
 import MarkdownIt from 'markdown-it-ts'
 import { getDefaultMathOptions } from './config'
 import { isUnsafeHtmlUrl } from './htmlTags'
-import { applyCjkFriendlyEmphasis } from './plugins/cjkFriendlyEmphasis'
 import { applyContainers } from './plugins/containers'
 import { applyFixHtmlInlineTokens } from './plugins/fixHtmlInline'
 import { applyFixIndentedCodeBlock } from './plugins/fixIndentedCodeBlock'
@@ -261,11 +261,13 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
 
   applyLinkifyCandidateFilter(md)
 
-  // CJK text has no spaces around its punctuation, which is exactly where
-  // CommonMark's flanking rules drop `**`/`*` pairs (`**快。**Pi`,
-  // `说明**「A」**。和**「B」**。`). Install the tokenizer-level rule before
+  // CJK text has no spaces around its punctuation, which is exactly where CommonMark's
+  // flanking rules drop `**`/`*` pairs (`**快。**Pi`, `说明**「A」**。和**「B」**。`).
+  // `markdown-it-cjk-friendly` amends the flanking definitions for emphasis, strong and
+  // (through the same `scanDelims` seam) GFM strikethrough; markdown-it-ts exposes
+  // `md.inline.State` as of 1.1.3, which is what the plugin subclasses. Install it before
   // anything reads tokens.
-  applyCjkFriendlyEmphasis(md)
+  md.use(markdownItCjkFriendly)
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }

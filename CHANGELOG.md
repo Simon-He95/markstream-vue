@@ -1,3 +1,31 @@
+## [2.0.19](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.18...markstream-vue@2.0.19) (2026-10-12)
+
+
+### Bug Fixes
+
+* **parser:** apply CJK-friendly flanking rules to emphasis runs ([282090b](https://github.com/Simon-He95/markstream-vue/commit/282090ba4cdad09d09f61edf451ca59b151d793b))
+* **parser:** fall back to the host delimiter scanner when utils is missing ([e01e8b9](https://github.com/Simon-He95/markstream-vue/commit/e01e8b9d89bcd4186c685f5b974d6ac87c2cc375)), closes [#786](https://github.com/Simon-He95/markstream-vue/issues/786)
+
+
+### Features
+
+* **parser:** expose link source markup on LinkNode ([e309c0d](https://github.com/Simon-He95/markstream-vue/commit/e309c0dc500a61a87eb5d5ba60dd41c2688533b5)), closes [#784](https://github.com/Simon-He95/markstream-vue/issues/784)
+* **parser:** make CJK-friendly emphasis switchable via cjkFriendly ([9dd99f1](https://github.com/Simon-He95/markstream-vue/commit/9dd99f1ea58ac54467fddd73d35701d78b3cd772))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.20`
+* `markstream-core@2.0.19`
+* `markstream-vue@2.0.19`
+* `markstream-react@2.0.19`
+* `markstream-octane@2.0.19`
+* `markstream-svelte@2.0.19`
+* `markstream-angular@2.0.19`
+* `markstream-vue2@2.0.19`
+
+
+
 ## [2.0.18](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.17...markstream-vue@2.0.18) (2026-10-11)
 
 

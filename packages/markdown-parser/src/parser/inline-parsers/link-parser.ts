@@ -1,5 +1,6 @@
 import type { LinkNode, MarkdownToken, ParseOptions } from '../../types'
 import type { ParseInlineTokensFn } from './inline-parser-types'
+import { resolveLinkMarkup } from '../../plugins/linkTokenMetadata'
 import { isParseContext } from '../parse-context'
 import { cloneTokenWithMutableChildren } from '../token-copy'
 
@@ -110,6 +111,7 @@ export function parseLinkToken(
     raw: String(`[${linkText}](${href}${title ? ` "${title}"` : ''})`),
     loading,
     attrs: normalizedAttrs,
+    markup: resolveLinkMarkup(openToken),
   }
 
   // Skip to after link_close

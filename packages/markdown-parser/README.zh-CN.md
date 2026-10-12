@@ -453,6 +453,8 @@ import type {
 - `MathBlockNode`, `MathInlineNode`
 - 以及更多...
 
+`LinkNode` 还会标记链接的来源：`node.markup` 在 `[文本](url)` 时为 `''`，自动识别的裸链接、域名与邮箱为 `'linkify'`，`<https://…>` 为 `'autolink'`，行内 `<a href="…">` 为 `'html'`。自定义 `link` 渲染器可以据此把自动识别出的链接（例如 `summary.md` 这类裸文件名）和手写链接区分处理。
+
 ## 默认插件
 
 该包预配置了以下 markdown-it 插件：

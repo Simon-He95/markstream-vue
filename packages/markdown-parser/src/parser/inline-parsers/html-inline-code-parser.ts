@@ -295,6 +295,7 @@ export function parseHtmlInlineCodeToken(
         children: normalizedChildren,
         loading: !fragment.closed,
         raw: fragment.html || code,
+        markup: 'html',
       } as ParsedNode,
       fragment.nextIndex,
     ]

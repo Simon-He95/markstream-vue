@@ -76,6 +76,8 @@ export interface LinkNode extends BaseNode {
   title: string | null
   text: string
   children: ParsedNode[]
+  /** `'linkify'` marks links auto-detected from bare text. */
+  markup?: string
 }
 
 export interface ImageNode extends BaseNode {

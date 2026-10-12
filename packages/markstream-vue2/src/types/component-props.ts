@@ -134,6 +134,8 @@ export interface LinkNodeProps {
     children: { type: string, raw: string }[]
     raw: string
     loading?: boolean
+    /** `'linkify'` marks links auto-detected from bare text. */
+    markup?: string
   }
   indexKey: number | string
   customId?: string

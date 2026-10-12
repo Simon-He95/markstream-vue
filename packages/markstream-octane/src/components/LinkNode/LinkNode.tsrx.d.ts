@@ -18,5 +18,7 @@ export declare function LinkNode(props: NodeComponentProps<{
     text: string;
     children?: ParsedNode[];
     loading?: boolean;
+    /** `'linkify'` marks links auto-detected from bare text. */
+    markup?: string;
 }> & LinkNodeStyleProps): import("octane/jsx-runtime").Octane.JSX.Element;
 export default LinkNode;

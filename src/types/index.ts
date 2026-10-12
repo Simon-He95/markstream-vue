@@ -77,6 +77,15 @@ export interface LinkNode extends BaseNode {
   text: string
   attrs?: [string, string][]
   children: ParsedNode[]
+  /**
+   * How the link was written in the source:
+   * - `''` explicit markdown syntax `[text](url)`, including an unfinished link
+   *   whose destination is still streaming in (`[text](http://part`)
+   * - `'linkify'` auto-detected bare URL / domain / e-mail
+   * - `'autolink'` `<https://...>` / `<mailto:...>`
+   * - `'html'` inline HTML `<a href="...">`
+   */
+  markup?: string
 }
 
 export interface ImageNode extends BaseNode {

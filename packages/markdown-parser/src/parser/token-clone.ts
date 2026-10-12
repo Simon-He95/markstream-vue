@@ -1,5 +1,6 @@
 import type { Token } from '../markdown-it-types'
 import type { MarkdownToken } from '../types'
+import { copySyntheticLinkOrigin } from '../plugins/linkTokenMetadata'
 import { cloneTokenWithMutableChildren } from './token-copy'
 
 function isPlainObject(value: unknown) {
@@ -143,6 +144,13 @@ function canCloneMarkdownTokenFast(token: Token, enumerableKeys: string[]) {
 }
 
 function cloneMarkdownToken(token: Token, cloneObjectFields = true): Token {
+  const cloned = cloneMarkdownTokenValue(token, cloneObjectFields)
+  // A plain object copy does not carry over the WeakMap origin of `link` tokens.
+  copySyntheticLinkOrigin(token as unknown as MarkdownToken, cloned as unknown as MarkdownToken)
+  return cloned
+}
+
+function cloneMarkdownTokenValue(token: Token, cloneObjectFields = true): Token {
   if (!cloneObjectFields)
     return cloneTokenWithMutableChildren(token as unknown as MarkdownToken) as unknown as Token
 

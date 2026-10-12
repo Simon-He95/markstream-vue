@@ -271,7 +271,9 @@ Deep dive: [ImageNode](/guide/image-node)
 
 - **Best for**: docs sites and chat surfaces where link affordance needs to match your design system
 - **Key props**: `color`, `underlineHeight`, `showTooltip`
+- **Node fields**: `node.href`, `node.title`, `node.text`, and `node.markup` — `''` for `[text](url)`, `'linkify'` for auto-detected bare URLs, domains and e-mails, `'autolink'` for `<https://…>`, `'html'` for inline `<a href="…">`
 - **Common gotcha**: browser defaults or resets can override anchor styles, so verify CSS order before assuming the component is broken
+- **Tip**: a custom `link` component can read `node.markup` to style auto-detected links (for example bare file names such as `summary.md`) differently from hand-written ones
 
 ## VmrContainerNode
 

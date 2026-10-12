@@ -1,6 +1,7 @@
 import type { MarkdownToken, ParsedNode, ParseOptions, TextNode } from '../../types'
 import type { ParseContext } from '../parse-context'
 import type { InlineParseState } from './inline-parser-state'
+import { resolveLinkMarkup } from '../../plugins/linkTokenMetadata'
 import { inferLinkifyDemotionContext } from '../linkifyHeuristics'
 import { ensureParseContext } from '../parse-context'
 import { cloneTokenWithMutableChildren } from '../token-copy'
@@ -84,6 +85,9 @@ export function parseInlineTokens(
     // push a raw token into result as a ParsedNode (best effort cast)
     resetCurrentTextNode()
     const node = cloneTokenWithMutableChildren(token) as unknown as ParsedNode
+    // A folded `link` token keeps its source in the WeakMap, not in `markup`.
+    if (node.type === 'link')
+      (node as ParsedNode & { markup?: string }).markup = resolveLinkMarkup(token)
     state.result.push(node)
   }
 

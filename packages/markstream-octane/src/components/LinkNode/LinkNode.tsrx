@@ -26,6 +26,8 @@ export function LinkNode(props: NodeComponentProps<{
   text: string
   children?: ParsedNode[]
   loading?: boolean
+  /** `'linkify'` marks links auto-detected from bare text. */
+  markup?: string
 }> & LinkNodeStyleProps) {
   const { node, ctx, renderNode, indexKey } = props
   const showTip = props.showTooltip !== false

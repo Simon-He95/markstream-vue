@@ -25,6 +25,7 @@ keywords:
 - `apply`：用于变更 `MarkdownIt` 实例的函数数组
 - `i18n`：翻译映射或函数
 - `customHtmlTags`：流式内联 HTML 中间态白名单扩展（如 `['thinking']`）
+- `cjkFriendly`（布尔，默认 `true`）：中日韩友好强调规则，紧贴中文/日文/韩文标点的强调记号可正确配对（`说明**「A」**。`）；传 `false` 恢复标准 CommonMark flanking 规则。
 
 ### `parseMarkdownToStructure(content, md, options?)`
 将 Markdown 字符串解析为供渲染器使用的节点树（AST）。

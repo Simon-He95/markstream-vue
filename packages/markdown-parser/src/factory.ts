@@ -1,9 +1,9 @@
 import type { MathOptions } from './config'
 import type { MarkdownIt as MarkdownItInstance, Token } from './markdown-it-types'
+import markdownItCjkFriendly from 'markdown-it-cjk-friendly'
 import MarkdownIt from 'markdown-it-ts'
 import { getDefaultMathOptions } from './config'
 import { isUnsafeHtmlUrl } from './htmlTags'
-import { applyCjkFriendlyEmphasis } from './plugins/cjkFriendlyEmphasis'
 import { applyContainers } from './plugins/containers'
 import { applyFixHtmlInlineTokens } from './plugins/fixHtmlInline'
 import { applyFixIndentedCodeBlock } from './plugins/fixIndentedCodeBlock'
@@ -30,6 +30,17 @@ export interface FactoryOptions extends Record<string, unknown> {
    * Default: true
    */
   enableFixIndentedCodeBlock?: boolean
+  /**
+   * CJK-friendly emphasis/strong/strikethrough flanking rules
+   * (`markdown-it-cjk-friendly`). Default: true.
+   *
+   * Chinese/Japanese/Korean prose has no spaces around its punctuation, so markers
+   * sit directly next to it (`说明**「A」**。`). CommonMark counts that punctuation as
+   * Unicode punctuation and refuses the run, which leaves the markers visible or pairs
+   * the wrong ones. Default-on because that is the common case for this renderer;
+   * set to `false` for plain CommonMark flanking (markdown-it's own default).
+   */
+  cjkFriendly?: boolean
 }
 
 const HTML_LINK_OPEN_RE = /^<a[>\s]/i
@@ -261,11 +272,14 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
 
   applyLinkifyCandidateFilter(md)
 
-  // CJK text has no spaces around its punctuation, which is exactly where
-  // CommonMark's flanking rules drop `**`/`*` pairs (`**快。**Pi`,
-  // `说明**「A」**。和**「B」**。`). Install the tokenizer-level rule before
+  // CJK text has no spaces around its punctuation, which is exactly where CommonMark's
+  // flanking rules drop `**`/`*` pairs (`**快。**Pi`, `说明**「A」**。和**「B」**。`).
+  // `markdown-it-cjk-friendly` amends the flanking definitions for emphasis, strong and
+  // (through the same `scanDelims` seam) GFM strikethrough; markdown-it-ts exposes
+  // `md.inline.State` as of 1.1.3, which is what the plugin subclasses. Install it before
   // anything reads tokens.
-  applyCjkFriendlyEmphasis(md)
+  if (opts.cjkFriendly ?? true)
+    md.use(markdownItCjkFriendly)
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }

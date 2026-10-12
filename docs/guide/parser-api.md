@@ -26,6 +26,7 @@ Options include:
 - `apply`: functions to mutate the `MarkdownIt` instance
 - `i18n`: translator map or function
 - `customHtmlTags`: custom HTML-like tags treated as common during streaming mid‑state handling (e.g. `['thinking']`)
+- `cjkFriendly` (boolean, default `true`): CJK-friendly emphasis/strong/strikethrough flanking rules, so markers next to Chinese/Japanese/Korean punctuation pair correctly (`说明**「A」**。`). Pass `false` for plain CommonMark flanking.
 
 ### `parseMarkdownToStructure(content, md, options?)`
 Parse a Markdown string into a streaming-friendly AST used by the renderer.

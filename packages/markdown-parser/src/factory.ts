@@ -30,6 +30,17 @@ export interface FactoryOptions extends Record<string, unknown> {
    * Default: true
    */
   enableFixIndentedCodeBlock?: boolean
+  /**
+   * CJK-friendly emphasis/strong/strikethrough flanking rules
+   * (`markdown-it-cjk-friendly`). Default: true.
+   *
+   * Chinese/Japanese/Korean prose has no spaces around its punctuation, so markers
+   * sit directly next to it (`说明**「A」**。`). CommonMark counts that punctuation as
+   * Unicode punctuation and refuses the run, which leaves the markers visible or pairs
+   * the wrong ones. Default-on because that is the common case for this renderer;
+   * set to `false` for plain CommonMark flanking (markdown-it's own default).
+   */
+  cjkFriendly?: boolean
 }
 
 const HTML_LINK_OPEN_RE = /^<a[>\s]/i
@@ -267,7 +278,8 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
   // (through the same `scanDelims` seam) GFM strikethrough; markdown-it-ts exposes
   // `md.inline.State` as of 1.1.3, which is what the plugin subclasses. Install it before
   // anything reads tokens.
-  md.use(markdownItCjkFriendly)
+  if (opts.cjkFriendly ?? true)
+    md.use(markdownItCjkFriendly)
 
   if (opts.enableMath ?? true) {
     const mergedMathOptions: MathOptions = { ...(getDefaultMathOptions() ?? {}), ...(opts.mathOptions ?? {}) }

@@ -115,6 +115,7 @@ interface FactoryOptions extends Record<string, unknown> {
     };
     customHtmlTags?: readonly string[];
     enableFixIndentedCodeBlock?: boolean;
+    cjkFriendly?: boolean;
 }
 interface BaseNode {
     type: string;

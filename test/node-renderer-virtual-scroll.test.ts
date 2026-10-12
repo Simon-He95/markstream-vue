@@ -2072,13 +2072,12 @@ describe('node renderer virtual-scroll coordination', () => {
 
     expect(finishAsyncNode).toBeTypeOf('function')
     finishAsyncNode?.(88)
-    await new Promise(resolve => setTimeout(resolve, 160))
-    await flushAll()
-
-    expect(wrapper.emitted('render-final')?.at(-1)?.[0]).toMatchObject({
-      phase: 'final',
-      totalHeight: 88,
-      stable: true,
+    await vi.waitFor(() => {
+      expect(wrapper.emitted('render-final')?.at(-1)?.[0]).toMatchObject({
+        phase: 'final',
+        totalHeight: 88,
+        stable: true,
+      })
     })
 
     wrapper.unmount()

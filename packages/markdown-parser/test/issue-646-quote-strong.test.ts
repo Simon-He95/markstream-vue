@@ -47,20 +47,27 @@ describe('issue 646: strong with quote content after Han text', () => {
     const markdown = '他说**\'关键\'**内容'
     const nodes = parseMarkdownToStructure(markdown, getMarkdown('issue-646-single'), { final: true }) as any[]
 
-    // typographer smartens straight to curly quotes inside the span
-    expect(collectText(nodes)).toBe('他说‘关键’内容')
+    // The markers now delimit a real strong span (CJK-friendly flanking), so the
+    // typographer sees a straight quote directly after `说` and directly before
+    // `关` — a word-internal quote, which markdown-it reads as an apostrophe.
+    // markdown-it + markdown-it-cjk-friendly renders the same `’关键’`.
+    expect(collectText(nodes)).toBe('他说’关键’内容')
     const strongs = findStrongs(nodes[0].children)
     expect(strongs).toHaveLength(1)
-    expect(strongs[0].children[0]).toMatchObject({ type: 'text', content: '‘关键’' })
+    expect(strongs[0].children[0]).toMatchObject({ type: 'text', content: '’关键’' })
   })
 
   it('parses strong when the closing marker directly follows an ASCII closing quote', () => {
     const markdown = '他说**"重点"**是工作'
     const nodes = parseMarkdownToStructure(markdown, getMarkdown('issue-646-close-quote'), { final: true }) as any[]
 
-    expect(collectText(nodes)).toBe('他说“重点”是工作')
+    // Same reason as the single-quote case above: the double quotes are inside
+    // the strong span with letters on the outside, so the typographer keeps them
+    // straight instead of pairing them. markdown-it + markdown-it-cjk-friendly
+    // renders `<strong>&quot;重点&quot;</strong>` for the same input.
+    expect(collectText(nodes)).toBe('他说"重点"是工作')
     const strongs = findStrongs(nodes[0].children)
     expect(strongs).toHaveLength(1)
-    expect(strongs[0].children[0]).toMatchObject({ type: 'text', content: '“重点”' })
+    expect(strongs[0].children[0]).toMatchObject({ type: 'text', content: '"重点"' })
   })
 })

@@ -259,8 +259,10 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
       }
     }
     else {
-      // no closing pair found: decide behavior based on strict option
-      if (state.requireClosingStrong || close.sawInvalidClose) {
+      // no closing pair found: decide behavior based on strict option.
+      // A final parse is authoritative: an unmatched `**` opener is literal
+      // text, matching the emphasis branch below (`state.options?.final`).
+      if (state.requireClosingStrong || close.sawInvalidClose || state.options?.final) {
         state.pushText(content.slice(beforeText.length), content.slice(beforeText.length))
         state.index++
         return true

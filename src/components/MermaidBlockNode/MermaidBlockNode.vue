@@ -261,20 +261,8 @@ const baseFixedCode = computed(() => {
     .replace(/:::subgraphNode$/gm, '::subgraphNode')
 })
 
-// get the code with the theme configuration
 function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
-  const baseCode = code
-  const themeValue = theme === 'dark' ? 'dark' : 'default'
-  const initConfig: Record<string, unknown> = { theme: themeValue }
-  if (mermaidSecurityLevel.value === 'strict') {
-    initConfig.htmlLabels = false
-    initConfig.flowchart = { htmlLabels: false }
-  }
-  const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
-  if (baseCode.trim().startsWith('%%{')) {
-    return baseCode
-  }
-  return themeConfig + baseCode
+  return applyThemeTo(code, theme)
 }
 
 function resolveMinContainerHeight() {
@@ -759,10 +747,11 @@ function applyThemeTo(code: string, theme: 'light' | 'dark') {
     initConfig.flowchart = { htmlLabels: false }
   }
   const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
+  const frontmatter = code.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
+  const diagram = code.slice(frontmatter.length)
+  if (diagram.trimStart().startsWith('%%{'))
     return code
-  return themeConfig + code
+  return frontmatter + themeConfig + diagram
 }
 
 // Whether we are allowed to apply a partial preview update safely

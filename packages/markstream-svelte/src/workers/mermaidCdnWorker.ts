@@ -60,16 +60,23 @@ function normalizeMermaidModule(mod) {
 function applyThemeTo(code, theme) {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = \`%%{init: {"theme": "\${themeValue}"}}%%\\n\`
-  const trimmed = String(code || '').trimStart()
-  if (trimmed.startsWith('%%{'))
+  const frontmatter = String(code || '').match(/^---[ \\t]*\\r?\\n[\\s\\S]*?\\r?\\n---[ \\t]*\\r?\\n/)?.[0] || ''
+  const diagram = String(code || '').slice(frontmatter.length)
+  if (diagram.trimStart().startsWith('%%{'))
     return code
-  return themeConfig + code
+  return frontmatter + themeConfig + diagram
 }
 
 function findHeaderIndex(lines) {
   const headerRe = /^(?:graph|flowchart|flowchart\\s+tb|flowchart\\s+lr|sequenceDiagram|gantt|classDiagram|stateDiagram(?:-v2)?|erDiagram|journey|pie|quadrantChart|timeline|xychart(?:-beta)?)\\b/
+  let inFrontmatter = lines[0]?.trimEnd() === '---'
   for (let i = 0; i < lines.length; i++) {
     const line = (lines[i] || '').trim()
+    if (inFrontmatter) {
+      if (i > 0 && lines[i].trimEnd() === '---')
+        inFrontmatter = false
+      continue
+    }
     if (!line || line.startsWith('%%'))
       continue
     if (headerRe.test(line))

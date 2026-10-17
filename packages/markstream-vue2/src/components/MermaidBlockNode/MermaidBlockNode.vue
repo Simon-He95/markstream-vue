@@ -235,15 +235,8 @@ function resolveEstimatedPreviewHeight() {
   return clampPreviewHeight(estimatedPreviewHeight.value)
 }
 
-// get the code with the theme configuration
 function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
-  const baseCode = code
-  const themeValue = theme === 'dark' ? 'dark' : 'default'
-  const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
-  if (baseCode.trim().startsWith('%%{')) {
-    return baseCode
-  }
-  return themeConfig + baseCode
+  return applyThemeTo(code, theme)
 }
 
 function getMermaidDiagramKind(code: string) {
@@ -551,10 +544,11 @@ function onCopyHover(e: Event) {
 function applyThemeTo(code: string, theme: 'light' | 'dark') {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
+  const frontmatter = code.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
+  const diagram = code.slice(frontmatter.length)
+  if (diagram.trimStart().startsWith('%%{'))
     return code
-  return themeConfig + code
+  return frontmatter + themeConfig + diagram
 }
 
 // Whether we are allowed to apply a partial preview update safely

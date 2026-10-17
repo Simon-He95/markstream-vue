@@ -719,11 +719,12 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   }
 
   private applyThemeTo(source: string, theme: MermaidTheme) {
-    const trimmed = source.trimStart()
-    if (trimmed.startsWith('%%{'))
+    const frontmatter = source.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
+    const diagram = source.slice(frontmatter.length)
+    if (diagram.trimStart().startsWith('%%{'))
       return source
     const themeValue = theme === 'dark' ? 'dark' : 'default'
-    return `%%{init: {"theme": "${themeValue}"}}%%\n${source}`
+    return `${frontmatter}%%{init: {"theme": "${themeValue}"}}%%\n${diagram}`
   }
 
   private getMermaidDiagramKind(source: string) {

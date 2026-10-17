@@ -180,11 +180,12 @@
   }
 
   function applyMermaidThemeTo(value: string, nextTheme: MermaidTheme) {
-    const trimmed = value.trimStart()
-    if (trimmed.startsWith('%%{'))
+    const frontmatter = value.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
+    const diagram = value.slice(frontmatter.length)
+    if (diagram.trimStart().startsWith('%%{'))
       return value
     const themeValue = nextTheme === 'dark' ? 'dark' : 'default'
-    return `%%{init: {"theme": "${themeValue}"}}%%\n${value}`
+    return `${frontmatter}%%{init: {"theme": "${themeValue}"}}%%\n${diagram}`
   }
 
   async function renderMermaid(force = false) {

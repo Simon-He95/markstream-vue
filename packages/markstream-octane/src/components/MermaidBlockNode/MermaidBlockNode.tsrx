@@ -1111,11 +1111,12 @@ async function findPrefixCandidate(
 }
 
 function applyThemeTo(code: string, theme: Theme) {
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
+  const frontmatter = code.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
+  const diagram = code.slice(frontmatter.length)
+  if (diagram.trimStart().startsWith('%%{'))
     return code
   const themeValue = theme === 'dark' ? 'dark' : 'default'
-  return `%%{init: {"theme": "${themeValue}"}}%%\n${code}`
+  return `${frontmatter}%%{init: {"theme": "${themeValue}"}}%%\n${diagram}`
 }
 
 function getMermaidDiagramKind(code: string) {

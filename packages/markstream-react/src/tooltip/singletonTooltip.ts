@@ -9,6 +9,7 @@ let showTimer: ReturnType<typeof setTimeout> | null = null
 let hideTimer: ReturnType<typeof setTimeout> | null = null
 let currentId: string | null = null
 let visible = false
+let requestId = 0
 
 function clearTimers() {
   if (showTimer) {
@@ -55,15 +56,29 @@ function detectDarkModeHint(hint?: boolean | null) {
   return false
 }
 
-async function updatePosition(placement: TooltipPlacement) {
-  if (!tooltipEl || !currentAnchor)
-    return
-  const { x, y } = await computePosition(currentAnchor, tooltipEl, {
+function isCurrentRequest(anchor: HTMLElement, request: number) {
+  if (request !== requestId || anchor !== currentAnchor)
+    return false
+  if (!anchor.isConnected) {
+    hideTooltip(true, anchor)
+    return false
+  }
+  return true
+}
+
+async function updatePosition(anchor: HTMLElement, placement: TooltipPlacement, request: number) {
+  const el = tooltipEl
+  if (!el || !isCurrentRequest(anchor, request))
+    return false
+  const { x, y } = await computePosition(anchor, el, {
     placement,
     middleware: [offset(8), flip(), shift({ padding: 8 })],
     strategy: 'fixed',
   })
-  tooltipEl.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`
+  if (!isCurrentRequest(anchor, request))
+    return false
+  el.style.transform = `translate3d(${Math.round(x)}px, ${Math.round(y)}px, 0)`
+  return true
 }
 
 export function showTooltipForAnchor(
@@ -74,16 +89,17 @@ export function showTooltipForAnchor(
   _origin?: { x: number, y: number } | undefined,
   isDark?: boolean | null,
 ) {
-  if (!anchor || typeof document === 'undefined')
+  if (!anchor?.isConnected || typeof document === 'undefined')
     return
   ensureTooltipEl()
   if (!tooltipEl)
     return
-  clearTimers()
+  hideTooltip(true)
+  currentAnchor = anchor
+  const request = requestId
   const doShow = async () => {
-    if (!tooltipEl)
+    if (!tooltipEl || !isCurrentRequest(anchor, request))
       return
-    currentAnchor = anchor
     tooltipEl.textContent = content
     tooltipEl.dataset.placement = placement
     tooltipEl.dataset.dark = detectDarkModeHint(isDark) ? 'true' : 'false'
@@ -94,12 +110,12 @@ export function showTooltipForAnchor(
       anchor.setAttribute('aria-describedby', currentId)
     }
     catch {}
-    await updatePosition(placement)
+    if (!await updatePosition(anchor, placement, request) || !isCurrentRequest(anchor, request))
+      return
     tooltipEl.dataset.visible = 'true'
     visible = true
-    cleanupAutoUpdate?.()
     cleanupAutoUpdate = autoUpdate(anchor, tooltipEl!, () => {
-      updatePosition(placement)
+      void updatePosition(anchor, placement, request)
     })
   }
   if (immediate)
@@ -108,16 +124,20 @@ export function showTooltipForAnchor(
     showTimer = setTimeout(doShow, 80)
 }
 
-export function hideTooltip(immediate = false) {
+export function hideTooltip(immediate = false, anchor?: HTMLElement | null) {
+  if (anchor !== undefined && anchor !== currentAnchor)
+    return
+  // Invalidate pending positioning immediately, including during the hide delay.
+  requestId += 1
+  clearTimers()
   if (!tooltipEl)
     return
-  clearTimers()
   const doHide = () => {
     if (!tooltipEl)
       return
     tooltipEl.dataset.visible = 'false'
     visible = false
-    if (currentAnchor && currentId) {
+    if (currentAnchor && currentId && currentAnchor.getAttribute('aria-describedby') === currentId) {
       try {
         currentAnchor.removeAttribute('aria-describedby')
       }

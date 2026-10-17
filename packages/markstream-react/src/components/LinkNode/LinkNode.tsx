@@ -1,6 +1,6 @@
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { NodeComponentProps } from '../../types/node-component'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { sanitizeHtmlAttrs, shouldOpenLinkInNewTab } from 'stream-markdown-parser'
 import { renderNodeChildren } from '../../renderers/renderChildren'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
@@ -30,6 +30,15 @@ export function LinkNode(props: NodeComponentProps<{
   const { node, ctx, renderNode, indexKey } = props
   const showTip = props.showTooltip !== false
   const isDark = props.isDark ?? ctx?.isDark
+  const anchorRef = useRef<HTMLAnchorElement>(null)
+
+  useEffect(() => {
+    const anchor = anchorRef.current
+    return () => {
+      if (anchor)
+        hideTooltip(true, anchor)
+    }
+  }, [showTip, node.loading])
 
   const cssVars = useMemo(() => {
     const bottom = props.underlineBottom !== undefined
@@ -76,10 +85,10 @@ export function LinkNode(props: NodeComponentProps<{
     showTooltipForAnchor(target, txt, 'top', false, { x: event.clientX, y: event.clientY }, isDark)
   }, [isDark, node.text, node.title, safeHref, showTip])
 
-  const onAnchorLeave = useCallback(() => {
+  const onAnchorLeave = useCallback((event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!showTip)
       return
-    hideTooltip()
+    hideTooltip(false, event.currentTarget)
   }, [showTip])
 
   if (node.loading) {
@@ -106,6 +115,7 @@ export function LinkNode(props: NodeComponentProps<{
 
   return (
     <a
+      ref={anchorRef}
       className="link-node"
       href={safeHref || undefined}
       title={showTip ? '' : title}

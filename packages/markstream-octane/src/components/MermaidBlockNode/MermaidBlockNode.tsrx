@@ -11,7 +11,7 @@ import {
   useState,
 } from 'octane'
 import { createPortal } from 'octane'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import type { PanGesture } from 'markstream-core'
 import { toSafeSvgElement } from 'stream-markdown-parser'
 import { useViewportPriority } from '../../context/viewportPriority.tsrx'
@@ -1111,11 +1111,8 @@ async function findPrefixCandidate(
 }
 
 function applyThemeTo(code: string, theme: Theme) {
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
-    return code
   const themeValue = theme === 'dark' ? 'dark' : 'default'
-  return `%%{init: {"theme": "${themeValue}"}}%%\n${code}`
+  return applyMermaidThemeDirective(code, `%%{init: {"theme": "${themeValue}"}}%%\n`)
 }
 
 function getMermaidDiagramKind(code: string) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Exported props interface for MermaidBlockNode
 import type { MermaidBlockEvent } from '../../types/component-props'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import { toSafeSvgElement } from 'stream-markdown-parser'
 import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
@@ -235,15 +235,8 @@ function resolveEstimatedPreviewHeight() {
   return clampPreviewHeight(estimatedPreviewHeight.value)
 }
 
-// get the code with the theme configuration
 function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
-  const baseCode = code
-  const themeValue = theme === 'dark' ? 'dark' : 'default'
-  const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
-  if (baseCode.trim().startsWith('%%{')) {
-    return baseCode
-  }
-  return themeConfig + baseCode
+  return applyThemeTo(code, theme)
 }
 
 function getMermaidDiagramKind(code: string) {
@@ -551,10 +544,7 @@ function onCopyHover(e: Event) {
 function applyThemeTo(code: string, theme: 'light' | 'dark') {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
-    return code
-  return themeConfig + code
+  return applyMermaidThemeDirective(code, themeConfig)
 }
 
 // Whether we are allowed to apply a partial preview update safely

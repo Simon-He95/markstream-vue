@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Exported props interface for MermaidBlockNode
 import type { MermaidBlockEvent, MermaidBlockNodeProps } from '../../types/component-props'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, useAttrs, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -261,20 +261,8 @@ const baseFixedCode = computed(() => {
     .replace(/:::subgraphNode$/gm, '::subgraphNode')
 })
 
-// get the code with the theme configuration
 function getCodeWithTheme(theme: 'light' | 'dark', code = baseFixedCode.value) {
-  const baseCode = code
-  const themeValue = theme === 'dark' ? 'dark' : 'default'
-  const initConfig: Record<string, unknown> = { theme: themeValue }
-  if (mermaidSecurityLevel.value === 'strict') {
-    initConfig.htmlLabels = false
-    initConfig.flowchart = { htmlLabels: false }
-  }
-  const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
-  if (baseCode.trim().startsWith('%%{')) {
-    return baseCode
-  }
-  return themeConfig + baseCode
+  return applyThemeTo(code, theme)
 }
 
 function resolveMinContainerHeight() {
@@ -759,10 +747,7 @@ function applyThemeTo(code: string, theme: 'light' | 'dark') {
     initConfig.flowchart = { htmlLabels: false }
   }
   const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
-    return code
-  return themeConfig + code
+  return applyMermaidThemeDirective(code, themeConfig)
 }
 
 // Whether we are allowed to apply a partial preview update safely

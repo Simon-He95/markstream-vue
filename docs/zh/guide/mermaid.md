@@ -141,6 +141,7 @@ import MarkdownRender from 'markstream-react'
 2. **版本过旧**：请使用 `mermaid` ≥ 11，旧版本无法兼容异步渲染。
 3. **SSR 报错**：Mermaid 依赖 DOM。Nuxt 请包裹 `<ClientOnly>`，Vite SSR 请在 `onMounted` 中渲染。
 4. **图表过大**：考虑在服务端预渲染或缓存 SVG，`MermaidBlockNode` 导出事件中提供 `svgString` 可直接上传或持久化。
+5. **主题被覆盖**：图表默认跟随应用主题，会覆盖 frontmatter 的 `config.theme`。需要单独指定图表主题时，使用 `%%{init: ...}%%` 指令；有 frontmatter 时，将指令放在其后。
 
 若问题仍存在，请在 playground (`pnpm play`) 中构造最小示例并附带链接提交 issue，方便复现与定位。
 

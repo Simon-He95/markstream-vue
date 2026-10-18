@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 
+import { applyMermaidThemeDirective } from 'markstream-core'
 import mermaid from 'mermaid'
 
 declare const self: DedicatedWorkerGlobalScope
@@ -21,16 +22,19 @@ type ResponseMessage
 function applyThemeTo(code: string, theme: Theme) {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
-    return code
-  return themeConfig + code
+  return applyMermaidThemeDirective(code, themeConfig)
 }
 
 function findHeaderIndex(lines: string[]) {
   const headerRe = /^(?:graph|flowchart|flowchart\s+tb|flowchart\s+lr|sequenceDiagram|gantt|classDiagram|stateDiagram(?:-v2)?|erDiagram|journey|pie|quadrantChart|timeline|xychart(?:-beta)?)\b/
+  let inFrontmatter = lines[0]?.trimEnd() === '---'
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index].trim()
+    if (inFrontmatter) {
+      if (index > 0 && lines[index].trimEnd() === '---')
+        inFrontmatter = false
+      continue
+    }
     if (!line || line.startsWith('%%'))
       continue
     if (headerRe.test(line))
@@ -50,7 +54,7 @@ async function canParse(code: string, theme: Theme) {
 }
 
 async function findLastRenderablePrefix(baseCode: string, theme: Theme) {
-  const lines = baseCode.split('\n')
+  const lines = baseCode.split(/\r\n?|\n/)
   const headerIndex = findHeaderIndex(lines)
   if (headerIndex === -1)
     return null

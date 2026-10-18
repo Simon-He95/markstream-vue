@@ -2,7 +2,7 @@ import type { PanGesture } from 'markstream-core'
 import type { VisibilityHandle } from '../../context/viewportPriority'
 import type { MermaidBlockEvent, MermaidBlockNodeProps } from '../../types/component-props'
 import clsx from 'clsx'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import React, {
   useCallback,
   useEffect,
@@ -1136,11 +1136,8 @@ async function findPrefixCandidate(
 }
 
 function applyThemeTo(code: string, theme: Theme) {
-  const trimmed = code.trimStart()
-  if (trimmed.startsWith('%%{'))
-    return code
   const themeValue = theme === 'dark' ? 'dark' : 'default'
-  return `%%{init: {"theme": "${themeValue}"}}%%\n${code}`
+  return applyMermaidThemeDirective(code, `%%{init: {"theme": "${themeValue}"}}%%\n`)
 }
 
 function getMermaidDiagramKind(code: string) {

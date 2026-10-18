@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
-  import { createPanGesture } from 'markstream-core'
+  import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
   import { onMount, tick, untrack } from 'svelte'
   import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
   import { useSafeI18n } from '../i18n/useSafeI18n'
@@ -180,11 +180,8 @@
   }
 
   function applyMermaidThemeTo(value: string, nextTheme: MermaidTheme) {
-    const trimmed = value.trimStart()
-    if (trimmed.startsWith('%%{'))
-      return value
     const themeValue = nextTheme === 'dark' ? 'dark' : 'default'
-    return `%%{init: {"theme": "${themeValue}"}}%%\n${value}`
+    return applyMermaidThemeDirective(value, `%%{init: {"theme": "${themeValue}"}}%%\n`)
   }
 
   async function renderMermaid(force = false) {

@@ -1,3 +1,27 @@
+## [2.0.20](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.19...markstream-vue@2.0.20) (2026-10-18)
+
+
+### Bug Fixes
+
+* complete Mermaid frontmatter handling ([37ae270](https://github.com/Simon-He95/markstream-vue/commit/37ae27086edf8869d65903e7dca62bf931862da6))
+* **parser:** keep unclosed strong delimiters literal in a final parse ([039c005](https://github.com/Simon-He95/markstream-vue/commit/039c0054fa88b5b40bfae1834acf79dd2dbc73f0))
+* preserve Mermaid frontmatter when applying themes ([530e7a7](https://github.com/Simon-He95/markstream-vue/commit/530e7a759902f174bc172be3dfc88aa899de9613))
+* **react:** cancel stale link tooltip requests ([8d0aeff](https://github.com/Simon-He95/markstream-vue/commit/8d0aeffe2aff080a4332624cb464669cb5508528))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.21`
+* `markstream-core@2.0.20`
+* `markstream-vue@2.0.20`
+* `markstream-react@2.0.20`
+* `markstream-octane@2.0.20`
+* `markstream-svelte@2.0.20`
+* `markstream-angular@2.0.20`
+* `markstream-vue2@2.0.20`
+
+
+
 ## [2.0.19](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.18...markstream-vue@2.0.19) (2026-10-12)
 
 

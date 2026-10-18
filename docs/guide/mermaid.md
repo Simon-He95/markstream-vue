@@ -143,12 +143,9 @@ Keep the default strict mode for user content, AI output, or any mixed-trust Mar
 2. **Async errors** — check the browser console for Mermaid logs. Versions prior to 11 are unsupported; upgrade to ≥ 11.
 3. **SSR guard** — Mermaid needs the DOM. Wrap the component in `<ClientOnly>` for Nuxt or check `typeof window !== 'undefined'` before mounting in SSR contexts.
 4. **Heavy graphs** — consider pre-rendering server-side (mermaid CLI) or caching SVG output; the component exposes `svgString` when using `MermaidBlockNode` export events.
+5. **Theme overridden** — diagrams follow the application's light/dark theme, overriding `config.theme` in frontmatter. To set a theme for one diagram, use an `%%{init: ...}%%` directive; place it after frontmatter when present.
 
 Still stuck? Reproduce the issue in the playground (`pnpm play`) with a minimal Markdown sample and link it when opening a bug report.
-
-## Theme and frontmatter
-
-Mermaid YAML frontmatter must stay at the start of the diagram source. Markstream preserves its title and other configuration, but the host light/dark theme overrides `config.theme`. An explicit `%%{init: ...}%%` directive at the start of the diagram (or immediately after frontmatter) is preserved instead, so use it when a diagram needs its own theme.
 
 ## CDN usage (no bundler)
 

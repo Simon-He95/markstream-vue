@@ -10,7 +10,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getMermaid } from '../../optional/mermaid'
 import { createMermaidRenderId } from '../../utils/mermaidRenderId'
@@ -719,12 +719,8 @@ export class MermaidBlockNodeComponent implements AfterViewInit, OnChanges, OnDe
   }
 
   private applyThemeTo(source: string, theme: MermaidTheme) {
-    const frontmatter = source.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
-    const diagram = source.slice(frontmatter.length)
-    if (diagram.trimStart().startsWith('%%{'))
-      return source
     const themeValue = theme === 'dark' ? 'dark' : 'default'
-    return `${frontmatter}%%{init: {"theme": "${themeValue}"}}%%\n${diagram}`
+    return applyMermaidThemeDirective(source, `%%{init: {"theme": "${themeValue}"}}%%\n`)
   }
 
   private getMermaidDiagramKind(source: string) {

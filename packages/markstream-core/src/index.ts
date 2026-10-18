@@ -1,4 +1,5 @@
 export * from './diff-preview'
+export { applyMermaidThemeDirective } from './mermaid-source'
 export { createPanGesture } from './pan-gesture'
 export type { PanGesture, PanGestureOptions, PanPoint } from './pan-gesture'
 export { resolveStreamingTextState, resolveStreamingTextUpdate } from './resolve-streaming-text-state'

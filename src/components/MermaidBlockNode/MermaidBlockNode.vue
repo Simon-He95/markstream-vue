@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Exported props interface for MermaidBlockNode
 import type { MermaidBlockEvent, MermaidBlockNodeProps } from '../../types/component-props'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, useAttrs, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -747,11 +747,7 @@ function applyThemeTo(code: string, theme: 'light' | 'dark') {
     initConfig.flowchart = { htmlLabels: false }
   }
   const themeConfig = `%%{init: ${JSON.stringify(initConfig)}}%%\n`
-  const frontmatter = code.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
-  const diagram = code.slice(frontmatter.length)
-  if (diagram.trimStart().startsWith('%%{'))
-    return code
-  return frontmatter + themeConfig + diagram
+  return applyMermaidThemeDirective(code, themeConfig)
 }
 
 // Whether we are allowed to apply a partial preview update safely

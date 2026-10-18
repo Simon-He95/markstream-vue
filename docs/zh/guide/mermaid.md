@@ -144,6 +144,10 @@ import MarkdownRender from 'markstream-react'
 
 若问题仍存在，请在 playground (`pnpm play`) 中构造最小示例并附带链接提交 issue，方便复现与定位。
 
+## 主题与 frontmatter
+
+Mermaid YAML frontmatter 必须位于图表源码开头。Markstream 保留其中的标题和其他配置，但宿主的浅色/深色主题会覆盖 `config.theme`。位于图表开头（或紧接 frontmatter 之后）的显式 `%%{init: ...}%%` 指令会被保留；需要为单张图表指定独立主题时，请使用该指令。
+
 ## CDN 用法（无 bundler）
 
 如果你通过 CDN 引入 Mermaid，并希望流式场景下的解析（语法检查/前缀查找）在 worker 中进行，可以注入一个“CDN 加载 Mermaid”的 worker：

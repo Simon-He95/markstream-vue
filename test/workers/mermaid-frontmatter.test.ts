@@ -46,7 +46,9 @@ const entries = [
 ]
 
 describe.each(entries)('mermaid frontmatter ($name)', ({ name, load, build }) => {
-  it('parses frontmatter and finds a renderable streaming prefix in both themes', async () => {
+  it.each(['\n', '\r\n', '\r'])('parses frontmatter and finds a streaming prefix with %j endings', async (newline) => {
+    const inputHeader = header.replace(/\n/g, newline)
+    const inputCode = code.replace(/\n/g, newline)
     const replies: unknown[] = []
     const sources: string[] = []
     const engine = {
@@ -81,14 +83,18 @@ describe.each(entries)('mermaid frontmatter ($name)', ({ name, load, build }) =>
     }
     expect(handler).toBeTypeOf('function')
     for (const theme of ['light', 'dark']) {
-      await handler!({ data: { id: theme, action: 'canParse', payload: { code, theme } } })
+      await handler!({ data: { id: theme, action: 'canParse', payload: { code: inputCode, theme } } })
       expect(replies.at(-1)).toEqual({ id: theme, ok: true, result: true })
-      expect(sources.at(-1)?.startsWith(header)).toBe(true)
+      expect(sources.at(-1)?.startsWith(inputHeader)).toBe(true)
       expect(await mermaid.parse(sources.at(-1)!)).toMatchObject({
         config: { theme: theme === 'dark' ? 'dark' : 'default', flowchart: { nodeSpacing: 73 } },
       })
-      await handler!({ data: { id: 'prefix', action: 'findPrefix', payload: { code: `${code}\n  B -->`, theme } } })
+      await handler!({ data: { id: 'prefix', action: 'findPrefix', payload: { code: `${inputCode}${newline}  B -->`, theme } } })
       expect(replies.at(-1)).toEqual({ id: 'prefix', ok: true, result: code })
+      const authored = `${inputHeader}%%{init: {"theme":"forest"}}%%${newline}flowchart LR${newline}  A --> B`
+      await handler!({ data: { id: 'author', action: 'canParse', payload: { code: authored, theme } } })
+      expect(replies.at(-1)).toEqual({ id: 'author', ok: true, result: true })
+      expect(sources.at(-1)).toBe(authored)
       await handler!({ data: { id: 'incomplete', action: 'canParse', payload: { code: '---\ntitle: Example', theme } } })
       expect(replies.at(-1)).toMatchObject({ id: 'incomplete', ok: false })
     }

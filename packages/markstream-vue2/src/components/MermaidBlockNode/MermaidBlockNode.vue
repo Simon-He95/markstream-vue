@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // Exported props interface for MermaidBlockNode
 import type { MermaidBlockEvent } from '../../types/component-props'
-import { createPanGesture } from 'markstream-core'
+import { applyMermaidThemeDirective, createPanGesture } from 'markstream-core'
 import { toSafeSvgElement } from 'stream-markdown-parser'
 import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
@@ -544,11 +544,7 @@ function onCopyHover(e: Event) {
 function applyThemeTo(code: string, theme: 'light' | 'dark') {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = `%%{init: {"theme": "${themeValue}"}}%%\n`
-  const frontmatter = code.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/)?.[0] ?? ''
-  const diagram = code.slice(frontmatter.length)
-  if (diagram.trimStart().startsWith('%%{'))
-    return code
-  return frontmatter + themeConfig + diagram
+  return applyMermaidThemeDirective(code, themeConfig)
 }
 
 // Whether we are allowed to apply a partial preview update safely

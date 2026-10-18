@@ -41,6 +41,7 @@ describe('mermaid frontmatter', () => {
           parsedSources.push(source)
           return result
         },
+        // This stub checks render input, not drawing: parse can accept the broken directive/frontmatter order.
         render: async (_id: string, source: string) => {
           await mermaid.parse(source)
           renderedSources.push(source)
@@ -59,7 +60,7 @@ describe('mermaid frontmatter', () => {
     return { wrapper, parsedSources, renderedSources, node }
   }
 
-  it.each(['\n', '\r\n'])('renders frontmatter and keeps theme switching with %j line endings', async (newline) => {
+  it.each(['\n', '\r\n', '\r'])('passes frontmatter to render and keeps theme switching with %j line endings', async (newline) => {
     const code = (frontmatter + diagram).replace(/\n/g, newline)
     const { wrapper, renderedSources } = await mountDiagram(code)
     try {

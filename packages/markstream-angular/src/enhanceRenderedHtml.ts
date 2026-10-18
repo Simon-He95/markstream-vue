@@ -1,5 +1,6 @@
 import type { NodeRendererCodeBlockProps, NodeRendererD2Props, NodeRendererInfographicProps, NodeRendererMermaidProps } from './components/shared/node-helpers'
 import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemes } from './types/codeBlock'
+import { applyMermaidThemeDirective } from 'markstream-core'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getD2 } from './optional/d2'
 import { getInfographic } from './optional/infographic'
@@ -355,11 +356,8 @@ async function renderMermaid(
 }
 
 function applyMermaidThemeTo(source: string, theme: MermaidTheme) {
-  const trimmed = source.trimStart()
-  if (trimmed.startsWith('%%{'))
-    return source
   const themeValue = theme === 'dark' ? 'dark' : 'default'
-  return `%%{init: {"theme": "${themeValue}"}}%%\n${source}`
+  return applyMermaidThemeDirective(source, `%%{init: {"theme": "${themeValue}"}}%%\n`)
 }
 
 async function canParseMermaidWithFallback(

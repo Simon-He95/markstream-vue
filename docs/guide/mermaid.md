@@ -146,6 +146,10 @@ Keep the default strict mode for user content, AI output, or any mixed-trust Mar
 
 Still stuck? Reproduce the issue in the playground (`pnpm play`) with a minimal Markdown sample and link it when opening a bug report.
 
+## Theme and frontmatter
+
+Mermaid YAML frontmatter must stay at the start of the diagram source. Markstream preserves its title and other configuration, but the host light/dark theme overrides `config.theme`. An explicit `%%{init: ...}%%` directive at the start of the diagram (or immediately after frontmatter) is preserved instead, so use it when a diagram needs its own theme.
+
 ## CDN usage (no bundler)
 
 If you load Mermaid via CDN and want progressive off-main-thread parsing, inject a CDN-backed worker:

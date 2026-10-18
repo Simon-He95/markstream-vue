@@ -1,3 +1,5 @@
+import { applyMermaidThemeDirective } from 'markstream-core'
+
 export type MermaidCDNWorkerMode = 'classic' | 'module'
 
 export interface MermaidCDNWorkerOptions {
@@ -33,6 +35,8 @@ let DEBUG = false
 let mermaid = null
 let mermaidLoadError = null
 
+const applyMermaidThemeDirective = ${applyMermaidThemeDirective.toString()}
+
 function normalizeMermaidModule(mod) {
   if (!mod)
     return mod
@@ -60,11 +64,7 @@ function normalizeMermaidModule(mod) {
 function applyThemeTo(code, theme) {
   const themeValue = theme === 'dark' ? 'dark' : 'default'
   const themeConfig = \`%%{init: {"theme": "\${themeValue}"}}%%\\n\`
-  const frontmatter = String(code || '').match(/^---[ \\t]*\\r?\\n[\\s\\S]*?\\r?\\n---[ \\t]*\\r?\\n/)?.[0] || ''
-  const diagram = String(code || '').slice(frontmatter.length)
-  if (diagram.trimStart().startsWith('%%{'))
-    return code
-  return frontmatter + themeConfig + diagram
+  return applyMermaidThemeDirective(code || '', themeConfig)
 }
 
 function findHeaderIndex(lines) {
@@ -95,7 +95,7 @@ async function canParse(code, theme) {
 }
 
 async function findLastRenderablePrefix(baseCode, theme) {
-  const lines = String(baseCode || '').split('\\n')
+  const lines = String(baseCode || '').split(/\\r\\n?|\\n/)
   const headerIndex = findHeaderIndex(lines)
   if (headerIndex === -1)
     return null

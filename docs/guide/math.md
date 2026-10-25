@@ -59,6 +59,8 @@ const md = getMarkdown()
 
 If KaTeX is not installed, the renderer will leave math content as text and still be import-safe under SSR.
 
+Currency amounts such as `**$312** and **$289**` or `$210 + $98 = $308` stay as text, including while streaming. An unfinished numeric span such as `$210 +` waits for an operand before becoming loading math. Closed formulas such as `$1$`, `$2 + 3 = 5$`, and `$1,000 + x$` still render as math. For ambiguous text, escape currency dollars as `\$` or use explicit TeX parenthesis delimiters for formulas.
+
 Important: when writing source Markdown, always use literal (escaped) backslashes
 for TeX parenthesis delimiters. Write `\\(...\\)` rather than `\(...\)` so
 the parser can reliably detect inline TeX delimiters. Unescaped `\(...\)`

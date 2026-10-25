@@ -928,15 +928,20 @@ function isLikelyCurrencyRangeDollar(content: string, nextChar?: string) {
   return /\d/.test(String(nextChar ?? ''))
 }
 
-function isLikelyCurrencyAmountStart(content: string) {
-  const stripped = String(content ?? '').trimStart()
+function isLikelyCurrencyAmountStart(content: string, closed = false) {
+  // A separate explicit formula must not supply TeX markers to a price span.
+  const stripped = String(content ?? '').split('\\(', 1)[0].trimStart()
   const amount = stripped.match(/^\d+(?:,\d{3})*(?:\.\d+)?/)
-  if (!amount)
+  if (!amount || /[\\^{}_]/.test(stripped))
     return false
   const rest = stripped.slice(amount[0].length)
-  if (/^\s*(?:[+\-*/^_=<>]|\\[a-z]+)/i.test(rest))
-    return false
-  return rest === '' || /^[)\s,.!?;:]/.test(rest)
+  if (!rest.trim())
+    return !closed
+  // An unfinished numeric operator can still be a price followed by another
+  // price. Wait for an operand before promoting it to loading math.
+  if (/^\s*[+\-*/=<>]/.test(rest))
+    return /^[\s+\-*/=<>]+$/.test(rest) || rest.startsWith('**')
+  return /^[)\s,.!?;:~～–—]/.test(rest)
 }
 
 function isLikelyPlaceholderDollar(content: string) {
@@ -1140,8 +1145,9 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
             const isEmpty = !content || !content.trim()
             const nextChar = text[closingDollarIndex + 1]
             const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
+            const isCurrencyAmount = isLikelyCurrencyAmountStart(content, true)
             const isPlaceholder = isLikelyPlaceholderDollar(content)
-            if (!hasBacktick && !isEmpty && !isCurrencyRange && !isPlaceholder) {
+            if (!hasBacktick && !isEmpty && !isCurrencyRange && !isCurrencyAmount && !isPlaceholder) {
               const token = s.push('math_inline', 'math', 0)
               token.content = normalizeStandaloneBackslashT(content, mathOpts)
               token.markup = '$'
@@ -1354,10 +1360,17 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         const isDollar = open === '$'
         const nextChar = src[endIdx + close.length]
         const isCurrencyRange = isDollar && isLikelyCurrencyRangeDollar(content, nextChar)
+        const isCurrencyAmount = isDollar && isLikelyCurrencyAmountStart(content, true)
         const isPlaceholder = isDollar && isLikelyPlaceholderDollar(content)
+        if (isCurrencyAmount || isCurrencyRange) {
+          // The candidate close may open the next price or a real formula.
+          // Leave the text to markdown-it so emphasis boundaries stay intact.
+          searchPos = index + open.length
+          continue
+        }
         const shouldSkip = strict
-          ? (hasBacktick || isEmpty || isCurrencyRange || isPlaceholder)
-          : (hasBacktick || isEmpty || isCurrencyRange || isPlaceholder || (!isDollar && !isMathLike(content)))
+          ? (hasBacktick || isEmpty || isPlaceholder)
+          : (hasBacktick || isEmpty || isPlaceholder || (!isDollar && !isMathLike(content)))
         if (shouldSkip) {
           // push remaining text after last match
           // not math-like; skip this match and continue scanning
@@ -1501,11 +1514,12 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
               const isEmpty = !content || !content.trim()
               const nextChar = src[closingDollarIndex + 1]
               const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
+              const isCurrencyAmount = isLikelyCurrencyAmountStart(content, true)
               const isPlaceholder = isLikelyPlaceholderDollar(content)
               // For explicit $...$ delimiters, accept non-empty content
               // (e.g. "$H$", "$1$") even if the heuristic doesn't classify it
               // as "math-like".
-              if (!hasBacktick && !isEmpty && !isCurrencyRange && !isPlaceholder) {
+              if (!hasBacktick && !isEmpty && !isCurrencyRange && !isCurrencyAmount && !isPlaceholder) {
                 // Push text before this $...$
                 const before = src.slice(searchPos, dollarIndex)
                 if (before) {

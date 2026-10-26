@@ -1,3 +1,29 @@
+## [2.0.21](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.20...markstream-vue@2.0.21) (2026-10-26)
+
+
+### Bug Fixes
+
+* **parser:** preserve currency pairs during streaming ([88a8c55](https://github.com/Simon-He95/markstream-vue/commit/88a8c55c5d9c75382d82248808289ae2537c5d10))
+
+
+### Performance Improvements
+
+* reduce synchronous layout work during streaming ([5759563](https://github.com/Simon-He95/markstream-vue/commit/5759563edab8b7bd0a313e0d08f8df6eef69b6d3))
+
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.22`
+* `markstream-core@2.0.21`
+* `markstream-vue@2.0.21`
+* `markstream-react@2.0.21`
+* `markstream-octane@2.0.21`
+* `markstream-svelte@2.0.21`
+* `markstream-angular@2.0.21`
+* `markstream-vue2@2.0.21`
+
+
+
 ## [2.0.20](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.19...markstream-vue@2.0.20) (2026-10-18)
 
 

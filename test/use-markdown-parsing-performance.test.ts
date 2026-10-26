@@ -1,5 +1,6 @@
 import type { Ref } from 'vue'
 import type { NodeRendererProps } from '../src/types/node-renderer-props'
+import * as markdownParser from 'stream-markdown-parser'
 import { clearRegisteredMarkdownPlugins, getMarkdown, parseMarkdownToStructure, registerMarkdownPlugin } from 'stream-markdown-parser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, effectScope, reactive, ref, watch } from 'vue'
@@ -1440,6 +1441,86 @@ describe('useMarkdownParsing performance behavior', () => {
     })
 
     scope.stop()
+  })
+
+  it.each([false, true])('reuses an unchanged suffix after a reference resolves, debug=%s', (debug) => {
+    const content = ref('[label][ref]\n\nStable **paragraph**.\n\nStable tail.\n\n')
+    const logPerf = vi.fn()
+    const { scope, state } = createParsingState(content, ref(false), {}, ref(debug), logPerf)
+    try {
+      const previous = state.parsedNodes.value
+      expect(previous).toHaveLength(3)
+      logPerf.mockClear()
+
+      content.value += '[ref]: https://example.com\n'
+      const next = state.parsedNodes.value
+      expect(next).toHaveLength(3)
+      expect(next[0]).not.toBe(previous[0])
+      expect(paragraphChildren(next[0]).some(node => node.type === 'link')).toBe(true)
+      expect(next[1]).toBe(previous[1])
+      expect(next[2]).toBe(previous[2])
+      if (debug) {
+        const metrics = logPerf.mock.calls.at(-1)?.[1]
+        expect(metrics).toMatchObject({ dirtyStartIndex: 0, reusedNodeCount: 2 })
+        expect(metrics?.stabilizeSignatureCallCount).toBeLessThanOrEqual(next.length + 1)
+      }
+    }
+    finally {
+      scope.stop()
+    }
+  })
+
+  it('compares suffix fields independently of insertion order and detects added fields', () => {
+    const text = { type: 'text' as const, raw: 'stable', content: 'stable' }
+    const suffix = { type: 'paragraph' as const, raw: 'stable', children: [text], loading: false }
+    const reordered = { loading: false, children: [{ ...text }], raw: 'stable', type: 'paragraph' as const }
+    const changed = { ...reordered, extra: 'changed' }
+    const first = (raw: string) => ({ type: 'paragraph' as const, raw, children: [{ ...text, raw, content: raw }] })
+    vi.spyOn(markdownParser, 'parseMarkdownToStructure')
+      .mockReturnValueOnce([first('a'), suffix])
+      .mockReturnValueOnce([first('ab'), reordered])
+      .mockReturnValueOnce([first('abc'), changed])
+    const content = ref('a')
+    const { scope, state } = createParsingState(content)
+    try {
+      expect(state.parsedNodes.value[1]).toBe(suffix)
+      content.value = 'ab'
+      expect(state.parsedNodes.value[1]).toBe(suffix)
+      content.value = 'abc'
+      expect(state.parsedNodes.value[1]).toBe(changed)
+    }
+    finally {
+      scope.stop()
+    }
+  })
+
+  it.each([false, true])('updates suffix field changes and complex metadata, debug=%s', (debug) => {
+    const text = { type: 'text' as const, raw: 'stable', content: 'stable' }
+    const base = { type: 'paragraph' as const, raw: 'stable', children: [text] }
+    const suffixes = [
+      { ...base, extra: undefined },
+      { ...base, renamed: undefined },
+      { ...base },
+      { ...base, attrs: { title: 'before' } },
+      { ...base, attrs: { title: 'after' } },
+      { ...base, children: [{ ...text, content: 'changed' }], attrs: { title: 'after' } },
+    ]
+    const parser = vi.spyOn(markdownParser, 'parseMarkdownToStructure')
+    for (const [index, suffix] of suffixes.entries()) {
+      const raw = 'a'.repeat(index + 1)
+      parser.mockReturnValueOnce([{ ...base, raw }, suffix])
+    }
+    const content = ref('a')
+    const { scope, state } = createParsingState(content, ref(false), {}, ref(debug))
+    try {
+      for (const [index, suffix] of suffixes.entries()) {
+        content.value = 'a'.repeat(index + 1)
+        expect(state.parsedNodes.value[1]).toBe(suffix)
+      }
+    }
+    finally {
+      scope.stop()
+    }
   })
 
   it('skips repeated signature scans for a previously stable append prefix', () => {

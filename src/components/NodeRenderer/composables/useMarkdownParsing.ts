@@ -760,18 +760,25 @@ function compareCheapParsedNodesIfSafe(
   const previousRecord = previous as Record<string, unknown>
   const nextRecord = next as Record<string, unknown>
   const previousKeys = Object.keys(previousRecord)
-    .filter(key => key !== 'type' && key !== 'children')
-    .sort()
   const nextKeys = Object.keys(nextRecord)
-    .filter(key => key !== 'type' && key !== 'children')
-    .sort()
+  let previousFieldCount = 0
+  let nextFieldCount = 0
+  for (const key of previousKeys) {
+    if (key !== 'type' && key !== 'children')
+      previousFieldCount++
+  }
+  for (const key of nextKeys) {
+    if (key !== 'type' && key !== 'children')
+      nextFieldCount++
+  }
 
-  if (previousKeys.length !== nextKeys.length)
+  if (previousFieldCount !== nextFieldCount)
     return false
 
-  for (let index = 0; index < previousKeys.length; index++) {
-    const key = previousKeys[index]!
-    if (key !== nextKeys[index])
+  for (const key of previousKeys) {
+    if (key === 'type' || key === 'children')
+      continue
+    if (!nextKeys.includes(key))
       return false
 
     const previousValue = previousRecord[key]
@@ -1000,7 +1007,7 @@ function stabilizeParsedNodes(
       if (
         previous
         && (!options.canReuseNode || (options.canReuseNode(previous) && options.canReuseNode(next)))
-        && isParsedNodeStable(previous, next)
+        && areTopLevelNodesStable(previous, next)
       ) {
         stableNodes[index] = previous
         reusedNodeCount += 1
@@ -1061,7 +1068,7 @@ function stabilizeParsedNodesWithMetrics(
       if (
         previous
         && (!options.canReuseNode || (options.canReuseNode(previous) && options.canReuseNode(next)))
-        && isParsedNodeStableWithMetrics(previous, next, signatureTiming)
+        && areTopLevelNodesStableWithMetrics(previous, next, signatureTiming)
       ) {
         stableNodes[index] = previous
         reusedNodeCount += 1

@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import type { MarkstreamViewportPriorityOptions } from '../types/node-renderer-props'
-import { computed, inject, provide, ref, watch } from 'vue'
+import { computed, inject, provide, queuePostFlushCb, ref, watch } from 'vue'
 
 // Injection key for viewport-priority registration
 const ViewportPriorityKey = Symbol('ViewportPriority') as InjectionKey<RegisterFn>
@@ -296,6 +296,7 @@ export function provideViewportPriority(
   const register: RegisterFn = (el, opts) => {
     const visible = ref(false)
     let settled = false
+    let destroyed = false
     let resolve!: () => void
     const whenVisible = new Promise<void>((res) => {
       resolve = () => {
@@ -307,6 +308,7 @@ export function provideViewportPriority(
     })
 
     const cleanup = () => {
+      destroyed = true
       const data = targets.get(el)
       if (!data) {
         idleQueue.delete(el)
@@ -325,28 +327,33 @@ export function provideViewportPriority(
       cleanupObserver(data.bucketKey)
     }
 
-    if (!isBrowser || !enabledRef.value) {
+    if (!isBrowser || !enabledRef.value || typeof IntersectionObserver === 'undefined') {
       visible.value = true
       resolve()
       return { isVisible: visible, whenVisible, destroy: cleanup }
     }
 
-    const observer = ensureObserver(el, opts)
-    if (!observer) {
-      visible.value = true
-      resolve()
-      return { isVisible: visible, whenVisible, destroy: cleanup }
-    }
+    // Resolve scroll-root geometry after Vue finishes patching sibling nodes.
+    queuePostFlushCb(() => {
+      if (destroyed)
+        return
+      const observer = enabledRef.value ? ensureObserver(el, opts) : null
+      if (!observer) {
+        visible.value = true
+        resolve()
+        return
+      }
 
-    const data: TargetState = { resolve, visible, bucketKey: observer.key, opts }
-    targets.set(el, data)
-    observer.bucket.targets.set(el, data)
-    observer.bucket.io.observe(el)
-    scheduleTargetRefresh()
-    if (opts?.allowIdle !== false) {
-      idleQueue.add(el)
-      scheduleIdleDrain()
-    }
+      const data: TargetState = { resolve, visible, bucketKey: observer.key, opts }
+      targets.set(el, data)
+      observer.bucket.targets.set(el, data)
+      observer.bucket.io.observe(el)
+      scheduleTargetRefresh()
+      if (opts?.allowIdle !== false) {
+        idleQueue.add(el)
+        scheduleIdleDrain()
+      }
+    })
     return { isVisible: visible, whenVisible, destroy: cleanup }
   }
   register.refresh = refreshTargets

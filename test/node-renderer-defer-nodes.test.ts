@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { computed, defineComponent, onMounted, ref } from 'vue'
+import { computed, defineComponent, h, nextTick, onMounted, ref } from 'vue'
 import { provideViewportPriority, useViewportPriority } from '../src/composables/viewportPriority'
 import { flushAll } from './setup/flush-all'
 
@@ -65,6 +65,54 @@ afterEach(() => {
 })
 
 describe('markdownRender deferNodesUntilVisible', () => {
+  it('resolves viewport roots after sibling DOM updates have finished', async () => {
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver as any)
+    const resolvedSiblings: Array<string | null> = []
+    const Probe = defineComponent({
+      setup() {
+        const register = provideViewportPriority((target) => {
+          resolvedSiblings.push(target?.nextElementSibling?.getAttribute('data-sibling') ?? null)
+          return null
+        }, true)
+        return () => h('div', [
+          h('div', {
+            ref: (el) => {
+              if (el)
+                register(el as HTMLElement, { allowIdle: false })
+            },
+          }),
+          h('div', { 'data-sibling': 'mounted' }),
+        ])
+      },
+    })
+    const wrapper = mount(Probe)
+    await nextTick()
+    expect(resolvedSiblings.length).toBeGreaterThan(0)
+    expect(resolvedSiblings.every(value => value === 'mounted')).toBe(true)
+    expect(FakeIntersectionObserver.instances[0]?.elements.size).toBe(1)
+    wrapper.unmount()
+  })
+
+  it('does not observe a target destroyed before the DOM flush finishes', async () => {
+    vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver as any)
+    const getRoot = vi.fn(() => null)
+    const Probe = defineComponent({
+      setup() {
+        const register = provideViewportPriority(getRoot, true)
+        onMounted(() => {
+          const handle = register(document.createElement('div'), { allowIdle: false })
+          handle.destroy()
+        })
+        return () => h('div')
+      },
+    })
+    const wrapper = mount(Probe)
+    await nextTick()
+    expect(getRoot).not.toHaveBeenCalled()
+    expect(FakeIntersectionObserver.instances).toHaveLength(0)
+    wrapper.unmount()
+  })
+
   it('settles registered viewport-priority targets when disabled after registration', async () => {
     const OriginalIO = globalThis.IntersectionObserver
     const benchmarkWindow = window as any

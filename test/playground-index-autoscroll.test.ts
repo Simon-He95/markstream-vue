@@ -6,6 +6,54 @@ import { describe, expect, it, vi } from 'vitest'
 import { createAutoScrollChaseController } from '../playground/src/utils/autoScrollChase'
 
 describe('playground auto-scroll chase', () => {
+  it('measures once before a scroll write and skips writes on stable frames', () => {
+    const root = document.createElement('div')
+    const operations: string[] = []
+    let scrollTop = 0
+    const frames: FrameRequestCallback[] = []
+    Object.defineProperty(root, 'scrollHeight', {
+      get: () => {
+        operations.push('height')
+        return 1000
+      },
+    })
+    Object.defineProperty(root, 'clientHeight', {
+      get: () => {
+        operations.push('viewport')
+        return 100
+      },
+    })
+    Object.defineProperty(root, 'scrollTop', {
+      get: () => {
+        operations.push('position')
+        return scrollTop
+      },
+      set: (value: number) => {
+        operations.push('scroll')
+        scrollTop = value
+      },
+    })
+    const controller = createAutoScrollChaseController({
+      getRoot: () => root,
+      getShouldStick: () => true,
+      setShouldStick: () => {},
+      requestFrame: (callback) => {
+        frames.push(callback)
+        return frames.length
+      },
+      cancelFrame: () => {},
+      now: () => 0,
+    })
+    controller.schedule()
+    frames.shift()?.(0)
+    expect(scrollTop).toBe(900)
+    expect(operations).toEqual(['height', 'viewport', 'position', 'scroll'])
+    operations.length = 0
+    frames.shift()?.(16)
+    expect(operations).toEqual(['height', 'viewport', 'position'])
+    controller.cancel()
+  })
+
   it('keeps chasing new content, stops when the user scrolls up, and resumes at bottom', () => {
     const root = document.createElement('div')
     let scrollHeight = 1000

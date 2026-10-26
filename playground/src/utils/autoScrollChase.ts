@@ -29,11 +29,14 @@ export function createAutoScrollChaseController(options: AutoScrollChaseControll
 
   function scrollToBottom() {
     const root = options.getRoot()
-    programmaticScrollTop = Math.max(0, root.scrollHeight - root.clientHeight)
-    root.scrollTop = root.scrollHeight
-    programmaticScrollTop = root.scrollTop
-    lastObservedScrollTop = root.scrollTop
+    const height = root.scrollHeight
+    const target = Math.max(0, height - root.clientHeight)
+    programmaticScrollTop = target
+    if (root.scrollTop !== target)
+      root.scrollTop = target
+    lastObservedScrollTop = target
     userDetached = false
+    return height
   }
 
   function stopChase() {
@@ -60,10 +63,7 @@ export function createAutoScrollChaseController(options: AutoScrollChaseControll
         return
       }
 
-      const root = options.getRoot()
-      scrollToBottom()
-
-      const currentHeight = root.scrollHeight
+      const currentHeight = scrollToBottom()
       if (currentHeight === lastHeight) {
         stableFrames++
       }
@@ -103,13 +103,14 @@ export function createAutoScrollChaseController(options: AutoScrollChaseControll
       // is still ours, but the recorded position is no longer the bottom.
       // Re-arm the chase instead of swallowing the only signal that can catch
       // up to the new height.
-      if (!isAtBottom(root))
+      if (!continuousScrollMode && !isAtBottom(root))
         schedule()
       return
     }
     programmaticScrollTop = null
     const previousScrollTop = lastObservedScrollTop
-    const atExactBottom = isAtBottom(root, 1)
+    const distanceFromBottom = root.scrollHeight - currentScrollTop - root.clientHeight
+    const atExactBottom = distanceFromBottom <= 1
     const scrolledUp = currentScrollTop < previousScrollTop - 2
     const returnedToBottom = currentScrollTop > previousScrollTop && atExactBottom
     lastObservedScrollTop = currentScrollTop
@@ -139,7 +140,7 @@ export function createAutoScrollChaseController(options: AutoScrollChaseControll
       return
     }
 
-    if (isAtBottom(root)) {
+    if (distanceFromBottom <= bottomThreshold) {
       if (userDetached && !returnedToBottom) {
         options.setShouldStick(false)
         return

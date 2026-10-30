@@ -52,6 +52,7 @@ try {
   })
   await page.goto(url)
   await page.waitForFunction(() => !!window.__markstreamSolid)
+  const defaultSource = await page.evaluate(() => window.__markstreamSolid.getSource())
   const timelineRounds = []
   for (let round = 0; round < 2; round++) {
     if (round)
@@ -521,6 +522,97 @@ try {
   await page.evaluate(() => window.__markstreamComponentParity.update({ final: true }))
   assert.equal(await page.locator('[data-framework="solid"] blockquote').count(), 3)
   await writeFile(path.join(outputDir, 'blockquote-geometry.json'), `${JSON.stringify(blockquoteGeometry, null, 2)}\n`)
+  const footnoteStart = defaultSource.indexOf('[^1]:')
+  assert.ok(footnoteStart > 0)
+  const definition = defaultSource.slice(footnoteStart, defaultSource.indexOf('\n', footnoteStart))
+  const seed = `${Array.from({ length: 20 }, (_, index) => `History paragraph ${index}.`).join('\n\n')}\n\nThe design token system[^1] enables full theme customization.\n\n`
+  const footnoteResults = []
+  await page.setViewportSize({ width: 1600, height: 1100 })
+  for (const smoothStreaming of [false, true]) {
+    for (const chunkSize of [1, 7, 64]) {
+      await page.evaluate(({ seed, smoothStreaming }) => {
+        window.__markstreamComponentParity.update({ content: '', final: false, fade: false, smoothStreaming, parseCoalesceMs: 0 })
+        window.__markstreamComponentParity.update({ content: seed })
+        for (const root of document.querySelectorAll('[data-framework]'))
+          Object.assign(root.style, { height: '240px', overflowY: 'auto' })
+      }, { seed, smoothStreaming })
+      await page.waitForFunction(() => ['vue3', 'solid'].every(framework => document.querySelector(`[data-framework="${framework}"]`).textContent.includes('The design token system[^1] enables full theme customization.')))
+      await page.evaluate(() => {
+        const data = window.__footnoteTrace = { active: true, samples: [], backwards: [], frames: [], phase: 'seed' }
+        const previous = new Map()
+        let lastFrame = performance.now()
+        const sample = () => {
+          if (!data.active)
+            return
+          const now = performance.now()
+          data.frames.push(now - lastFrame)
+          lastFrame = now
+          for (const framework of ['vue3', 'solid']) {
+            const root = document.querySelector(`[data-framework="${framework}"]`)
+            root.scrollTop = root.scrollHeight
+            const next = { framework, phase: data.phase, time: now, height: root.scrollHeight, top: root.scrollTop, mathBlocks: root.querySelectorAll('.math-block').length, footnotes: root.querySelectorAll('.footnote-node').length }
+            const before = previous.get(framework)
+            if (before && next.top < before.top - 2)
+              data.backwards.push({ before, after: next })
+            previous.set(framework, next)
+            if (!before || next.height !== before.height || next.phase !== before.phase || next.mathBlocks !== before.mathBlocks || next.footnotes !== before.footnotes)
+              data.samples.push(next)
+          }
+          requestAnimationFrame(sample)
+        }
+        requestAnimationFrame(sample)
+      })
+      for (const prefix of ['[', '[^', '[^1', '[^1]', '[^1]:', '[^1]: ']) {
+        await page.evaluate(({ seed, prefix }) => {
+          window.__footnoteTrace.phase = prefix
+          window.__markstreamComponentParity.update({ content: seed + prefix })
+        }, { seed, prefix })
+        await page.waitForTimeout(100)
+        assert.equal(await page.locator('[data-framework] .math-block').count(), 0, `footnote prefix ${prefix} never enters math rendering`)
+        assert.equal(await page.locator('[data-framework] .footnote-node').count(), 0, `footnote prefix ${prefix} stays pending until its body arrives`)
+      }
+      await page.evaluate(async ({ seed, definition, chunkSize }) => {
+        window.__footnoteTrace.phase = 'definition body'
+        const prefixLength = '[^1]: '.length
+        for (let end = prefixLength + chunkSize; end < definition.length + chunkSize; end += chunkSize) {
+          window.__markstreamComponentParity.update({ content: seed + definition.slice(0, end) })
+          await new Promise(resolve => requestAnimationFrame(resolve))
+        }
+        window.__footnoteTrace.phase = 'final and following blocks'
+        window.__markstreamComponentParity.update({ content: `${seed}${definition}\n\n## Next\n\nRestored tail.`, final: true })
+      }, { seed, definition, chunkSize })
+      await page.waitForFunction(() => ['vue3', 'solid'].every((framework) => {
+        const root = document.querySelector(`[data-framework="${framework}"]`)
+        return root.querySelectorAll('.footnote-node').length === 1 && root.querySelector('.footnote-node').textContent.includes('complete token specification') && root.textContent.includes('Restored tail.')
+      }))
+      await page.waitForTimeout(200)
+      const streamed = await page.evaluate(() => {
+        window.__footnoteTrace.active = false
+        return { ...window.__footnoteTrace, text: ['vue3', 'solid'].map(framework => document.querySelector(`[data-framework="${framework}"] .footnote-node`).textContent.replace(/\s/g, '')), documentText: ['vue3', 'solid'].map(framework => document.querySelector(`[data-framework="${framework}"]`).textContent.replace(/\s/g, '')), references: ['vue3', 'solid'].map(framework => document.querySelectorAll(`[data-framework="${framework}"] .footnote-reference`).length) }
+      })
+      assert.deepEqual(streamed.backwards, [], `footnote streaming never reverses scroll (smooth=${smoothStreaming}, chunk=${chunkSize})`)
+      assert.ok(streamed.samples.every(sample => sample.mathBlocks === 0))
+      assert.deepEqual(streamed.references, [1, 1])
+      assert.equal(streamed.text[0], streamed.text[1], 'Vue 3 and Solid restore the same footnote text')
+      await page.evaluate(({ seed, definition }) => {
+        window.__markstreamComponentParity.update({ content: '', final: false, smoothStreaming: false })
+        window.__markstreamComponentParity.update({ content: `${seed}${definition}\n\n## Next\n\nRestored tail.`, final: true })
+      }, { seed, definition })
+      await page.waitForFunction(() => ['vue3', 'solid'].every(framework => document.querySelectorAll(`[data-framework="${framework}"] .footnote-node`).length === 1))
+      const restored = await page.evaluate(() => ['vue3', 'solid'].map(framework => document.querySelector(`[data-framework="${framework}"] .footnote-node`).textContent.replace(/\s/g, '')))
+      assert.deepEqual(restored, streamed.text, 'full restoration matches streaming')
+      const restoredDocument = await page.evaluate(() => ['vue3', 'solid'].map(framework => document.querySelector(`[data-framework="${framework}"]`).textContent.replace(/\s/g, '')))
+      assert.deepEqual(restoredDocument, streamed.documentText, 'full document text survives restoration')
+      footnoteResults.push({ smoothStreaming, chunkSize, definition, streamed, restored })
+    }
+  }
+  await writeFile(path.join(outputDir, 'footnote-streaming.json'), `${JSON.stringify(footnoteResults, null, 2)}\n`)
+  await page.evaluate(() => {
+    for (const root of document.querySelectorAll('[data-framework]')) {
+      root.style.height = ''
+      root.style.overflowY = ''
+    }
+  })
   await page.evaluate(() => {
     window.__markstreamComponentParity.update({ content: 'Selected prefix', final: false, fade: true })
     const text = document.querySelector('[data-framework="solid"] .text-node > span').firstChild

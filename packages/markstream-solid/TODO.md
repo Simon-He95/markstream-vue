@@ -60,10 +60,17 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Reproduce the Markdown timeline stack overflow and isolate restoreState / heightCache effect dependencies.
 - [x] Verify known-width reactive restoration, changed incoming state and independent height caches.
 - [x] Click the real playground entry during streaming and after restore; navigate 1,000 Markdown items and exit with bounded DOM and no browser errors.
-- [ ] Resolve the independent shared-parser footnote prefix being temporarily classified as bracket math before its colon arrives; keep the captured rollback trace.
+- [x] Resolve the shared-parser footnote prefix being temporarily classified as bracket math; defer ambiguous trailing definitions and preserve the captured before/after traces.
 
 ## Nested blockquote parity
 
 - [x] Match Vue 3 margin containment for nested and mixed block quotes while preserving the simple-paragraph path.
 - [x] Move the existing pure simple-inline helpers into core and reuse them from Vue and Solid.
 - [x] Verify custom paragraph overrides, streaming DOM identity, replacement/restoration and per-level browser geometry across widths and themes.
+
+## Shared parser footnote streaming
+
+- [x] Keep footnote prefixes out of tolerant bracket math without changing explicit TeX or supported bracket formulas.
+- [x] Defer unresolved standalone trailing definitions until body/newline/final, preserving known references, literals, code and final empty definitions.
+- [x] Compare every incremental AST prefix against cold parsing; verify final output and full restoration.
+- [x] Replay identical Vue 3 / Solid input at 1/7/64 characters, smooth off/on, with bracket/colon stages held to expose transient rollback.

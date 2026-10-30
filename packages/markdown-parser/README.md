@@ -63,6 +63,8 @@ parseMarkdownToStructure(markdown, md) → AST (ParsedNode[])
 
 Reuse the same `md` instance when parsing multiple documents—plugin setup is the heaviest step. When integrating with [`markstream-vue`](https://www.npmjs.com/package/markstream-vue), pass the AST to `<MarkdownRender :nodes="nodes" />` or supply raw `content` and hand it the same parser options.
 
+With `final: false`, an unresolved standalone footnote definition prefix at the end of the input (`[^`, `[^id]`, or `[^id]: `) stays pending until its body or a newline arrives. This avoids rendering it as bracket math, temporary text, or an empty footer. Known references still render normally; `final: true` flushes literal unfinished text and valid empty definitions.
+
 ### Incremental / streaming example
 
 When consuming an AI or SSE stream you can keep appending to a buffer, parse with the same `md` instance, and send the AST to the UI (e.g., `markstream-vue`) on every chunk:

@@ -1596,6 +1596,9 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     let prefixBeforeOpen = ''
     let tolerantBoundary = false
     for (const [open, close] of delimiters) {
+      // A footnote prefix stays Markdown even before its colon arrives.
+      if (open === '[' && lineText.startsWith('[^'))
+        continue
       // 这里其实不应该只匹配 startWith的情况因为很可能前面还有 text
       if (lineText.startsWith(open)) {
         if (open.includes('[')) {

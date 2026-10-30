@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-30T13:46:59.443Z",
+  "timestamp": "2026-10-30T15:22:08.925Z",
   "styleCases": 43,
   "propertiesPerCase": 25,
   "variants": [
@@ -41,7 +41,7 @@
         "height": 128
       },
       {
-        "src": "http://127.0.0.1:52645/assets/vue-logo-C0QQ1j6M.png",
+        "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
         "width": 400,
         "height": 400
       }
@@ -50,9 +50,9 @@
   },
   "defaultPlaybacks": [
     {
-      "frameP95Ms": 18.3,
-      "maxLongTaskMs": 65,
-      "longTaskCount": 2,
+      "frameP95Ms": 19.4,
+      "maxLongTaskMs": 64,
+      "longTaskCount": 1,
       "backwards": [],
       "images": [
         {
@@ -61,7 +61,7 @@
           "height": 128
         },
         {
-          "src": "http://127.0.0.1:52645/assets/vue-logo-C0QQ1j6M.png",
+          "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
           "width": 400,
           "height": 400
         }
@@ -69,7 +69,7 @@
       "bottomGap": 0
     },
     {
-      "frameP95Ms": 18.6,
+      "frameP95Ms": 19.6,
       "maxLongTaskMs": 0,
       "longTaskCount": 0,
       "backwards": [],
@@ -80,7 +80,7 @@
           "height": 128
         },
         {
-          "src": "http://127.0.0.1:52645/assets/vue-logo-C0QQ1j6M.png",
+          "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
           "width": 400,
           "height": 400
         }
@@ -99,7 +99,7 @@
           "height": 128
         },
         {
-          "src": "http://127.0.0.1:52645/assets/vue-logo-C0QQ1j6M.png",
+          "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
           "width": 400,
           "height": 400
         }

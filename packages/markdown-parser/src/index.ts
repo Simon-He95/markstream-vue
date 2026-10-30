@@ -177,6 +177,28 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
   md.use(markdownItIns)
   md.use(markdownItFootnote)
 
+  md.block.ruler.before('footnote_def', 'pending_footnote_def', (state: {
+    src: string
+    bMarks: number[]
+    tShift: number[]
+    eMarks: number[]
+    line: number
+    env: { __markstreamFinal?: boolean, footnotes?: { refs?: Record<string, number> } }
+  }, startLine: number, _endLine: number, silent: boolean) => {
+    if (state.env.__markstreamFinal !== false || state.eMarks[startLine] !== state.src.length)
+      return false
+    const line = state.src.slice(state.bMarks[startLine] + state.tShift[startLine], state.eMarks[startLine])
+    const pending = /^\[\^([^\]\s]*)(?:\](?::[\t ]*)?)?$/.exec(line)
+    if (!pending)
+      return false
+    if (line.endsWith(']') && state.env.footnotes?.refs?.[`:${pending[1]}`] != null)
+      return false
+    // Keep an ambiguous trailing definition pending instead of flashing text or an empty footer.
+    if (!silent)
+      state.line = startLine + 1
+    return true
+  }, { alt: ['paragraph', 'reference'] })
+
   // Annotate fence tokens with unclosed meta using a lightweight line check
   md.core.ruler.after('block', 'mark_fence_closed', (state: unknown) => {
     const s = state as unknown as {

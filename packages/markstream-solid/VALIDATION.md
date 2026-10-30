@@ -9,9 +9,10 @@
 | Vue 3 公开 API 对照 | 181 个运行时导出对应项、10 组组件/渲染器属性契约通过 |
 | Solid 客户端单元测试 | 11 个文件，85 个测试通过 |
 | Solid SSR 单元测试 | 3 个测试通过 |
+| 公共 parser 单元测试 | 72 个文件，727 个测试通过；新增 19 项脚注分片回归 |
 | 公共 core 单元测试 | 8 个文件，103 个测试通过 |
 | Vue 3 / Solid pre → highlight 几何交接 | wrap / scroll、首次导航 / 刷新、窄屏、明暗主题全部通过 |
-| 原仓库全量测试 | 393 个文件，3,532 个测试通过（限并发完整运行） |
+| 原仓库全量测试 | 394 个文件，3,551 个测试通过（限并发完整运行） |
 | 根目录及 Solid 类型检查、根库构建 | 通过 |
 | Solid browser/node 构建、声明、CSS、worker/utils/tailwind 子路径 | 通过 |
 | tarball 独立安装、外部 TSX 消费者及 SSR | 通过；临时消费者没有 Vue/React，也没有安装可选 peers |
@@ -49,7 +50,7 @@ jsdom 对旧高度估算器的 Canvas getContext 打印未实现提示，但最�
 
 ## 性能方法
 
-Chrome 156.0.8078.49，1440 × 1000。原始记录时间：2026-10-30T13:46:59.443Z。生产构建中 Vue 3 / Solid 使用相同 parser、语料和渲染选项，完整加载 Vue 基础 CSS，并分别配置 KaTeX/Mermaid workers 和匹配的高亮池；可选集成在 playground 中 dedupe 为同一依赖实例。预热 1 轮、测量 3 轮，交替框架顺序后取中位数。
+Chrome 156.0.8078.49，1440 × 1000。原始记录时间：2026-10-30T15:22:08.925Z。生产构建中 Vue 3 / Solid 使用相同 parser、语料和渲染选项，完整加载 Vue 基础 CSS，并分别配置 KaTeX/Mermaid workers 和匹配的高亮池；可选集成在 playground 中 dedupe 为同一依赖实例。预热 1 轮、测量 3 轮，交替框架顺序后取中位数。
 
 普通恢复语料是 250 个章节、1,000 个顶层节点、40,478 字符；普通流式使用 12 个章节、每帧追加 128 字符。长历史追加先渲染这 1,000 个节点，种子恢复不计时，然后继续追加尾部。重内容包含真实代码高亮、diff、KaTeX 和 Mermaid，等待相应 DOM 目标出现。D2/infographic 做了真实浏览器功能验证，未将它们的渲染耗时纳入比较表。
 
@@ -57,14 +58,14 @@ Chrome 156.0.8078.49，1440 × 1000。原始记录时间：2026-10-30T13:46:59.4
 
 | 场景 | 总耗时 ms（Vue 3 / Solid） | 更新 P95 ms（Vue 3 / Solid） | 帧间隔 P95 ms（Vue 3 / Solid） | 长任务次数（Vue 3 / Solid） |
 | --- | --- | --- | --- | --- |
-| 全量立即恢复 | 242.3 / 219.8 | 180.7 / 206.6 | 242.2 / 217.8 | 1 / 1 |
-| 64 节点窗口恢复 | 55.5 / 24.2 | 51.8 / 22.3 | 53.2 / 23.8 | 1 / 0 |
-| 开启 batch 的完成态恢复（原场景） | 246.8 / 218.8 | 235.8 / 206.1 | 246.8 / 216.6 | 1 / 1 |
-| 外层协调下真正分批恢复 | 727.8 / 400.0 | 61.9 / 17.0 | 20.9 / 18.6 | 1 / 0 |
-| 普通流式更新 | 266.2 / 265.9 | 3.9 / 2.9 | 17.6 / 17.4 | 0 / 0 |
-| 重内容恢复 | 33.5 / 33.9 | 3.1 / 3.4 | 22.6 / 17.7 | 0 / 0 |
-| 重内容流式更新 | 117.2 / 116.0 | 2.0 / 1.9 | 21.5 / 17.6 | 0 / 0 |
-| 1,000 节点历史后继续追加 | 139.2 / 154.5 | 58.5 / 37.3 | 61.4 / 45.1 | 1 / 0 |
+| 全量立即恢复 | 255.9 / 230.8 | 193.8 / 218.4 | 255.9 / 228.7 | 1 / 1 |
+| 64 节点窗口恢复 | 53.5 / 23.3 | 48.9 / 21.5 | 51.4 / 22.9 | 1 / 0 |
+| 开启 batch 的完成态恢复（原场景） | 249.3 / 235.6 | 238.0 / 220.9 | 249.3 / 233.4 | 1 / 1 |
+| 外层协调下真正分批恢复 | 698.0 / 433.2 | 61.3 / 17.4 | 22.2 / 19.2 | 1 / 0 |
+| 普通流式更新 | 267.1 / 266.8 | 3.8 / 3.2 | 17.2 / 17.6 | 0 / 0 |
+| 重内容恢复 | 33.6 / 33.1 | 3.3 / 3.5 | 23.1 / 17.8 | 0 / 0 |
+| 重内容流式更新 | 116.4 / 116.6 | 2.0 / 1.9 | 21.5 / 17.6 | 0 / 0 |
+| 1,000 节点历史后继续追加 | 138.0 / 145.9 | 54.6 / 34.5 | 57.4 / 38.2 | 1 / 0 |
 
 完成态恢复不再误走分批。真正分批采用与 Vue 3 一致的预算阈值和批量上下限；移除 idle 后的额外定时器。表中保留所有场景的实测结果；同步更新、帧间隔和端到端耗时是不同指标，不能据此宣称任意输入都更快。布局包装层、调度与框架运行时不同，DOM 元素数也不同。
 
@@ -99,9 +100,9 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 
 组件、worker、样式与调度问题的定位记录见 [COMPONENT_VALIDATION.md](./COMPONENT_VALIDATION.md)。逐项原始结果见 [component-styles.json](./benchmarks/component-styles.json)，worker 消息见 [workers.json](./benchmarks/workers.json)，播放轨迹见 [playback.json](./benchmarks/playback.json)。
 
-连续三轮默认完整播放均为零滚动回退，完成时底部距离不超过 1px，且两张图实际解码为 128×128 和 400×400。rAF 帧间隔 P95 依次为 18.3 / 18.6 / 18.0 ms；最大长任务为 65 / 0 / 0 ms。三轮轨迹保存在 [playbacks.json](./benchmarks/playbacks.json)，组件摘要保存于 [component-validation.json](./benchmarks/component-validation.json)。标题 Image 的错误路由修复前 DOM 见 [image-diagnosis-before.json](./benchmarks/image-diagnosis-before.json)。
+连续三轮默认完整播放均为零滚动回退，完成时底部距离不超过 1px，且两张图实际解码为 128×128 和 400×400。rAF 帧间隔 P95 依次为 19.4 / 19.6 / 18.0 ms；最大长任务为 64 / 0 / 0 ms。三轮轨迹保存在 [playbacks.json](./benchmarks/playbacks.json)，组件摘要保存于 [component-validation.json](./benchmarks/component-validation.json)。标题 Image 的错误路由修复前 DOM 见 [image-diagnosis-before.json](./benchmarks/image-diagnosis-before.json)。
 
-本轮同场景 restore-batched 的 Solid 中位耗时由 799.5 ms 降至 218.8 ms（本轮 Vue 3 为 246.8 ms）。新增真正分批场景 Vue 3 / Solid 为 727.8 / 400.0 ms，更新 P95 为 61.9 / 17.0 ms；每个框架每轮均断言分批增量合计 1,000 节点。恢复门禁收紧为 `max(300ms, Vue 3 × 1.5)`，原有更新 P95 门禁保持不变。立即恢复依然可能产生长任务，需短帧时应使用真正分批或节点窗口。
+本轮同场景 restore-batched 的 Solid 中位耗时由 799.5 ms 降至 235.6 ms（本轮 Vue 3 为 249.3 ms）。新增真正分批场景 Vue 3 / Solid 为 698.0 / 433.2 ms，更新 P95 为 61.3 / 17.4 ms；每个框架每轮均断言分批增量合计 1,000 节点。恢复门禁收紧为 `max(300ms, Vue 3 × 1.5)`，原有更新 P95 门禁保持不变。立即恢复依然可能产生长任务，需短帧时应使用真正分批或节点窗口。
 
 ## Virtual timeline 入口回归
 
@@ -111,7 +112,7 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 
 生产浏览器分别在 streaming 和 restore 完成后真实点击进入、滚到 Message 999、返回 Message 0、退出，并验证页面保持响应。两轮首尾分别只挂载 18 / 20 条消息，没有浏览器错误。82 个客户端测试、3 个 SSR 测试、类型检查、打包消费者与完整生产浏览器回归通过。原始数据见 [timeline.json](./benchmarks/timeline.json)，截图见 [timeline.png](../../playground-solid/screenshots/timeline.png)。
 
-全量复测还捕获一条独立的共享 parser 前缀歧义：脚注定义尚未收到冒号时，`[^1]` 暂时成为 math_block，随后转成 footnote，可出现约 8–11px 收缩。这与本次时间线递归无关；后续三轮完整回归通过，但不能据此排除该偶发分片情形。诊断轨迹见 [footnote-prefix-rollback.json](./benchmarks/footnote-prefix-rollback.json)。本次没有改动共享 parser 的数学语法。
+当时时间线复测捕获了独立的脚注分片回退：`[^1]` 被临时解析成 math_block，随后转成 footnote，收缩约 8–11px。[修复前轨迹](./benchmarks/footnote-prefix-rollback.json) 保留该观察；此路径现已在共享 parser 中修复，见下方脚注分片验证。
 
 ## 嵌套引用样式回归
 
@@ -120,3 +121,15 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 桌面原例三层高度对齐为 108 / 68 / 28px；各层带段落为 220 / 124 / 28px；引用内含列表为 120px，简单段落仍为 28px。新增三项单测覆盖复杂/简单布局、自定义段落、streaming 身份及内容恢复。全仓 3,532 测试、Solid 85 + 3 测试、core 103 测试、Vue/Solid 构建和类型检查通过。
 
 浏览器逐层比较 x/y、宽度与高度，允许 0.1px 舍入误差；覆盖 4 个样例 × 桌面/窄屏 × 明/暗主题，并断言纯三层引用的边框逐层缩短。额外验证流式追加和最终收尾保留原 blockquote 元素。修复前几何见 [blockquote-before.json](./benchmarks/blockquote-before.json)，当前结果见 [blockquote-geometry.json](./benchmarks/blockquote-geometry.json)。
+
+## 公共 parser 脚注分片验证
+
+修复包含两部分：宽松方括号数学规则不再接管 `[^` 前缀；公共 getMarkdown 管线在非 final 时暂缓输出独立且未解析的流尾脚注定义候选，直到正文、换行或 final 消除歧义。只禁掉数学误判仍可能让临时段落变成空脚注，造成回退，因此没有仅停留在数学规则排除上。已知完整引用、行内字面内容、代码、已换行文本以及 final 的未闭合字面文本/空定义保留原语义。Vue / Solid 共用 parser，没有添加渲染器高度补偿或复制规则。
+
+新增 19 项 parser 回归，覆盖数字/下划线/中文标签、列表/引用嵌套、每一个字符前缀、streamParse 开/关、增量对冷解析、final 对直接完整解析，以及普通方括号公式、显式 TeX、跨行公式。旧中间态测试改为断言尾部歧义暂缓、final 保留字面文本、完成定义恢复真实脚注。公共 parser 727 测试、122 项公开 API/声明契约及五个固定种子的增量/冷解析差分场景通过。
+
+生产浏览器从共用默认示例取原脚注定义，用同样的 20 段前置历史、滚动容器、worker 和渲染设置同时驱动 Vue 3 / Solid。1 / 7 / 64 字符分片 × smooth 关闭/开启共六组，关键的 `[`, `[^`, `[^1]`, `[^1]:`, `[^1]: ` 均停留 100ms；持续逐帧记录两端内容高度、底部追随、数学块/脚注数，防止快速分片偶然绕过错误状态。最终比较脚注/引用数量、正文及全文恢复结果。两端脚注的最终包装高度不同，记录不据此宣称所有几何都一致；本场景检查无错误公式、无回退及内容一致。
+
+逐帧原始数据和汇总见 [footnote-streaming.json](./benchmarks/footnote-streaming.json) 与 [footnote-validation.json](./benchmarks/footnote-validation.json)。原有完整播放、时间线、嵌套引用及八组生产性能场景也继续执行，性能门禁没有放宽。
+
+本轮六组脚注场景的两端均为零回退、零错误数学块；从 `[^` 到 `[^1]: ` 的阶段内容高度都稳定在 1,116px。每组均验证一个真实引用和一个脚注，final 后全文与直接恢复一致。原默认播放三轮零回退，现有八组性能门禁、时间线、嵌套引用、可选 worker 与预览回归全部通过。

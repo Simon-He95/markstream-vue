@@ -300,7 +300,14 @@
     "test:e2e:math-streaming-stability": "node scripts/e2e-math-streaming-stability.mjs",
     "test:e2e:next14-ssr": "node scripts/e2e-next-ssr.mjs --playground playground-next14 --version next14",
     "test:e2e:next15-ssr": "node scripts/e2e-next-ssr.mjs --playground playground-next15 --version next15",
-    "test:e2e:next-ssr": "pnpm run test:e2e:next14-ssr && pnpm run test:e2e:next15-ssr"
+    "test:e2e:next-ssr": "pnpm run test:e2e:next14-ssr && pnpm run test:e2e:next15-ssr",
+    "play:solid": "pnpm -C playground-solid dev",
+    "play:solid:build": "pnpm -C playground-solid build",
+    "play:solid:preview": "pnpm -C playground-solid preview",
+    "build:solid": "pnpm run build:parser && pnpm run build:core && pnpm --filter markstream-solid build",
+    "test:solid": "pnpm --filter markstream-solid test && pnpm --filter markstream-solid test:ssr",
+    "test:e2e:solid-playground": "pnpm run build:solid && pnpm run play:solid:build && node scripts/e2e-solid-playground.mjs",
+    "test:smoke:solid": "pnpm run build:solid && node scripts/smoke-solid-package.mjs"
   },
   "peerDependencies": {
     "@antv/infographic": "^0.2.3",

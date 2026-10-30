@@ -41,6 +41,7 @@ Vue 包：
 | `markstream-vue` | Vue 3 / Nuxt / VitePress | `pnpm add markstream-vue` | [框架总览](https://markstream.simonhe.me/zh/frameworks) · [Vue 指南](https://markstream.simonhe.me/zh/frameworks/vue) · [Nuxt 指南](https://markstream.simonhe.me/zh/frameworks/nuxt) |
 | `markstream-react` | React / Next.js / Remix | `pnpm add markstream-react` | [React 指南](https://markstream.simonhe.me/zh/frameworks/react) · [Next.js 指南](https://markstream.simonhe.me/zh/frameworks/next) |
 | `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [包使用指南](./packages/markstream-octane/README.md) · [本地 Playground](./playground-octane) |
+| `markstream-solid` | SolidJS 1.9 | 工作区包 | [包使用指南](./packages/markstream-solid/README.md) · [本地 Playground](./playground-solid) |
 | `markstream-svelte` | Svelte 5 | `pnpm add markstream-svelte svelte@^5` | [Svelte 指南](https://markstream.simonhe.me/zh/frameworks/svelte) |
 | `markstream-angular` | Angular standalone | `pnpm add markstream-angular` | [Angular 指南](https://markstream.simonhe.me/zh/frameworks/angular) |
 | `markstream-vue2` | Vue 2.6 / 2.7 | `pnpm add markstream-vue2` | [Vue 2 指南](https://markstream.simonhe.me/zh/frameworks/vue2) · [快速开始](https://markstream.simonhe.me/zh/guide/vue2-quick-start) |

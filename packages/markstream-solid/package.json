@@ -1,0 +1,134 @@
+{
+  "name": "markstream-solid",
+  "type": "module",
+  "version": "2.0.21",
+  "description": "SolidJS streaming Markdown renderer for AI chat, incremental Markdown and long document restoration.",
+  "author": "Simon He",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Simon-He95/markstream-vue.git",
+    "directory": "packages/markstream-solid"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "browser": "./dist/client/index.js",
+      "node": "./dist/server/index.js",
+      "import": "./dist/client/index.js"
+    },
+    "./index.css": "./dist/index.css",
+    "./index.px.css": "./dist/index.px.css",
+    "./index.tailwind.css": "./dist/index.tailwind.css",
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "browser": "./dist/client/utils/index.js",
+      "node": "./dist/server/utils/index.js",
+      "import": "./dist/client/utils/index.js"
+    },
+    "./utils/katex-threshold": {
+      "types": "./dist/utils/katex-threshold.d.ts",
+      "browser": "./dist/client/utils/katex-threshold.js",
+      "node": "./dist/server/utils/katex-threshold.js",
+      "import": "./dist/client/utils/katex-threshold.js"
+    },
+    "./utils/performance-monitor": {
+      "types": "./dist/utils/performance-monitor.d.ts",
+      "browser": "./dist/client/utils/performance-monitor.js",
+      "node": "./dist/server/utils/performance-monitor.js",
+      "import": "./dist/client/utils/performance-monitor.js"
+    },
+    "./utils/safeRaf": {
+      "types": "./dist/utils/safeRaf.d.ts",
+      "browser": "./dist/client/utils/safeRaf.js",
+      "node": "./dist/server/utils/safeRaf.js",
+      "import": "./dist/client/utils/safeRaf.js"
+    },
+    "./workers/katexWorkerClient": {
+      "types": "./dist/workers/katexWorkerClient.d.ts",
+      "browser": "./dist/client/workers/katexWorkerClient.js",
+      "node": "./dist/server/workers/katexWorkerClient.js",
+      "import": "./dist/client/workers/katexWorkerClient.js"
+    },
+    "./workers/mermaidWorkerClient": {
+      "types": "./dist/workers/mermaidWorkerClient.d.ts",
+      "browser": "./dist/client/workers/mermaidWorkerClient.js",
+      "node": "./dist/server/workers/mermaidWorkerClient.js",
+      "import": "./dist/client/workers/mermaidWorkerClient.js"
+    },
+    "./workers/katexCdnWorker": {
+      "types": "./dist/workers/katexCdnWorker.d.ts",
+      "browser": "./dist/client/workers/katexCdnWorker.js",
+      "node": "./dist/server/workers/katexCdnWorker.js",
+      "import": "./dist/client/workers/katexCdnWorker.js"
+    },
+    "./workers/mermaidCdnWorker": {
+      "types": "./dist/workers/mermaidCdnWorker.d.ts",
+      "browser": "./dist/client/workers/mermaidCdnWorker.js",
+      "node": "./dist/server/workers/mermaidCdnWorker.js",
+      "import": "./dist/client/workers/mermaidCdnWorker.js"
+    },
+    "./workers/katexRenderer.worker": "./dist/client/workers/katexRenderer.worker.js",
+    "./workers/mermaidParser.worker": "./dist/client/workers/mermaidParser.worker.js",
+    "./tailwind": {
+      "types": "./dist/tailwind.d.ts",
+      "import": "./dist/tailwind.js"
+    }
+  },
+  "main": "./dist/server/index.js",
+  "module": "./dist/client/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build --mode client && vite build --mode server && tsc -p tsconfig.build.json && postcss src/index.css -o dist/index.css && node scripts/finalize-build.mjs && node ../../scripts/generate-px-css.mjs && pnpm run check:parity",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:ssr": "vitest run --config vitest.ssr.config.ts",
+    "prepublishOnly": "pnpm run build && node ../../scripts/check-workspace-deps-published.mjs --package-json package.json",
+    "check:parity": "node scripts/check-vue3-parity.mjs"
+  },
+  "peerDependencies": {
+    "@antv/infographic": "^0.2.3",
+    "@terrastruct/d2": ">=0.1.33",
+    "katex": ">=0.16.22",
+    "mermaid": ">=11",
+    "solid-js": "^1.9.0",
+    "stream-diffs": ">=0.0.2"
+  },
+  "peerDependenciesMeta": {
+    "@antv/infographic": {
+      "optional": true
+    },
+    "@terrastruct/d2": {
+      "optional": true
+    },
+    "katex": {
+      "optional": true
+    },
+    "mermaid": {
+      "optional": true
+    },
+    "stream-diffs": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@floating-ui/dom": "^1.8.0",
+    "markstream-core": "workspace:*",
+    "stream-markdown-parser": "workspace:*"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3",
+    "postcss-cli": "^11.0.1",
+    "solid-js": "^1.9.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vite-plugin-solid": "^2.11.0",
+    "vitest": "^4.1.10"
+  }
+}

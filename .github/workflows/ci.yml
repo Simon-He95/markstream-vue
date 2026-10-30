@@ -81,6 +81,14 @@ jobs:
           pnpm --filter markstream-octane test
           pnpm run test:smoke:octane
 
+      - name: Solid package checks (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pnpm --filter markstream-solid typecheck
+          pnpm test:solid
+          pnpm test:smoke:solid
+          pnpm test:e2e:solid-playground
+
       - name: Svelte package tests (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm --filter markstream-svelte test

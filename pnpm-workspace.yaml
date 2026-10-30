@@ -9,5 +9,6 @@ packages:
   - playground-octane
   - playground-react18
   - playground-react19
+  - playground-solid
   - playground-svelte
   - packages/*

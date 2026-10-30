@@ -1,0 +1,40 @@
+:root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #23332f; background: #f3f5f1; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, textarea { font: inherit; }
+button { padding: 9px 13px; border: 1px solid #c5cec7; border-radius: 5px; color: inherit; background: white; cursor: pointer; }
+button:first-child { color: white; background: #245b43; border-color: #245b43; }
+button:disabled { opacity: .4; cursor: default; }
+button:hover:enabled { filter: brightness(.95); }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid #45996d; outline-offset: 3px; }
+main { min-height: 100vh; padding: 36px 4vw 20px; }
+header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+header a { color: #245b43; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-decoration: none; }
+h1 { font-size: 40px; letter-spacing: -.04em; margin: 14px 0 8px; }
+header p { color: #63716a; margin: 0; }
+nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+nav label { display: flex; align-items: center; gap: 7px; margin-left: 8px; font-size: 12px; }
+nav input { width: 68px; padding: 7px; border: 1px solid #c5cec7; border-radius: 4px; background: transparent; color: inherit; }
+.status { display: flex; gap: 24px; margin: 22px 0 12px; font-size: 12px; color: #63716a; font-variant-numeric: tabular-nums; }
+.status span:first-child { color: #245b43; font-weight: 600; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: min(68vh, 850px); min-height: 420px; border: 1px solid #c5cec7; background: white; border-radius: 7px; overflow: hidden; }
+.source-panel, .panel-label { padding: 16px 20px; font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
+.source-panel { display: flex; flex-direction: column; gap: 15px; border-right: 1px solid #dce2dc; background: #fbfcfa; }
+textarea { resize: none; flex: 1; width: 100%; border: 0; outline: 0; font-family: "SFMono-Regular", Consolas, monospace; font-size: 12px; font-weight: 400; line-height: 1.8; color: inherit; background: transparent; }
+.preview-panel { min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.panel-label { border-bottom: 1px solid #e6ebe5; }
+.preview { flex: 1; overflow: auto; padding: 20px 28px; overflow-anchor: none; }
+.markstream-solid { line-height: 1.65; }
+.markstream-solid h1 { font-size: 30px; }
+.markstream-solid .node-slot { display: flow-root; }
+.markstream-solid .code-block-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #eef2ed; font-size: 12px; }
+.markstream-solid .code-block-header button { padding: 3px 8px; }
+.markstream-solid pre { overflow: auto; padding: 14px; border-radius: 4px; background: #f3f5f1; }
+.markstream-solid table { width: 100%; border-collapse: collapse; }
+.markstream-solid th, .markstream-solid td { text-align: left; padding: 8px 12px; border: 1px solid #dce2dc; }
+.thinking { padding: 14px; background: #f3f5f1; border-left: 3px solid #7c9c85; }
+footer { color: #849086; font-size: 11px; margin-top: 18px; }
+.playground-dark { color: #d6e0d8; background: #18241d; }
+.playground-dark .workspace, .playground-dark button { color: inherit; background: #202d24; }
+.playground-dark .source-panel, .playground-dark pre, .playground-dark .thinking, .playground-dark .code-block-header { background: #18241d; }
+@media (max-width: 760px) { main { padding: 24px 16px; } h1 { font-size: 32px; } .workspace { grid-template-columns: 1fr; height: auto; } .source-panel { height: 280px; border-right: 0; border-bottom: 1px solid #dce2dc; } .preview { max-height: 65vh; min-height: 300px; } .status { gap: 12px; flex-wrap: wrap; } }

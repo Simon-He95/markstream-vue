@@ -40,6 +40,8 @@ afterEach(() => {
 })
 function semanticHtml(host: HTMLElement) {
   const clone = host.cloneNode(true) as HTMLElement
+  for (const node of clone.querySelectorAll('.text-node'))
+    node.replaceChildren(document.createTextNode(node.textContent ?? ''))
   for (const node of clone.querySelectorAll('.text-node-stream-delta'))
     node.replaceWith(document.createTextNode(node.textContent ?? ''))
   for (const node of clone.querySelectorAll('*')) {
@@ -205,6 +207,25 @@ describe('solid renderer streaming and restore', () => {
     expect(view.host.querySelectorAll('[data-node-deferred="true"]')).toHaveLength(1)
     expect(view.host.querySelector('.fade-node')).toBeNull()
     expect(view.host.querySelector('.markdown-renderer')?.getAttribute('data-theme')).toBe('claude')
+  })
+
+  it('renders the live streaming tail without estimated shell placeholders', () => {
+    vi.stubGlobal('IntersectionObserver', class {
+      observe() { }
+      disconnect() { }
+    })
+    const source = Array.from({ length: 100 }, (_, index) => `Paragraph ${index}`).join('\n\n')
+    const view = mount({ content: source, final: false, initialRenderBatchSize: 2, liveNodeBuffer: 3, maxLiveNodes: 220, deferNodesUntilVisible: true })
+    expect(view.host.querySelector('[data-node-index="96"]')?.getAttribute('data-node-deferred')).toBe('true')
+    for (const index of [0, 1, 97, 98, 99]) {
+      const node = view.host.querySelector(`[data-node-index="${index}"]`)
+      expect(node?.getAttribute('data-node-deferred')).toBeNull()
+      expect(node?.textContent).toContain(`Paragraph ${index}`)
+    }
+    view.update({ content: `${source}\n\nNewest paragraph` })
+    const newest = view.host.querySelector('[data-node-index="100"]')
+    expect(newest?.getAttribute('data-node-deferred')).toBeNull()
+    expect(newest?.textContent).toBe('Newest paragraph')
   })
 
   it('batches full history restoration and cancels pending work on unmount', async () => {

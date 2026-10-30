@@ -33,7 +33,7 @@ yarn add markstream-vue
 | KaTeX 数学公式 | `katex` | 行内或块级公式 |
 | Infographic 图表 | `@antv/infographic` | 渲染 `infographic` fenced code block；还需要配置 `setInfographicLoader` |
 
-所有框架包（vue、vue2、react、svelte、angular）的增强代码块都通过同一个 loader 解析：安装 `stream-diffs` 时使用增强的 `stream-diffs` surface，否则渲染普通 `<pre>`。
+所有框架包（vue、vue2、react、solid、svelte、angular）的增强代码块都通过同一个 loader 解析：安装 `stream-diffs` 时使用增强的 `stream-diffs` surface，否则渲染普通 `<pre>`。
 
 ## 3. 常见安装配方
 
@@ -146,3 +146,5 @@ const customId: MarkdownRenderProps['customId'] = 'install-check'
   { text: 'AI 聊天与流式输出', link: '/zh/guide/ai-chat-streaming' },
   { text: '按症状排查', link: '/zh/guide/troubleshooting-path' },
 ]" />
+
+SolidJS 项目使用 [Solid 接入指南](/zh/guide/solid)，其中说明 npm 发布前的工作区／tarball 安装方式。

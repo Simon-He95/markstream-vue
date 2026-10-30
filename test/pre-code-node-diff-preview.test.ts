@@ -48,8 +48,8 @@ describe('pre code node diff preview', () => {
   })
 
   it('styles async code block loading content inside the bordered shell', () => {
-    const source = readFileSync('src/components/PreCodeNode/PreCodeNode.vue', 'utf8')
-    const selector = '.markstream-vue pre.code-pre-fallback[data-markstream-code-loading=\'1\']'
+    const source = readFileSync('packages/markstream-core/src/styles/pre-code.css', 'utf8')
+    const selector = ':is(.markstream-vue, .markstream-solid) pre.code-pre-fallback[data-markstream-code-loading=\'1\']'
     const start = source.indexOf(selector)
     expect(start).toBeGreaterThanOrEqual(0)
     const end = source.indexOf('}', start)
@@ -909,9 +909,9 @@ describe('pre code node diff preview', () => {
 
   it('paints one added or removed fill layer in each visual region', () => {
     const source = readFileSync(
-      'src/components/PreCodeNode/PreCodeNode.vue',
+      'packages/markstream-core/src/styles/pre-code.css',
       'utf8',
-    )
+    ) + readFileSync('src/components/PreCodeNode/PreCodeNode.vue', 'utf8')
 
     expect(source).toContain('.markstream-pre__diff-line--added::before')
     expect(source).toContain('.markstream-pre__diff-line--removed::before')
@@ -959,7 +959,7 @@ describe('pre code node diff preview', () => {
 
   it('keeps inline diff fallback full width when wrap is disabled', () => {
     const source = readFileSync(
-      'src/components/PreCodeNode/PreCodeNode.vue',
+      'packages/markstream-core/src/styles/pre-code.css',
       'utf8',
     )
 
@@ -978,7 +978,7 @@ describe('pre code node diff preview', () => {
 
   it('keeps diff fallback rows and content at least pane width', () => {
     const source = readFileSync(
-      'src/components/PreCodeNode/PreCodeNode.vue',
+      'packages/markstream-core/src/styles/pre-code.css',
       'utf8',
     )
 
@@ -989,11 +989,11 @@ describe('pre code node diff preview', () => {
 
   it('uses modified gutter metrics without an extra gap for inline diff fallback', () => {
     const source = readFileSync(
-      'src/components/PreCodeNode/PreCodeNode.vue',
+      'packages/markstream-core/src/styles/pre-code.css',
       'utf8',
     )
 
-    expect(source).toContain('.markstream-vue pre.markstream-pre--diff-preview.markstream-pre--diff-inline {')
+    expect(source).toContain(':is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-inline {')
     expect(source).toContain('--markstream-pre-diff-gutter-marker-width: 4px;')
     expect(source).toContain('--markstream-pre-diff-code-gap: 1ch;')
     expect(source).toContain('--markstream-pre-diff-code-padding: 0px;')
@@ -1022,7 +1022,7 @@ describe('pre code node diff preview', () => {
 
   it('keeps diff fallback line fills square', () => {
     const source = readFileSync(
-      'src/components/PreCodeNode/PreCodeNode.vue',
+      'packages/markstream-core/src/styles/pre-code.css',
       'utf8',
     )
 
@@ -1034,7 +1034,7 @@ describe('pre code node diff preview', () => {
 
   it('lets side-by-side diff fallback panes scroll horizontally when wrap is disabled', () => {
     const source = readFileSync(
-      'src/components/PreCodeNode/PreCodeNode.vue',
+      'packages/markstream-core/src/styles/pre-code.css',
       'utf8',
     )
 

@@ -13,6 +13,8 @@ export * from './pre-code-visual'
 export { resolveStreamingTextState, resolveStreamingTextUpdate } from './resolve-streaming-text-state'
 export * from './shiki-language'
 export { createSmoothMarkdownStream } from './smooth-stream-controller'
+export { createStreamingTextFade } from './streaming-text-fade'
+export type { FadeSegment } from './streaming-text-fade'
 export { extractRenderedSvg, toSafeSvgMarkup } from './svg-markup'
 export type {
   ResolveStreamingTextStateOptions,

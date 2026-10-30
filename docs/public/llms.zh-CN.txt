@@ -36,6 +36,7 @@ Vue 可选 peer：
 - markstream-vue：稳定，Vue 3、Nuxt 3、VitePress，renderer。
 - markstream-react：beta，React 18/19、Next.js App Router、Next.js Pages Router、Remix，renderer。
 - markstream-octane：beta，Octane 0.1.x 客户端与服务端 runtime，renderer。
+- markstream-solid：工作区预览，SolidJS 1.9 原生组件、SSR 与 hydration，renderer。
 - markstream-svelte：beta/实验，仅 Svelte 5，renderer。
 - markstream-angular：alpha，Angular standalone 组件，Angular 20+，renderer。
 - markstream-vue2：兼容移植版，Vue 2.6 / 2.7，renderer。
@@ -98,6 +99,14 @@ import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
 ```
 
+SolidJS 1.9（工作区预览，尚未发布 npm）：
+```txt
+pnpm install
+pnpm play:solid
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+```
+
 Svelte 5:
 ```txt
 pnpm add markstream-svelte svelte@^5
@@ -115,6 +124,7 @@ pnpm add markstream-angular
 - markstream-vue2：仅用于 Vue 2.6 / 2.7 兼容。
 - markstream-react：React、Next.js、Remix renderer。
 - markstream-octane：原生 Octane 客户端/服务端 renderer。
+- markstream-solid：原生 SolidJS 1.9 工作区预览；npm 发布与线上部署尚未完成。
 - markstream-svelte：仅用于 Svelte 5。
 - markstream-angular：Angular standalone renderer。
 - stream-markdown-parser：只提供 parser，不渲染 UI 组件。

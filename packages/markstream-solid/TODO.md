@@ -34,3 +34,13 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Align code headers, gutter/padding, fonts, wrapping, tab size and scrollbar reservation; eagerly render the initial batch.
 - [x] Run the existing Vue 3 handoff assertions against Solid in wrap/scroll, dark/light, first navigation/reload and narrow layouts.
 - [x] Cover native playback controls, source restoration, Unicode transport and mobile/dark settings in the production browser regression.
+
+## Component, worker, streaming and docs follow-up
+
+- [x] Align Mermaid/Infographic/D2 headers, icons, mode layout, source typography and scoped Chinese labels.
+- [x] Use stable native math nodes with real worker injection, cancellation, coalescing and optional-peer fallback.
+- [x] Share theme/layout tokens, pre/diff CSS and streaming fade state through core; preserve selected text DOM.
+- [x] Match live-tail deferral and virtual flow-root behavior; remove initial full-document playback work; share pinned-image styling.
+- [x] Avoid empty-editor visual-ready queue waits and repeated font/theme resets; correct idle/batch delay and budget recovery.
+- [x] Compare 43 component style cases across four states and 25 properties; verify worker messages and full playback in production.
+- [x] Add bilingual Solid docs, framework/guide/quick-start entries, Pages playground link, LLM/SEO routing and docs build validation.

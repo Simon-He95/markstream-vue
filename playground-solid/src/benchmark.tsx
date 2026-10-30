@@ -16,6 +16,7 @@ interface BenchmarkResult {
   longTaskCount: number
   maxLongTaskMs: number
   frameP95Ms: number
+  batchSizes: number[]
 }
 
 declare global {
@@ -96,9 +97,15 @@ export function mountBenchmark(root: HTMLElement) {
                 await frame()
               }
             }
+            const batchSizes: number[] = []
             if (scenario === 'restore-batched') {
+              let previousCount = 0
               const deadline = performance.now() + 10000
               while (host.querySelectorAll('.markdown-renderer > .node-slot').length < 1000) {
+                const count = host.querySelectorAll('.markdown-renderer > .node-slot').length
+                if (count > previousCount)
+                  batchSizes.push(count - previousCount)
+                previousCount = count
                 if (performance.now() > deadline)
                   throw new Error(`${framework} batch restoration did not finish`)
                 await frame()
@@ -127,7 +134,7 @@ export function mountBenchmark(root: HTMLElement) {
             durations.sort((a, b) => a - b)
             gaps.sort((a, b) => a - b)
             if (round >= 0) {
-              results.push({ framework, scenario, round, characters: content.length, totalMs, updateP95Ms: durations[Math.min(durations.length - 1, Math.floor(durations.length * 0.95))], domNodes: host.querySelectorAll('*').length, longTaskCount: longTasks.length, maxLongTaskMs: Math.max(0, ...longTasks), frameP95Ms: gaps[Math.min(gaps.length - 1, Math.floor(gaps.length * 0.95))] })
+              results.push({ batchSizes, framework, scenario, round, characters: content.length, totalMs, updateP95Ms: durations[Math.min(durations.length - 1, Math.floor(durations.length * 0.95))], domNodes: host.querySelectorAll('*').length, longTaskCount: longTasks.length, maxLongTaskMs: Math.max(0, ...longTasks), frameP95Ms: gaps[Math.min(gaps.length - 1, Math.floor(gaps.length * 0.95))] })
             }
             dispose()
             host.remove()

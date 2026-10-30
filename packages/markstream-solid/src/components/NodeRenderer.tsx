@@ -204,16 +204,22 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       let timer: ReturnType<typeof setTimeout> | undefined
       let idle: number | undefined
       let frame: number | undefined
-      const size = adaptiveBatchSize || Math.max(1, props.renderBatchSize ?? 80)
+      const configuredSize = Math.max(1, props.renderBatchSize ?? 80)
+      const size = Math.min(configuredSize, adaptiveBatchSize || configuredSize)
       const budget = Math.max(1, props.renderBatchBudgetMs ?? 6)
       const run = () => {
         const start = performance.now()
         setRenderedCount(Math.min(total, current + size))
-        if (performance.now() - start > budget && size > 1)
+        const elapsed = performance.now() - start
+        if (elapsed > budget && size > 1)
           adaptiveBatchSize = Math.max(1, Math.floor(size / 2))
+        else if (elapsed < budget / 2)
+          adaptiveBatchSize = Math.min(configuredSize, size * 2)
       }
+      const scheduledAt = performance.now()
       const begin = () => {
-        timer = setTimeout(run, Math.max(0, props.renderBatchDelay ?? 16))
+        const remainingDelay = Math.max(0, (props.renderBatchDelay ?? 16) - (performance.now() - scheduledAt))
+        timer = setTimeout(run, remainingDelay)
       }
       if (document.visibilityState !== 'hidden' && typeof window.requestIdleCallback === 'function')
         idle = window.requestIdleCallback(begin, { timeout: props.renderBatchIdleTimeoutMs ?? 120 })
@@ -275,6 +281,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       wasSettled = false
       wasFinal = false
       lastEmission = 0
+      adaptiveBatchSize = 0
       heights.clear()
       setHeightsRevision(value => value + 1)
       setFocus(0)
@@ -665,7 +672,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       while (walker.nextNode())
         last = walker.currentNode
       if (props.typewriter === 'simple' && last?.parentElement) {
-        simpleTarget = last.parentElement
+        simpleTarget = last.parentElement.closest<HTMLElement>('.text-node') ?? last.parentElement
         simpleTarget.classList.add('typewriter-simple-cursor-target')
         setSimpleCursor(true)
         setCursor(undefined)
@@ -694,7 +701,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     })
   })
   const Content = () => (
-    <div ref={root} class={`markstream-solid markdown-renderer ${props.class ?? props.className ?? ''}`} classList={{ 'dark': !!props.isDark, 'virtualized': virtual(), 'typewriter-simple-cursor': simpleCursor() }} style={{ position: 'relative', ...props.style }} data-theme={props['data-theme']} data-custom-id={props.customId} data-rendered-nodes={visible().length} data-total-nodes={nodes().length} data-stream-caught-up={!enabled() || stream.snapshot().caughtUp ? 'true' : 'false'} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
+    <div ref={root} class={`markstream-solid markdown-renderer ${props.class ?? props.className ?? ''}`} classList={{ 'dark': !!props.isDark, 'virtualized': virtual(), 'virtual-scroll-coordinated': props.virtualScroll?.enabled === true, 'typewriter-simple-cursor': simpleCursor() }} style={{ position: 'relative', ...props.style }} data-theme={props['data-theme']} data-custom-id={props.customId} data-rendered-nodes={visible().length} data-total-nodes={nodes().length} data-stream-caught-up={!enabled() || stream.snapshot().caughtUp ? 'true' : 'false'} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
       <Show when={range().start > 0}><div class="virtual-spacer" aria-hidden="true" style={{ height: `${offsets()[range().start]}px` }} /></Show>
       <Show
         when={minimalDom() || props.renderAsFragment}
@@ -702,7 +709,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
           <For each={visibleIndices()}>
             {(index) => {
               const node = createMemo(() => nodes()[index])
-              return <NodeSlot node={node()} index={index} indexKey={`${props.indexKey ?? 'markdown'}-${index}`} context={context()} defer={shellDeferral() && index >= (props.initialRenderBatchSize ?? 40)} margin={props.viewportPriorityOptions?.rootMargin ?? '400px'} estimatedHeight={(offsets()[index + 1] ?? 48) - (offsets()[index] ?? 0)} />
+              return <NodeSlot node={node()} index={index} indexKey={`${props.indexKey ?? 'markdown'}-${index}`} context={context()} defer={shellDeferral() && index >= (props.initialRenderBatchSize ?? 40) && !(final() !== true && !props.nodes?.length && index >= nodes().length - (props.liveNodeBuffer ?? 60))} margin={props.viewportPriorityOptions?.rootMargin ?? '400px'} estimatedHeight={(offsets()[index + 1] ?? 48) - (offsets()[index] ?? 0)} />
             }}
           </For>
         )}

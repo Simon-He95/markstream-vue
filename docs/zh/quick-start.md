@@ -1,6 +1,6 @@
 ---
 title: 多框架快速开始
-description: 为 Vue、React、Svelte 或 Angular 安装正确的 Markstream 渲染器，并渲染第一段流式 Markdown。
+description: 为 Vue、React、SolidJS、Svelte 或 Angular 安装正确的 Markstream 渲染器，并渲染第一段流式 Markdown。
 keywords:
   - 快速开始
   - 多框架
@@ -48,6 +48,25 @@ export function Message({ content, isDone }: { content: string, isDone: boolean 
 ```
 
 Next.js 里，实时 SSE/WebSocket 区域用 root `markstream-react` 放在 `'use client'` 组件中；SSR-first 或 server-only Markdown 看 [Next.js 指南](/zh/frameworks/next)。
+
+## SolidJS 1.9
+
+当前 Solid 包通过仓库工作区提供，尚未发布到 npm。先运行本地演示，或按 [Solid 指南](/zh/guide/solid) 打包给独立应用使用。
+
+```bash
+pnpm install
+pnpm build:solid
+pnpm play:solid
+```
+
+```tsx
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+
+export function Message(props: { content: string, done: boolean }) {
+  return <MarkdownRender mode="chat" content={props.content} final={props.done} />
+}
+```
 
 ## Svelte 5
 

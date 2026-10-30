@@ -3,6 +3,7 @@ import { createEffect, onCleanup } from 'solid-js'
 import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
 
 export function ToolbarButton(props: {
+  class?: string
   label: string
   children?: JSX.Element
   onClick?: JSX.EventHandler<HTMLButtonElement, MouseEvent>
@@ -27,7 +28,7 @@ export function ToolbarButton(props: {
     <button
       type="button"
       role={props.menu ? 'menuitem' : undefined}
-      class="code-action-btn"
+      class={`code-action-btn ${props.class ?? ''}`}
       aria-label={props.label}
       aria-pressed={props.pressed}
       aria-expanded={props.expanded}

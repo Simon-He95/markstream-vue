@@ -311,7 +311,7 @@ function renderLinkNode(node: RenderableMarkdownNode, ctx: RenderContext): strin
 
 function renderMathInlineNode(node: RenderableMarkdownNode) {
   const source = escapeHtml(getString(node.content || node.markup || node.raw))
-  return `<span class="markstream-nested-math" data-display="inline"><span class="markstream-nested-math__source">${source}</span><span class="markstream-nested-math__render" aria-hidden="true"></span></span>`
+  return `<span class="markstream-nested-math" data-display="${node.markup === '$$' ? 'block' : 'inline'}"><span class="markstream-nested-math__source">${source}</span><span class="markstream-nested-math__render" aria-hidden="true"></span></span>`
 }
 
 function renderMathBlockNode(node: RenderableMarkdownNode) {

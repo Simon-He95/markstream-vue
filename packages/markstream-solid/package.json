@@ -5,6 +5,7 @@
   "description": "SolidJS streaming Markdown renderer for AI chat, incremental Markdown and long document restoration.",
   "author": "Simon He",
   "license": "MIT",
+  "homepage": "https://markstream.simonhe.me/frameworks/solid",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Simon-He95/markstream-vue.git",
@@ -125,6 +126,7 @@
   "devDependencies": {
     "jsdom": "^24.1.3",
     "postcss-cli": "^11.0.1",
+    "postcss-import": "^15.1.0",
     "solid-js": "^1.9.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",

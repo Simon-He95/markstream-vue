@@ -13,3 +13,11 @@ html.dark { background: #121212; color: #e0e0e0; }
 .document-tools summary { cursor: pointer; }
 .document-tools .setting-group { margin-top: 12px; }
 .thinking-node .markstream-solid { color: inherit; }
+.component-parity {padding:16px;min-height:100vh;background:#f5f7fb;font-family:system-ui,sans-serif;}
+.component-parity > header {display:flex;align-items:center;gap:16px;margin-bottom:16px;}
+.component-parity > header h1 {font-size:20px;}
+.component-parity-columns {display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;}
+.component-parity-columns > section {min-width:0;padding:16px;background:white;border:1px solid #d1d5db;}
+.component-parity-columns > section > h2 {font-weight:600;margin-bottom:12px;}
+.component-parity.dark {background:#0b1220;color:#e0e0e0;}
+.component-parity.dark .component-parity-columns > section {background:#121212;border-color:#333;}

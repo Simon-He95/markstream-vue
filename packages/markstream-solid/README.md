@@ -2,7 +2,23 @@
 
 Native SolidJS 1.9 renderer using Markstream's shared parser and stream controller. Vue 3's public renderer capabilities are implemented with Solid components, accessors and context; see [PARITY.md](./PARITY.md) and [VALIDATION.md](./VALIDATION.md).
 
-This is a workspace package. The changes here do not publish it to npm. Tracking: [#799](https://github.com/Simon-He95/markstream-vue/issues/799).
+## Install and compiler setup
+
+The package is currently a workspace preview; npm publication is pending. From this repository:
+
+```bash
+pnpm install
+pnpm build:solid
+pnpm play:solid
+```
+
+Applications in the same pnpm workspace can depend on `markstream-solid` using `workspace:*`, with `solid-js@^1.9`. For external apps, build and pack `stream-markdown-parser`, `markstream-core`, and `markstream-solid` together; see the [Solid installation guide](https://markstream.simonhe.me/guide/solid#install-and-requirements) and [packed consumer smoke](../../scripts/smoke-solid-package.mjs).
+
+Compile application TSX with `vite-plugin-solid` in Vite, and use `"jsx": "preserve"` / `"jsxImportSource": "solid-js"` in TypeScript. SolidStart manages its own compiler setup. The distributed library contains compiled browser/server JavaScript and declarations.
+
+Import exactly one stylesheet: `index.css`, `index.px.css` for apps that change the root font size, or `index.tailwind.css`. Math also needs `katex/dist/katex.min.css`.
+
+## Basic usage
 
 ```tsx
 import MarkdownRender from 'markstream-solid'
@@ -82,3 +98,12 @@ pnpm test:e2e:solid-playground
 ```
 
 The production browser suite verifies streaming, full restoration, virtual scrolling, toolbar and iframe interactions, all three diagram integrations, artifact events and hydration. Performance comparisons warm up once and measure three rounds, alternating framework order. They include plain and rich documents plus continued streaming after a 1,000-node history; raw results and screenshots are in `.tmp/solid/`.
+
+## Documentation and playground
+
+- [Solid framework overview](https://markstream.simonhe.me/frameworks/solid)
+- [English guide](https://markstream.simonhe.me/guide/solid) / [中文指南](https://markstream.simonhe.me/zh/guide/solid)
+- [Playground source and local commands](../../playground-solid/README.md)
+- [Online playground](https://markstream-solid.pages.dev/) — deployment pending; use `pnpm play:solid` locally.
+
+The guide covers reactive SSE input, optional peers, workers, custom components, i18n/provider scope, HTML previews, SSR/hydration and virtual-history restoration. The playground follows the same Pages naming convention as Svelte.

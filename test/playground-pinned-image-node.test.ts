@@ -21,7 +21,7 @@ function imageNode(overrides: Record<string, unknown> = {}) {
 }
 
 function pinnedImageNodeSource() {
-  return readFileSync(resolve(process.cwd(), 'playground/src/components/PinnedImageNode.vue'), 'utf8')
+  return readFileSync(resolve(process.cwd(), 'playground/src/components/PinnedImageNode.vue'), 'utf8') + readFileSync(resolve(process.cwd(), 'playground-shared/pinned-image.css'), 'utf8')
 }
 
 describe('playground pinned image node (issue #766)', () => {

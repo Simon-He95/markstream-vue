@@ -78,6 +78,13 @@ If the first render fails, use [Troubleshooting by Symptom](/guide/troubleshooti
 | [Installation](/guide/angular-installation) | Angular specific setup |
 | [Quick Start](/guide/angular-quick-start) | Standalone Angular examples |
 
+### SolidJS (markstream-solid)
+
+| Page | Description |
+| --- | --- |
+| [Quick Start](/guide/solid) | Workspace/tarball setup, Solid TSX, streaming, workers, custom components, SSR and restoration |
+| [Framework overview](/frameworks/solid) | Capabilities and workspace preview status |
+
 ### Svelte (markstream-svelte)
 
 | Page | Description |

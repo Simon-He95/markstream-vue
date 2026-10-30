@@ -1,20 +1,20 @@
 import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
 import type { SolidRenderableNode } from './shared/node-helpers'
-import { resolveStreamingTextState } from 'markstream-core'
-import { createEffect, createMemo, createSignal, Index, Match, onCleanup, Show, Switch } from 'solid-js'
+import { createEffect, createMemo, createSignal, Index, Match, onCleanup, Show, Switch, untrack } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { isHtmlTagBlocked, NON_STRUCTURING_HTML_TAGS, sanitizeHtmlAttrs } from 'stream-markdown-parser'
 import { getCustomNodeComponents } from '../customComponents'
 import { enhanceRenderedHtml } from '../enhanceRenderedHtml'
 import { renderMarkdownNodeToHtml } from '../renderMarkdownHtml'
-import { AdmonitionNode, BlockquoteNode, CheckboxNode, DefinitionListNode, EmojiNode, EmphasisNode, FootnoteAnchorNode, FootnoteNode, FootnoteReferenceNode, HardBreakNode, HeadingNode, HighlightNode, ImageNode, InlineCodeNode, InsertNode, LinkNode, ListItemNode, ListNode, ParagraphNode, ReferenceNode, StrikethroughNode, StrongNode, SubscriptNode, SuperscriptNode, TableNode, ThematicBreakNode, VmrContainerNode } from './BuiltinNodes'
+import { AdmonitionNode, BlockquoteNode, CheckboxNode, DefinitionListNode, EmojiNode, EmphasisNode, FootnoteAnchorNode, FootnoteNode, FootnoteReferenceNode, HardBreakNode, HeadingNode, HighlightNode, ImageNode, InlineCodeNode, InsertNode, LinkNode, ListItemNode, ListNode, MathBlockNode, MathInlineNode, ParagraphNode, ReferenceNode, StrikethroughNode, StrongNode, SubscriptNode, SuperscriptNode, TableNode, ThematicBreakNode, VmrContainerNode } from './BuiltinNodes'
 import { CodeBlockNode } from './CodeBlockNode'
 import { D2BlockNode, InfographicBlockNode, MermaidBlockNode } from './DiagramBlockNode'
 import { useNodeLifecycle } from './lifecycle'
 import { PreCodeBlock } from './PreCodeBlock'
 import { buildRenderContext, getNodeList, getString, resolveCodeBlockLanguage } from './shared/node-helpers'
 import { coerceCustomHtmlNode, resolveHtmlTag, resolveNodeOutletCustomComponent, resolveNodeOutletCustomInputs } from './shared/node-outlet-helpers'
+import { StreamingTextNode } from './StreamingTextNode'
 import { useHeavyNodeVisibility } from './viewport'
 
 export function RenderChildren(props: NodeComponentProps & {
@@ -28,20 +28,7 @@ export function RenderChildren(props: NodeComponentProps & {
   )
 }
 export function TextNode(props: NodeComponentProps): JSX.Element {
-  let previous = ''
-  const text = createMemo(() => getString(props.node.content ?? props.node.raw))
-  const state = createMemo(() => {
-    const next = text()
-    const result = resolveStreamingTextState({ nextContent: next, previousContent: previous, typewriterEnabled: props.context?.fade !== false })
-    previous = next
-    return result
-  })
-  return (
-    <span class="text-node markstream-solid-text-node" classList={{ 'markstream-solid-text--centered': !!props.node.center }} data-typewriter={props.context?.typewriter ? '1' : undefined}>
-      {state().settledContent}
-      <Show when={state().streamedDelta}><span class="text-node-stream-delta markstream-solid-text__stream-delta">{state().streamedDelta}</span></Show>
-    </span>
-  )
+  return <StreamingTextNode {...props} />
 }
 export function RichNode(props: NodeComponentProps): JSX.Element {
   let host!: HTMLSpanElement
@@ -53,6 +40,7 @@ export function RichNode(props: NodeComponentProps): JSX.Element {
     htmlPolicy: props.context?.htmlPolicy,
     allowHtml: props.context?.allowHtml,
   }))
+  const initialMarkup = untrack(html)
   const final = createMemo(() => props.context?.final !== false && props.node.loading !== true)
   createEffect(() => {
     const markup = html()
@@ -65,7 +53,8 @@ export function RichNode(props: NodeComponentProps): JSX.Element {
     let handle: {
       dispose: () => void
     } | undefined
-    host.innerHTML = markup
+    if (host.innerHTML !== markup)
+      host.innerHTML = markup
     void enhanceRenderedHtml(host, {
       ...context,
       final: isFinal,
@@ -88,9 +77,11 @@ export function RichNode(props: NodeComponentProps): JSX.Element {
       handle?.dispose()
     })
   })
-  return <span ref={host} class="rich-node" style={{ display: 'contents' }} innerHTML={html()} />
+  return <span ref={host} class="rich-node" style={{ display: 'contents' }} innerHTML={initialMarkup} />
 }
 const builtinComponents = {
+  math_block: MathBlockNode,
+  math_inline: MathInlineNode,
   paragraph: ParagraphNode,
   heading: HeadingNode,
   strong: StrongNode,

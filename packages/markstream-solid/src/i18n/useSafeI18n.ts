@@ -12,6 +12,8 @@ function humanizeKey(key: string) {
 }
 
 const defaultMap: Record<string, string> = {
+  'common.minimize': 'Minimize',
+  'common.selectCopy': '全选（复制）',
   'common.more': 'More',
   'common.fontSmaller': 'Font size −',
   'common.fontReset': 'Font size reset',

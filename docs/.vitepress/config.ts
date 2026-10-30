@@ -9,7 +9,7 @@ import { componentCategories, componentsDocData } from './theme/data/components'
 const docsSiteUrl = process.env.VITEPRESS_SITE_URL || 'https://markstream.simonhe.me'
 const docsOgImageUrl = getDocsAbsoluteAssetUrl('/og-image.png')
 const docsOgImageAlt = 'Markstream streaming Markdown renderer documentation overview'
-const docsDefaultDescription = 'Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nuxt, and Next.js'
+const docsDefaultDescription = 'Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Angular, Nuxt, and Next.js'
 const githubRepoUrl = 'https://github.com/Simon-He95/markstream-vue'
 const docsRootDir = fileURLToPath(new URL('..', import.meta.url))
 const workspaceRootDir = fileURLToPath(new URL('../..', import.meta.url))
@@ -52,6 +52,7 @@ const markdownParserSrcDir = path.dirname(markdownParserSrc)
 const playgroundItems = [
   { text: 'Vue 3', link: 'https://markstream-vue.simonhe.me/' },
   { text: 'React', link: 'https://markstream-react.pages.dev/' },
+  { text: 'Solid', link: 'https://markstream-solid.pages.dev/' },
   { text: 'Svelte', link: 'https://markstream-svelte.pages.dev/' },
   { text: 'Nuxt', link: 'https://markstream-nuxt.pages.dev/' },
   { text: 'Vue 2', link: 'https://markstream-vue2.pages.dev/' },
@@ -86,6 +87,7 @@ const rootNav = [
       { text: 'Vue 2', link: '/frameworks/vue2' },
       { text: 'React', link: '/frameworks/react' },
       { text: 'Next.js', link: '/frameworks/next' },
+      { text: 'SolidJS', link: '/frameworks/solid' },
       { text: 'Svelte', link: '/frameworks/svelte' },
       { text: 'Angular', link: '/frameworks/angular' },
     ],
@@ -123,6 +125,7 @@ const zhNav = [
       { text: 'Vue 2', link: '/zh/frameworks/vue2' },
       { text: 'React', link: '/zh/frameworks/react' },
       { text: 'Next.js', link: '/zh/frameworks/next' },
+      { text: 'SolidJS', link: '/zh/frameworks/solid' },
       { text: 'Svelte', link: '/zh/frameworks/svelte' },
       { text: 'Angular', link: '/zh/frameworks/angular' },
     ],
@@ -232,6 +235,7 @@ const englishGuideSidebar = [
       { text: 'Nuxt', link: '/frameworks/nuxt' },
       { text: 'React', link: '/frameworks/react' },
       { text: 'Next.js', link: '/frameworks/next' },
+      { text: 'SolidJS', link: '/frameworks/solid' },
       { text: 'Svelte', link: '/frameworks/svelte' },
       { text: 'Angular', link: '/frameworks/angular' },
       { text: 'Nuxt SSR', link: '/nuxt-ssr' },
@@ -243,6 +247,7 @@ const englishGuideSidebar = [
       { text: 'React Components', link: '/guide/react-components' },
       { text: 'Migrate from react-markdown', link: '/guide/react-markdown-migration' },
       { text: 'Migration Cookbook', link: '/guide/react-markdown-migration-cookbook' },
+      { text: 'SolidJS Quick Start', link: '/guide/solid' },
       { text: 'Svelte Quick Start', link: '/guide/svelte' },
       { text: 'Angular Quick Start', link: '/guide/angular-quick-start' },
       { text: 'Angular Installation', link: '/guide/angular-installation' },
@@ -377,6 +382,7 @@ const chineseGuideSidebar = [
       { text: 'Nuxt 流式 Markdown 渲染器', link: '/zh/frameworks/nuxt' },
       { text: 'React 流式 Markdown 渲染器', link: '/zh/frameworks/react' },
       { text: 'Next.js 流式 Markdown 渲染器', link: '/zh/frameworks/next' },
+      { text: 'SolidJS 流式 Markdown 渲染器', link: '/zh/frameworks/solid' },
       { text: 'Svelte 流式 Markdown 渲染器', link: '/zh/frameworks/svelte' },
       { text: 'Angular 流式 Markdown 渲染器', link: '/zh/frameworks/angular' },
       { text: 'Nuxt SSR', link: '/zh/nuxt-ssr' },
@@ -388,6 +394,7 @@ const chineseGuideSidebar = [
       { text: 'React 组件', link: '/zh/guide/react-components' },
       { text: '从 react-markdown 迁移', link: '/zh/guide/react-markdown-migration' },
       { text: '迁移 Cookbook', link: '/zh/guide/react-markdown-migration-cookbook' },
+      { text: 'SolidJS 快速开始', link: '/zh/guide/solid' },
       { text: 'Svelte 快速开始', link: '/zh/guide/svelte' },
       { text: 'Angular 快速开始', link: '/zh/guide/angular-quick-start' },
       { text: 'Angular 安装', link: '/zh/guide/angular-installation' },
@@ -535,6 +542,7 @@ const docsPrimaryLandingPaths = new Set([
   '/frameworks/vue2',
   '/frameworks',
   '/frameworks/react',
+  '/frameworks/solid',
   '/frameworks/svelte',
   '/frameworks/angular',
   '/frameworks/nuxt',
@@ -587,6 +595,7 @@ const docsSecondaryLandingPaths = new Set([
   '/guide/react-markdown-migration-cookbook',
   '/guide/vue2-quick-start',
   '/guide/react-quick-start',
+  '/guide/solid',
   '/guide/angular-quick-start',
   '/guide/troubleshooting',
 ])

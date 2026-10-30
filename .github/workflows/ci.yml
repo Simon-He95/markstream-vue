@@ -89,6 +89,19 @@ jobs:
           pnpm test:smoke:solid
           pnpm test:e2e:solid-playground
 
+      - name: Upload Solid validation reports
+        if: always() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: solid-validation
+          path: |
+            .tmp/solid/performance.json
+            .tmp/solid/component-styles.json
+            .tmp/solid/workers.json
+            .tmp/solid/playback.json
+            .tmp/solid/*.png
+          if-no-files-found: ignore
+
       - name: Svelte package tests (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm --filter markstream-svelte test

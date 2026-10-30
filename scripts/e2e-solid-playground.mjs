@@ -34,6 +34,22 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
+  await page.addInitScript(() => {
+    window.__solidWorkers = { workers: [], messages: [] }
+    const Base = window.Worker
+    window.Worker = class extends Base {
+      constructor(url, options) {
+        super(url, options)
+        this.auditName = options?.name ?? String(url)
+        window.__solidWorkers.workers.push({ name: this.auditName, url: String(url) })
+      }
+
+      postMessage(message, ...args) {
+        window.__solidWorkers.messages.push({ name: this.auditName, type: message?.type, displayMode: message?.displayMode })
+        return super.postMessage(message, ...args)
+      }
+    }
+  })
   await page.goto(url)
   await page.waitForFunction(() => !!window.__markstreamSolid)
   await page.evaluate(() => {
@@ -44,9 +60,14 @@ try {
   assert.equal(await page.locator('[data-runtime-error]').count(), 0)
   await page.screenshot({ path: path.join(outputDir, 'playground.png'), fullPage: true })
   await page.evaluate(() => window.__markstreamSolid.update({ content: '```ts\nconst streamed = ', final: false, smoothStreaming: false }))
-  assert.ok((await page.locator('.pre-code code').textContent()).includes('const streamed'))
+  await page.waitForFunction(() => document.querySelector('.code-block-container[aria-busy="true"] .stream-diffs-shell'), null, { timeout: 30000 })
+  await page.evaluate(() => {
+    window.__solidStreamingHost = document.querySelector('.code-block-editor')
+    window.__solidStreamingShell = document.querySelector('.stream-diffs-shell')
+  })
   await page.evaluate(() => window.__markstreamSolid.update({ content: '```ts\nconst streamed = 42\n```', final: true }))
   await page.waitForFunction(() => document.querySelector('.code-block-editor .stream-diffs-shell') && !document.querySelector('.code-block-container[data-markstream-pending]'))
+  assert.equal(await page.evaluate(() => window.__solidStreamingHost === document.querySelector('.code-block-editor') && window.__solidStreamingShell === document.querySelector('.stream-diffs-shell')), true)
   await page.evaluate(() => {
     window.__solidCodeHost = document.querySelector('.code-block-editor')
     window.__solidCodeRuntime = document.querySelector('.stream-diffs-shell')
@@ -315,6 +336,121 @@ try {
   await page.screenshot({ path: path.join(outputDir, 'ui-mobile-dark.png'), fullPage: true })
   await page.setViewportSize({ width: 1440, height: 1000 })
 
+  await page.goto(url)
+  await page.waitForFunction(() => !!window.__markstreamSolid)
+  await page.evaluate(() => {
+    const root = document.querySelector('.chat-wrapper')
+    const messages = document.querySelector('.chat-messages')
+    const data = window.__solidPlayback = { frames: [], heights: [], longTasks: [], backwards: [], active: true }
+    let previous = { time: performance.now(), top: root.scrollTop, height: messages.getBoundingClientRect().height }
+    new PerformanceObserver(list => data.longTasks.push(...list.getEntries().map(entry => entry.duration))).observe({ type: 'longtask' })
+    const sample = () => {
+      if (!data.active)
+        return
+      const next = { time: performance.now(), top: root.scrollTop, height: messages.getBoundingClientRect().height }
+      data.frames.push(next.time - previous.time)
+      if (Math.abs(next.height - previous.height) > 0.5)
+        data.heights.push({ time: next.time, delta: next.height - previous.height })
+      if (next.top < previous.top - 2)
+        data.backwards.push({ time: next.time, delta: next.top - previous.top, heightDelta: next.height - previous.height })
+      previous = next
+      requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+  await page.waitForFunction(() => document.querySelector('.speed-status__state')?.textContent === 'Input complete', null, { timeout: 30000 })
+  await page.waitForFunction(() => document.querySelector('[data-testid="preview"] > .markdown-renderer')?.dataset.streamCaughtUp === 'true')
+  await page.waitForTimeout(500)
+  const playback = await page.evaluate(() => {
+    window.__solidPlayback.active = false
+    return window.__solidPlayback
+  })
+  assert.equal(await page.locator('[data-runtime-error]').count(), 0)
+  assert.ok(playback.backwards.length <= 2 && playback.backwards.every(event => Math.abs(event.delta) <= 100), 'streaming avoids repeated placeholder scroll reversals')
+  assert.ok(Math.max(0, ...playback.longTasks) < 250, 'default playback avoids large main-thread stalls')
+  await writeFile(path.join(outputDir, 'playback.json'), `${JSON.stringify(playback, null, 2)}\n`)
+
+  await page.goto(`${url}/component-parity`)
+  await page.waitForFunction(() => !!window.__markstreamComponentParity)
+  await page.waitForFunction(() => ['vue3', 'solid'].every((framework) => {
+    const root = document.querySelector(`[data-framework="${framework}"]`)
+    return root?.querySelector('.katex') && root.querySelector('.mermaid-block-container svg text') && root.querySelector('.infographic-block-container svg')
+  }), null, { timeout: 45000 })
+  const selectors = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', '.paragraph-node', 'strong', 'em', 'del', 'mark', 'ins', 'sub.subscript-node', 'sup.superscript-node', 'blockquote', 'ul', 'ol', 'li', 'hr', 'code.inline-code', '.checkbox-node', '.link-node', 'table', 'th', 'td', 'img', '.math-block', '.math-inline', '.mermaid-block-header', '.infographic-block-header', '.d2-block-header', '.code-block-header', '.footnote-node', '.footnote-reference', '.footnote-anchor', '.admonition', '.admonition-legend', '.admonition-content', '.reference-node', '.emoji-node', '.vmr-container', '.fixture-html', 'kbd']
+  const properties = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'color', 'backgroundColor', 'marginTop', 'marginBottom', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderLeftWidth', 'borderRadius', 'display', 'verticalAlign', 'whiteSpace', 'minHeight', 'gap', 'letterSpacing', 'tableLayout', 'borderCollapse', 'textDecorationLine', 'position', 'maxWidth']
+  const componentStyles = []
+  for (const variant of [{ width: 1600, dark: false, locale: 'en' }, { width: 1600, dark: true, locale: 'zh' }, { width: 1600, dark: false, locale: 'zh' }, { width: 760, dark: false, locale: 'zh' }]) {
+    await page.setViewportSize({ width: variant.width, height: 1100 })
+    await page.evaluate(({ dark, locale }) => window.__markstreamComponentParity.update({ isDark: dark, locale }), variant)
+    await page.mouse.move(0, 0)
+    await page.waitForTimeout(300)
+    const rows = await page.evaluate(({ selectors, properties }) => selectors.map((selector) => {
+      const read = (framework) => {
+        const element = document.querySelector(`[data-framework="${framework}"] ${selector}`)
+        if (!element)
+          return null
+        const css = getComputedStyle(element)
+        return Object.fromEntries(properties.map(key => [key, css[key]]))
+      }
+      const vue = read('vue3')
+      const solid = read('solid')
+      return { selector, vue, solid, differences: vue && solid ? properties.filter(key => vue[key] !== solid[key]) : ['missing'] }
+    }), { selectors, properties })
+    componentStyles.push({ ...variant, rows })
+    assert.deepEqual(rows.filter(row => row.differences.length), [], `component styles ${JSON.stringify(variant)}`)
+    const headers = page.locator('[data-framework="solid"] .diagram-block-header')
+    for (const header of await headers.all()) {
+      for (const button of await header.locator('.diagram-mode-btn').all()) {
+        const box = await button.boundingBox()
+        assert.ok(box && box.width > 40 && box.height < 32, 'mode labels stay on one line')
+      }
+    }
+    if (variant.locale === 'zh')
+      assert.ok(await page.locator('[data-framework="solid"] button[aria-label="源代码"]').count() >= 3)
+    if (variant.width === 1600 && !variant.dark && variant.locale === 'zh') {
+      await page.locator('[data-framework="solid"] .mermaid-block-container').first().screenshot({ path: path.join(outputDir, 'mermaid-zh.png') })
+      await page.locator('[data-framework="solid"] .infographic-block-container').first().screenshot({ path: path.join(outputDir, 'infographic-zh.png') })
+      await page.locator('[data-framework="solid"] .math-block').first().screenshot({ path: path.join(outputDir, 'math-block.png') })
+    }
+  }
+  for (const framework of ['vue3', 'solid']) {
+    for (const button of await page.locator(`[data-framework="${framework}"]`).getByRole('button', { name: '源代码', exact: true }).all())
+      await button.click()
+  }
+  const sourceStyles = await page.evaluate(() => ['mermaid', 'infographic'].map((kind) => {
+    const fields = ['fontFamily', 'fontSize', 'lineHeight', 'color', 'whiteSpace', 'paddingTop', 'paddingLeft', 'marginTop', 'marginBottom']
+    const read = (framework) => {
+      const pre = document.querySelector(`[data-framework="${framework}"] .${kind}-source-code`)
+      const css = getComputedStyle(pre)
+      return Object.fromEntries(fields.map(field => [field, css[field]]))
+    }
+    return { kind, vue: read('vue3'), solid: read('solid') }
+  }))
+  for (const result of sourceStyles)
+    assert.deepEqual(result.solid, result.vue, `${result.kind} source typography`)
+  const workerAudit = await page.evaluate(() => window.__solidWorkers)
+  assert.ok(workerAudit.messages.some(message => message.name === 'markstream-solid-katex' && message.type === 'render' && message.displayMode === true), 'block math uses the native Solid worker')
+  assert.ok(workerAudit.messages.some(message => message.name === 'markstream-solid-katex' && message.type === 'render' && message.displayMode === false), 'inline math uses the native Solid worker')
+  await writeFile(path.join(outputDir, 'component-styles.json'), `${JSON.stringify(componentStyles, null, 2)}\n`)
+  await writeFile(path.join(outputDir, 'workers.json'), `${JSON.stringify(workerAudit.messages, null, 2)}\n`)
+  await page.evaluate(() => {
+    window.__markstreamComponentParity.update({ content: 'Selected prefix', final: false, fade: true })
+    const text = document.querySelector('[data-framework="solid"] .text-node > span').firstChild
+    window.__solidSelectedText = text
+    const range = document.createRange()
+    range.setStart(text, 0)
+    range.setEnd(text, 8)
+    getSelection().removeAllRanges()
+    getSelection().addRange(range)
+    window.__markstreamComponentParity.update({ content: 'Selected prefix plus appended text' })
+  })
+  await page.waitForTimeout(350)
+  assert.equal(await page.evaluate(() => getSelection().toString()), 'Selected')
+  assert.equal(await page.evaluate(() => window.__solidSelectedText.textContent), 'Selected prefix')
+  assert.equal(await page.locator('[data-framework="solid"]').textContent(), 'Selected prefix plus appended text')
+  await page.evaluate(() => getSelection().removeAllRanges())
+  await page.setViewportSize({ width: 1440, height: 1000 })
+
   await page.goto(`${url}/?benchmark=1`)
   await page.waitForFunction(() => !!window.__markstreamBenchmark)
   const measurements = await page.evaluate(() => window.__markstreamBenchmark.run(3))
@@ -327,12 +463,14 @@ try {
       summary.push({ scenario, framework, medianTotalMs: median('totalMs'), medianUpdateP95Ms: median('updateP95Ms'), domNodes: median('domNodes'), longTaskCount: median('longTaskCount'), maxLongTaskMs: median('maxLongTaskMs'), frameP95Ms: median('frameP95Ms') })
     }
     const [vue, solid] = summary.filter(row => row.scenario === scenario)
+    if (scenario === 'restore-batched')
+      assert.ok(solid.medianTotalMs < Math.max(1000, vue.medianTotalMs * 4), 'Solid batching must recover throughput after budget spikes')
     assert.ok(solid.medianUpdateP95Ms < Math.max(100, vue.medianUpdateP95Ms * 2), `Solid ${scenario} update regression`)
   }
   assert.deepEqual(errors, [])
   const report = { browser: await browser.version(), timestamp: new Date().toISOString(), viewport: { width: 1440, height: 1000 }, warmupRounds: 1, measuredRounds: 3, summary, measurements }
   await writeFile(path.join(outputDir, 'performance.json'), `${JSON.stringify(report, null, 2)}\n`)
-  console.log(JSON.stringify({ status: 'passed', checks: ['Vue3 page shell and native controls', 'brand/code themes and HTML policy', 'TPS and both random chunk transports', 'Unicode transport preservation', 'mobile controls and dark mode', 'optional peers', 'real editor streaming identity', 'streaming 1/7/64/1024', 'DOM identity', 'replace/reset/restore/resume', '3000-node virtualization first/last', 'full DOM restore', 'smooth final', 'pause/resume', 'SSR hydration and append', 'toolbar/font/copy', 'HTML sandbox/scripts', 'SVG artifact events', 'D2/infographic/Mermaid preview', 'diagram pan/zoom/fullscreen/export', 'virtual cache roundtrip', 'typewriter simple/precise/final', 'Vue3/Solid performance'], summary, report: path.join(outputDir, 'performance.json') }, null, 2))
+  console.log(JSON.stringify({ status: 'passed', checks: ['real default playground playback, frame/height/scroll trace', 'per-component Vue3 CSS equality in light/dark, English/Chinese and narrow widths', 'real block/inline math worker messages', 'native browser selection survives streaming and fade settlement', 'streaming editor creation and identity', 'Vue3 page shell and native controls', 'brand/code themes and HTML policy', 'TPS and both random chunk transports', 'Unicode transport preservation', 'mobile controls and dark mode', 'optional peers', 'real editor streaming identity', 'streaming 1/7/64/1024', 'DOM identity', 'replace/reset/restore/resume', '3000-node virtualization first/last', 'full DOM restore', 'smooth final', 'pause/resume', 'SSR hydration and append', 'toolbar/font/copy', 'HTML sandbox/scripts', 'SVG artifact events', 'D2/infographic/Mermaid preview', 'diagram pan/zoom/fullscreen/export', 'virtual cache roundtrip', 'typewriter simple/precise/final', 'Vue3/Solid performance'], summary, report: path.join(outputDir, 'performance.json') }, null, 2))
 }
 finally {
   await browser?.close()

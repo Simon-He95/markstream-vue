@@ -36,7 +36,7 @@ Then continue with [Quick Start](/guide/quick-start) if you only need basic Mark
 | KaTeX math | `katex` | Inline or block math rendering |
 | Infographic blocks | `@antv/infographic` | Fenced `infographic` blocks; also configure `setInfographicLoader` |
 
-Enhanced code blocks resolve through the same loader across all framework packages (vue, vue2, react, svelte, angular): when `stream-diffs` is installed, the enhanced `stream-diffs` surface is used; otherwise a plain `<pre>` is rendered.
+Enhanced code blocks resolve through the same loader across all framework packages (vue, vue2, react, solid, svelte, angular): when `stream-diffs` is installed, the enhanced `stream-diffs` surface is used; otherwise a plain `<pre>` is rendered.
 
 ## 3. Common install recipes
 
@@ -149,3 +149,5 @@ Next steps:
   { text: 'AI Chat & Streaming', link: '/guide/ai-chat-streaming' },
   { text: 'Troubleshooting by Symptom', link: '/guide/troubleshooting-path' },
 ]" />
+
+SolidJS apps use the [Solid setup guide](/guide/solid), including workspace/tarball installation before npm publication.

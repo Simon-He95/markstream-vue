@@ -1,18 +1,21 @@
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
+import autoprefixer from 'autoprefixer'
+import tailwindcss from 'tailwindcss'
 import { defineConfig } from 'vite'
 import solid from 'vite-plugin-solid'
+import tailwindConfig from '../tailwind.config'
 
 export default defineConfig({
   base: './',
   publicDir: resolve(import.meta.dirname, '../public'),
   css: {
     postcss: {
-      plugins: [{
+      plugins: [tailwindcss({ ...tailwindConfig, content: tailwindConfig.content.map(pattern => resolve(import.meta.dirname, '..', pattern)) }), autoprefixer(), {
         postcssPlugin: 'markstream-solid-playground-themes',
         Rule(rule) {
           if (rule.source?.input.file?.includes('/themes/'))
-            rule.selector = rule.selector.replaceAll('.markstream-vue', '.markstream-solid')
+            rule.selector = rule.selector.replaceAll('.markstream-vue', ':is(.markstream-vue, .markstream-solid)')
         },
       }],
     },

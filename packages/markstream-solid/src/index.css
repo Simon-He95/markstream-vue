@@ -1,3 +1,6 @@
+@import '../../markstream-core/src/styles/pre-code.css';
+@import '../../markstream-core/src/styles/theme-tokens.css';
+
 /*
  * Keep button defaults minimal, but don't override Tailwind utilities.
  * Use :where() to keep specificity low so `.markstream-solid .<utility>` wins.
@@ -17,69 +20,7 @@ markstream-solid {
   width: 100%;
 }
 
-/* Theme variables for renderer colors */
-.markstream-solid {
-  --border: 0 0% 87%;
-  --background: 0 0% 100%;
-  --foreground: 0 0% 10%;
-  --secondary: 0 0% 93.5%;
-  --muted: 0 0% 96.5%;
-  --muted-foreground: 0 0% 43%;
-  --ms-background: var(--background);
-  --ms-foreground: var(--foreground);
-  --ms-muted: var(--muted);
-  --ms-muted-foreground: var(--muted-foreground);
-  --ms-secondary: var(--secondary);
-  --ms-secondary-foreground: var(--foreground);
-  --ms-accent: 0 0% 91%;
-  --ms-accent-foreground: var(--foreground);
-  --ms-border: var(--border);
-  --ms-popover: var(--background);
-  --ms-popover-foreground: var(--foreground);
-  /* Unified default code surface; explicit editor themes may override it. */
-  --code-fg: hsl(0 0% 10%);
-  --code-bg: #fff;
-  --code-border: hsl(var(--ms-border));
-  --code-header-bg: hsl(var(--ms-secondary));
-  --code-line-number: hsl(var(--ms-muted-foreground));
-  --code-action-fg: hsl(var(--ms-muted-foreground));
-  --code-action-hover-bg: hsl(var(--ms-accent));
-  --code-action-hover-fg: hsl(var(--ms-accent-foreground));
-  --diagram-bg: hsl(var(--ms-muted));
-  --diagram-border: hsl(var(--ms-border));
-  --diagram-header-bg: hsl(var(--ms-muted));
-  --blockquote-border: hsl(var(--ms-muted-foreground) / 0.2);
-  --modal-overlay: hsl(0 0% 0% / 0.7);
-  --modal-bg: hsl(var(--ms-popover));
-  --modal-fg: hsl(var(--ms-popover-foreground));
-  --ms-text-label: 0.75rem;
-  --ms-radius: 0.5rem;
-  --ms-gap-header: 1rem;
-  --ms-gap-header-main: 0.625rem;
-  --ms-action-btn-padding: 0.375rem;
-  --ms-action-btn-icon: 0.875rem;
-  --ms-inset-panel-x: 0.625rem;
-  --ms-inset-panel-y: 0.375rem;
-  --ms-inset-panel-body: 1rem;
-  --ms-gap-header-actions: 0.5rem;
-  --ms-flow-blockquote-y: 1.25em;
-  --ms-flow-blockquote-indent: 1.25em;
-  --ms-flow-diagram-y: 1.5em;
-  --ms-size-image-max-width: 24rem;
-  --ms-size-diagram-min-height: 360px;
-  --ms-size-code-max-height: 500px;
-  --ms-duration-standard: 180ms;
-  --ms-duration-fast: 120ms;
-  --ms-duration-emphasis: 220ms;
-  --ms-ease-standard: cubic-bezier(0.2, 0, 0, 1);
-  --ms-shadow-subtle: 0 1px 3px 0 hsl(var(--ms-foreground) / 0.06);
-  --ms-shadow-modal: 0 10px 15px -3px hsl(var(--ms-foreground) / 0.1), 0 4px 6px -4px hsl(var(--ms-foreground) / 0.1);
-  --ms-font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  color: hsl(var(--ms-foreground));
-  font: 400 16px/1.75 var(--ms-font-sans);
-  word-break: break-word;
-  position: relative;
-}
+.markstream-solid {color:inherit;word-break:break-word;position:relative;}
 
 .markstream-solid.markdown-renderer {
   contain: layout;
@@ -90,20 +31,6 @@ markstream-solid {
 .markstream-solid.virtualized {
   content-visibility: visible;
   contain-intrinsic-size: auto;
-}
-
-.dark .markstream-solid,
-.markstream-solid.dark {
-  --border: 0 0% 20%;
-  --background: 0 0% 7%;
-  --foreground: 0 0% 93%;
-  --secondary: 0 0% 16%;
-  --muted: 0 0% 12%;
-  --muted-foreground: 0 0% 60%;
-  --ms-accent: 0 0% 24%;
-  --code-fg: hsl(0 0% 93%);
-  --code-bg: #111827;
-  --code-header-bg: hsl(var(--ms-muted));
 }
 
 .markstream-solid > :first-child {
@@ -1726,39 +1653,6 @@ body > div[id^="dmermaid-"] {
   pointer-events: none;
 }
 
-.markstream-solid .code-pre-fallback {
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  padding: var(--markstream-code-padding-y, 8px) var(--markstream-code-padding-x, 12px);
-  padding-left: var(--markstream-code-padding-left, 52px);
-  max-height: 500px;
-  overflow: auto;
-  border: 0;
-  border-radius: 0;
-  background: var(--markstream-code-fallback-bg, var(--code-bg, #fff));
-  color: var(--markstream-code-fallback-fg, var(--code-fg));
-  font-family: var(--markstream-code-font-family, Menlo, Monaco, "Courier New", monospace);
-  font-size: var(--vscode-editor-font-size, 12px);
-  font-weight: 400;
-  line-height: var(--vscode-editor-line-height, 18px);
-  white-space: pre;
-  backface-visibility: visible;
-  transform: none;
-  -webkit-font-smoothing: auto;
-}
-
-.markstream-solid .code-pre-fallback code {
-  color: inherit;
-  font: inherit;
-  background: transparent;
-}
-
-.markstream-solid .code-pre-fallback.is-hidden {
-  visibility: hidden;
-  pointer-events: none;
-}
-
 /* ── Pre fallback: non-diff line numbers (aligned with markstream-vue PreCodeNode) ── */
 .markstream-solid pre[class^='language-'],
 .markstream-solid pre[class*=' language-'] {
@@ -1774,92 +1668,6 @@ body > div[id^="dmermaid-"] {
 .markstream-solid pre[class^='language-'] > code,
 .markstream-solid pre[class*=' language-'] > code {
   display: block;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers {
-  position: relative;
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  padding: var(--markstream-code-padding-y, 8px) var(--markstream-code-padding-x, 12px);
-  padding-left: var(--markstream-code-padding-left);
-  overflow: auto;
-  border: 0;
-  border-radius: 0;
-  background: var(--code-bg);
-  color: var(--code-fg);
-  font-family: var(
-    --markstream-code-font-family,
-    Menlo,
-    Monaco,
-    Courier New,
-    monospace
-  );
-  font-size: var(--vscode-editor-font-size, 12px);
-  line-height: var(--vscode-editor-line-height, 18px);
-}
-
-.markstream-solid .code-pre-fallback.markstream-pre--line-numbers {
-  background: var(--markstream-code-fallback-bg, var(--code-bg, #fff));
-  color: var(--markstream-code-fallback-fg, var(--code-fg));
-}
-
-.markstream-solid pre[data-markstream-pre='1']:not(.code-pre-fallback):not(.markstream-pre--diff-preview) {
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: auto;
-  border: 0;
-  border-radius: 0;
-  background: var(--code-bg, #fff);
-  color: var(--code-fg);
-  box-shadow: none;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 28px;
-}
-
-.markstream-solid pre[data-markstream-pre='1']:not(.code-pre-fallback):not(.markstream-pre--diff-preview) > code {
-  color: inherit;
-  background: transparent;
-  font: inherit;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__line-numbers {
-  position: absolute;
-  top: var(--markstream-pre-line-number-top, 0);
-  left: var(--markstream-pre-line-number-left, 0);
-  box-sizing: content-box;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  width: var(--markstream-pre-line-number-width, 2ch);
-  min-width: var(--markstream-pre-line-number-width, 2ch);
-  padding-left: var(--markstream-pre-line-number-padding-left, 2ch);
-  padding-right: var(--markstream-pre-line-number-padding-right, 1ch);
-  border-right: var(--markstream-pre-line-number-separator-width, 2px) solid transparent;
-  color: var(--code-line-number);
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  line-height: inherit;
-  pointer-events: none;
-  user-select: none;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers:not(.markstream-pre--diff-preview):not(.code-pre-fallback) > .markstream-pre__code {
-  box-sizing: border-box;
-  min-width: 100%;
-  padding-left: var(--markstream-code-padding-left, 52px);
-  padding-right: var(--markstream-code-padding-x, 12px);
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__line-numbers > .markstream-pre__line-numbers-text {
-  display: block;
-  min-height: 1lh;
-  text-align: right;
-  white-space: pre;
 }
 
 .markstream-solid .code-block-container.is-diff {
@@ -2323,240 +2131,10 @@ body > div[id^="dmermaid-"] {
   display: block;
 }
 
-.markstream-solid pre[data-markstream-pre='1']:not(.markstream-pre--diff-preview) {
-  background: var(--markstream-code-fallback-bg, var(--markstream-code-theme-bg, var(--code-bg)));
-  color: var(--markstream-code-fallback-fg, var(--markstream-code-theme-fg, var(--code-fg)));
-}
-
-.markstream-solid pre.markstream-pre--line-numbers {
-  position: relative;
-}
-
-.markstream-solid pre.code-pre-fallback[data-markstream-code-loading='1'] {
-  --markstream-pre-line-number-top: var(--markstream-code-padding-y, 8px);
-  --markstream-pre-line-number-left: 0px;
-  --markstream-pre-line-number-width: 2ch;
-  --markstream-pre-line-number-padding-left: 2ch;
-  --markstream-pre-line-number-padding-right: 1ch;
-  --markstream-pre-line-number-separator-width: 2px;
-  --markstream-code-padding-left: calc(2ch + 2ch + 1ch + 2px + 1ch);
-  box-sizing: border-box;
-  width: 100%;
-  margin: 0;
-  padding: var(--markstream-code-padding-y, 8px) var(--markstream-code-padding-x, 1ch);
-  padding-left: var(--markstream-code-padding-left);
-  overflow: auto;
-  border: 0;
-  border-radius: 0;
-  background: var(--markstream-code-fallback-bg, var(--markstream-code-theme-bg, var(--code-bg)));
-  color: var(--markstream-code-fallback-fg, var(--markstream-code-theme-fg, var(--code-fg)));
-  font-family: var(--markstream-code-font-family, \"SF Mono\", Monaco, Consolas, \"Ubuntu Mono\", \"Liberation Mono\", \"Courier New\", monospace);
-  font-size: var(--vscode-editor-font-size, 12px);
-  line-height: var(--vscode-editor-line-height, 18px);
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__line-numbers {
-  position: absolute;
-  top: var(--markstream-pre-line-number-top, 0);
-  left: var(--markstream-pre-line-number-left, 0);
-  box-sizing: content-box;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  width: var(--markstream-pre-line-number-width, 2ch);
-  min-width: var(--markstream-pre-line-number-width, 2ch);
-  padding-left: var(--markstream-pre-line-number-padding-left, 2ch);
-  padding-right: var(--markstream-pre-line-number-padding-right, 1ch);
-  border-right: var(--markstream-pre-line-number-separator-width, 2px) solid transparent;
-  color: var(--code-line-number);
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  line-height: inherit;
-  pointer-events: none;
-  user-select: none;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers:not(.markstream-pre--diff-preview):not(.code-pre-fallback) > .markstream-pre__code {
-  box-sizing: border-box;
-  min-width: 100%;
-  padding-left: var(--markstream-code-padding-left, 52px);
-  padding-right: var(--markstream-code-padding-x, 12px);
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__code--wrapped {
-  white-space: pre-wrap;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__code--wrapped > .markstream-pre__logical-line {
-  position: relative;
-  display: block;
-  min-height: 1lh;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__code--wrapped > .markstream-pre__logical-line::before {
-  position: absolute;
-  left: calc(-1 * var(--markstream-code-padding-left, 52px));
-  box-sizing: content-box;
-  width: var(--markstream-pre-line-number-width, 2ch);
-  padding-left: var(--markstream-pre-line-number-padding-left, 2ch);
-  color: var(--code-line-number);
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  line-height: inherit;
-  text-align: right;
-  white-space: pre;
-  content: attr(data-line-number);
-  pointer-events: none;
-  user-select: none;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__line-numbers > .markstream-pre__line-number {
-  display: block;
-  min-height: 1lh;
-}
-
-.markstream-solid pre.markstream-pre--line-numbers > .markstream-pre__line-numbers > .markstream-pre__line-numbers-text {
-  display: block;
-  min-height: 1lh;
-  text-align: right;
-  white-space: pre;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview {
-  box-sizing: border-box;
-  /* The diff rows manage their own number-column padding, so the pre itself
-     must not add another left padding. `!important` so the loading-placeholder
-     rule (`pre[data-markstream-code-loading='1']`) cannot double-count it. */
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  width: 100%;
-
-  --markstream-pre-diff-gutter-marker-width: 4px;
-  --markstream-pre-diff-gutter-gap: 1ch;
-  --markstream-pre-diff-code-gap: 1ch;
-  --markstream-pre-diff-code-padding: 0px;
-  --markstream-diff-added-fg: var(--diff-added-fg, #2f8f68);
-  --markstream-diff-removed-fg: var(--diff-removed-fg, #c24141);
-  --markstream-diff-added-line-fill: var(--diff-added-bg, rgb(47 143 104 / 12%));
-  --markstream-diff-removed-line-fill: var(--diff-removed-bg, rgb(194 65 65 / 12%));
-  --markstream-diff-added-gutter: linear-gradient(
-    90deg,
-    var(--markstream-diff-added-fg) 0 var(--markstream-pre-diff-gutter-marker-width),
-    transparent var(--markstream-pre-diff-gutter-marker-width) 100%
-  );
-  --markstream-diff-removed-gutter: linear-gradient(
-    90deg,
-    var(--markstream-diff-removed-fg) 0 var(--markstream-pre-diff-gutter-marker-width),
-    transparent var(--markstream-pre-diff-gutter-marker-width) 100%
-  );
-  --markstream-pre-diff-line-number-width: 2ch;
-  --markstream-pre-diff-line-number-padding-left: 2ch;
-  --markstream-pre-diff-line-number-padding-right: 1ch;
-  --markstream-pre-diff-line-number-separator-width: 2px;
-  --markstream-pre-diff-pane-min-width: 225px;
-  --markstream-pre-diff-line-number-box-width: calc(
-    var(--markstream-pre-diff-line-number-padding-left)
-    + var(--markstream-pre-diff-line-number-width)
-    + var(--markstream-pre-diff-line-number-padding-right)
-    + var(--markstream-pre-diff-line-number-separator-width)
-  );
-  --markstream-pre-diff-line-number-bg: var(--markstream-diff-line-number-bg, transparent);
-  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
-  --markstream-pre-diff-line-number-left: 0px;
-  --markstream-pre-diff-line-number-align: var(--markstream-diff-line-number-align, right);
-  --markstream-pre-diff-code-fill-left: calc(
-    var(--markstream-pre-diff-line-number-left)
-    + var(--markstream-pre-diff-line-number-box-width)
-  );
-  --markstream-pre-diff-code-left: calc(
-    var(--markstream-pre-diff-code-fill-left)
-    + var(--markstream-pre-diff-line-number-gap-to-code)
-    + var(--markstream-pre-diff-code-padding)
-  );
-}
-
-.markstream-solid pre.markstream-pre--diff-preview::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-.markstream-solid pre.code-pre-fallback.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap) {
-  scrollbar-width: none;
-}
-
-.markstream-solid pre.code-pre-fallback.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap)::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
 .markstream-solid pre.is-wrap {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: normal;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.markstream-pre--diff-inline {
-  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
-  --markstream-pre-diff-line-number-left: 0px;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview > .markstream-pre__diff-code {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  font: inherit;
-  line-height: inherit;
-  min-width: 100%;
-  width: 100%;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.is-wrap > .markstream-pre__diff-code {
-  grid-template-columns: minmax(var(--markstream-pre-diff-pane-min-width, 225px), 1fr) minmax(var(--markstream-pre-diff-pane-min-width, 225px), 1fr);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.markstream-pre--diff-inline > .markstream-pre__diff-code {
-  grid-template-columns: minmax(0, 1fr);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap) > .markstream-pre__diff-code {
-  grid-template-columns: minmax(100%, max-content);
-  width: 100%;
-  min-width: max-content;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-pane {
-  min-width: 0;
-  overflow: hidden;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview:not(.is-wrap):not(.markstream-pre--diff-inline) .markstream-pre__diff-pane {
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-pane-content {
-  display: block;
-  min-width: 100%;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview:not(.is-wrap):not(.markstream-pre--diff-inline) .markstream-pre__diff-pane-content {
-  width: max-content;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap) .markstream-pre__diff-pane {
-  min-width: max-content;
-  width: 100%;
-  overflow: visible;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-pane--modified {
-  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
-  --markstream-pre-diff-line-number-left: 0px;
-  /* The finalized highlight surface separates its split columns with a clean
-     background gap (pierre's 1ch line paddings plus background-colored column
-     borders), not a colored 1px divider line. Keep the pre fallback visually
-     identical: drop the divider so the middle between the two columns reads
-     as a 2ch white gap. */
-  box-shadow: none;
 }
 
 /* Match the finalized highlight surface's 2ch white split divider: pierre's
@@ -2566,9 +2144,6 @@ body > div[id^="dmermaid-"] {
    (`--markstream-pre-diff-line-number-gap-to-code`), so no extra left padding
    is added there — adding one would push the right column's content one `ch`
    away from the line numbers compared with the highlight surface. */
-.markstream-solid pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--original .markstream-pre__diff-line:not(.markstream-pre__diff-line--collapsed) .markstream-pre__diff-content {
-  padding-right: 1ch;
-}
 
 /* Split view: the collapsed "N unmodified lines" pill must read as ONE
    continuous pill spanning both columns (pierre's split separators meet at the
@@ -2576,314 +2151,22 @@ body > div[id^="dmermaid-"] {
    the right pane starts flush at its own left edge, so the two halves abut
    exactly at the column seam; the inner corners are squared so there is no
    notch where they meet. */
-.markstream-solid pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--original .markstream-pre__diff-line--collapsed::before {
-  right: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-right-radius: 0px;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--modified .markstream-pre__diff-line--collapsed::before {
-  left: 0px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
-}
 
 /* The modified (right) pane's collapsed row is only the empty half of the
    continuous pill — the finalized surface renders the "N unmodified lines"
    widget once on the original side. Hide the duplicated chevron/icon so the
    right half stays clean (matches the highlight surface). */
-.markstream-solid pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--modified .markstream-pre__diff-line--collapsed > .markstream-pre__diff-collapsed-icon {
-  display: none;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line {
-  position: relative;
-  display: block;
-  box-sizing: border-box;
-  width: 100%;
-  min-width: 100%;
-  min-height: var(
-    --markstream-pre-diff-synced-row-height,
-    var(--markstream-pre-diff-line-height, 18px)
-  );
-  padding-left: var(--markstream-pre-diff-code-left);
-  line-height: var(--markstream-pre-diff-line-height, 18px);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line::before {
-  content: '';
-  position: absolute;
-  left: var(--markstream-pre-diff-code-fill-left);
-  right: 0;
-  top: 0;
-  height: var(
-    --markstream-pre-diff-synced-row-height,
-    var(--markstream-pre-diff-line-height, 18px)
-  );
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 0;
-  background: transparent;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line::after {
-  content: '';
-  position: absolute;
-  left: var(--markstream-pre-diff-line-number-left);
-  top: 0;
-  width: var(--markstream-pre-diff-line-number-box-width);
-  height: var(
-    --markstream-pre-diff-synced-row-height,
-    var(--markstream-pre-diff-line-height, 18px)
-  );
-  z-index: 0;
-  pointer-events: none;
-  background: var(--markstream-pre-diff-line-number-bg);
-  box-shadow: none;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-rail {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  left: 0;
-  height: var(
-    --markstream-pre-diff-synced-row-height,
-    var(--markstream-pre-diff-line-height, 18px)
-  );
-  width: var(--markstream-pre-diff-gutter-marker-width, 4px);
-  min-width: var(--markstream-pre-diff-gutter-marker-width, 4px);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-number {
-  position: absolute;
-  z-index: 1;
-  top: 0;
-  left: var(--markstream-pre-diff-line-number-left);
-  width: var(--markstream-pre-diff-line-number-width);
-  min-width: var(--markstream-pre-diff-line-number-width);
-  height: var(
-    --markstream-pre-diff-synced-row-height,
-    var(--markstream-pre-diff-line-height, 18px)
-  );
-  box-sizing: content-box;
-  background: var(--markstream-pre-diff-line-number-bg);
-  box-shadow: none;
-  padding-left: var(--markstream-pre-diff-line-number-padding-left, 2ch);
-  padding-right: var(--markstream-pre-diff-line-number-padding-right, 1ch);
-  border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--markstream-diff-editor-bg, var(--code-bg));
-  color: var(--code-line-number);
-  font-variant-numeric: tabular-nums;
-  line-height: var(--markstream-pre-diff-line-height, 18px);
-  text-align: var(--markstream-pre-diff-line-number-align, right);
-  user-select: none;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-number {
-  background: var(--markstream-diff-added-number-fill, var(--markstream-diff-added-line-fill, transparent));
-  color: var(--markstream-diff-added-fg, var(--code-line-number));
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
-  background: var(--markstream-diff-removed-number-fill, var(--markstream-diff-removed-line-fill, transparent));
-  color: var(--markstream-diff-removed-fg, var(--code-line-number));
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-content {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: max-content;
-  min-width: 100%;
-  line-height: var(--markstream-pre-diff-line-height, 18px);
-  white-space: inherit;
-  overflow-wrap: normal;
-  word-break: normal;
-  line-break: auto;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.is-wrap .markstream-pre__diff-content {
-  box-sizing: border-box;
-  width: auto;
-  min-width: 0;
-  padding-right: 1ch;
-  overflow-wrap: anywhere;
-  word-break: normal;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-content-inner {
-  white-space: inherit;
-  overflow-wrap: inherit;
-  word-break: inherit;
-  line-break: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--hunk {
-  color: var(--markstream-diff-unchanged-fg, var(--code-line-number));
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--hunk::before {
-  background: var(--markstream-diff-unchanged-bg, transparent);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer::before {
-  background-image: linear-gradient(
-    -45deg,
-    color-mix(in srgb, currentColor 20%, transparent) 12.5%,
-    transparent 12.5%,
-    transparent 50%,
-    color-mix(in srgb, currentColor 20%, transparent) 50%,
-    color-mix(in srgb, currentColor 20%, transparent) 62.5%,
-    transparent 62.5%,
-    transparent 100%
-  );
-  background-size: 10px 10px;
-  opacity: 0.38;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata {
-  color: var(--markstream-diff-metadata-fg, var(--code-line-number));
-  background: var(--markstream-diff-metadata-bg, var(--code-bg));
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata::after,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata > .markstream-pre__diff-rail,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata > .markstream-pre__diff-number {
-  display: none;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.markstream-pre--diff-inline .markstream-pre__diff-line--metadata + .markstream-pre__diff-line--metadata {
-  margin-top: calc(-1 * var(--markstream-pre-diff-line-height, 18px));
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer::after,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer > .markstream-pre__diff-rail,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer > .markstream-pre__diff-number,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer > .markstream-pre__diff-content {
-  display: none;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview.markstream-pre--diff-collapsed:not(.code-pre-fallback) {
-  height: auto !important;
-  min-height: 0 !important;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed {
-  /* The finalized highlight surface renders its "N unmodified lines" widget as a
-     32px pill separated from the surrounding diff rows by an 8px gap on each
-     side (pierre's `line-info` separator with its 8px `--diffs-gap-fallback`).
-     The first/last collapsed rows drop the outer gap (pierre's
-     `data-separator-first/last` rules): a terminal row reuses the pre's own
-     8px bottom padding so the pill sits at the bottom of the pre. */
-  min-height: calc(
-    var(--markstream-pre-diff-collapsed-row-height, 32px)
-    + var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px))
-    + var(--markstream-pre-diff-collapsed-row-gap-bottom, var(--markstream-pre-diff-collapsed-row-gap, 8px))
-  );
-  padding:
-    var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px))
-    0
-    var(--markstream-pre-diff-collapsed-row-gap-bottom, var(--markstream-pre-diff-collapsed-row-gap, 8px));
-  /* Match the finalized separator's text: pierre paints "N unmodified lines" in
-     its header/sans-serif font in the muted `--diffs-fg-number` gray
-     (`color-mix(in lab, fg 65%, bg)`), not the code's monospace foreground. */
-  color: color-mix(
-    in lab,
-    var(--markstream-code-theme-fg, var(--markstream-code-fallback-fg, var(--markstream-pre-resolved-theme-fg, var(--code-fg, #000)))) 65%,
-    var(--markstream-code-theme-bg, var(--markstream-code-fallback-bg, var(--markstream-pre-resolved-theme-bg, var(--code-bg, #fff))))
-  );
-  font-family: var(
-    --markstream-pre-diff-header-font,
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    'Noto Sans',
-    'Liberation Sans',
-    Arial,
-    sans-serif
-  );
-  line-height: var(--markstream-pre-diff-collapsed-row-height, 32px);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed::before {
-  top: var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px));
-  left: 8px;
-  right: 8px;
-  height: var(--markstream-pre-diff-collapsed-row-height, 32px);
-  border-radius: 6px;
-  background: var(--markstream-diff-unchanged-bg, rgb(0 0 0 / 4%));
-}
 
 /* First collapsed region: flush against the top diff rows (pierre's
    `data-separator-first` clears the leading margin). */
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed-first {
-  --markstream-pre-diff-collapsed-row-gap-top: 0px;
-}
 
 /* Terminal collapsed region: the pill sits at the bottom of the pre and the
    pre's own 8px bottom padding provides the gap (pierre's
    `data-separator-last` clears the trailing margin). */
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed-last {
-  --markstream-pre-diff-collapsed-row-gap-bottom: 0px;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed::after,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-rail,
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-number {
-  display: none;
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-content {
-  width: 100%;
-  min-width: 0;
-  /* Match the finalized separator's text offset: pierre's `line-info` pill
-     sits 8px from the code-area left (`padding-inline: 8px`), the text
-     follows a 34px expand-button column, and the content itself carries
-     `padding: 0 1ch` (8px + 34px + 1ch). */
-  padding-left: calc(8px + 34px + 1ch);
-  line-height: var(--markstream-pre-diff-collapsed-row-height, 32px);
-}
 
 /* Mirror pierre's `diffs-icon-expand` chevron occupying the 34px column left
    of the "N unmodified lines" text, so the fallback pill matches the
    finalized separator (same color, same position, non-interactive). */
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-collapsed-icon {
-  position: absolute;
-  left: 8px;
-  top: var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px));
-  width: 34px;
-  height: var(--markstream-pre-diff-collapsed-row-height, 32px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: inherit;
-  pointer-events: none;
-
-  & svg {
-    fill: currentColor;
-    flex: none;
-  }
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--added::before {
-  background: var(--markstream-diff-added-line-fill, transparent);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed::before {
-  background: var(--markstream-diff-removed-line-fill, transparent);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-rail {
-  background: var(--markstream-diff-added-gutter, currentColor);
-}
-
-.markstream-solid pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-rail {
-  background: var(--markstream-diff-removed-gutter, currentColor);
-}
 
 /* Keyboard accessibility: visible focus when scroll container is focused */
 .markstream-solid pre[class^='language-']:focus,
@@ -2908,11 +2191,6 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .code-diff-stats { display:flex;gap:.4rem;font-size:.75rem;font-variant-numeric:tabular-nums; }
 .markstream-solid .code-diff-stats .removed {color:#d14444;} .markstream-solid .code-diff-stats .added {color:#29934c;}
 .markstream-solid .code-block-body { min-width:0; } .markstream-solid .code-block-body pre {margin:0;}
-.markstream-solid .markstream-pre__line-numbers {white-space:pre;}
-.markstream-solid .markstream-pre__diff-pane {white-space:pre-wrap;min-width:0;}
-.markstream-solid .markstream-pre__diff-code {display:flex;width:100%;}
-.markstream-solid .markstream-pre__diff-line {display:flex;white-space:inherit;min-height:1.5em;}
-.markstream-solid .markstream-pre__diff-content {white-space:inherit;}
 .markstream-solid .diagram-block-container { border:1px solid var(--diagram-border);border-radius:var(--ms-radius,.5rem);margin:1rem 0;overflow:hidden;background:var(--diagram-bg); }
 .markstream-solid .diagram-preview { overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center; }
 .markstream-solid .diagram-content { transform-origin:center;will-change:transform; }
@@ -2948,5 +2226,110 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .code-header-main {gap:10px;}
 .markstream-solid .code-header-title {font-size:12px;color:hsl(var(--ms-muted-foreground));font-family:inherit;}
 .markstream-solid .code-header-actions {gap:2px;}
-.markstream-solid .code-block-header .code-action-btn:not([role="menuitem"]) {width:26px;height:26px;padding:6px;line-height:1;}
+.markstream-solid .code-block-container > .code-block-header .code-action-btn:not([role="menuitem"]) {width:26px;height:26px;padding:6px;line-height:1;}
 .markstream-solid .code-block-header .code-action-btn .action-icon {width:14px;height:14px;display:block;}
+
+.markstream-solid .math-block {position:relative;text-align:center;overflow-x:auto;min-height:40px;padding:0;}
+.markstream-solid .math-block__content .katex-display {margin:1em 0;}
+.markstream-solid .math-block__fallback {white-space:pre-wrap;overflow-wrap:anywhere;margin:0;text-align:left;}
+.markstream-solid .math-inline-wrapper {position:relative;display:inline-block;}
+.markstream-solid .math-inline {display:inline-block;vertical-align:middle;}
+.markstream-solid .math-inline--fallback {white-space:pre-wrap;}
+.markstream-solid .math-inline__loading {display:inline-flex;align-items:center;justify-content:center;pointer-events:none;}
+.markstream-solid .math-loading-overlay {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;min-height:40px;}
+.markstream-solid .math-loading-spinner {width:20px;height:20px;border:2px solid #94a3b826;border-top-color:#94a3b8cc;border-radius:50%;animation:spin .8s linear infinite;}
+
+.markstream-solid .diagram-block-header {display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;border-bottom:1px solid var(--diagram-border);background:var(--diagram-header-bg);min-width:0;}
+.markstream-solid .diagram-header-label {display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;font:500 12px/1.75 var(--ms-font-mono,ui-monospace,SFMono-Regular,Menlo,monospace);color:var(--code-action-fg);}
+.markstream-solid .diagram-header-label > span:last-child {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.markstream-solid .diagram-header-icon {display:inline-flex;width:14px;height:14px;flex:0 0 14px;}
+.markstream-solid .diagram-header-icon svg {width:100%;height:100%;display:block;}
+.markstream-solid .diagram-mode-toggle {display:flex;align-items:center;gap:2px;flex-shrink:0;}
+.markstream-solid .diagram-mode-btn {display:inline-flex;align-items:center;justify-content:center;gap:4px;width:auto;white-space:nowrap;word-break:normal;padding:2px 8px;font-size:12px;line-height:1.75;opacity:.6;}
+.markstream-solid .diagram-mode-btn[aria-pressed=true] {opacity:1;background:hsl(var(--ms-foreground)/.08);color:var(--code-fg);}
+.markstream-solid .diagram-header-actions {display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.markstream-solid .diagram-header-actions .code-action-btn {display:inline-flex;align-items:center;justify-content:center;padding:6px;width:26px;height:26px;}
+.markstream-solid .diagram-block-header .action-icon,.markstream-solid .diagram-zoom-controls .action-icon {display:block;flex-shrink:0;width:14px;height:14px;}
+.markstream-solid .diagram-zoom-controls {position:absolute;top:8px;right:8px;z-index:1;display:flex;align-items:center;gap:8px;border:0;padding:0;backdrop-filter:blur(8px);}
+.markstream-solid .diagram-modal-header {display:flex;align-items:center;justify-content:space-between;padding:8px;}
+.markstream-solid .diagram-modal-header > div {display:flex;align-items:center;gap:8px;}
+
+.markstream-solid .heading-node {font-weight:500;line-height:1.25;color:inherit;}
+.markstream-solid .heading-1 {font-size:var(--ms-text-h1);line-height:var(--ms-leading-h1);font-weight:var(--ms-weight-h1);margin-top:var(--ms-flow-heading-1-mt);margin-bottom:var(--ms-flow-heading-1-mb);}
+.markstream-solid .heading-2 {font-size:var(--ms-text-h2);line-height:var(--ms-leading-h2);font-weight:var(--ms-weight-h2);margin-top:var(--ms-flow-heading-2-mt);margin-bottom:var(--ms-flow-heading-2-mb);}
+.markstream-solid .heading-3 {font-size:var(--ms-text-h3);line-height:var(--ms-leading-h3);font-weight:var(--ms-weight-h3);margin-top:var(--ms-flow-heading-3-mt);margin-bottom:var(--ms-flow-heading-3-mb);}
+.markstream-solid .heading-4 {font-size:var(--ms-text-h4);font-weight:var(--ms-weight-h4);margin-top:var(--ms-flow-heading-4-mt);margin-bottom:var(--ms-flow-heading-4-mb);}
+.markstream-solid .heading-5 {font-size:var(--ms-text-h5);margin-top:var(--ms-flow-heading-5-mt);margin-bottom:var(--ms-flow-heading-5-mb);}
+.markstream-solid .heading-6 {font-size:var(--ms-text-h6);margin-top:var(--ms-flow-heading-6-mt);margin-bottom:var(--ms-flow-heading-6-mb);}
+.markstream-solid .paragraph-node {font-size:var(--ms-text-body);line-height:var(--ms-leading-body);margin:var(--ms-flow-paragraph-y) 0;}
+.markstream-solid li .paragraph-node {margin:0;}
+.markstream-solid .blockquote {display:block;font-weight:400;font-style:normal;color:var(--blockquote-fg,hsl(var(--ms-muted-foreground)));border-left:3px solid var(--blockquote-border);margin:var(--ms-flow-blockquote-y) 0;padding-left:var(--ms-flow-blockquote-indent);}
+.markstream-solid .blockquote > .paragraph-node:first-child {margin-top:0;}
+.markstream-solid .blockquote > .paragraph-node:last-child {margin-bottom:0;}
+.markstream-solid .list-node {margin:var(--ms-flow-list-y) 0;padding-left:var(--ms-flow-list-indent);}
+.markstream-solid .list-decimal {list-style-type:decimal;}
+.markstream-solid .list-disc {list-style-type:disc;}
+.markstream-solid .list-item {margin:var(--ms-flow-list-item-y) 0;padding-left:var(--ms-space-1_5);}
+.markstream-solid .highlight-node {background:var(--highlight-bg);padding:0 .2rem;border-radius:.2em;}
+.markstream-solid .subscript-node {font-size:.8em;vertical-align:sub;}
+.markstream-solid .superscript-node {font-size:.8em;vertical-align:super;}
+.markstream-solid .hr-node {margin:var(--ms-flow-hr-y) 0;border-color:var(--hr-border);}
+.markstream-solid .inline-code {display:inline;font-family:var(--ms-font-mono);font-size:.8125em;font-weight:inherit;line-height:inherit;color:var(--inline-code-fg);background:var(--inline-code-bg);padding:.15em .35em;border-radius:.25em;white-space:normal;word-break:break-word;max-width:100%;-webkit-box-decoration-break:clone;box-decoration-break:clone;}
+.markstream-solid .table-node {table-layout:fixed;border-collapse:separate;border-spacing:0;margin:var(--ms-flow-table-y) 0;font-size:inherit;border:1px solid var(--table-border);border-radius:var(--ms-radius);overflow:hidden;box-shadow:var(--ms-shadow-subtle);}
+.markstream-solid .table-node th,.markstream-solid .table-node td {border:0;border-bottom:1px solid var(--table-border);border-right:1px solid var(--table-border);padding:var(--ms-flow-table-cell);vertical-align:middle;white-space:normal;overflow-wrap:break-word;word-break:normal;}
+.markstream-solid .table-node th:last-child,.markstream-solid .table-node td:last-child {border-right:0;}
+.markstream-solid .table-node tbody tr:last-child td {border-bottom:0;}
+.markstream-solid .table-node thead th {position:relative;font-weight:600;background:var(--table-header-bg);border-bottom-width:2px;}
+.markstream-solid .image-node img {display:inline-block;border-radius:0;}
+.markstream-solid li:has(.checkbox-node) {list-style-type:none;margin-left:calc(-1 * var(--ms-flow-list-indent));}
+@media (max-width:1023px) {.markstream-solid .list-disc {margin-top:calc(4/3*1em);margin-bottom:calc(4/3*1em);padding-left:var(--ms-flow-list-indent-mobile);}}
+.markstream-solid .diagram-block-header {gap:normal;}
+.markstream-solid .infographic-block-header {color:hsl(var(--ms-foreground));}
+.markstream-solid .code-block-header {font-family:var(--ms-font-sans);}
+.markstream-solid .checkbox-node {display:inline-flex;align-items:center;margin-right:.5em;vertical-align:-.15em;}
+.markstream-solid .checkbox-icon {flex-shrink:0;}
+.markstream-solid .checkbox-unchecked {color:hsl(var(--ms-muted-foreground)/.5);}
+.markstream-solid .checkbox-checked {color:hsl(var(--ms-info));}
+.markstream-solid .reference-node {background:hsl(var(--ms-muted));color:hsl(var(--ms-muted-foreground));cursor:pointer;font-size:12px;border-radius:6px;padding:0 6px;margin:0 2px;}
+.markstream-solid .admonition {position:relative;margin:var(--ms-flow-admonition-y) 0;padding:.25em .75em .375em;border:1px solid var(--admonition-border);border-radius:var(--ms-radius);color:var(--admonition-fg);}
+.markstream-solid .admonition-legend {position:absolute;top:0;left:.75em;transform:translateY(-50%);display:inline-flex;align-items:center;gap:.35em;padding:0 .5em;background:hsl(var(--ms-background));font-size:.8125rem;font-weight:600;line-height:1;}
+.markstream-solid .admonition-icon {flex-shrink:0;}
+.markstream-solid .admonition-title {white-space:nowrap;}
+.markstream-solid .admonition-content {padding-top:.25em;color:var(--admonition-fg);}
+.markstream-solid .admonition-note,.markstream-solid .admonition-info {border-color:hsl(var(--ms-info)/.3);background:hsl(var(--ms-info)/.04);}
+.markstream-solid .admonition-note .admonition-legend,.markstream-solid .admonition-info .admonition-legend {color:var(--admonition-note);}
+.markstream-solid .admonition-tip {border-color:hsl(var(--ms-success)/.3);background:hsl(var(--ms-success)/.04);}
+.markstream-solid .admonition-tip .admonition-legend {color:var(--admonition-tip);}
+.markstream-solid .admonition-warning,.markstream-solid .admonition-caution {border-color:hsl(var(--ms-warning)/.3);background:hsl(var(--ms-warning)/.04);}
+.markstream-solid .admonition-warning .admonition-legend,.markstream-solid .admonition-caution .admonition-legend {color:var(--admonition-warning);}
+.markstream-solid .admonition-danger,.markstream-solid .admonition-error {border-color:hsl(var(--ms-destructive)/.3);background:hsl(var(--ms-destructive)/.04);}
+.markstream-solid .admonition-danger .admonition-legend,.markstream-solid .admonition-error .admonition-legend {color:var(--admonition-danger);}
+.markstream-solid .admonition-toggle {margin-left:.25em;background:transparent;border:0;color:inherit;cursor:pointer;padding:.125rem;border-radius:calc(var(--ms-radius)*.5);display:inline-flex;align-items:center;}
+.markstream-solid.virtualized .node-slot,.markstream-solid.virtualized .node-content,.markstream-solid.virtual-scroll-coordinated .node-slot,.markstream-solid.virtual-scroll-coordinated .node-content {display:flow-root;}
+.markstream-solid .footnote-node {display:flex;font-size:14px;line-height:1.625;margin:var(--ms-flow-footnote-y) 0;border-top:1px solid var(--footnote-border);padding-top:8px;}
+.markstream-solid .code-pre-fallback code {color:inherit;font:inherit;background:transparent;}
+.markstream-solid.markdown-renderer {contain-intrinsic-size:auto 800px auto 600px;}
+.markstream-solid .text-node-stream-delta {animation:markstream-solid-stream-fade var(--stream-update-fade-duration,var(--fade-duration,200ms)) var(--stream-update-fade-ease,var(--fade-ease,cubic-bezier(.2,0,.4,1))) both;}
+@keyframes markstream-solid-stream-fade {from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce) {.markstream-solid .text-node-stream-delta {animation-duration:0s!important;}}
+.markstream-solid .heading-node {letter-spacing:normal;}
+.markstream-solid .math-loading-spinner {border-color:color-mix(in srgb,var(--loading-spinner) 15%,transparent);border-top-color:color-mix(in srgb,var(--loading-spinner) 80%,transparent);}
+.markstream-solid .reference-node {line-height:16px;}
+.markstream-solid .reference-node:hover {background:hsl(var(--ms-secondary));}
+.markstream-solid .footnote-reference {font-size:.75em;line-height:0;}
+.markstream-solid .table-node-wrapper {position:relative;max-width:100%;overflow-x:auto;scrollbar-gutter:stable;overscroll-behavior-x:contain;}
+.markstream-solid .table-node--loading tbody td {position:relative;overflow:hidden;}
+.markstream-solid .table-node--loading tbody td > * {visibility:hidden;}
+.markstream-solid .table-node--loading tbody td::after {content:'';position:absolute;inset:0;border-radius:calc(var(--ms-radius)*.5);background:var(--loading-shimmer);}
+.markstream-solid .table-node__loading {position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.markstream-solid .table-node__spinner {width:40px;height:40px;border-radius:9999px;border:2px solid color-mix(in srgb,var(--loading-spinner) 25%,transparent);border-top-color:color-mix(in srgb,var(--loading-spinner) 80%,transparent);animation:spin 1s linear infinite;}
+.markstream-solid .link-node {position:static;text-decoration:none;}
+.markstream-solid .link-node:hover {text-decoration:underline;}
+.markstream-solid .footnote-reference {vertical-align:baseline;}
+.markstream-solid .footnote-anchor {font-size:14px;line-height:20px;margin-left:.5rem;color:var(--link-color);}
+.markstream-solid .footnote-link {color:var(--link-color);text-decoration:none;}
+.markstream-solid .footnote-link:hover {text-decoration:underline;}
+.markstream-solid .emoji-node {display:inline-block;}
+.markstream-solid .diagram-source-panel {padding:var(--ms-inset-panel-body);background:var(--diagram-bg);}
+.markstream-solid .diagram-source-code {margin:0;padding:0;font-family:var(--ms-font-mono);font-size:14px;line-height:20px;white-space:pre-wrap;text-align:left;color:hsl(var(--ms-foreground));background:transparent;border:0;border-radius:0;}
+.markstream-solid .d2-source-code {white-space:pre;line-height:1.5;}

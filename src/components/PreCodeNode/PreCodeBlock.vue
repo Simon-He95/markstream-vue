@@ -2,7 +2,7 @@
 import type { ResolvedPreCodeVisualOptions } from 'markstream-core'
 import type { CSSProperties } from 'vue'
 import type { CodeBlockNodeProps, CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes, PreCodeNodeProps } from '../../types/component-props'
-import { isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffInlineLayout, resolvePreCodeLayoutStyle, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
+import { isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffInlineLayout, resolvePreCodeLayoutStyle, resolvePreCodeThemePalette, resolvePreCodeThemeVariables, resolvePreCodeVisualOptions } from 'markstream-core'
 import { computed, inject, onBeforeUnmount, ref, useAttrs } from 'vue'
 import { languageIconsRevision, languageMap, normalizeLanguageIdentifier } from '../../utils'
 import { MARKSTREAM_LANGUAGE_ICON_RESOLVER_KEY } from '../../utils/languageIconContext'
@@ -119,22 +119,7 @@ const preStyle = computed<CSSProperties>(() => {
 
   return {
     ...resolvePreCodeLayoutStyle(visual, { padding: props.codeBlockOptions?.padding, showLineNumbers: showLineNumbers.value, diff: isDiff.value }),
-    ...(themePalette.value.builtin
-      ? {
-          '--markstream-code-theme-bg': themePalette.value.background,
-          '--markstream-code-theme-fg': themePalette.value.foreground,
-          '--markstream-code-theme-line-number': themePalette.value.lineNumber,
-        }
-      : {}),
-    '--markstream-diff-added-line-fill': themePalette.value.diffAddedLine,
-    '--markstream-diff-added-number-fill': themePalette.value.diffAddedNumber,
-    '--markstream-diff-metadata-bg': themePalette.value.background,
-    '--markstream-diff-metadata-fg': themePalette.value.lineNumber,
-    '--markstream-diff-removed-line-fill': themePalette.value.diffRemovedLine,
-    '--markstream-diff-removed-number-fill': themePalette.value.diffRemovedNumber,
-    '--markstream-pre-resolved-theme-bg': themePalette.value.background,
-    '--markstream-pre-resolved-theme-fg': themePalette.value.foreground,
-    '--markstream-pre-resolved-theme-line-number': themePalette.value.lineNumber,
+    ...resolvePreCodeThemeVariables(themePalette.value),
     '--markstream-diff-fallback-handoff-height': reservedDiffHeight ?? 'auto',
     ...(reservedDiffHeight
       ? {

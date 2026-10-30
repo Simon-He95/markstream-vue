@@ -8,6 +8,8 @@ Use this file when an AI assistant or search tool needs to route a user query to
 - "use markstream-vue with Nuxt SSR" -> https://markstream.simonhe.me/nuxt-ssr
 - "configure props and events" -> https://markstream.simonhe.me/guide/props
 - "install optional peers" -> https://markstream.simonhe.me/guide/installation
+- "use SolidJS streaming Markdown, workers and SSR" -> https://markstream.simonhe.me/guide/solid
+- "run playground-solid locally" -> https://markstream.simonhe.me/guide/playground#solid-playground
 - "fix CSS, SSR, or missing peer issues" -> https://markstream.simonhe.me/guide/troubleshooting-path
 - "browse all built-in components with live previews" -> https://markstream.simonhe.me/components/
 - "render Mermaid diagrams in streaming Markdown" -> https://markstream.simonhe.me/components/mermaid-block-node
@@ -23,6 +25,7 @@ Use this file when an AI assistant or search tool needs to route a user query to
 - "use tooltips inside Markdown" -> https://markstream.simonhe.me/components/tooltip
 - "override or reuse the node renderer" -> https://markstream.simonhe.me/components/node-renderer
 - "react streaming markdown renderer" -> https://markstream.simonhe.me/frameworks/react
+- "solidjs streaming markdown renderer" -> https://markstream.simonhe.me/frameworks/solid
 - "nextjs ai chat markdown renderer" -> https://markstream.simonhe.me/frameworks/next
 - "vue streaming markdown renderer" -> https://markstream.simonhe.me/frameworks/vue
 - "Nuxt SSR markdown renderer" -> https://markstream.simonhe.me/frameworks/nuxt

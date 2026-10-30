@@ -219,7 +219,10 @@ async function renderKatex(root: HTMLElement, isActive: () => boolean) {
       continue
     }
     try {
-      writeKatexMarkup(node, renderTarget, await renderKatexMarkup(source, node.dataset.display === 'block'))
+      const html = await renderKatexMarkup(source, node.dataset.display === 'block')
+      if (!isActive())
+        return
+      writeKatexMarkup(node, renderTarget, html)
       node.dataset.markstreamKatexSource = source
     }
     catch {
@@ -247,7 +250,10 @@ async function renderKatex(root: HTMLElement, isActive: () => boolean) {
       continue
     }
     try {
-      writeKatexMarkup(node, renderTarget, await renderKatexMarkup(source, true), {
+      const html = await renderKatexMarkup(source, true)
+      if (!isActive())
+        return
+      writeKatexMarkup(node, renderTarget, html, {
         renderedClass: 'markstream-nested-math-block--rendered',
       })
       node.dataset.markstreamKatexSource = source

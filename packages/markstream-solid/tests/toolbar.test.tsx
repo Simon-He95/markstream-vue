@@ -124,6 +124,21 @@ describe('vue 3 code toolbar parity', () => {
     expect(copy).not.toHaveBeenCalled()
     expect(host.querySelector('[aria-label="Copied"]')).toBeNull()
   })
+  it('creates streaming editors after the first code content and avoids repeated font/theme resets', async () => {
+    const update = mount({ node: { ...htmlNode, code: '', raw: '```html', loading: true } })
+    await new Promise(resolve => setTimeout(resolve, 0))
+    expect(state.create).not.toHaveBeenCalled()
+    update({ node: { ...htmlNode, code: '<h1>First', raw: '```html\n<h1>First', loading: true } })
+    await vi.waitFor(() => expect(state.create).toHaveBeenCalledTimes(1))
+    update({ node: { ...htmlNode, code: '<h1>First content', raw: '```html\n<h1>First content', loading: true } })
+    await vi.waitFor(() => expect(state.update).toHaveBeenCalled())
+    expect(state.create).toHaveBeenCalledTimes(1)
+    expect(state.theme).toHaveBeenCalledTimes(1)
+    expect(state.options.mock.calls.filter(([options]) => Object.keys(options).length === 1 && options.fontSize === 12)).toHaveLength(1)
+    update({ node: { ...htmlNode, loading: false } })
+    await vi.waitFor(() => expect(state.finalize).toHaveBeenCalled())
+  })
+
   it('delays non-streaming editors until final and finalizes their content', async () => {
     const update = mount({ node: { ...htmlNode, loading: true }, stream: false })
     await Promise.resolve()

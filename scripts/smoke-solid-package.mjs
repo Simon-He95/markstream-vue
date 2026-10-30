@@ -26,6 +26,10 @@ try {
     for (const target of typeof entry === 'string' ? [entry] : Object.values(entry))
       assert.ok(existsSync(path.resolve(temporary, 'node_modules/markstream-solid', target)), `Missing export: ${target}`)
   }
+  const css = await readFile(path.join(temporary, 'node_modules/markstream-solid/dist/index.css'), 'utf8')
+  assert.ok(css.includes('--ms-text-h1'))
+  assert.ok(css.includes('markstream-pre__diff-content-inner') && css.includes('markstream-pre-diff-collapsed-row-height'))
+  assert.ok(!css.includes('@import'), 'shared styles must be bundled into the packed CSS')
   assert.ok(require.resolve('markstream-solid'))
   await writeFile(path.join(temporary, 'consumer.tsx'), `
     import type { Component } from 'solid-js'

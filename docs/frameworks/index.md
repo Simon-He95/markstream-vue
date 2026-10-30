@@ -1,5 +1,5 @@
 ---
-title: 'Streaming Markdown renderer by framework: Vue, React, Nuxt, Next.js, Svelte, Angular'
+title: 'Streaming Markdown renderer by framework: Vue, React, SolidJS, Nuxt, Next.js, Svelte, Angular'
 description: Choose the right Markstream package for streaming Markdown in AI chat apps across Vue, Nuxt, React, Next.js, Svelte, Angular, Vue 2, and parser-only usage.
 keywords:
   - Markstream framework packages
@@ -13,7 +13,7 @@ keywords:
 ---
 # Markstream framework packages
 
-Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nuxt, and Next.js.
+Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Angular, Nuxt, and Next.js.
 
 ## Choose by framework
 
@@ -21,6 +21,7 @@ Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nux
 | --- | --- | --- | --- | --- | --- |
 | Vue 3 / Nuxt / VitePress | `markstream-vue` | stable | `pnpm add markstream-vue` | [Vue](/frameworks/vue) / [Nuxt](/frameworks/nuxt) | Most mature renderer |
 | React / Next.js / Remix | `markstream-react` | beta | `pnpm add markstream-react` | [React](/frameworks/react) / [Next.js](/frameworks/next) | SSR entries for Next.js |
+| SolidJS 1.9 | `markstream-solid` | workspace preview | workspace / tarball | [SolidJS](/frameworks/solid) | Native Solid; npm publication pending |
 | Svelte 5 | `markstream-svelte` | beta | `pnpm add markstream-svelte svelte@^5` | [Svelte](/frameworks/svelte) | Svelte 5 only |
 | Angular standalone | `markstream-angular` | alpha | `pnpm add markstream-angular` | [Angular](/frameworks/angular) | Angular 20+ standalone |
 | Vue 2.6 / 2.7 | `markstream-vue2` | compatibility | `pnpm add markstream-vue2` | [Vue 2](/frameworks/vue2) | Legacy Vue 2; Vue 2.6 needs `@vue/composition-api` |
@@ -33,6 +34,7 @@ Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nux
 | Vue AI chat | `markstream-vue` | Most mature renderer and the deepest Vue/Nuxt docs |
 | React AI chat | `markstream-react` | React renderer for streaming chat; compare it with Streamdown for direct streaming alternatives |
 | Next.js SSR-first Markdown | `markstream-react/next` | Server HTML first, then client enhancement |
+| SolidJS AI chat | `markstream-solid` | Native Solid signals/context, SSR and virtual history |
 | Svelte 5 AI chat | `markstream-svelte` | Svelte 5 renderer with the shared Markstream parser behavior |
 | Angular standalone app | `markstream-angular` | Angular 20+ standalone component package |
 | Legacy Vue 2 AI chat | `markstream-vue2` | Compatibility port for Vue 2.6 / 2.7; use `nodes` for high-frequency long streams |
@@ -47,6 +49,7 @@ Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nux
 | `markstream-vue` | stable | Main renderer, most documented path |
 | `stream-markdown-parser` | stable | Parser-only package shared by renderers |
 | `markstream-react` | beta | React and Next.js entries are documented separately |
+| `markstream-solid` | workspace preview | SolidJS 1.9; use workspace or tarballs before npm publication |
 | `markstream-svelte` | beta / experimental | Svelte 5 only |
 | `markstream-angular` | alpha | Angular standalone component |
 | `markstream-vue2` | compatibility | Vue 2.6 / 2.7 legacy support; not the first choice for new Vue 3 projects |
@@ -72,6 +75,15 @@ import 'markstream-react/index.css'
 
 export function Message({ content, isDone }: { content: string, isDone: boolean }) {
   return <MarkdownRender content={content} final={isDone} fade={false} />
+}
+```
+
+```tsx [SolidJS]
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+
+export function Message(props: { content: string, done: boolean }) {
+  return <MarkdownRender mode="chat" content={props.content} final={props.done} />
 }
 ```
 
@@ -105,7 +117,7 @@ export class MessageComponent {
 
 ### Is Markstream only for Vue?
 
-No. `markstream-vue` is the most mature package, but Markstream also has React, Svelte, Angular, Vue 2, Next.js, and parser-only entries.
+No. `markstream-vue` is the most mature package, but Markstream also has React, SolidJS, Svelte, Angular, Vue 2, Next.js, and parser-only entries.
 
 ### Should I use Markstream or marked / markdown-it?
 
@@ -130,3 +142,5 @@ Use `markstream-vue2` only when the app must stay on Vue 2.6 / 2.7. For Vue 3 or
 - Use [Svelte Quick Start](/guide/svelte) after choosing `markstream-svelte`.
 - Use [Angular installation](/guide/angular-installation) after choosing `markstream-angular`.
 - Use [Vue 2 landing](/frameworks/vue2) after choosing `markstream-vue2`.
+
+- [SolidJS setup and playground](/guide/solid): workspace installation, streaming, workers and SSR.

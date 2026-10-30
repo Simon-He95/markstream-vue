@@ -18,8 +18,8 @@ export interface StreamSettings {
 }
 
 export function createPlaygroundStream(source: Accessor<string>, settings: Accessor<StreamSettings>) {
-  const [content, setContent] = createSignal(source())
-  const [final, setFinal] = createSignal(true)
+  const [content, setContent] = createSignal('')
+  const [final, setFinal] = createSignal(false)
   const [running, setRunning] = createSignal(false)
   const [paused, setPaused] = createSignal(false)
   const [elapsed, setElapsed] = createSignal(0)

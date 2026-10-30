@@ -4,13 +4,15 @@ import type { D2BlockNodeProps, InfographicBlockNodeProps, MermaidBlockEvent, Me
 import { createPanGesture } from 'markstream-core'
 import { createEffect, createMemo, createSignal, mergeProps, onCleanup, onMount, Show } from 'solid-js'
 import { isServer, Portal } from 'solid-js/web'
+import infographicIcon from '../../../../src/icon/infographic.svg?raw'
+import mermaidIcon from '../../../../src/icon/mermaid.svg?raw'
 import { enhanceRenderedHtml } from '../enhanceRenderedHtml'
 import { useSafeI18n } from '../i18n/useSafeI18n'
 import { renderMarkdownNodeToHtml } from '../renderMarkdownHtml'
 import { copyTextToClipboard } from '../utils/clipboard'
 import { useNodeLifecycle } from './lifecycle'
-import { PreCodeNode } from './PreCodeNode'
 import { ToolbarButton } from './ToolbarButton'
+import { ToolbarIcon } from './ToolbarIcon'
 import { useHeavyNodeVisibility } from './viewport'
 
 interface DiagramEvents {
@@ -51,7 +53,7 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
   const [translate, setTranslate] = createSignal({ x: 0, y: 0 })
   const [dragging, setDragging] = createSignal(false)
   const [overflowing, setOverflowing] = createSignal(false)
-  let userMode = false
+  const [userMode, setUserMode] = createSignal(false)
   const loading = createMemo(() => props.loading ?? props.node.loading === true)
   const code = createMemo(() => props.node.code)
   const pan = createPanGesture({ getTranslate: translate, setTranslate, canStart: () => !!svg() && (zoom() > 1 || fullscreen() || overflowing()), onActiveChange: setDragging })
@@ -116,7 +118,7 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
           viewport.replaceChildren(props.kind === 'infographic' ? rendered.cloneNode(true) : rendered)
           setSvg(new XMLSerializer().serializeToString(rendered))
           setRenderError('')
-          if (!userMode)
+          if (!userMode())
             setSourceMode(false)
         }
         else if (!isLoading && content.trim()) {
@@ -232,7 +234,7 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
     const modeEvent = event({ type: 'toggle-mode' as const, target: mode })
     props.onToggleMode?.(mode, modeEvent)
     if (!modeEvent.defaultPrevented) {
-      userMode = true
+      setUserMode(true)
       setSourceMode(mode === 'source')
     }
   }
@@ -246,45 +248,55 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
   const buttonProps = () => ({ isDark: props.isDark, showTooltips: props.showTooltips })
   const zoomControls = () => (
     <>
-      <ToolbarButton {...buttonProps()} label={t('common.zoomIn')} onClick={() => changeZoom(0.1)}>＋</ToolbarButton>
-      <ToolbarButton {...buttonProps()} label={t('common.zoomOut')} onClick={() => changeZoom(-0.1)}>−</ToolbarButton>
+      <ToolbarButton {...buttonProps()} label={t('common.zoomIn')} onClick={() => changeZoom(0.1)}><ToolbarIcon name="zoomIn" /></ToolbarButton>
+      <ToolbarButton {...buttonProps()} label={t('common.zoomOut')} onClick={() => changeZoom(-0.1)}><ToolbarIcon name="zoomOut" /></ToolbarButton>
       <ToolbarButton {...buttonProps()} label={t('common.resetZoom')} onClick={resetZoom}>
-        {Math.round(zoom() * 100)}
-        %
+        <ToolbarIcon name="reset" />
       </ToolbarButton>
     </>
   )
   return (
-    <div ref={root} class={`diagram-block-container ${props.kind}-block-container`} data-diagram-kind={props.kind} data-markstream-pending={pending() ? 'true' : undefined} data-markstream-mermaid={props.kind === 'mermaid' && svg() ? '1' : undefined} data-markstream-d2={props.kind === 'd2' && svg() ? '1' : undefined} data-markstream-infographic={props.kind === 'infographic' && svg() ? '1' : undefined} classList={{ 'dark': !!props.isDark, 'is-collapsed': collapsed() }} aria-busy={loading()}>
+    <div ref={root} class={`diagram-block-container ${props.kind}-block-container`} data-diagram-kind={props.kind} data-markstream-pending={pending() ? 'true' : undefined} data-markstream-mermaid={props.kind === 'mermaid' && svg() ? '1' : undefined} data-markstream-d2={props.kind === 'd2' && svg() ? '1' : undefined} data-markstream-infographic={props.kind === 'infographic' && svg() ? '1' : undefined} classList={{ 'markstream-solid': !props.context, 'dark': !!props.isDark, 'is-collapsed': collapsed() }} aria-busy={loading()}>
       <Show when={props.showHeader}>
-        <div class="code-block-header">
-          <span>{props.kind === 'd2' ? 'D2' : props.kind === 'mermaid' ? 'Mermaid' : 'Infographic'}</span>
-          <div class="code-block-actions">
-            <Show when={props.showModeToggle}>
-              <ToolbarButton {...buttonProps()} label={t('common.source')} pressed={sourceMode()} onClick={() => switchMode('source')} />
-              <ToolbarButton {...buttonProps()} label={t('common.preview')} pressed={!sourceMode()} onClick={() => switchMode('preview')} />
-            </Show>
-            <Show when={props.showCopyButton}><ToolbarButton {...buttonProps()} label={t(copied() ? 'common.copied' : 'common.copy')} onClick={() => void copy()} /></Show>
-            <Show when={props.showExportButton}><ToolbarButton {...buttonProps()} label={t('common.export')} disabled={!svg()} onClick={exportSvg} /></Show>
-            <Show when={props.showFullscreenButton && props.kind !== 'd2'}><ToolbarButton {...buttonProps()} label={t('common.open')} disabled={!svg()} onClick={openModal}>⛶</ToolbarButton></Show>
-            <Show when={props.showCollapseButton}><ToolbarButton {...buttonProps()} label={t(collapsed() ? 'common.expand' : 'common.collapse')} pressed={collapsed()} onClick={() => setCollapsed(value => !value)} /></Show>
+        <div class={`diagram-block-header ${props.kind}-block-header`}>
+          <div class="diagram-header-label">
+            <Show when={props.kind !== 'd2'}><span class="diagram-header-icon" innerHTML={props.kind === 'mermaid' ? mermaidIcon : infographicIcon} /></Show>
+            <span>{props.kind === 'd2' ? 'D2' : props.kind === 'mermaid' ? 'Mermaid' : 'Infographic'}</span>
+          </div>
+          <Show when={props.showModeToggle}>
+            <div class="diagram-mode-toggle">
+              <ToolbarButton {...buttonProps()} class="diagram-mode-btn" label={t('common.preview')} pressed={!sourceMode()} onClick={() => switchMode('preview')}>
+                <ToolbarIcon name="preview" />
+                <span>{t('common.preview')}</span>
+              </ToolbarButton>
+              <ToolbarButton {...buttonProps()} class="diagram-mode-btn" label={t('common.source')} pressed={sourceMode()} onClick={() => switchMode('source')}>
+                <ToolbarIcon name="source" />
+                <span>{t('common.source')}</span>
+              </ToolbarButton>
+            </div>
+          </Show>
+          <div class="diagram-header-actions">
+            <Show when={props.showCollapseButton}><ToolbarButton {...buttonProps()} label={t(collapsed() ? 'common.expand' : 'common.collapse')} pressed={collapsed()} onClick={() => setCollapsed(value => !value)}><ToolbarIcon name={collapsed() ? 'expand' : 'collapse'} /></ToolbarButton></Show>
+            <Show when={props.showCopyButton}><ToolbarButton {...buttonProps()} label={t(copied() ? 'common.copied' : 'common.copy')} onClick={() => void copy()}><ToolbarIcon name={copied() ? 'check' : 'copy'} /></ToolbarButton></Show>
+            <Show when={props.showExportButton}><ToolbarButton {...buttonProps()} label={t('common.export')} disabled={!svg()} onClick={exportSvg}><ToolbarIcon name="export" /></ToolbarButton></Show>
+            <Show when={props.showFullscreenButton && props.kind !== 'd2'}><ToolbarButton {...buttonProps()} label={t(fullscreen() ? 'common.minimize' : 'common.open')} disabled={!svg() || sourceMode() || collapsed()} onClick={() => fullscreen() ? setFullscreen(false) : openModal()}><ToolbarIcon name="open" /></ToolbarButton></Show>
           </div>
         </div>
       </Show>
       <div class="diagram-body" style={{ display: collapsed() ? 'none' : undefined }}>
-        <div style={{ display: sourceMode() ? undefined : 'none' }}><PreCodeNode context={props.context} node={props.node} loading={loading()} /></div>
-        <div class="diagram-preview" style={{ 'display': sourceMode() ? 'none' : undefined, 'max-height': props.maxHeight === 'none' || props.maxHeight === null ? 'none' : props.maxHeight ?? '500px', 'min-height': !svg() || !props.fitPreviewHeight ? `${props.estimatedPreviewHeightPx ?? 180}px` : undefined, 'touch-action': zoom() > 1 || overflowing() ? 'none' : 'auto', 'cursor': dragging() ? 'grabbing' : zoom() > 1 ? 'grab' : undefined }} onPointerDown={pan.start} onWheel={wheel}>
+        <div class="diagram-source-panel" style={{ 'display': sourceMode() ? undefined : 'none', 'min-height': props.kind === 'mermaid' && !userMode() && !svg() ? `${props.estimatedPreviewHeightPx ?? 360}px` : undefined }}><pre class={`diagram-source-code ${props.kind}-source-code`}>{code()}</pre></div>
+        <div class="diagram-preview" style={{ 'display': sourceMode() ? 'none' : undefined, 'max-height': props.maxHeight === 'none' || props.maxHeight === null ? 'none' : props.maxHeight ?? '500px', 'min-height': !svg() || !props.fitPreviewHeight ? `${props.estimatedPreviewHeightPx ?? 360}px` : undefined, 'touch-action': zoom() > 1 || overflowing() ? 'none' : 'auto', 'cursor': dragging() ? 'grabbing' : zoom() > 1 ? 'grab' : undefined }} onPointerDown={pan.start} onWheel={wheel}>
           <div ref={viewport} class="diagram-content" style={{ transform: transform() }} />
           <Show when={renderError() && !svg()}><div class="diagram-error" role="status">{renderError()}</div></Show>
+          <Show when={props.showZoomControls && !sourceMode() && svg() && props.kind !== 'd2'}><div class="diagram-zoom-controls">{zoomControls()}</div></Show>
         </div>
-        <Show when={props.showZoomControls && !sourceMode() && svg() && props.kind !== 'd2'}><div class="diagram-zoom-controls">{zoomControls()}</div></Show>
       </div>
       <Show when={!isServer && fullscreen()}>
         <Portal>
           <div class="markstream-solid" classList={{ dark: !!props.isDark }}>
             <div class="diagram-modal-backdrop" onClick={() => setFullscreen(false)}>
               <div class="diagram-modal" role="dialog" aria-modal="true" aria-label={`${props.kind} ${t('common.preview')}`} onClick={event => event.stopPropagation()}>
-                <div class="code-block-header">
+                <div class="diagram-modal-header">
                   <span>{props.kind}</span>
                   <div>
                     {zoomControls()}
@@ -296,7 +308,7 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
                         pan.stop()
                       }}
                     >
-                      ×
+                      <ToolbarIcon name="close" />
                     </ToolbarButton>
                   </div>
                 </div>

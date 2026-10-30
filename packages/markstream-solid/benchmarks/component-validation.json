@@ -1,0 +1,49 @@
+{
+  "timestamp": "2026-10-30T12:43:10.707Z",
+  "styleCases": 43,
+  "propertiesPerCase": 25,
+  "variants": [
+    {
+      "width": 1600,
+      "dark": false,
+      "locale": "en"
+    },
+    {
+      "width": 1600,
+      "dark": true,
+      "locale": "zh"
+    },
+    {
+      "width": 1600,
+      "dark": false,
+      "locale": "zh"
+    },
+    {
+      "width": 760,
+      "dark": false,
+      "locale": "zh"
+    }
+  ],
+  "styleComparisons": 4300,
+  "allStylesEqual": true,
+  "workerMessages": 61,
+  "solidBlockWorkerRenders": 2,
+  "solidInlineWorkerRenders": 1,
+  "defaultPlayback": {
+    "frameP95Ms": 19.2,
+    "maxLongTaskMs": 63,
+    "longTaskCount": 1,
+    "backwards": [
+      {
+        "time": 6621.5,
+        "delta": -32,
+        "heightDelta": -32
+      },
+      {
+        "time": 9790.200000286102,
+        "delta": -12,
+        "heightDelta": -12
+      }
+    ]
+  }
+}

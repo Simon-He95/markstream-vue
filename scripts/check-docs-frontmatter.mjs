@@ -6,7 +6,7 @@ const root = process.cwd()
 const docsDir = resolve(root, 'docs')
 
 const docsDefaultDescriptions = new Set([
-  'Streaming Markdown renderers for AI apps across Vue, React, Svelte, Angular, Nuxt, and Next.js',
+  'Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Angular, Nuxt, and Next.js',
   '适用于 AI 应用的多框架流式 Markdown 渲染器家族',
 ])
 

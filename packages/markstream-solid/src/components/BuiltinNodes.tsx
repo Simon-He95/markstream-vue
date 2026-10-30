@@ -9,6 +9,7 @@ import { useSafeI18n } from '../i18n/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
 import { findFootnoteElement } from '../utils/footnoteTarget'
 import { useNodeLifecycle } from './lifecycle'
+import { MathNode } from './MathNode'
 import { RenderChildren, RichNode } from './RenderNode'
 import { getNodeList, getString, splitParagraphChildren } from './shared/node-helpers'
 import { useHeavyNodeVisibility } from './viewport'
@@ -19,7 +20,7 @@ export function ParagraphNode(props: NodeComponentProps): JSX.Element {
 }
 export function HeadingNode(props: NodeComponentProps): JSX.Element {
   const attrs = createMemo(() => sanitizeHtmlAttrs(Array.isArray(props.node.attrs) ? Object.fromEntries(props.node.attrs) : props.node.attrs ?? {}, props.context?.htmlPolicy ?? 'safe'))
-  return <Dynamic component={`h${Math.min(6, Math.max(1, Number(props.node.level) || 1))}`} {...attrs()} class="heading-node"><RenderChildren {...props} /></Dynamic>
+  return <Dynamic component={`h${Math.min(6, Math.max(1, Number(props.node.level) || 1))}`} {...attrs()} class={`heading-node heading-${Math.min(6, Math.max(1, Number(props.node.level) || 1))}`}><RenderChildren {...props} /></Dynamic>
 }
 export function StrongNode(props: NodeComponentProps): JSX.Element {
   return <strong><RenderChildren {...props} /></strong>
@@ -31,43 +32,52 @@ export function StrikethroughNode(props: NodeComponentProps): JSX.Element {
   return <del><RenderChildren {...props} /></del>
 }
 export function HighlightNode(props: NodeComponentProps): JSX.Element {
-  return <mark><RenderChildren {...props} /></mark>
+  return <mark class="highlight-node"><RenderChildren {...props} /></mark>
 }
 export function InsertNode(props: NodeComponentProps): JSX.Element {
   return <ins><RenderChildren {...props} /></ins>
 }
 export function SubscriptNode(props: NodeComponentProps): JSX.Element {
-  return <sub><RenderChildren {...props} /></sub>
+  return <sub class="subscript-node"><RenderChildren {...props} /></sub>
 }
 export function SuperscriptNode(props: NodeComponentProps): JSX.Element {
-  return <sup><RenderChildren {...props} /></sup>
+  return <sup class="superscript-node"><RenderChildren {...props} /></sup>
 }
 export function BlockquoteNode(props: NodeComponentProps): JSX.Element {
-  return <blockquote><RenderChildren {...props} /></blockquote>
+  return <blockquote class="blockquote"><RenderChildren {...props} /></blockquote>
 }
 export function ListNode(props: NodeComponentProps): JSX.Element {
-  return <Dynamic component={props.node.ordered ? 'ol' : 'ul'} start={props.node.ordered ? props.node.start : undefined}><RenderChildren {...props} nodes={getNodeList(props.node.items)} /></Dynamic>
+  return <Dynamic component={props.node.ordered ? 'ol' : 'ul'} class={`list-node ${props.node.ordered ? 'list-decimal' : 'list-disc'}`} start={props.node.ordered ? props.node.start : undefined}><RenderChildren {...props} nodes={getNodeList(props.node.items)} /></Dynamic>
 }
 export function ListItemNode(props: NodeComponentProps): JSX.Element {
-  return <li><RenderChildren {...props} /></li>
+  return <li class="list-item"><RenderChildren {...props} /></li>
 }
 export function HardBreakNode(): JSX.Element {
   return <br />
 }
 export function ThematicBreakNode(): JSX.Element {
-  return <hr />
+  return <hr class="hr-node" />
 }
 export function InlineCodeNode(props: NodeComponentProps): JSX.Element {
   return <code class="inline-code">{props.node.code ?? props.node.content}</code>
 }
 export function CheckboxNode(props: NodeComponentProps): JSX.Element {
-  return <input type="checkbox" disabled checked={!!props.node.checked} />
+  return (
+    <span class="checkbox-node" role="img" aria-label={props.node.checked ? 'checked' : 'unchecked'}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" class={`checkbox-icon ${props.node.checked ? 'checkbox-checked' : 'checkbox-unchecked'}`}>
+        <Show when={props.node.checked} fallback={<rect x="3" y="3" width="18" height="18" rx="4" stroke="currentColor" stroke-width="2" />}>
+          <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />
+          <path d="m9 12 2 2 4-4" stroke="hsl(var(--ms-background))" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        </Show>
+      </svg>
+    </span>
+  )
 }
 export function EmojiNode(props: NodeComponentProps): JSX.Element {
   return <span class="emoji-node">{props.node.name ?? props.node.content}</span>
 }
 export function ReferenceNode(props: NodeComponentProps): JSX.Element {
-  return <span class="reference-node" data-markstream-reference-id={String(props.node.id)}>{String(props.node.id)}</span>
+  return <span class="reference-node" role="button" tabIndex={0} data-reference-id={String(props.node.id)} data-markstream-reference-id={String(props.node.id)}>{String(props.node.id)}</span>
 }
 export function HtmlInlineNode(props: NodeComponentProps): JSX.Element {
   return <RichNode {...props} />
@@ -76,10 +86,10 @@ export function HtmlBlockNode(props: NodeComponentProps): JSX.Element {
   return <RichNode {...props} />
 }
 export function MathInlineNode(props: MathInlineNodeProps & Omit<NodeComponentProps, 'node'>): JSX.Element {
-  return <RichNode {...props} />
+  return <MathNode {...props} block={false} />
 }
 export function MathBlockNode(props: MathBlockNodeProps & Omit<NodeComponentProps, 'node'>): JSX.Element {
-  return <RichNode {...props} />
+  return <MathNode {...props} block />
 }
 export function FallbackComponent(props: NodeComponentProps): JSX.Element {
   return <RichNode {...props} />
@@ -102,10 +112,28 @@ export function DefinitionListNode(props: NodeComponentProps): JSX.Element {
   )
 }
 export function AdmonitionNode(props: NodeComponentProps): JSX.Element {
+  const [collapsed, setCollapsed] = createSignal(props.node.collapsible ? !(props.node.open ?? true) : false)
+  const title = () => props.node.title || String(props.node.kind ?? 'note').replace(/^./, (char: string) => char.toUpperCase())
   return (
-    <div class={`admonition-node admonition-${String(props.node.kind ?? 'note')}`}>
-      <div class="admonition-title">{props.node.title || props.node.kind || 'Note'}</div>
-      <RenderChildren {...props} />
+    <div class={`admonition admonition-${String(props.node.kind ?? 'note')}`}>
+      <div class="admonition-legend">
+        <svg class="admonition-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <Show
+            when={['warning', 'caution'].includes(props.node.kind)}
+            fallback={(
+              <>
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </>
+            )}
+          >
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3M12 9v4M12 17h.01" />
+          </Show>
+        </svg>
+        <span class="admonition-title">{title()}</span>
+        <Show when={props.node.collapsible}><button class="admonition-toggle" aria-label={title()} aria-expanded={!collapsed()} onClick={() => setCollapsed(value => !value)}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style={{ rotate: collapsed() ? '0deg' : '90deg' }}><path d="m9 18 6-6-6-6" /></svg></button></Show>
+      </div>
+      <div class="admonition-content" style={{ display: collapsed() ? 'none' : undefined }}><RenderChildren {...props} /></div>
     </div>
   )
 }
@@ -262,7 +290,7 @@ export function TableNode(props: NodeComponentProps): JSX.Element {
   }
   return (
     <div class="table-node-wrapper">
-      <table ref={table} class="table-node" aria-busy={props.node.loading === true}>
+      <table ref={table} class="table-node" classList={{ 'table-node--loading': props.node.loading === true }} aria-busy={props.node.loading === true}>
         <Show when={widths().length}><colgroup><Index each={widths()}>{width => <col style={{ width: `${width()}px` }} />}</Index></colgroup></Show>
         <thead>
           <tr>
@@ -278,6 +306,7 @@ export function TableNode(props: NodeComponentProps): JSX.Element {
         </thead>
         <tbody><Index each={getNodeList(props.node.rows)}>{row => <tr><Index each={getNodeList(row().cells)}>{cell => <td dir="auto" style={{ 'text-align': cell().align }}><RenderChildren {...props} node={cell()} /></td>}</Index></tr>}</Index></tbody>
       </table>
+      <Show when={props.node.loading === true}><div class="table-node__loading" role="status"><span class="table-node__spinner" aria-hidden="true" /></div></Show>
     </div>
   )
 }

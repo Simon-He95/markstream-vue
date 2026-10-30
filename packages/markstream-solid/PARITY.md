@@ -9,7 +9,7 @@
 | docs / chat / minimal | 同样的模式默认值和显式属性覆盖；final 聊天历史自动窗口；maxLiveNodes=0 禁用窗口 | virtual-state |
 | domMode / renderAsFragment | 满足条件时移除节点包装；需要窗口/节点推迟渲染时保留完整 DOM | virtual-state、SSR |
 | smoothStreaming / parseCoalesceMs | 共享 stream controller；最终收尾、替换、清空、续流与解析合并 | renderer、浏览器 |
-| typewriter / fade | simple 与 precise 光标；光标与追加文字渐显分别控制 | renderer、浏览器 |
+| typewriter / fade | simple 与 precise 光标；共用 core 分段渐显状态机，选区保持及动画收尾 | renderer、浏览器 |
 | 代码工具栏 | 复制反馈、折叠、展开、更多菜单、字体减小/重置/放大、宽度与按钮开关 | toolbar、浏览器 |
 | 代码运行时 | 已存在实例增量更新；loading 期间使用原生预览；非流式配置等到完成；主题、行号、diff 与 worker pool | toolbar、renderer、浏览器 |
 | 强制 pre 路径 | 不加载编辑器；保留代码头/复制、行号、换行、split/unified diff、折叠上下文与保留高度 | toolbar、浏览器 |
@@ -38,7 +38,7 @@
 | Markdown AST、HTML 标签/属性与 Mermaid SVG 清洗 | `stream-markdown-parser` | Solid 节点组件及 provider 配置 |
 | playground 外观与分片模拟 | `playground-shared`；共用 Vue playground 的纯数据/流生成函数 | 原生 Solid 控件与 TPS/stream 生命周期 |
 
-代码块纯工具已移除 Vue/Solid 各自的副本。框架响应式状态、provider、SSR/hydration 与 DOM 生命周期继续留在各自包中，避免 core 依赖 Vue 或 Solid。
+代码块纯工具已移除 Vue/Solid 各自的副本。主题/布局 token 与 pre/diff CSS 共用 `markstream-core/src/styles`，文本渐显使用同一个 core 状态机。框架响应式状态、provider、SSR/hydration 与 DOM 生命周期继续留在各自包中，避免 core 依赖 Vue 或 Solid。
 
 预览到高亮交接复用 Vue 3 的 gutter、padding、字体与运行时 CSS 契约；浏览器检查覆盖 wrap/scroll、首次导航/刷新、窄屏、明暗主题、首字符坐标、切换边界高度及无空白帧。首批节点直接渲染，后续节点才按视口推迟。
 
@@ -57,4 +57,4 @@ pnpm test:smoke:solid
 pnpm test:e2e:solid-playground
 ```
 
-`playground-solid` 的 “Toolbar & preview fixtures” 提供 HTML、SVG、diff、Mermaid、D2 和 infographic 示例。完整检查结果、语料、测量边界及性能原始记录位置见 [VALIDATION.md](./VALIDATION.md)。本次不执行 npm 发布。
+`playground-solid` 的 “Toolbar & preview fixtures” 提供 HTML、SVG、diff、Mermaid、D2 和 infographic 示例。完整检查结果、语料、测量边界及性能原始记录位置见 [VALIDATION.md](./VALIDATION.md)。组件样式、worker 与完整播放记录见 [COMPONENT_VALIDATION.md](./COMPONENT_VALIDATION.md)。

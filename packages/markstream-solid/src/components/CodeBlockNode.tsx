@@ -44,6 +44,8 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   let menu!: HTMLDivElement
   let moreButton!: HTMLButtonElement
   let helpers: StreamDiffsRuntimeHelpers | undefined
+  let appliedTheme: string | undefined
+  let appliedFontSize: number | undefined
   let disposed = false
   let version = 0
   let kind: boolean | undefined
@@ -80,7 +82,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
     return resolveLanguageIcon(language(), configuration().languageIconResolver)
   })
   const theme = createMemo(() => typeof props.theme === 'string' ? props.theme : props.isDark ? props.theme?.dark ?? props.darkTheme ?? props.themes?.[0] ?? 'vitesse-dark' : props.theme?.light ?? props.lightTheme ?? props.themes?.[1] ?? 'vitesse-light')
-  const surfaceDark = createMemo(() => typeof props.theme === 'string' ? preCodeThemeLooksDark(props.theme, props.isDark === true) : props.isDark === true)
+  const surfaceDark = createMemo(() => preCodeThemeLooksDark(theme(), props.isDark === true))
   const visual = createMemo(() => resolvePreCodeVisualOptions({ ...props.codeBlockOptions, fontSize: fontSize() }))
   const palette = createMemo(() => resolvePreCodeThemePalette(props))
   const previewable = createMemo(() => props.isShowPreview && (language() === 'html' || language() === 'svg'))
@@ -101,7 +103,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
     const dark = surfaceDark()
     const numbers = showNumbers()
     const font = fontSize()
-    const delayed = !inViewport() || (loading() && (!helpers || props.stream === false)) || collapsed()
+    const delayed = !inViewport() || (loading() && (props.stream === false || !source.trim())) || collapsed()
     const token = ++version
     if (delayed) {
       if (loading() && props.stream === false)
@@ -146,13 +148,16 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
       if (helpers && kind !== isDiff) {
         helpers.cleanupEditor?.()
         helpers = undefined
+        appliedTheme = undefined
+        appliedFontSize = undefined
         host.replaceChildren()
         setReady(false)
       }
-      if (!helpers) {
+      if (appliedTheme !== requestedTheme)
         await syncStreamDiffsWorkerTheme(requestedTheme)
-        if (disposed || token !== version)
-          return
+      if (disposed || token !== version)
+        return
+      if (!helpers) {
         helpers = runtime.createCodeBlockRuntime(runtimeOptions)
         kind = isDiff
         if (isDiff)
@@ -171,14 +176,22 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
         return
       }
       const view = isDiff ? helpers.getDiffEditorView?.() : helpers.getEditorView?.()
-      view?.updateOptions?.({ fontSize: font })
-      await helpers.setTheme?.(requestedTheme)
+      if (view?.updateOptions && appliedFontSize !== font) {
+        view.updateOptions({ fontSize: font })
+        appliedFontSize = font
+      }
+      if (appliedTheme !== requestedTheme) {
+        await helpers.setTheme?.(requestedTheme)
+        appliedTheme = requestedTheme
+      }
       if (!isLoading) {
         if (isDiff)
           await helpers.finalizeDiff?.()
         else
           await helpers.finalizeCode?.()
       }
+      if (disposed || token !== version)
+        return
       const visuallyReady = await helpers.whenVisualReady?.()
       if (!disposed && token === version && visuallyReady !== false) {
         setError('')
@@ -189,6 +202,8 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
       if (!disposed) {
         helpers?.cleanupEditor?.()
         helpers = undefined
+        appliedTheme = undefined
+        appliedFontSize = undefined
         host.replaceChildren()
         setReady(false)
         setError(String(cause))
@@ -264,7 +279,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   })
 
   return (
-    <div ref={container} class="code-block-container" classList={{ 'dark': !!props.isDark, 'is-collapsed': collapsed(), 'is-expanded': expanded() }} data-code-language={language()} data-runtime-error={error() || undefined} data-markstream-pending={!resolved() ? 'true' : undefined} aria-busy={loading()} style={{ 'min-width': cssSize(props.minWidth), 'max-width': cssSize(props.maxWidth), '--markstream-code-font-size': `${fontSize()}px`, '--markstream-code-fallback-bg': palette().background, '--markstream-code-fallback-fg': palette().foreground }}>
+    <div ref={container} class="code-block-container" classList={{ 'markstream-solid': !props.context, 'dark': !!props.isDark, 'is-collapsed': collapsed(), 'is-expanded': expanded() }} data-code-language={language()} data-runtime-error={error() || undefined} data-markstream-pending={!resolved() ? 'true' : undefined} aria-busy={loading()} style={{ 'min-width': cssSize(props.minWidth), 'max-width': cssSize(props.maxWidth), '--markstream-code-font-size': `${fontSize()}px`, '--markstream-code-fallback-bg': palette().background, '--markstream-code-fallback-fg': palette().foreground }}>
       <Show when={props.showHeader}>
         <div class="code-block-header">
           <Show

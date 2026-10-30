@@ -1,6 +1,6 @@
 import type { MarkdownRenderProps, MarkstreamRendererHandle, NodeComponentProps } from 'markstream-solid'
 import type { StreamSettings } from './createPlaygroundStream'
-import MarkdownRender, { enableInfographic, MarkstreamVirtualTimeline } from 'markstream-solid'
+import MarkdownRender, { enableInfographic, MarkstreamVirtualTimeline, preloadCodeBlockRuntime } from 'markstream-solid'
 import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
 import { createStore } from 'solid-js/store'
 import { brandThemes, themes } from '../../playground-shared/options'
@@ -13,6 +13,7 @@ import { createAutoScrollChaseController } from '../../playground/src/utils/auto
 import { createPlaygroundStream } from './createPlaygroundStream'
 import { createDocument, paritySample } from './fixtures'
 import { Icon } from './Icon'
+import { PinnedImageNode } from './PinnedImageNode'
 import { StreamSpeedPanel } from './StreamSpeedPanel'
 
 import '../../playground-shared/chat.css'
@@ -20,6 +21,7 @@ import '../../playground-shared/speed-panel.css'
 import '../../themes/index.css'
 
 enableInfographic(() => import('@antv/infographic'))
+void preloadCodeBlockRuntime()
 
 export interface PlaygroundControl {
   update: (props: Partial<MarkdownRenderProps>) => void
@@ -274,6 +276,7 @@ export default function App() {
               <button class="nav-btn" onClick={() => restore(streamContent)}>Reset sample</button>
               <button class="nav-btn" data-testid="parity" onClick={() => restore(paritySample)}>Toolbar &amp; preview fixtures</button>
               <button class="nav-btn" aria-pressed={showSource()} onClick={() => setShowSource(value => !value)}>Markdown source</button>
+              <a class="nav-btn" href="/component-parity">Vue 3 component parity</a>
               <a class="nav-btn" href="/line-number-handoff-check">Pre → highlight check</a>
             </div>
           </details>
@@ -385,7 +388,7 @@ export default function App() {
           </Show>
           <main ref={messages} class="chat-messages chatbot-messages" data-testid="preview">
             <Show when={timeline()}><MarkstreamVirtualTimeline style={{ height: '70vh' }} items={timelineItems} threadKey="solid-playground" renderItem={item => <MarkdownRender content={item.content} final isDark={settings.dark} />} /></Show>
-            <MarkdownRender ref={value => renderer = value} style={{ display: timeline() ? 'none' : undefined }} content={stream.content()} final={stream.final()} isDark={settings.dark} smoothStreaming={settings.smooth} codeBlockDarkTheme={settings.codeTheme} codeBlockLightTheme={settings.codeTheme} themes={[settings.codeTheme, settings.codeTheme]} htmlPolicy={settings.htmlPolicy} customHtmlTags={['thinking']} customComponents={{ thinking: Thinking }} class="chat-messages__content" data-theme={settings.brand || undefined} {...props()} />
+            <MarkdownRender ref={value => renderer = value} style={{ display: timeline() ? 'none' : undefined }} content={stream.content()} final={stream.final()} isDark={settings.dark} smoothStreaming={settings.smooth} codeBlockDarkTheme={settings.codeTheme} codeBlockLightTheme={settings.codeTheme} themes={[settings.codeTheme, settings.codeTheme]} htmlPolicy={settings.htmlPolicy} customHtmlTags={['thinking']} customComponents={{ thinking: Thinking, image: PinnedImageNode }} class="chat-messages__content" data-theme={settings.brand || undefined} {...props()} />
           </main>
         </div>
       </div>

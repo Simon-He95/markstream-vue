@@ -69,3 +69,24 @@ export function resolvePreCodeThemePalette(input: PreCodeThemeInput): PreCodeThe
         lineNumber: '#393a3450',
       }
 }
+
+export function resolvePreCodeThemeVariables(palette: PreCodeThemePalette) {
+  return {
+    ...(palette.builtin
+      ? {
+          '--markstream-code-theme-bg': palette.background,
+          '--markstream-code-theme-fg': palette.foreground,
+          '--markstream-code-theme-line-number': palette.lineNumber,
+        }
+      : {}),
+    '--markstream-diff-added-line-fill': palette.diffAddedLine,
+    '--markstream-diff-added-number-fill': palette.diffAddedNumber,
+    '--markstream-diff-metadata-bg': palette.background,
+    '--markstream-diff-metadata-fg': palette.lineNumber,
+    '--markstream-diff-removed-line-fill': palette.diffRemovedLine,
+    '--markstream-diff-removed-number-fill': palette.diffRemovedNumber,
+    '--markstream-pre-resolved-theme-bg': palette.background,
+    '--markstream-pre-resolved-theme-fg': palette.foreground,
+    '--markstream-pre-resolved-theme-line-number': palette.lineNumber,
+  }
+}

@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { D2BlockNode, InfographicBlockNode, MermaidBlockNode } from '../src'
+import { D2BlockNode, InfographicBlockNode, MarkstreamProvider, MermaidBlockNode } from '../src'
 
 const state = vi.hoisted(() => ({ render: vi.fn(), dispose: vi.fn() }))
 vi.mock('../src/enhanceRenderedHtml', () => ({ enhanceRenderedHtml: (host: HTMLElement, options: any) => state.render(host, options) }))
@@ -68,7 +68,7 @@ describe('vue 3 diagram interaction parity', () => {
         }}
       />
     ), host)
-    await vi.waitFor(() => expect(host.querySelector('svg')).not.toBeNull())
+    await vi.waitFor(() => expect(host.querySelector('.diagram-content svg')).not.toBeNull())
     button('Zoom in').click()
     expect(host.querySelector('.diagram-content')?.getAttribute('style')).toContain('scale(1.1)')
     button('Reset zoom').click()
@@ -84,6 +84,18 @@ describe('vue 3 diagram interaction parity', () => {
     expect(document.querySelector('[role="dialog"]')).not.toBeNull()
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
     expect(document.querySelector('[role="dialog"]')).toBeNull()
+  })
+  it('translates diagram modes, actions and modal controls through the scoped provider', async () => {
+    dispose = render(() => (
+      <MarkstreamProvider defaultI18nMap={{ 'common.preview': '预览', 'common.source': '源代码', 'common.copy': '复制', 'common.export': '导出', 'common.collapse': '折叠', 'common.open': '打开', 'common.close': '关闭', 'common.zoomIn': '放大', 'common.zoomOut': '缩小', 'common.resetZoom': '重置缩放' }}>
+        <MermaidBlockNode node={node} />
+      </MarkstreamProvider>
+    ), host)
+    await vi.waitFor(() => expect(host.querySelector('.diagram-content svg')).not.toBeNull())
+    for (const label of ['预览', '源代码', '复制', '导出', '折叠', '打开', '放大', '缩小', '重置缩放'])
+      expect(button(label)).toBeDefined()
+    button('打开').click()
+    expect(document.querySelector('[role="dialog"] button[aria-label="关闭"]')).not.toBeNull()
   })
   it('preserves the current preview during a delayed stream update and commits only the newest result', async () => {
     const [value, setValue] = createSignal(node)

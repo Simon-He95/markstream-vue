@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { HtmlPolicy } from 'stream-markdown-parser'
 import type { NodeRendererProps } from '../../types/node-renderer-props'
+import { getPlainTextContent } from 'markstream-core'
 import { isHtmlTagBlocked, NON_STRUCTURING_HTML_TAGS, sanitizeHtmlContent, sanitizeHtmlTokenAttrs, tokenAttrsToRecord } from 'stream-markdown-parser'
 import { computed, defineAsyncComponent, defineComponent, inject, nextTick, onBeforeUnmount, ref, shallowRef, watch } from 'vue'
 import { DEFAULT_VIEWPORT_PRIORITY_ROOT_MARGIN, useOffscreenHeavyNodeDeferral, useViewportPriority, useViewportPriorityOptions } from '../../composables/viewportPriority'
 import { resolveHtmlVNodes } from '../../utils/htmlRenderer'
 import { useCustomNodeComponents } from '../../utils/nodeComponents'
-import { getPlainTextContent } from '../SimpleInlineRenderer/simpleInline'
 
 const props = defineProps<{
   node: {

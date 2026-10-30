@@ -2266,6 +2266,7 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .blockquote {display:block;font-weight:400;font-style:normal;color:var(--blockquote-fg,hsl(var(--ms-muted-foreground)));border-left:3px solid var(--blockquote-border);margin:var(--ms-flow-blockquote-y) 0;padding-left:var(--ms-flow-blockquote-indent);}
 .markstream-solid .blockquote > .paragraph-node:first-child {margin-top:0;}
 .markstream-solid .blockquote > .paragraph-node:last-child {margin-bottom:0;}
+.markstream-solid .blockquote-content {content-visibility:visible;contain:content;contain-intrinsic-size:0px 0px;}
 .markstream-solid .list-node {margin:var(--ms-flow-list-y) 0;padding-left:var(--ms-flow-list-indent);}
 .markstream-solid .list-decimal {list-style-type:decimal;}
 .markstream-solid .list-disc {list-style-type:disc;}

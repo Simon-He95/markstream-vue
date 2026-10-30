@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getPlainTextContent } from 'markstream-core'
 import { computed, inject } from 'vue'
 import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import CheckboxNode from '../CheckboxNode'
@@ -14,7 +15,6 @@ import LinkNode from '../LinkNode'
 import NodeChildRenderer from '../NodeChildRenderer'
 import { MathInlineNodeAsync } from '../NodeRenderer/asyncComponent'
 import ReferenceNode from '../ReferenceNode'
-import { getPlainTextContent } from '../SimpleInlineRenderer/simpleInline'
 import StrikethroughNode from '../StrikethroughNode'
 import StrongNode from '../StrongNode'
 import SubscriptNode from '../SubscriptNode'

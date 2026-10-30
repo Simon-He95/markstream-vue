@@ -482,6 +482,45 @@ try {
   assert.ok(workerAudit.messages.some(message => message.name === 'markstream-solid-katex' && message.type === 'render' && message.displayMode === false), 'inline math uses the native Solid worker')
   await writeFile(path.join(outputDir, 'component-styles.json'), `${JSON.stringify(componentStyles, null, 2)}\n`)
   await writeFile(path.join(outputDir, 'workers.json'), `${JSON.stringify(workerAudit.messages, null, 2)}\n`)
+  const blockquoteGeometry = []
+  for (const variant of [{ width: 1600, dark: false }, { width: 1600, dark: true }, { width: 760, dark: false }, { width: 760, dark: true }]) {
+    await page.setViewportSize({ width: variant.width, height: 1100 })
+    for (const content of ['>>>I\'ll create a simple Electron + Vue chat application demo. Here\'s the structure:', '> Outer paragraph\n>\n>> Middle paragraph\n>>\n>>> Inner paragraph', '> A quoted paragraph.\n>\n> - Nested item', '> Single paragraph.']) {
+      await page.evaluate(({ content, dark }) => window.__markstreamComponentParity.update({ content, isDark: dark, final: true, fade: false }), { content, dark: variant.dark })
+      await page.waitForTimeout(100)
+      const geometry = await page.evaluate(() => ['vue3', 'solid'].map((framework) => {
+        const root = document.querySelector(`[data-framework="${framework}"] > .markdown-renderer`)
+        const origin = root.getBoundingClientRect()
+        return [...root.querySelectorAll('blockquote')].map((quote) => {
+          const rect = quote.getBoundingClientRect()
+          return { x: rect.x - origin.x, y: rect.y - origin.y, width: rect.width, height: rect.height }
+        })
+      }))
+      assert.equal(geometry[1].length, geometry[0].length)
+      for (let index = 0; index < geometry[0].length; index++) {
+        for (const key of ['x', 'y', 'width', 'height'])
+          assert.ok(Math.abs(geometry[1][index][key] - geometry[0][index][key]) <= 0.1, `nested blockquote ${key}: ${JSON.stringify({ variant, content, geometry })}`)
+      }
+      if (content.startsWith('>>>')) {
+        assert.ok(geometry[1][0].height > geometry[1][1].height && geometry[1][1].height > geometry[1][2].height, 'nested quote borders shorten at each level')
+        if (variant.width === 1600 && !variant.dark)
+          await page.locator('.component-parity-columns').screenshot({ path: path.join(outputDir, 'nested-blockquote.png') })
+      }
+      blockquoteGeometry.push({ ...variant, content, vue: geometry[0], solid: geometry[1] })
+    }
+  }
+  await page.evaluate(() => {
+    window.__markstreamComponentParity.update({ content: '>>> Streaming', final: false, fade: false })
+    window.__solidQuoteElements = [...document.querySelectorAll('[data-framework="solid"] blockquote')]
+  })
+  for (const content of ['>>> Streaming **quote', '>>> Streaming **quote**']) {
+    await page.evaluate(content => window.__markstreamComponentParity.update({ content }), content)
+    await page.evaluate(() => new Promise(resolve => requestAnimationFrame(resolve)))
+    assert.equal(await page.evaluate(() => [...document.querySelectorAll('[data-framework="solid"] blockquote')].every((quote, index) => quote === window.__solidQuoteElements[index])), true)
+  }
+  await page.evaluate(() => window.__markstreamComponentParity.update({ final: true }))
+  assert.equal(await page.locator('[data-framework="solid"] blockquote').count(), 3)
+  await writeFile(path.join(outputDir, 'blockquote-geometry.json'), `${JSON.stringify(blockquoteGeometry, null, 2)}\n`)
   await page.evaluate(() => {
     window.__markstreamComponentParity.update({ content: 'Selected prefix', final: false, fade: true })
     const text = document.querySelector('[data-framework="solid"] .text-node > span').firstChild

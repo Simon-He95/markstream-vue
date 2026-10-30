@@ -1,6 +1,7 @@
 import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
 import type { ImageNodeProps, LinkNodeProps, MathBlockNodeProps, MathInlineNodeProps } from '../types/component-props'
+import { resolveSimpleInlineChildren } from 'markstream-core'
 import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { isUnsafeHtmlUrl, sanitizeHtmlAttrs, sanitizeImageSrc, shouldOpenLinkInNewTab } from 'stream-markdown-parser'
@@ -44,7 +45,8 @@ export function SuperscriptNode(props: NodeComponentProps): JSX.Element {
   return <sup class="superscript-node"><RenderChildren {...props} /></sup>
 }
 export function BlockquoteNode(props: NodeComponentProps): JSX.Element {
-  return <blockquote class="blockquote"><RenderChildren {...props} /></blockquote>
+  const simple = createMemo(() => resolveSimpleInlineChildren(getNodeList(props.node.children) as any, !(props.context?.customComponents ?? getCustomNodeComponents(props.customId)).paragraph))
+  return <blockquote class="blockquote blockquote-node" dir="auto" cite={props.node.cite}><Show when={simple()} fallback={<div class="blockquote-content"><RenderChildren {...props} /></div>}><p class="paragraph-node" dir="auto"><RenderChildren {...props} nodes={simple() as any} /></p></Show></blockquote>
 }
 export function ListNode(props: NodeComponentProps): JSX.Element {
   return <Dynamic component={props.node.ordered ? 'ol' : 'ul'} class={`list-node ${props.node.ordered ? 'list-decimal' : 'list-disc'}`} start={props.node.ordered ? props.node.start : undefined}><RenderChildren {...props} nodes={getNodeList(props.node.items)} /></Dynamic>

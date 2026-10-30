@@ -61,3 +61,9 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Verify known-width reactive restoration, changed incoming state and independent height caches.
 - [x] Click the real playground entry during streaming and after restore; navigate 1,000 Markdown items and exit with bounded DOM and no browser errors.
 - [ ] Resolve the independent shared-parser footnote prefix being temporarily classified as bracket math before its colon arrives; keep the captured rollback trace.
+
+## Nested blockquote parity
+
+- [x] Match Vue 3 margin containment for nested and mixed block quotes while preserving the simple-paragraph path.
+- [x] Move the existing pure simple-inline helpers into core and reuse them from Vue and Solid.
+- [x] Verify custom paragraph overrides, streaming DOM identity, replacement/restoration and per-level browser geometry across widths and themes.

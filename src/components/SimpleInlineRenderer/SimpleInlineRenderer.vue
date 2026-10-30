@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { SimpleInlineNode } from 'markstream-core'
 import type { Component } from 'vue'
-import type { SimpleInlineNode } from './simpleInline'
 import { computed, markRaw } from 'vue'
 import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import CheckboxNode from '../CheckboxNode'

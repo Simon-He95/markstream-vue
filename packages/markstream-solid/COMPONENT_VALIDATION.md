@@ -48,3 +48,9 @@ Solid playground 的线上地址按 Svelte 的方式配置为 `https://markstrea
 ## Virtual timeline 栈溢出
 
 时间线中的 Markdown 子渲染器会回填 restoreState；恢复 effect 意外追踪了恢复函数内部读取的高度信号，同时恢复函数再次写入该信号，形成同步循环。恢复调用使用 untrack 隔离，保留外部状态/缓存的响应式入口。新增已知宽度状态恢复单测和真实按钮的两轮进入、首尾导航、退出回归。原因、覆盖与独立脚注前缀观察见 [VALIDATION.md](./VALIDATION.md#virtual-timeline-入口回归)。
+
+## 多层 blockquote 几何
+
+Solid 直接把 blockquote 放进上一级 blockquote，父子外边距折叠，导致三条引用边框都只有 28px。Vue 的复杂引用通过内部布局容器隔离外边距，实际高度为 108 / 68 / 28px。Solid 现在为复杂引用提供同样的 content containment 边界，简单单段落仍直接渲染。已有简单行内/单段落识别纯函数移到 core，由 Vue 和 Solid 共用；没有新增嵌套渲染器、复制判断或额外解析。
+
+单测覆盖多层引用结构、段落自定义覆盖、流式 DOM 复用、复杂/简单内容替换。浏览器在桌面/窄屏、明/暗主题中比较同一内容每层边框的 x/y、宽、高，覆盖纯三层、各层自带段落、列表和单段落。此前仅比较计算 CSS 会漏掉 margin collapse 引起的几何差异；现在同时断言逐层边框高度递减。

@@ -7,7 +7,7 @@
 | 检查 | 结果 |
 | --- | --- |
 | Vue 3 公开 API 对照 | 181 个运行时导出对应项、10 组组件/渲染器属性契约通过 |
-| Solid 客户端单元测试 | 10 个文件，82 个测试通过 |
+| Solid 客户端单元测试 | 11 个文件，85 个测试通过 |
 | Solid SSR 单元测试 | 3 个测试通过 |
 | 公共 core 单元测试 | 8 个文件，103 个测试通过 |
 | Vue 3 / Solid pre → highlight 几何交接 | wrap / scroll、首次导航 / 刷新、窄屏、明暗主题全部通过 |
@@ -112,3 +112,11 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 生产浏览器分别在 streaming 和 restore 完成后真实点击进入、滚到 Message 999、返回 Message 0、退出，并验证页面保持响应。两轮首尾分别只挂载 18 / 20 条消息，没有浏览器错误。82 个客户端测试、3 个 SSR 测试、类型检查、打包消费者与完整生产浏览器回归通过。原始数据见 [timeline.json](./benchmarks/timeline.json)，截图见 [timeline.png](../../playground-solid/screenshots/timeline.png)。
 
 全量复测还捕获一条独立的共享 parser 前缀歧义：脚注定义尚未收到冒号时，`[^1]` 暂时成为 math_block，随后转成 footnote，可出现约 8–11px 收缩。这与本次时间线递归无关；后续三轮完整回归通过，但不能据此排除该偶发分片情形。诊断轨迹见 [footnote-prefix-rollback.json](./benchmarks/footnote-prefix-rollback.json)。本次没有改动共享 parser 的数学语法。
+
+## 嵌套引用样式回归
+
+以 Vue 3 为基线，同一三层引用在 Solid 中曾都是 28px 高；原因是缺少复杂引用内容的布局容器，父子外边距折叠。现在复杂引用使用 content containment，单段落继续直接渲染，并复用移入 core 的既有简单行内识别函数。没有增加 NodeRenderer 实例、额外解析或复制 Vue 的判断逻辑。
+
+桌面原例三层高度对齐为 108 / 68 / 28px；各层带段落为 220 / 124 / 28px；引用内含列表为 120px，简单段落仍为 28px。新增三项单测覆盖复杂/简单布局、自定义段落、streaming 身份及内容恢复。全仓 3,532 测试、Solid 85 + 3 测试、core 103 测试、Vue/Solid 构建和类型检查通过。
+
+浏览器逐层比较 x/y、宽度与高度，允许 0.1px 舍入误差；覆盖 4 个样例 × 桌面/窄屏 × 明/暗主题，并断言纯三层引用的边框逐层缩短。额外验证流式追加和最终收尾保留原 blockquote 元素。修复前几何见 [blockquote-before.json](./benchmarks/blockquote-before.json)，当前结果见 [blockquote-geometry.json](./benchmarks/blockquote-geometry.json)。

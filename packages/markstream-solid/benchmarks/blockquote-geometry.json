@@ -1,0 +1,530 @@
+[
+  {
+    "width": 1600,
+    "dark": false,
+    "content": ">>>I'll create a simple Electron + Vue chat application demo. Here's the structure:",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 108
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 715,
+        "height": 68
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 692,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 108
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 715,
+        "height": 68
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 692,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": false,
+    "content": "> Outer paragraph\n>\n>> Middle paragraph\n>>\n>>> Inner paragraph",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 715,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 692,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 715,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 692,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": false,
+    "content": "> A quoted paragraph.\n>\n> - Nested item",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 120
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 120
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": false,
+    "content": "> Single paragraph.",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": true,
+    "content": ">>>I'll create a simple Electron + Vue chat application demo. Here's the structure:",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 108
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 715,
+        "height": 68
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 692,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 108
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 715,
+        "height": 68
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 692,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": true,
+    "content": "> Outer paragraph\n>\n>> Middle paragraph\n>>\n>>> Inner paragraph",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 715,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 692,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 715,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 692,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": true,
+    "content": "> A quoted paragraph.\n>\n> - Nested item",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 120
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 120
+      }
+    ]
+  },
+  {
+    "width": 1600,
+    "dark": true,
+    "content": "> Single paragraph.",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 738,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": false,
+    "content": ">>>I'll create a simple Electron + Vue chat application demo. Here's the structure:",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 164
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 272,
+        "height": 84
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 164
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 272,
+        "height": 84
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": false,
+    "content": "> Outer paragraph\n>\n>> Middle paragraph\n>>\n>>> Inner paragraph",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 272,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 272,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": false,
+    "content": "> A quoted paragraph.\n>\n> - Nested item",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 125.328125
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 125.328125
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": false,
+    "content": "> Single paragraph.",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": true,
+    "content": ">>>I'll create a simple Electron + Vue chat application demo. Here's the structure:",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 164
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 272,
+        "height": 84
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 164
+      },
+      {
+        "x": 23,
+        "y": 40,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 60,
+        "width": 272,
+        "height": 84
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": true,
+    "content": "> Outer paragraph\n>\n>> Middle paragraph\n>>\n>>> Inner paragraph",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 272,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 220
+      },
+      {
+        "x": 23,
+        "y": 96,
+        "width": 295,
+        "height": 124
+      },
+      {
+        "x": 46,
+        "y": 172,
+        "width": 272,
+        "height": 28
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": true,
+    "content": "> A quoted paragraph.\n>\n> - Nested item",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 125.328125
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 125.328125
+      }
+    ]
+  },
+  {
+    "width": 760,
+    "dark": true,
+    "content": "> Single paragraph.",
+    "vue": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 28
+      }
+    ],
+    "solid": [
+      {
+        "x": 0,
+        "y": 20,
+        "width": 318,
+        "height": 28
+      }
+    ]
+  }
+]

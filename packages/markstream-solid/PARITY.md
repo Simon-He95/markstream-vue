@@ -31,6 +31,7 @@
 | 公共能力 | 复用来源 | 框架层保留的部分 |
 | --- | --- | --- |
 | 平滑流与 streaming 文本状态 | `markstream-core` 的 stream controller / text-state resolver | Solid accessor、effect 和卸载绑定 |
+| 单段落/简单行内快速路径判断 | Vue 与 Solid 共用 core 的 `resolveSimpleInlineChildren`；复杂引用保留内层布局边界 | 各自段落/子节点渲染与框架生命周期 |
 | diff 预览与匹配缓存 | `markstream-core` 的 `buildDiffPreviewPanes` / `createDiffMatchCache` | Solid 行节点与 ResizeObserver 调度 |
 | 代码头、diff 统计、主题、字体/行高、padding/gutter、diff 行测量、运行时 surface CSS | Vue 3 与 Solid 直接导入同一份 `markstream-core` 工具 | 各自组件、ref、事件与编辑器生命周期 |
 | 通用 SVG 清洗 | Vue D2 与 Solid 直接导入 `markstream-core` 的 `toSafeSvgMarkup`；保留 Vue D2 的 root class | 各自预览容器、下载和 artifact 事件 |

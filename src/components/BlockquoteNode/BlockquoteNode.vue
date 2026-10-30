@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { getPlainTextContent, resolveSimpleInlineChildren } from 'markstream-core'
 import { computed, provide } from 'vue'
 import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import NodeRenderer from '../NodeRenderer'
 import SimpleInlineRenderer from '../SimpleInlineRenderer'
-import { getPlainTextContent, resolveSimpleInlineChildren } from '../SimpleInlineRenderer/simpleInline'
 
 // child node shape used across many node components
 interface NodeChild {

@@ -17,6 +17,7 @@ const sample = [
   '###### Heading six',
   'Paragraph with **strong**, *emphasis*, ~~strike~~, ==highlight==, ++insert++, H~2~O, x^2^ and `inline code`.',
   '> A quoted paragraph.\n>\n> - Nested item',
+  '>>>I\'ll create a simple Electron + Vue chat application demo. Here\'s the structure:',
   '- First item\n- Second item\n  - Nested item',
   '3. Third item\n4. Fourth item',
   '- [x] Completed task\n- [ ] Pending task',

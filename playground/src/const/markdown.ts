@@ -1,3 +1,5 @@
+import vueLogoUrl from '../assets/vue-logo.png?no-inline'
+
 export const streamContent = `
 <thinking>我们被要求思考斐波那契数的实现过程。斐波那契数列的定义是：F(0)=0, F(1)=1, 对于n>=2，F(n)=F(n-1)+F(n-2)。有多种方法可以实现斐波那契数的计算，包括递归、迭代、矩阵快速幂、通项公式等。我们需要讨论这些方法的优缺点，可能还需要考虑时间复杂度和空间复杂度。
 
@@ -517,5 +519,5 @@ This is a danger admonition for critical warnings.
 
 ## Image
 
-![Vue Logo](https://vuejs.org/images/logo.png)
+![Vue Logo](${vueLogoUrl})
 `

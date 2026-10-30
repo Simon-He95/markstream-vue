@@ -44,3 +44,13 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Avoid empty-editor visual-ready queue waits and repeated font/theme resets; correct idle/batch delay and budget recovery.
 - [x] Compare 43 component style cases across four states and 25 properties; verify worker messages and full playback in production.
 - [x] Add bilingual Solid docs, framework/guide/quick-start entries, Pages playground link, LLM/SEO routing and docs build validation.
+
+## Restoration throughput, scroll stability and images
+
+- [x] Locate diff folding, trailing-line editor handoff and Mermaid source/preview height changes with per-node frame traces.
+- [x] Preserve measured streaming code geometry and align diagram height caps; require zero backward scrolls.
+- [x] Match Vue 3 completed-content and continuous-stream batching semantics; align batch adaptation and idle scheduling.
+- [x] Keep the original comparison and add a true multi-batch, 1,000-node restoration scenario.
+- [x] Share playground static assets, bundle the demo PNG, defer incomplete image URLs and verify both decoded images.
+- [x] Restrict tag-based custom component routing to HTML nodes; preserve Image headings, ordinary paragraphs and typed custom node metadata.
+- [x] Continue bottom following while final input drains through smooth rendering; assert the finished viewport remains at the bottom.

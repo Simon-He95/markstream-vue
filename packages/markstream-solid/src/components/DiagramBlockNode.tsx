@@ -56,6 +56,7 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
   const [userMode, setUserMode] = createSignal(false)
   const loading = createMemo(() => props.loading ?? props.node.loading === true)
   const code = createMemo(() => props.node.code)
+  const maxHeight = createMemo(() => props.maxHeight === 'none' || props.maxHeight === null ? 'none' : props.maxHeight ?? '500px')
   const pan = createPanGesture({ getTranslate: translate, setTranslate, canStart: () => !!svg() && (zoom() > 1 || fullscreen() || overflowing()), onActiveChange: setDragging })
   function resetZoom() {
     pan.stop()
@@ -284,8 +285,8 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
         </div>
       </Show>
       <div class="diagram-body" style={{ display: collapsed() ? 'none' : undefined }}>
-        <div class="diagram-source-panel" style={{ 'display': sourceMode() ? undefined : 'none', 'min-height': props.kind === 'mermaid' && !userMode() && !svg() ? `${props.estimatedPreviewHeightPx ?? 360}px` : undefined }}><pre class={`diagram-source-code ${props.kind}-source-code`}>{code()}</pre></div>
-        <div class="diagram-preview" style={{ 'display': sourceMode() ? 'none' : undefined, 'max-height': props.maxHeight === 'none' || props.maxHeight === null ? 'none' : props.maxHeight ?? '500px', 'min-height': !svg() || !props.fitPreviewHeight ? `${props.estimatedPreviewHeightPx ?? 360}px` : undefined, 'touch-action': zoom() > 1 || overflowing() ? 'none' : 'auto', 'cursor': dragging() ? 'grabbing' : zoom() > 1 ? 'grab' : undefined }} onPointerDown={pan.start} onWheel={wheel}>
+        <div class="diagram-source-panel" style={{ 'display': sourceMode() ? undefined : 'none', 'max-height': maxHeight(), 'overflow': 'auto', 'min-height': props.kind === 'mermaid' && !userMode() && !svg() ? `${props.estimatedPreviewHeightPx ?? 360}px` : undefined }}><pre class={`diagram-source-code ${props.kind}-source-code`}>{code()}</pre></div>
+        <div class="diagram-preview" style={{ 'display': sourceMode() ? 'none' : undefined, 'max-height': maxHeight(), 'min-height': !svg() || !props.fitPreviewHeight ? `${props.estimatedPreviewHeightPx ?? 360}px` : undefined, 'touch-action': zoom() > 1 || overflowing() ? 'none' : 'auto', 'cursor': dragging() ? 'grabbing' : zoom() > 1 ? 'grab' : undefined }} onPointerDown={pan.start} onWheel={wheel}>
           <div ref={viewport} class="diagram-content" style={{ transform: transform() }} />
           <Show when={renderError() && !svg()}><div class="diagram-error" role="status">{renderError()}</div></Show>
           <Show when={props.showZoomControls && !sourceMode() && svg() && props.kind !== 'd2'}><div class="diagram-zoom-controls">{zoomControls()}</div></Show>

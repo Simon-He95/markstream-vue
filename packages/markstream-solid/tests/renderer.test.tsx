@@ -174,6 +174,11 @@ describe('solid renderer streaming and restore', () => {
     expect(view.host.querySelector('h2#heading')?.textContent).toBe('title')
     expect(view.host.querySelector('[onclick]')).toBeNull()
   })
+  it('preserves typed custom node metadata when its content is a bare word', () => {
+    const custom = (props: any) => <aside data-node-type={props.node.type}>{props.node.content}</aside>
+    const view = mount({ nodes: [{ type: 'thinking', content: 'Image' }], customComponents: { thinking: custom } })
+    expect(view.host.querySelector('aside')?.getAttribute('data-node-type')).toBe('thinking')
+  })
   it('keeps language overrides and their heavy-node props ahead of the native pre path', () => {
     const diagram = (props: any) => <aside data-height={props.maxHeight}>{props.node.code}</aside>
     const view = mount({ content: '```mermaid\nflowchart LR\nA --> B\n```', final: true, renderCodeBlocksAsPre: true, customComponents: { mermaid: diagram }, mermaidProps: { maxHeight: '240px' } })
@@ -231,11 +236,33 @@ describe('solid renderer streaming and restore', () => {
   it('batches full history restoration and cancels pending work on unmount', async () => {
     vi.useFakeTimers()
     const content = Array.from({ length: 200 }, (_, index) => `paragraph ${index}`).join('\n\n')
-    const view = mount({ content, final: true, batchRendering: true, initialRenderBatchSize: 8, renderBatchSize: 12, maxLiveNodes: 0 })
+    const view = mount({ content, final: true, virtualScroll: { enabled: true, sessionKey: 'batched-history' }, batchRendering: true, initialRenderBatchSize: 8, renderBatchSize: 12, maxLiveNodes: 0 })
     expect(view.host.querySelectorAll('.node-slot')).toHaveLength(8)
     await vi.advanceTimersByTimeAsync(1000)
     expect(view.host.querySelectorAll('.node-slot')).toHaveLength(200)
     view.update({ content: `${content}\n\nmore` })
+    view.dispose()
+    await vi.runAllTimersAsync()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+  it('restores completed content immediately with Vue 3 batch semantics', () => {
+    const content = Array.from({ length: 200 }, (_, index) => `paragraph ${index}`).join('\n\n')
+    const view = mount({ content: '', final: false, batchRendering: true, initialRenderBatchSize: 8, renderBatchSize: 12, maxLiveNodes: 0 })
+    view.update({ content, final: true })
+    expect(view.host.querySelectorAll('.node-slot')).toHaveLength(200)
+    view.update({ content: content.replaceAll('paragraph', 'restored') })
+    expect(view.host.querySelectorAll('.node-slot')).toHaveLength(200)
+    expect(view.host.textContent).toContain('restored 199')
+  })
+  it('batches an initial unfinished document but flushes continuous appends and final', async () => {
+    vi.useFakeTimers()
+    const content = Array.from({ length: 200 }, (_, index) => `paragraph ${index}`).join('\n\n')
+    const view = mount({ content, final: false, batchRendering: true, initialRenderBatchSize: 8, renderBatchSize: 12, maxLiveNodes: 0 })
+    expect(view.host.querySelectorAll('.node-slot')).toHaveLength(8)
+    view.update({ content: `${content}\n\nappended` })
+    expect(view.host.querySelectorAll('.node-slot')).toHaveLength(201)
+    view.update({ final: true })
+    expect(view.host.querySelectorAll('.node-slot')).toHaveLength(201)
     view.dispose()
     await vi.runAllTimersAsync()
     expect(vi.getTimerCount()).toBe(0)

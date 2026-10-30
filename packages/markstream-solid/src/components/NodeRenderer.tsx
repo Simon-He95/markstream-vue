@@ -185,13 +185,24 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
   const [renderContext, setRenderContext] = createStore(contextSnapshot())
   createEffect(() => setRenderContext(reconcile(contextSnapshot(), { merge: true, key: null })))
   const context = () => renderContext
+  let previousBatchContent = content() ?? ''
+  const continuousStreaming = createMemo((previous: boolean) => {
+    const next = content() ?? ''
+    const before = previousBatchContent
+    previousBatchContent = next
+    if (props.nodes?.length || final() === true || !next.startsWith(before))
+      return false
+    return previous || (!!before && next.length > before.length)
+  }, false)
   let adaptiveBatchSize = 0
   const [renderedCount, setRenderedCount] = createSignal(isServer || hydrating() ? nodes().length : Math.min(nodes().length, props.initialRenderBatchSize ?? 40))
   createEffect(() => {
     const total = nodes().length
     const current = renderedCount()
     const initial = Math.max(1, props.initialRenderBatchSize ?? 40)
-    if (props.batchRendering === false || final() === false || isServer) {
+    const incremental = !props.renderAsFragment && props.batchRendering !== false && (props.renderBatchSize ?? 80) > 0
+      && !continuousStreaming() && !(final() === true && !props.virtualScroll?.enabled) && (props.maxLiveNodes ?? 0) <= 0
+    if (!incremental || isServer) {
       if (current !== total)
         setRenderedCount(total)
       return
@@ -206,15 +217,15 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       let frame: number | undefined
       const configuredSize = Math.max(1, props.renderBatchSize ?? 80)
       const size = Math.min(configuredSize, adaptiveBatchSize || configuredSize)
-      const budget = Math.max(1, props.renderBatchBudgetMs ?? 6)
+      const budget = Math.max(2, props.renderBatchBudgetMs ?? 6)
       const run = () => {
         const start = performance.now()
         setRenderedCount(Math.min(total, current + size))
         const elapsed = performance.now() - start
-        if (elapsed > budget && size > 1)
-          adaptiveBatchSize = Math.max(1, Math.floor(size / 2))
-        else if (elapsed < budget / 2)
-          adaptiveBatchSize = Math.min(configuredSize, size * 2)
+        if (elapsed > budget * 1.5)
+          adaptiveBatchSize = Math.max(Math.max(1, Math.floor(configuredSize / 4)), Math.floor(size * 0.8))
+        else if (elapsed < budget * 0.6)
+          adaptiveBatchSize = Math.min(configuredSize, Math.ceil(size * 1.2))
       }
       const scheduledAt = performance.now()
       const begin = () => {
@@ -222,7 +233,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
         timer = setTimeout(run, remainingDelay)
       }
       if (document.visibilityState !== 'hidden' && typeof window.requestIdleCallback === 'function')
-        idle = window.requestIdleCallback(begin, { timeout: props.renderBatchIdleTimeoutMs ?? 120 })
+        idle = window.requestIdleCallback(run, { timeout: props.renderBatchIdleTimeoutMs ?? 120 })
       else if (document.visibilityState !== 'hidden' && typeof requestAnimationFrame === 'function')
         frame = requestAnimationFrame(begin)
       else
@@ -281,7 +292,6 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       wasSettled = false
       wasFinal = false
       lastEmission = 0
-      adaptiveBatchSize = 0
       heights.clear()
       setHeightsRevision(value => value + 1)
       setFocus(0)

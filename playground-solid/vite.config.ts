@@ -8,7 +8,7 @@ import tailwindConfig from '../tailwind.config'
 
 export default defineConfig({
   base: './',
-  publicDir: resolve(import.meta.dirname, '../public'),
+  publicDir: resolve(import.meta.dirname, '../playground/public'),
   css: {
     postcss: {
       plugins: [tailwindcss({ ...tailwindConfig, content: tailwindConfig.content.map(pattern => resolve(import.meta.dirname, '..', pattern)) }), autoprefixer(), {

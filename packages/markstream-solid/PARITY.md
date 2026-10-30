@@ -21,7 +21,7 @@
 | 表格 / 图片 / 链接 | 列宽拖拽；图片加载/失败/安全 fallback；链接属性清洗、目标和 tooltip；脚注限定渲染树定位 | renderer、浏览器 |
 | 自定义组件 | 全局、customId、局部覆盖；streamingComponents / htmlComponents；块级/行内 display 提示 | renderer、provider、virtual-state |
 | app 级配置 | MarkstreamProvider 隔离组件、翻译和语言图标；全局配置函数仍可用于初始化 | provider |
-| 视口与批处理 | 节点壳和重型节点视口推迟；批次大小、预算、idle timeout、后台定时器与卸载清理 | renderer、virtual-state |
+| 视口与批处理 | 节点壳和重型节点视口推迟；完成态立即恢复、连续追加不分批、外层协调分批；批次大小、预算、idle timeout、后台定时器与卸载清理 | renderer、virtual-state |
 | 文档虚拟状态 | getVirtualMetrics、captureVirtualState、restoreVirtualState、forceMeasure、settle、scrollToNode；签名/宽度/测量 key 校验 | virtual-state、浏览器 |
 | 外层会话列表 | MarkstreamVirtualTimeline / useMarkstreamVirtualAdapter；窗口、测量、锚点、缓存、线程隔离和旧任务清理 | virtual-state、virtual-adapter |
 | 包与 worker | browser/node 条件导出、SSR/hydration、utils、worker clients/CDN helpers/worker 入口、CSS 和 tailwind 入口 | API gate、SSR、消费者 smoke、浏览器 |

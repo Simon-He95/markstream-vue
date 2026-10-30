@@ -37,14 +37,14 @@ export function mountBenchmark(root: HTMLElement) {
       const results: BenchmarkResult[] = []
       for (let round = -1; round < rounds; round++) {
         for (const framework of (round % 2 === 0 ? ['vue3', 'solid'] : ['solid', 'vue3']).filter(framework => !profile.frameworks || profile.frameworks.includes(framework))) {
-          for (const scenario of (profile.scenarios ?? ['restore', 'restore-virtual', 'restore-batched', 'streaming', 'restore-rich', 'streaming-rich', 'streaming-history'])) {
+          for (const scenario of (profile.scenarios ?? ['restore', 'restore-virtual', 'restore-batched', 'restore-progressive', 'streaming', 'restore-rich', 'streaming-rich', 'streaming-history'])) {
             const host = document.createElement('div')
             output.append(host)
             const rich = scenario.endsWith('-rich')
             const streaming = scenario.startsWith('streaming')
             const history = scenario === 'streaming-history'
             const content = rich ? ['# Rich renderer parity', '```ts\nconst answer = 42\n```', '```diff ts:answer.ts\n-const answer = 41\n+const answer = 42\n```', '$$\nx^2 + y^2 = z^2\n$$', '```mermaid\nflowchart LR\nStream --> Render\n```'].join('\n\n') : history ? `${createDocument(250)}\n\nStreaming tail ${'追加内容 🚀 stable prefix. '.repeat(32)}` : createDocument(streaming ? 12 : 250)
-            const options = { debugPerformance: profile.debug && framework === 'solid', smoothStreaming: false, batchRendering: scenario === 'restore-batched', maxLiveNodes: scenario === 'restore-virtual' ? 64 : 0, deferNodesUntilVisible: false, fade: false, typewriter: false, renderCodeBlocksAsPre: !rich, viewportPriority: false }
+            const options = { debugPerformance: profile.debug && framework === 'solid', smoothStreaming: false, batchRendering: scenario === 'restore-batched' || scenario === 'restore-progressive', virtualScroll: scenario === 'restore-progressive' ? { enabled: true as const, sessionKey: 'benchmark-history' } : undefined, maxLiveNodes: scenario === 'restore-virtual' ? 64 : 0, deferNodesUntilVisible: false, fade: false, typewriter: false, renderCodeBlocksAsPre: !rich, viewportPriority: false }
             let update: (content: string, final: boolean) => void
             let dispose: () => void
             if (framework === 'solid') {
@@ -98,11 +98,12 @@ export function mountBenchmark(root: HTMLElement) {
               }
             }
             const batchSizes: number[] = []
-            if (scenario === 'restore-batched') {
+            if (scenario === 'restore-batched' || scenario === 'restore-progressive') {
               let previousCount = 0
               const deadline = performance.now() + 10000
-              while (host.querySelectorAll('.markdown-renderer > .node-slot').length < 1000) {
-                const count = host.querySelectorAll('.markdown-renderer > .node-slot').length
+              const countRendered = () => host.querySelectorAll('.markdown-renderer > .node-slot > .node-content').length
+              while (countRendered() < 1000) {
+                const count = countRendered()
                 if (count > previousCount)
                   batchSizes.push(count - previousCount)
                 previousCount = count
@@ -110,6 +111,8 @@ export function mountBenchmark(root: HTMLElement) {
                   throw new Error(`${framework} batch restoration did not finish`)
                 await frame()
               }
+              if (batchSizes.length)
+                batchSizes.push(countRendered() - previousCount)
             }
             if (rich) {
               const deadline = performance.now() + 20000

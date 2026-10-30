@@ -336,39 +336,57 @@ try {
   await page.screenshot({ path: path.join(outputDir, 'ui-mobile-dark.png'), fullPage: true })
   await page.setViewportSize({ width: 1440, height: 1000 })
 
-  await page.goto(url)
-  await page.waitForFunction(() => !!window.__markstreamSolid)
-  await page.evaluate(() => {
-    const root = document.querySelector('.chat-wrapper')
-    const messages = document.querySelector('.chat-messages')
-    const data = window.__solidPlayback = { frames: [], heights: [], longTasks: [], backwards: [], active: true }
-    let previous = { time: performance.now(), top: root.scrollTop, height: messages.getBoundingClientRect().height }
-    new PerformanceObserver(list => data.longTasks.push(...list.getEntries().map(entry => entry.duration))).observe({ type: 'longtask' })
-    const sample = () => {
-      if (!data.active)
-        return
-      const next = { time: performance.now(), top: root.scrollTop, height: messages.getBoundingClientRect().height }
-      data.frames.push(next.time - previous.time)
-      if (Math.abs(next.height - previous.height) > 0.5)
-        data.heights.push({ time: next.time, delta: next.height - previous.height })
-      if (next.top < previous.top - 2)
-        data.backwards.push({ time: next.time, delta: next.top - previous.top, heightDelta: next.height - previous.height })
-      previous = next
+  const playbacks = []
+  for (let round = 0; round < 3; round++) {
+    await page.goto(url)
+    await page.waitForFunction(() => !!window.__markstreamSolid)
+    await page.evaluate(() => {
+      const root = document.querySelector('.chat-wrapper')
+      const messages = document.querySelector('.chat-messages')
+      const data = window.__solidPlayback = { frames: [], heights: [], longTasks: [], backwards: [], active: true }
+      let previous = { time: performance.now(), top: root.scrollTop, height: messages.getBoundingClientRect().height }
+      new PerformanceObserver(list => data.longTasks.push(...list.getEntries().map(entry => entry.duration))).observe({ type: 'longtask' })
+      const sample = () => {
+        if (!data.active)
+          return
+        const next = { time: performance.now(), top: root.scrollTop, height: messages.getBoundingClientRect().height }
+        data.frames.push(next.time - previous.time)
+        if (Math.abs(next.height - previous.height) > 0.5)
+          data.heights.push({ time: next.time, delta: next.height - previous.height })
+        if (next.top < previous.top - 2)
+          data.backwards.push({ time: next.time, delta: next.top - previous.top, heightDelta: next.height - previous.height })
+        previous = next
+        requestAnimationFrame(sample)
+      }
       requestAnimationFrame(sample)
-    }
-    requestAnimationFrame(sample)
-  })
-  await page.waitForFunction(() => document.querySelector('.speed-status__state')?.textContent === 'Input complete', null, { timeout: 30000 })
-  await page.waitForFunction(() => document.querySelector('[data-testid="preview"] > .markdown-renderer')?.dataset.streamCaughtUp === 'true')
-  await page.waitForTimeout(500)
-  const playback = await page.evaluate(() => {
-    window.__solidPlayback.active = false
-    return window.__solidPlayback
-  })
-  assert.equal(await page.locator('[data-runtime-error]').count(), 0)
-  assert.ok(playback.backwards.length <= 2 && playback.backwards.every(event => Math.abs(event.delta) <= 100), 'streaming avoids repeated placeholder scroll reversals')
-  assert.ok(Math.max(0, ...playback.longTasks) < 250, 'default playback avoids large main-thread stalls')
-  await writeFile(path.join(outputDir, 'playback.json'), `${JSON.stringify(playback, null, 2)}\n`)
+    })
+    await page.waitForFunction(() => document.querySelector('.speed-status__state')?.textContent === 'Input complete', null, { timeout: 30000 })
+    await page.waitForFunction(() => document.querySelector('[data-testid="preview"] > .markdown-renderer')?.dataset.streamCaughtUp === 'true')
+    await page.waitForTimeout(500)
+    const playback = await page.evaluate(() => {
+      window.__solidPlayback.active = false
+      const root = document.querySelector('.chat-wrapper')
+      window.__solidPlayback.bottomGap = root.scrollHeight - root.clientHeight - root.scrollTop
+      return window.__solidPlayback
+    })
+    assert.equal(await page.locator('[data-runtime-error]').count(), 0)
+    assert.deepEqual(playback.backwards, [], 'default streaming must not scroll backwards during folding or preview handoff')
+    assert.ok(playback.bottomGap <= 1, 'bottom following continues until smooth rendering finishes')
+    await page.waitForFunction(() => [...document.querySelectorAll('.chat-messages img')].every(image => image.complete && image.naturalWidth > 0))
+    assert.equal(await page.locator('.chat-messages [data-pinned-image-state="error"]').count(), 0)
+    assert.equal(await page.locator('.chat-messages img').count(), 2)
+    assert.equal(await page.getByRole('heading', { level: 2, name: 'Image', exact: true }).count(), 1)
+    const logo = await page.request.get(`${url}/vue-markdown-icon.svg`)
+    assert.match(logo.headers()['content-type'], /image\/svg\+xml/)
+    playback.images = await page.locator('.chat-messages img').evaluateAll(images => images.map(image => ({ src: image.getAttribute('src'), width: image.naturalWidth, height: image.naturalHeight })))
+    assert.ok(playback.images.every(image => new URL(image.src, url).origin === new URL(url).origin), 'demo images are bundled locally')
+    assert.ok(Math.max(0, ...playback.longTasks) < 250, 'default playback avoids large main-thread stalls')
+    await writeFile(path.join(outputDir, 'playback.json'), `${JSON.stringify(playback, null, 2)}\n`)
+    playbacks.push(playback)
+  }
+  await writeFile(path.join(outputDir, 'playbacks.json'), `${JSON.stringify(playbacks, null, 2)}\n`)
+  await page.getByRole('heading', { level: 2, name: 'Image', exact: true }).scrollIntoViewIfNeeded()
+  await page.screenshot({ path: path.join(outputDir, 'images-loaded.png') })
 
   await page.goto(`${url}/component-parity`)
   await page.waitForFunction(() => !!window.__markstreamComponentParity)
@@ -456,15 +474,18 @@ try {
   const measurements = await page.evaluate(() => window.__markstreamBenchmark.run(3))
   await writeFile(path.join(outputDir, 'measurements.json'), `${JSON.stringify(measurements, null, 2)}\n`)
   const summary = []
-  for (const scenario of ['restore', 'restore-virtual', 'restore-batched', 'streaming', 'restore-rich', 'streaming-rich', 'streaming-history']) {
+  for (const scenario of ['restore', 'restore-virtual', 'restore-batched', 'restore-progressive', 'streaming', 'restore-rich', 'streaming-rich', 'streaming-history']) {
     for (const framework of ['vue3', 'solid']) {
       const rows = measurements.filter(row => row.scenario === scenario && row.framework === framework)
+      if (scenario === 'restore-progressive') {
+        assert.ok(rows.every(row => row.batchSizes.length > 1 && row.batchSizes.reduce((sum, size) => sum + size, 0) === 1000), `${framework} must actually restore all 1000 nodes in multiple batches`)
+      }
       const median = key => rows.map(row => row[key]).sort((a, b) => a - b)[Math.floor(rows.length / 2)]
       summary.push({ scenario, framework, medianTotalMs: median('totalMs'), medianUpdateP95Ms: median('updateP95Ms'), domNodes: median('domNodes'), longTaskCount: median('longTaskCount'), maxLongTaskMs: median('maxLongTaskMs'), frameP95Ms: median('frameP95Ms') })
     }
     const [vue, solid] = summary.filter(row => row.scenario === scenario)
-    if (scenario === 'restore-batched')
-      assert.ok(solid.medianTotalMs < Math.max(1000, vue.medianTotalMs * 4), 'Solid batching must recover throughput after budget spikes')
+    if (scenario === 'restore-batched' || scenario === 'restore-progressive')
+      assert.ok(solid.medianTotalMs < Math.max(300, vue.medianTotalMs * 1.5), `Solid ${scenario} restoration throughput regression`)
     assert.ok(solid.medianUpdateP95Ms < Math.max(100, vue.medianUpdateP95Ms * 2), `Solid ${scenario} update regression`)
   }
   assert.deepEqual(errors, [])

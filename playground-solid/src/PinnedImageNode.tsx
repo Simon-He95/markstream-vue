@@ -13,7 +13,7 @@ export function PinnedImageNode(props: NodeComponentProps) {
   const failed = createMemo(() => !props.node.loading && (!src() || failedSrc() === src()))
   return (
     <span class="pinned-image-node" data-pinned-image-state={failed() ? 'error' : loaded() ? 'loaded' : 'loading'}>
-      <Show when={src() && !failed()}>
+      <Show when={src() && !props.node.loading && !failed()}>
         <img src={src()} alt={String(props.node.alt ?? props.node.title ?? '')} title={String(props.node.title ?? props.node.alt ?? '')} decoding="async" class="pinned-image-node__img" classList={{ 'is-loaded': loaded() }} onLoad={() => setLoadedSrc(src())} onError={() => setFailedSrc(src())} />
       </Show>
       <Show when={!failed() && !loaded()}><span class="pinned-image-node__placeholder"><span class="pinned-image-node__shimmer" aria-hidden="true" /></span></Show>

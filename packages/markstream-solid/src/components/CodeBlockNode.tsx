@@ -41,6 +41,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   const configuration = useContext(MarkstreamConfigContext)
   let container!: HTMLDivElement
   let host!: HTMLDivElement
+  let body!: HTMLDivElement
   let menu!: HTMLDivElement
   let moreButton!: HTMLButtonElement
   let helpers: StreamDiffsRuntimeHelpers | undefined
@@ -62,6 +63,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   const [preview, setPreview] = createSignal(false)
   const [copied, setCopied] = createSignal(false)
   const [fontSize, setFontSize] = createSignal(props.codeBlockOptions?.fontSize ?? 12)
+  const [streamingHeight, setStreamingHeight] = createSignal(0)
   const loading = createMemo(() => props.loading ?? props.node.loading === true)
   const language = createMemo(() => {
     const raw = props.node.raw ?? ''
@@ -72,6 +74,17 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   })
   const runtimeLanguage = createMemo(() => resolveLanguageId(language()) === 'plaintext' ? 'text' : resolveLanguageId(language()))
   const code = createMemo(() => loading() ? props.node.code : props.node.code.replace(/\r\n$|\n$|\r$/, ''))
+  let previousCode = code()
+  createEffect(() => {
+    const next = code()
+    if (!next.startsWith(previousCode) && next !== previousCode.replace(/\r\n$|\n$|\r$/, ''))
+      setStreamingHeight(0)
+    previousCode = next
+  })
+  function retainStreamingHeight() {
+    if (loading() && !collapsed() && body)
+      setStreamingHeight(height => Math.max(height, body.getBoundingClientRect().height))
+  }
   const diff = createMemo(() => isDiffCodeBlock(props.node))
   const original = createMemo(() => String(props.node.originalCode ?? ''))
   const updated = createMemo(() => String(props.node.updatedCode ?? '') || code())
@@ -90,6 +103,13 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   const cssSize = (value: string | number | undefined) => typeof value === 'number' ? `${value}px` : value
   const configuredFont = createMemo(() => props.codeBlockOptions?.fontSize ?? 12)
   createEffect(() => setFontSize(configuredFont()))
+  createEffect(() => {
+    fontSize()
+    theme()
+    expanded()
+    collapsed()
+    setStreamingHeight(0)
+  })
   createEffect(() => {
     const isLoading = loading()
     const source = code()
@@ -194,6 +214,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
         return
       const visuallyReady = await helpers.whenVisualReady?.()
       if (!disposed && token === version && visuallyReady !== false) {
+        retainStreamingHeight()
         setError('')
         setReady(true)
         setResolved(true)
@@ -216,6 +237,16 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
       setPreview(false)
   })
   onMount(() => {
+    // Preserve measured streaming geometry when diffs fold or pre yields to the editor.
+    let width = 0
+    const observer = new ResizeObserver(([entry]) => {
+      if (width && width !== entry.contentRect.width)
+        setStreamingHeight(0)
+      width = entry.contentRect.width
+      retainStreamingHeight()
+    })
+    observer.observe(body)
+    onCleanup(() => observer.disconnect())
     const dismiss = (event: Event) => {
       if (event instanceof KeyboardEvent && event.key !== 'Escape')
         return
@@ -386,7 +417,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
           </Show>
         </div>
       </Show>
-      <div class="code-block-body" style={{ 'display': collapsed() ? 'none' : undefined, 'max-height': expanded() ? 'none' : `${props.codeBlockOptions?.maxHeight ?? 500}px`, 'overflow': expanded() ? 'visible' : 'auto' }}>
+      <div ref={body} class="code-block-body" style={{ 'display': collapsed() ? 'none' : undefined, 'min-height': streamingHeight() ? `${expanded() ? streamingHeight() : Math.min(streamingHeight(), props.codeBlockOptions?.maxHeight ?? 500)}px` : undefined, 'max-height': expanded() ? 'none' : `${props.codeBlockOptions?.maxHeight ?? 500}px`, 'overflow': expanded() ? 'visible' : 'auto' }}>
         <div ref={host} class="code-block-editor code-editor-container" style={{ 'position': ready() ? undefined : 'absolute', 'visibility': ready() ? undefined : 'hidden', 'pointer-events': ready() ? undefined : 'none', 'min-width': '0', 'width': '100%', 'top': '0', 'left': '0', '--diffs-font-family': visual().fontFamily, '--diffs-font-size': `${fontSize()}px`, '--diffs-line-height': `${visual().lineHeight}px`, '--diffs-tab-size': String(visual().tabSize), '--diffs-scrollbar-gutter-override': '0px', '--diffs-gap-block': props.codeBlockOptions?.padding != null ? `${visual().padding}px` : undefined }} />
         <Show when={!ready()}><Show when={props.stream === false && loading()} fallback={<PreCodeNode themeName={palette().name} node={props.node} context={props.context} loading={loading()} showLineNumbers={showNumbers()} diffInline={props.codeBlockOptions?.diffStyle === 'unified'} diffHideUnchangedRegions={resolveDiffHideUnchangedRegionsOption(props.codeBlockOptions)} codeBlockOptions={{ ...props.codeBlockOptions, fontSize: fontSize() }} />}><div class="code-block-loading" role="status">Loading code…</div></Show></Show>
       </div>

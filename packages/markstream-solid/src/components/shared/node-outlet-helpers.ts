@@ -27,6 +27,8 @@ export function resolveHtmlTag(node: SolidRenderableNode) {
 }
 
 export function coerceCustomHtmlNode(node: SolidRenderableNode) {
+  if (node.type !== 'html_block' && node.type !== 'html_inline')
+    return node
   const tag = resolveHtmlTag(node)
   if (!tag)
     return node
@@ -120,7 +122,7 @@ export function resolveNodeOutletCustomComponent(
   if (direct)
     return direct
 
-  const tag = resolveHtmlTag(node)
+  const tag = node.type === 'html_block' || node.type === 'html_inline' ? resolveHtmlTag(node) : ''
   if (tag && mapping?.[tag])
     return mapping[tag]
 

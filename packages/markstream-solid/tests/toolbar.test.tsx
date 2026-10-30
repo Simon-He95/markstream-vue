@@ -147,6 +147,23 @@ describe('vue 3 code toolbar parity', () => {
     await vi.waitFor(() => expect(state.create).toHaveBeenCalledTimes(1))
     expect(state.finalize).toHaveBeenCalled()
   })
+  it('retains streaming fallback height across handoff and releases it for replacement or font controls', async () => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
+      return { height: this.classList.contains('code-block-body') ? 106 : 0 } as DOMRect
+    })
+    const update = mount({ node: { ...htmlNode, code: 'first line\n', loading: true } })
+    await vi.waitFor(() => expect(host.querySelector('.code-pre-fallback')).toBeNull())
+    const body = host.querySelector<HTMLElement>('.code-block-body')!
+    expect(body.style.minHeight).toBe('106px')
+    update({ node: { ...htmlNode, code: 'first line\n', loading: false } })
+    await vi.waitFor(() => expect(state.finalize).toHaveBeenCalled())
+    expect(body.style.minHeight).toBe('106px')
+    more()
+    click('Font size −')
+    expect(body.style.minHeight).toBe('')
+    update({ node: { ...htmlNode, code: 'replacement', loading: false } })
+    expect(body.style.minHeight).toBe('')
+  })
   it('shows line numbers and split/unified diffs without optional stream-diffs', async () => {
     state.available = false
     const update = mount({ node: htmlNode, showLineNumbers: true })

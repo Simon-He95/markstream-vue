@@ -122,7 +122,7 @@ export default function App() {
     const change = () => setCompact(media.matches)
     media.addEventListener('change', change)
     const observer = new ResizeObserver(() => {
-      if (stream.running())
+      if (stream.running() || stream.final())
         chase.schedule()
     })
     observer.observe(messages)

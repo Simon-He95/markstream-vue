@@ -324,6 +324,7 @@ const integrationRoutingEntries = [
   ['configure props and events', '/guide/props'],
   ['install optional peers', '/guide/installation'],
   ['use SolidJS streaming Markdown, workers and SSR', '/guide/solid'],
+  ['look up SolidJS component props, callbacks and every runtime API', '/guide/solid-api'],
   ['run playground-solid locally', '/guide/playground#solid-playground'],
   ['fix CSS, SSR, or missing peer issues', '/guide/troubleshooting-path'],
 ]

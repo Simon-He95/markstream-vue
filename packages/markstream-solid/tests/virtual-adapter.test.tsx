@@ -42,6 +42,8 @@ function setup() {
   const report = (callback: any, height: number) => callback({ sessionKey: 'one::a', threadKey: 'one', totalHeight: height, final: true, stable: true, phase: 'final', confidence: 'final' })
   return { adapter, items, setItems, setThread, setMeasurement, sizes, report, get top() {
     return top
+  }, navigate(value: number) {
+    top = value
   } }
 }
 describe('outer virtualizer state compatibility', () => {
@@ -59,6 +61,20 @@ describe('outer virtualizer state compatibility', () => {
     value.report(props.onHeightChange, 200)
     props.onHeightChange({ sessionKey: 'one::a', threadKey: 'one', totalHeight: 50, final: false, stable: false, phase: 'streaming', confidence: 'estimate' })
     expect(value.adapter.itemHeights.get('a')).toBe(200)
+  })
+  it('does not overwrite navigation with a previously queued measurement anchor', async () => {
+    const value = setup()
+    value.report(value.adapter.markdownProps(value.items()[0], 0).onHeightChange, 200)
+    value.navigate(0)
+    await vi.advanceTimersByTimeAsync(20)
+    expect(value.top).toBe(0)
+  })
+  it('preserves the original anchor across multiple measurements in one frame', async () => {
+    const value = setup()
+    value.report(value.adapter.markdownProps(value.items()[0], 0).onHeightChange, 200)
+    value.adapter.markdownProps(value.items()[1], 1).onHeightChange({ sessionKey: 'one::b', threadKey: 'one', totalHeight: 200, final: true, stable: true, phase: 'final', confidence: 'final' })
+    await vi.advanceTimersByTimeAsync(20)
+    expect(value.top).toBe(250)
   })
   it('rejects stale callbacks and persisted heights after an item is replaced', () => {
     const value = setup()

@@ -148,6 +148,15 @@ export interface LinkNodeProps {
   animationIteration?: string | number
 }
 
+export interface ReferenceNodeProps {
+  node: { type: 'reference', id: string | number, raw?: string }
+  messageId?: string
+  threadId?: string
+  onClick?: (event: MouseEvent, id: string, messageId?: string, threadId?: string) => void
+  onMouseEnter?: (event: MouseEvent, id: string, messageId?: string, threadId?: string) => void
+  onMouseLeave?: (event: MouseEvent, id: string, messageId?: string, threadId?: string) => void
+}
+
 export interface PreCodeNodeProps {
   node: CodeBlockNode
   loading?: boolean

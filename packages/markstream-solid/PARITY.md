@@ -1,6 +1,6 @@
 # Vue 3 对齐清单
 
-本包以同仓库 Vue 3 公开功能为基准。`pnpm --filter markstream-solid check:parity` 对照 `src/exports.ts` 及 Vue 3 类型声明，校验 181 个运行时导出和 10 组组件/渲染器属性契约；行为由单元测试和生产浏览器用例验证。
+本包以同仓库 Vue 3 公开功能为基准。`pnpm --filter markstream-solid check:parity` 对照 `src/exports.ts` 及 Vue 3 类型声明，校验 181 个 Vue 运行时导出对应名及 10 组组件/渲染器参数的继承字段、类型和可选性；名称/签名检查与行为验证分开；行为由单元测试和生产浏览器用例验证。
 
 | Vue 3 功能 | Solid 对应行为 | 验证 |
 | --- | --- | --- |
@@ -18,7 +18,7 @@
 | Mermaid / D2 / infographic | source/preview、复制、SVG 导出、折叠和相应按钮开关；Mermaid/infographic 缩放、平移、全屏 | diagrams、heavy-nodes、浏览器 |
 | 图表异步生命周期 | debounce、最终渲染、保留上次有效预览、旧结果取消、实例清理、Mermaid 错误回调、可取消事件 | diagrams、heavy-nodes |
 | 基础与独立节点 | 段落、标题、行内格式、列表、表格、脚注、图片、HTML、数学、admonition 与 vmr container 导出 | renderer、provider、打包检查 |
-| 表格 / 图片 / 链接 | 列宽拖拽；图片加载/失败/安全 fallback；链接属性清洗、目标和 tooltip；脚注限定渲染树定位 | renderer、浏览器 |
+| 表格 / 图片 / 链接 | 列宽拖拽；图片加载/失败/安全 fallback、慢请求稳定策略；链接属性清洗、目标和 tooltip；脚注限定渲染树定位 | renderer、浏览器 |
 | 自定义组件 | 全局、customId、局部覆盖；streamingComponents / htmlComponents；块级/行内 display 提示 | renderer、provider、virtual-state |
 | app 级配置 | MarkstreamProvider 隔离组件、翻译和语言图标；全局配置函数仍可用于初始化 | provider |
 | 视口与批处理 | 节点壳和重型节点视口推迟；完成态立即恢复、连续追加不分批、外层协调分批；批次大小、预算、idle timeout、后台定时器与卸载清理 | renderer、virtual-state |
@@ -59,3 +59,5 @@ pnpm test:e2e:solid-playground
 ```
 
 `playground-solid` 的 “Toolbar & preview fixtures” 提供 HTML、SVG、diff、Mermaid、D2 和 infographic 示例。完整检查结果、语料、测量边界及性能原始记录位置见 [VALIDATION.md](./VALIDATION.md)。组件样式、worker 与完整播放记录见 [COMPONENT_VALIDATION.md](./COMPONENT_VALIDATION.md)。
+
+ReferenceNode 的事件和消息/线程参数、MathBlockNode 的 scope/index 待定高度缓存、Mermaid 稳定延时和有界轮询现均有行为用例。完整使用参考见 [Solid API](https://markstream.simonhe.me/guide/solid-api)，包含 202 个运行时导出及独立节点、参数、回调、句柄和 worker 边界。

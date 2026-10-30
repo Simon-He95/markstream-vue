@@ -74,3 +74,13 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Defer unresolved standalone trailing definitions until body/newline/final, preserving known references, literals, code and final empty definitions.
 - [x] Compare every incremental AST prefix against cold parsing; verify final output and full restoration.
 - [x] Replay identical Vue 3 / Solid input at 1/7/64 characters, smooth off/on, with bracket/colon stages held to expose transient rollback.
+
+## Final review and release readiness
+
+- [x] Fix Linux timeline navigation anchors and disable intrinsic placeholders on coordinated rows; test with CPU throttling and save failure diagnostics.
+- [x] Implement reference callbacks, scoped pending math heights, Mermaid stability/polling and Vue-equivalent footnote containment.
+- [x] Verify slow image deadlines and metadata/fallback updates without spurious image errors.
+- [x] Bump parser/core dependency versions, gate publishing and wire Solid stable/preview/family release commands.
+- [x] Validate emitted workers in an external packed consumer and correct the worker guide.
+- [x] Add bilingual complete component/API references, signature/field coverage, LLM routing and a discoverable Solid skill.
+- [x] Separate playground SEO metadata from Vue while reusing shared assets.

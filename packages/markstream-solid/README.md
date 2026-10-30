@@ -18,6 +18,10 @@ Compile application TSX with `vite-plugin-solid` in Vite, and use `"jsx": "prese
 
 Import exactly one stylesheet: `index.css`, `index.px.css` for apps that change the root font size, or `index.tailwind.css`. Math also needs `katex/dist/katex.min.css`.
 
+## Component and API reference
+
+[English API reference](https://markstream.simonhe.me/guide/solid-api) / [中文组件与 API](https://markstream.simonhe.me/zh/guide/solid-api) cover all components, props, callbacks, defaults, lifecycle/virtual handles and runtime exports. Vite workers require `worker.format: 'es'` and non-inline `?worker` imports; the packed-worker smoke validates the emitted subpaths.
+
 ## Basic usage
 
 ```tsx
@@ -107,3 +111,5 @@ The production browser suite verifies streaming, full restoration, virtual scrol
 - [Online playground](https://markstream-solid.pages.dev/) — deployment pending; use `pnpm play:solid` locally.
 
 The guide covers reactive SSE input, optional peers, workers, custom components, i18n/provider scope, HTML previews, SSR/hydration and virtual-history restoration. The playground follows the same Pages naming convention as Svelte.
+
+Before publishing Solid, release the new `markstream-core` and `stream-markdown-parser` versions first. Packed dependencies must match those versions; registry-only installation is blocked by the publish gate until they exist. The release-family pipeline publishes parser/core before the adapters.

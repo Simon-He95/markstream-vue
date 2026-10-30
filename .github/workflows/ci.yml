@@ -87,7 +87,10 @@ jobs:
           pnpm --filter markstream-solid typecheck
           pnpm test:solid
           pnpm test:smoke:solid
+          node scripts/smoke-solid-workers.mjs
           pnpm test:e2e:solid-playground
+          node scripts/check-solid-playground-seo.mjs
+          node scripts/check-solid-api-docs.mjs
 
       - name: Upload Solid validation reports
         if: always() && matrix.os == 'ubuntu-latest'
@@ -95,10 +98,7 @@ jobs:
         with:
           name: solid-validation
           path: |
-            .tmp/solid/performance.json
-            .tmp/solid/component-styles.json
-            .tmp/solid/workers.json
-            .tmp/solid/playback.json
+            .tmp/solid/*.json
             .tmp/solid/*.png
           if-no-files-found: ignore
 

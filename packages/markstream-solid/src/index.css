@@ -627,6 +627,10 @@ body > div[id^="dmermaid-"] {
   font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
 }
 
+.markstream-solid .reference-node:hover {
+  background-color: hsl(var(--ms-secondary));
+}
+
 .markstream-solid .footnote-node {
   display: flex;
   margin-top: var(--ms-flow-footnote-y);
@@ -640,10 +644,6 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .footnote-node__content {
   flex: 1 1 auto;
   min-width: 0;
-}
-
-.markstream-solid .footnote-node .paragraph-node {
-  margin: 0;
 }
 
 .markstream-solid .footnote-reference {
@@ -2266,7 +2266,7 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .blockquote {display:block;font-weight:400;font-style:normal;color:var(--blockquote-fg,hsl(var(--ms-muted-foreground)));border-left:3px solid var(--blockquote-border);margin:var(--ms-flow-blockquote-y) 0;padding-left:var(--ms-flow-blockquote-indent);}
 .markstream-solid .blockquote > .paragraph-node:first-child {margin-top:0;}
 .markstream-solid .blockquote > .paragraph-node:last-child {margin-bottom:0;}
-.markstream-solid .blockquote-content {content-visibility:visible;contain:content;contain-intrinsic-size:0px 0px;}
+.markstream-solid .blockquote-content,.markstream-solid .footnote-node__content {content-visibility:visible;contain:content;contain-intrinsic-size:0px 0px;}
 .markstream-solid .list-node {margin:var(--ms-flow-list-y) 0;padding-left:var(--ms-flow-list-indent);}
 .markstream-solid .list-decimal {list-style-type:decimal;}
 .markstream-solid .list-disc {list-style-type:disc;}
@@ -2310,6 +2310,7 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .footnote-node {display:flex;font-size:14px;line-height:1.625;margin:var(--ms-flow-footnote-y) 0;border-top:1px solid var(--footnote-border);padding-top:8px;}
 .markstream-solid .code-pre-fallback code {color:inherit;font:inherit;background:transparent;}
 .markstream-solid.markdown-renderer {contain-intrinsic-size:auto 800px auto 600px;}
+.markstream-solid.markdown-renderer.virtualized,.markstream-solid.markdown-renderer.virtual-scroll-coordinated {content-visibility:visible;contain-intrinsic-size:none;}
 .markstream-solid .text-node-stream-delta {animation:markstream-solid-stream-fade var(--stream-update-fade-duration,var(--fade-duration,200ms)) var(--stream-update-fade-ease,var(--fade-ease,cubic-bezier(.2,0,.4,1))) both;}
 @keyframes markstream-solid-stream-fade {from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce) {.markstream-solid .text-node-stream-delta {animation-duration:0s!important;}}

@@ -245,6 +245,7 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(options:
   const [revision, setRevision] = createSignal(0)
   const [restoring, setRestoring] = createSignal(false)
   const frames = new Set<number>()
+  let pendingAnchor: { anchor: MarkstreamThreadAnchor, scrollTop: number } | undefined
   let disposed = false
   const getKey = (item: T, index: number) => getMarkstreamTimelineItemKey(item, index, options)
   const isMarkdown = (item: T, index: number) => isMarkstreamMarkdownTimelineItem(item, index, options)
@@ -302,13 +303,26 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(options:
     const next = Math.ceil(size)
     if (heights.get(key) === next)
       return
-    const anchor = options.preserveScrollAnchor !== false ? captureAnchor() : undefined
+    let request: typeof pendingAnchor
+    if (!pendingAnchor && options.preserveScrollAnchor !== false) {
+      const anchor = captureAnchor()
+      if (anchor)
+        pendingAnchor = request = { anchor, scrollTop: options.virtualizer.getScrollTop() }
+    }
     heights.set(key, next)
     sources.set(key, { sourceKey: source, measurementKey: measurementKey(), widthBucket: widthBucket() })
     options.virtualizer.setItemSize(key, next)
     setRevision(value => value + 1)
-    if (anchor)
-      frame(() => restoreAnchor(anchor))
+    if (request) {
+      const captured = request
+      frame(() => {
+        if (pendingAnchor !== captured)
+          return
+        pendingAnchor = undefined
+        if (options.virtualizer.getScrollTop() === captured.scrollTop)
+          restoreAnchor(captured.anchor)
+      })
+    }
   }
   function unobserveItem(key: string) {
     measurements.get(key)?.observer.disconnect()
@@ -417,6 +431,7 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(options:
     read(options.layoutRevision)
     read(options.measurementKey)
     if (previousMeasurement !== measurementKey() || previousThread !== thread) {
+      pendingAnchor = undefined
       setRestoring(false)
       previousMeasurement = measurementKey()
     }
@@ -444,6 +459,7 @@ export function useMarkstreamVirtualAdapter<T = MarkstreamTimelineItem>(options:
   })
   function dispose() {
     disposed = true
+    pendingAnchor = undefined
     for (const key of measurements.keys())
       unobserveItem(key)
     for (const id of frames)

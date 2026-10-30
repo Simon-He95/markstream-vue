@@ -13,4 +13,6 @@ pnpm test:e2e:line-number-handoff-playgrounds --framework=vue3,solid
 CODE_OVERFLOW=scroll pnpm test:e2e:line-number-handoff-playgrounds --framework=vue3,solid
 ```
 
-`pnpm play:solid:build` creates the production playground. `pnpm test:e2e:solid-playground` verifies its controls, streaming/restoration, previews, virtualization, hydration and seven Vue 3/Solid performance scenarios. Generated data and screenshots are saved in `.tmp/solid/`.
+`pnpm play:solid:build` creates the production playground. `pnpm test:e2e:solid-playground` verifies its controls, streaming/restoration, previews, virtualization, hydration and eight Vue 3/Solid performance scenarios. Generated data and screenshots are saved in `.tmp/solid/`.
+
+The build has its own canonical/social metadata, robots, sitemap and noindex lab headers; shared logo/OG assets are emitted from their existing sources. `pnpm play:solid:seo` checks the production output.

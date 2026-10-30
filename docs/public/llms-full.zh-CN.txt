@@ -55,7 +55,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 - 文档 URL：https://markstream.simonhe.me/frameworks/solid
 - Playground URL：https://markstream-solid.pages.dev/
 - Peer dependencies：@antv/infographic, @terrastruct/d2, katex, mermaid, solid-js, stream-diffs
-- Keywords：无
+- Keywords：solid, solidjs, markdown, streaming-markdown, ai-chat, sse, ssr, katex, mermaid, markstream-solid
 - 核心能力：content 与 nodes 输入；平滑流式输出；虚拟历史捕获与恢复；原生 Solid 组件和 provider；Mermaid、KaTeX、D2 和 infographic；stream-diffs 代码块；browser/server 条件导出；worker 子路径；px 与 Tailwind CSS
 - 已知限制：工作区预览；npm 包与线上 playground 尚未部署。先用 pnpm play:solid，独立应用需一起打包 parser/core/Solid。
 
@@ -103,7 +103,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### stream-markdown-parser
 - 包名：stream-markdown-parser
-- 版本：1.2.22
+- 版本：1.2.23
 - 成熟度标签：稳定
 - 框架/运行时：任意 JavaScript 或 TypeScript 应用
 - 描述：Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.
@@ -116,7 +116,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-core
 - 包名：markstream-core
-- 版本：2.0.21
+- 版本：2.0.22
 - 成熟度标签：稳定
 - 框架/运行时：框架无关工具
 - 描述：Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream

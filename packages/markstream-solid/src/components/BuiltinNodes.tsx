@@ -1,8 +1,8 @@
 import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
-import type { ImageNodeProps, LinkNodeProps, MathBlockNodeProps, MathInlineNodeProps } from '../types/component-props'
+import type { ImageNodeProps, LinkNodeProps, MathBlockNodeProps, MathInlineNodeProps, ReferenceNodeProps } from '../types/component-props'
 import { resolveSimpleInlineChildren } from 'markstream-core'
-import { createEffect, createMemo, createSignal, Index, onCleanup, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, Index, onCleanup, Show, untrack } from 'solid-js'
 import { Dynamic } from 'solid-js/web'
 import { isUnsafeHtmlUrl, sanitizeHtmlAttrs, sanitizeImageSrc, shouldOpenLinkInNewTab } from 'stream-markdown-parser'
 import { getCustomComponentDisplay, getCustomNodeComponents } from '../customComponents'
@@ -78,8 +78,8 @@ export function CheckboxNode(props: NodeComponentProps): JSX.Element {
 export function EmojiNode(props: NodeComponentProps): JSX.Element {
   return <span class="emoji-node">{props.node.name ?? props.node.content}</span>
 }
-export function ReferenceNode(props: NodeComponentProps): JSX.Element {
-  return <span class="reference-node" role="button" tabIndex={0} data-reference-id={String(props.node.id)} data-markstream-reference-id={String(props.node.id)}>{String(props.node.id)}</span>
+export function ReferenceNode(props: ReferenceNodeProps & Omit<NodeComponentProps, 'node'>): JSX.Element {
+  return <span class="reference-node" role="button" tabIndex={0} data-reference-id={String(props.node.id)} data-markstream-reference-id={String(props.node.id)} onClick={event => props.onClick?.(event, String(props.node.id), props.messageId, props.threadId)} onMouseEnter={event => props.onMouseEnter?.(event, String(props.node.id), props.messageId, props.threadId)} onMouseLeave={event => props.onMouseLeave?.(event, String(props.node.id), props.messageId, props.threadId)}>{String(props.node.id)}</span>
 }
 export function HtmlInlineNode(props: NodeComponentProps): JSX.Element {
   return <RichNode {...props} />
@@ -140,7 +140,7 @@ export function AdmonitionNode(props: NodeComponentProps): JSX.Element {
   )
 }
 export function FootnoteNode(props: NodeComponentProps): JSX.Element {
-  return <div class="footnote-node" id={`fnref--${props.node.id}`}><RenderChildren {...props} /></div>
+  return <div class="footnote-node" id={`fnref--${props.node.id}`}><div class="footnote-node__content"><RenderChildren {...props} /></div></div>
 }
 function followFootnote(event: MouseEvent, id: string) {
   const target = findFootnoteElement(event.currentTarget, id)
@@ -190,26 +190,34 @@ export function ImageNode(props: ImageNodeProps & Omit<NodeComponentProps, 'node
   const [src, setSrc] = createSignal('')
   const [loaded, setLoaded] = createSignal(false)
   const [failed, setFailed] = createSignal(false)
+  const [settleExpired, setSettleExpired] = createSignal(false)
   let fallback = false
   const safeSrc = createMemo(() => sanitizeImageSrc(props.node.src))
   const safeFallback = createMemo(() => sanitizeImageSrc(props.fallbackSrc))
+  const requestedSources = createMemo(() => [safeSrc(), safeFallback()], undefined, { equals: (before, after) => before[0] === after[0] && before[1] === after[1] })
+  const showFailed = createMemo(() => !props.node.loading && (failed() || !src()))
   createEffect(() => {
-    setSrc(safeSrc() || safeFallback() || '')
-    void props.node.loading
-    fallback = !safeSrc()
-    setLoaded(false)
-    setFailed(!safeSrc() && !safeFallback())
+    const [primary, secondary] = requestedSources()
+    const next = primary || secondary || ''
+    fallback = !primary
+    if (next !== untrack(src) || untrack(failed)) {
+      setSrc(next)
+      setLoaded(false)
+      setSettleExpired(false)
+      setFailed(false)
+    }
   })
-  useNodeLifecycle(props, () => inViewport() && !!src() && !loaded() && !failed() && !props.node.loading, () => imageRoot)
+  useNodeLifecycle(props, () => inViewport() && !!src() && !loaded() && !failed() && !settleExpired() && !props.node.loading, () => imageRoot)
   createEffect(() => {
-    if (!src() || loaded() || failed() || !inViewport())
+    if (!src() || loaded() || failed() || props.node.loading || !inViewport())
       return
-    const timer = setTimeout(() => setFailed(true), 8000)
+    const timer = setTimeout(() => setSettleExpired(true), 8000)
     onCleanup(() => clearTimeout(timer))
   })
   function error() {
     if (!fallback && safeFallback() && safeFallback() !== src()) {
       fallback = true
+      setSettleExpired(false)
       setSrc(safeFallback())
       return
     }
@@ -218,7 +226,7 @@ export function ImageNode(props: ImageNodeProps & Omit<NodeComponentProps, 'node
   }
   return (
     <span ref={imageRoot} class="image-node">
-      <Show when={!failed()} fallback={<span role="status" class="image-error">{t('image.loadError')}</span>}>
+      <Show when={!showFailed()} fallback={<span role="status" class="image-error">{t('image.loadError')}</span>}>
         <Show when={props.usePlaceholder !== false && (!loaded() || props.node.loading)}><span class="image-placeholder" aria-hidden="true">{t('image.loading')}</span></Show>
         <Show when={!props.node.loading && src() && inViewport()}>
           <img

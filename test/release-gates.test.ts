@@ -79,6 +79,7 @@ describe('release dependency gates', () => {
       'pnpm run publish:svelte:current',
       'pnpm run publish:angular:current',
       'pnpm run publish:vue2:current',
+      'pnpm run publish:solid:current',
     ]
 
     expect(scripts['release:family:preflight']).toBe('node scripts/check-release-family-dist-tags.mjs')
@@ -99,6 +100,7 @@ describe('release dependency gates', () => {
       'packages/markstream-svelte/package.json',
       'packages/markstream-angular/package.json',
       'packages/markstream-vue2/package.json',
+      'packages/markstream-solid/package.json',
     ]) {
       expect(preflightScript).toContain(`'${path}'`)
     }

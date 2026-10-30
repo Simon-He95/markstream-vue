@@ -38,6 +38,34 @@ function button(label: string) {
   return target
 }
 describe('vue 3 diagram interaction parity', () => {
+  it('waits for the configured content stability delay before leaving source mode', async () => {
+    vi.useFakeTimers()
+    dispose = render(() => <MermaidBlockNode node={{ ...node, loading: true }} renderDebounceMs={0} contentStableDelayMs={200} />, host)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(button('Source').getAttribute('aria-pressed')).toBe('true')
+    await vi.advanceTimersByTimeAsync(199)
+    expect(button('Source').getAttribute('aria-pressed')).toBe('true')
+    await vi.advanceTimersByTimeAsync(1)
+    expect(button('Preview').getAttribute('aria-pressed')).toBe('true')
+  })
+  it('uses bounded preview polling with configured delay and backoff', async () => {
+    vi.useFakeTimers()
+    state.render.mockResolvedValue({ dispose: state.dispose })
+    dispose = render(() => <MermaidBlockNode node={{ ...node, loading: true }} renderDebounceMs={0} previewPollDelayMs={120} previewPollMaxDelayMs={150} previewPollMaxAttempts={2} />, host)
+    await vi.advanceTimersByTimeAsync(0)
+    expect(state.render).toHaveBeenCalledTimes(1)
+    button('Preview').click()
+    await vi.advanceTimersByTimeAsync(119)
+    expect(state.render).toHaveBeenCalledTimes(1)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(state.render).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(149)
+    expect(state.render).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(state.render).toHaveBeenCalledTimes(3)
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(state.render).toHaveBeenCalledTimes(3)
+  })
   it.each([['mermaid', MermaidBlockNode], ['d2', D2BlockNode], ['infographic', InfographicBlockNode]] as const)('%s supports preview/source/collapse and exports cancelable SVG events', async (kind, Component) => {
     const onExport = vi.fn(event => event.preventDefault())
     dispose = render(() => <Component node={{ ...node, language: kind }} onExport={onExport} />, host)

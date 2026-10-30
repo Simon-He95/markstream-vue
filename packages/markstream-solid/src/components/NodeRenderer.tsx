@@ -10,6 +10,7 @@ import { MarkstreamConfigContext } from '../configuration'
 import { getCustomNodeComponents } from '../customComponents'
 import { useSmoothMarkdownStream } from '../useSmoothMarkdownStream'
 import { NodeLifecycleContext } from './lifecycle'
+import { MathHeightCacheContext } from './mathHeightCache'
 import { NodeSlot } from './NodeSlot'
 import { normalizeRendererMode, RENDERER_MODE_DEFAULTS } from './rendererModeDefaults'
 import { RenderNode } from './RenderNode'
@@ -64,6 +65,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     sessionKey: string
     threadKey?: string
   } | undefined
+  const mathHeights = { scope: () => String(props.virtualScroll?.sessionKey ?? props.customId ?? props.indexKey ?? ''), cache: new Map<string, number>() }
   let restoredBottom: number | undefined
   let lastEmission = 0
   let wasSettled = false
@@ -287,6 +289,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     const next = props.content ?? ''
     const ast = props.nodes
     if (!next.startsWith(previousContent) || ast !== previousNodes) {
+      mathHeights.cache.clear()
       restoredBottom = undefined
       adaptiveBatchSize = 0
       wasSettled = false
@@ -467,6 +470,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
   createEffect(() => {
     const key = measurementKey()
     if (key !== previousMeasurementKey) {
+      mathHeights.cache.clear()
       heights.clear()
       setHeightsRevision(value => value + 1)
       previousMeasurementKey = key
@@ -644,6 +648,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
   })
   onCleanup(() => {
     disposed = true
+    mathHeights.cache.clear()
     pendingRestore = undefined
     for (const [id, resolve] of frameWaiters) {
       cancelAnimationFrame(id)
@@ -730,6 +735,6 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       <Show when={virtual() && range().end < nodes().length}><div class="virtual-spacer" aria-hidden="true" style={{ height: `${offsets()[nodes().length] - offsets()[range().end]}px` }} /></Show>
     </div>
   )
-  return <RendererScope.Provider value={nestedProps}><SmoothScope.Provider value={enabled}><NodeLifecycleContext.Provider value={lifecycle}><Show when={props.renderAsFragment} fallback={<Content />}><Index each={visible()}>{(node, index) => <RenderNode node={node()} context={context()} indexKey={`${props.indexKey ?? 'fragment'}-${index}`} />}</Index></Show></NodeLifecycleContext.Provider></SmoothScope.Provider></RendererScope.Provider>
+  return <RendererScope.Provider value={nestedProps}><SmoothScope.Provider value={enabled}><MathHeightCacheContext.Provider value={mathHeights}><NodeLifecycleContext.Provider value={lifecycle}><Show when={props.renderAsFragment} fallback={<Content />}><Index each={visible()}>{(node, index) => <RenderNode node={node()} context={context()} indexKey={`${props.indexKey ?? 'fragment'}-${index}`} />}</Index></Show></NodeLifecycleContext.Provider></MathHeightCacheContext.Provider></SmoothScope.Provider></RendererScope.Provider>
 }
 export default NodeRenderer

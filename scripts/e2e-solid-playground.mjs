@@ -28,10 +28,11 @@ const template = await readFile(path.join(repoRoot, 'playground-solid/dist/index
 await writeFile(path.join(repoRoot, 'playground-solid/dist/hydrate.html'), template.replace('<div id="root"></div>', `<div id="root">${markup}</div>${generateHydrationScript()}<script>window.__solidServerRoot = document.getElementById('root').firstElementChild</script>`))
 const executablePath = [process.env.PLAYWRIGHT_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(value => value && existsSync(value))
 let browser
+let page
 try {
   const url = `http://127.0.0.1:${port}`
   browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : { channel: 'chrome' }) })
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
   await page.addInitScript(() => {
@@ -54,6 +55,8 @@ try {
   await page.waitForFunction(() => !!window.__markstreamSolid)
   const defaultSource = await page.evaluate(() => window.__markstreamSolid.getSource())
   const timelineRounds = []
+  const timelineSession = await page.context().newCDPSession(page)
+  await timelineSession.send('Emulation.setCPUThrottlingRate', { rate: 4 })
   for (let round = 0; round < 2; round++) {
     if (round)
       await page.evaluate(() => window.__markstreamSolid.restore('Ready for timeline'))
@@ -66,6 +69,7 @@ try {
       return count > 0 && count < 60
     }, null, { timeout: 5000 })
     const mountedMs = performance.now() - started
+    assert.equal(await timeline.locator('.markdown-renderer').evaluateAll(nodes => nodes.every(node => getComputedStyle(node).contentVisibility === 'visible')), true, 'outer-coordinated rows must not use intrinsic-size placeholders')
     await page.waitForTimeout(250)
     await timeline.evaluate(root => root.scrollTop = root.scrollHeight)
     await page.waitForFunction(() => document.querySelector('.markstream-virtual-timeline')?.textContent.includes('Message 999'), null, { timeout: 5000 })
@@ -83,7 +87,9 @@ try {
     timelineRounds.push({ inputState: round ? 'restored' : 'streaming', mountedMs, bottom, top })
   }
   assert.deepEqual(errors, [], 'entering, navigating and leaving a Markdown timeline must not recurse')
-  await writeFile(path.join(outputDir, 'timeline.json'), `${JSON.stringify({ rounds: timelineRounds, errors }, null, 2)}\n`)
+  await writeFile(path.join(outputDir, 'timeline.json'), `${JSON.stringify({ cpuThrottleRate: 4, rounds: timelineRounds, errors }, null, 2)}\n`)
+  await timelineSession.send('Emulation.setCPUThrottlingRate', { rate: 1 })
+  await timelineSession.detach()
   await page.evaluate(() => {
     window.__markstreamSolid.restore('# Solid playground\n\nStreaming Markdown with **Solid**.\n\n```ts\nconst value = 42\n```\n\nInline math: $E = mc^2$.\n\n```mermaid\nflowchart LR\nStream --> Solid\n```')
     window.__markstreamSolid.update({ viewportPriority: false, deferNodesUntilVisible: false, smoothStreaming: false })
@@ -522,6 +528,11 @@ try {
   await page.evaluate(() => window.__markstreamComponentParity.update({ final: true }))
   assert.equal(await page.locator('[data-framework="solid"] blockquote').count(), 3)
   await writeFile(path.join(outputDir, 'blockquote-geometry.json'), `${JSON.stringify(blockquoteGeometry, null, 2)}\n`)
+  await page.evaluate(() => window.__markstreamComponentParity.update({ content: 'Reference[^1].\n\n[^1]: A complete footnote.', final: true, smoothStreaming: false, fade: false }))
+  await page.waitForFunction(() => ['vue3', 'solid'].every(framework => document.querySelector(`[data-framework="${framework}"] .footnote-node`)))
+  const footnoteGeometry = await page.evaluate(() => ['vue3', 'solid'].map(framework => document.querySelector(`[data-framework="${framework}"] .footnote-node`).getBoundingClientRect().height))
+  assert.ok(Math.abs(footnoteGeometry[0] - footnoteGeometry[1]) <= 0.1, `footnote layout matches Vue 3: ${JSON.stringify(footnoteGeometry)}`)
+  await writeFile(path.join(outputDir, 'footnote-geometry.json'), `${JSON.stringify({ vue: footnoteGeometry[0], solid: footnoteGeometry[1] }, null, 2)}\n`)
   const footnoteStart = defaultSource.indexOf('[^1]:')
   assert.ok(footnoteStart > 0)
   const definition = defaultSource.slice(footnoteStart, defaultSource.indexOf('\n', footnoteStart))
@@ -654,6 +665,17 @@ try {
   const report = { browser: await browser.version(), timestamp: new Date().toISOString(), viewport: { width: 1440, height: 1000 }, warmupRounds: 1, measuredRounds: 3, summary, measurements }
   await writeFile(path.join(outputDir, 'performance.json'), `${JSON.stringify(report, null, 2)}\n`)
   console.log(JSON.stringify({ status: 'passed', checks: ['real default playground playback, frame/height/scroll trace', 'per-component Vue3 CSS equality in light/dark, English/Chinese and narrow widths', 'real block/inline math worker messages', 'native browser selection survives streaming and fade settlement', 'streaming editor creation and identity', 'Vue3 page shell and native controls', 'brand/code themes and HTML policy', 'TPS and both random chunk transports', 'Unicode transport preservation', 'mobile controls and dark mode', 'optional peers', 'real editor streaming identity', 'streaming 1/7/64/1024', 'DOM identity', 'replace/reset/restore/resume', '3000-node virtualization first/last', 'full DOM restore', 'smooth final', 'pause/resume', 'SSR hydration and append', 'toolbar/font/copy', 'HTML sandbox/scripts', 'SVG artifact events', 'D2/infographic/Mermaid preview', 'diagram pan/zoom/fullscreen/export', 'virtual cache roundtrip', 'typewriter simple/precise/final', 'Vue3/Solid performance'], summary, report: path.join(outputDir, 'performance.json') }, null, 2))
+}
+catch (error) {
+  if (page) {
+    const state = await Promise.race([page.evaluate(() => {
+      const root = document.querySelector('.markstream-virtual-timeline')
+      return { timeline: root ? { scrollTop: root.scrollTop, scrollHeight: root.scrollHeight, clientHeight: root.clientHeight, items: [...root.querySelectorAll('.markstream-timeline-item')].map(item => ({ key: item.dataset.itemKey, height: item.getBoundingClientRect().height })), spacers: [...root.children].filter(child => child.getAttribute('aria-hidden') === 'true').map(child => child.style.height) } : null, url: location.href }
+    }).catch(() => null), new Promise(resolve => setTimeout(() => resolve(null), 2000))])
+    await writeFile(path.join(outputDir, 'failure.json'), `${JSON.stringify({ error: String(error), state }, null, 2)}\n`)
+    await page.screenshot({ path: path.join(outputDir, 'failure.png'), timeout: 3000 }).catch(() => {})
+  }
+  throw error
 }
 finally {
   await browser?.close()

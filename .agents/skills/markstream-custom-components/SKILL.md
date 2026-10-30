@@ -1,6 +1,6 @@
 ---
 name: markstream-custom-components
-description: Override built-in Markstream node renderers and add trusted custom tags across Vue, React, Svelte, and Angular. Use when Codex needs scoped `setCustomComponents`, renderer-local React `streamingComponents` or `htmlComponents`, Angular/Svelte `customComponents`, Vue app-scoped components, node override keys such as `image`, `code_block`, `mermaid`, or `link`, or nested renderers for tags such as `thinking`.
+description: Override built-in Markstream node renderers and add trusted custom tags across Vue, React, Solid, Svelte, and Angular. Use when Codex needs scoped `setCustomComponents`, renderer-local React `streamingComponents` or `htmlComponents`, Angular/Svelte `customComponents`, Vue app-scoped components, node override keys such as `image`, `code_block`, `mermaid`, or `link`, or nested renderers for tags such as `thinking`.
 ---
 
 # Markstream Custom Components
@@ -8,6 +8,8 @@ description: Override built-in Markstream node renderers and add trusted custom 
 Use this skill when the task is to change how Markstream renders specific nodes or custom tags.
 
 Read [references/patterns.md](references/patterns.md) before choosing an override strategy.
+
+For SolidJS/SolidStart, follow [markstream-solid](../markstream-solid/SKILL.md) and the Solid API reference. Prefer renderer-local or `MarkstreamProvider` overrides, keep prop reads reactive, and use typed callbacks/render props rather than Vue emits/slots.
 
 ## Workflow
 

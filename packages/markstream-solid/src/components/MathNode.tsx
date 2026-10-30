@@ -1,15 +1,16 @@
 import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
-import { createEffect, createMemo, createSignal, onCleanup, onMount, sharedConfig, Show, untrack } from 'solid-js'
+import { createEffect, createMemo, createSignal, onCleanup, onMount, sharedConfig, Show, untrack, useContext } from 'solid-js'
 import { Dynamic, isServer } from 'solid-js/web'
 import { useSafeI18n } from '../i18n/useSafeI18n'
 import { getKatex } from '../optional/katex'
 import { normalizeKaTeXRenderInput } from '../utils/normalizeKaTeXRenderInput'
 import { renderKaTeXWithBackpressure, setKaTeXCache, WORKER_BUSY_CODE } from '../workers/katexWorkerClient'
 import { useNodeLifecycle } from './lifecycle'
+import { MathHeightCacheContext } from './mathHeightCache'
 import { useHeavyNodeVisibility } from './viewport'
 
-export function MathNode(props: NodeComponentProps & { block: boolean }): JSX.Element {
+export function MathNode(props: NodeComponentProps & { block: boolean, cacheScope?: string | number }): JSX.Element {
   const { t } = useSafeI18n()
   let root!: HTMLElement
   const source = createMemo(() => normalizeKaTeXRenderInput(String(props.node.content ?? '')))
@@ -20,15 +21,54 @@ export function MathNode(props: NodeComponentProps & { block: boolean }): JSX.El
   const [fallback, setFallback] = createSignal(initialFallback ? String(props.node.raw ?? '') : '')
   const [pending, setPending] = createSignal(!initialFallback)
   const [lockedHeight, setLockedHeight] = createSignal<number>()
+  const heightCache = useContext(MathHeightCacheContext)
+  const cacheKey = createMemo(() => {
+    if (!props.block || props.indexKey == null)
+      return undefined
+    const scope = props.cacheScope ?? heightCache?.scope()
+    return `${scope != null && String(scope).length ? `${scope}:` : ''}math-block:${props.indexKey}`
+  })
+  function clearCachedHeight() {
+    const key = cacheKey()
+    if (key)
+      heightCache?.cache.delete(key)
+  }
+  function capturePendingHeight() {
+    if (!props.block || html() || !(loading() || pending() || fallback()))
+      return
+    const height = root.getBoundingClientRect().height
+    if (height > 0) {
+      setLockedHeight(previous => Math.max(previous ?? 0, height))
+      const key = cacheKey()
+      if (key)
+        heightCache?.cache.set(key, lockedHeight()!)
+    }
+  }
+  createEffect(() => {
+    const key = cacheKey()
+    untrack(() => setLockedHeight(html() ? undefined : key ? heightCache?.cache.get(key) : undefined))
+  })
   const visible = useHeavyNodeVisibility(props, () => root)
   useNodeLifecycle(props, () => visible() && pending(), () => root)
   onMount(() => {
+    if (props.block) {
+      const observer = new ResizeObserver(capturePendingHeight)
+      observer.observe(root)
+      capturePendingHeight()
+      onCleanup(() => observer.disconnect())
+    }
+    let previousSource = source()
     createEffect(() => {
       const content = source()
       const isLoading = loading()
       const displayMode = display()
       if (!visible())
         return
+      if (!content.startsWith(previousSource)) {
+        clearCachedHeight()
+        setLockedHeight(undefined)
+      }
+      previousSource = content
       if (!content) {
         setHtml('')
         setFallback(String(props.node.raw ?? ''))
@@ -70,6 +110,7 @@ export function MathNode(props: NodeComponentProps & { block: boolean }): JSX.El
             return
           setHtml(rendered)
           setFallback('')
+          clearCachedHeight()
           if (!isLoading)
             setLockedHeight(undefined)
         }

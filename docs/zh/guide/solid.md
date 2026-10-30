@@ -13,6 +13,8 @@ keywords:
 
 `markstream-solid` 是原生 SolidJS 1.9 渲染器。它与 Vue 3 共用 Markstream parser 和框架无关的 core，使用 Solid 组件、signal、accessor、回调和 context 完成渲染。
 
+[完整组件与 API 参考](/zh/guide/solid-api)
+
 ## 安装与环境要求
 
 Solid 包当前通过本仓库工作区提供，尚未发布到 npm。先运行本地 playground：
@@ -43,6 +45,7 @@ import solid from 'vite-plugin-solid'
 
 export default defineConfig({
   plugins: [solid({ ssr: true })],
+  worker: { format: 'es' },
 })
 ```
 
@@ -143,8 +146,8 @@ enableInfographic(() => import('@antv/infographic'))
 
 ```ts
 import { setKaTeXWorker, setMermaidWorker } from 'markstream-solid'
-import KatexWorker from 'markstream-solid/workers/katexRenderer.worker?worker&inline'
-import MermaidWorker from 'markstream-solid/workers/mermaidParser.worker?worker&inline'
+import KatexWorker from 'markstream-solid/workers/katexRenderer.worker?worker'
+import MermaidWorker from 'markstream-solid/workers/mermaidParser.worker?worker'
 
 setKaTeXWorker(new KatexWorker())
 setMermaidWorker(new MermaidWorker())
@@ -238,3 +241,5 @@ export function History(props: { content: string }) {
 - [Playground 源码](https://github.com/Simon-He95/markstream-vue/tree/main/playground-solid)
 - [API 对齐与公共 core](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/PARITY.md)
 - [验证与性能数据](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/VALIDATION.md)
+
+Mermaid 分包使用文件 worker，保持 `worker.format="es"`，不要使用 inline Blob 模式。CDN 路径及完整参数见组件/API 参考。

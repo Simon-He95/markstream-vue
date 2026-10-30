@@ -182,6 +182,8 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 
 ## Repository skills and prompts
 
+SolidJS/SolidStart integrations have a dedicated `markstream-solid` skill under `.agents/skills/markstream-solid`, with reactive TSX, packed workers, SSR, scoped components and the complete Solid API guide.
+
 If you want the AI assets without cloning the repo:
 
 ```bash

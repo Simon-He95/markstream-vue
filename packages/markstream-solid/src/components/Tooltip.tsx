@@ -23,6 +23,7 @@ export function Tooltip(props: TooltipProps): JSX.Element {
     const visible = props.visible
     const placement = props.placement ?? 'top'
     const gap = props.offset ?? 6
+    const id = props.id
     void props.content
     if (!anchor || !tooltip || !visible)
       return
@@ -33,12 +34,12 @@ export function Tooltip(props: TooltipProps): JSX.Element {
         setPosition(result)
     }
     const cleanup = autoUpdate(anchor, tooltip, () => void update())
-    if (props.id)
-      anchor.setAttribute('aria-describedby', props.id)
+    if (id)
+      anchor.setAttribute('aria-describedby', id)
     onCleanup(() => {
       cancelled = true
       cleanup()
-      if (props.id && anchor.getAttribute('aria-describedby') === props.id)
+      if (id && anchor.getAttribute('aria-describedby') === id)
         anchor.removeAttribute('aria-describedby')
     })
   })

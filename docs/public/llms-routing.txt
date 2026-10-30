@@ -9,6 +9,7 @@ Use this file when an AI assistant or search tool needs to route a user query to
 - "configure props and events" -> https://markstream.simonhe.me/guide/props
 - "install optional peers" -> https://markstream.simonhe.me/guide/installation
 - "use SolidJS streaming Markdown, workers and SSR" -> https://markstream.simonhe.me/guide/solid
+- "look up SolidJS component props, callbacks and every runtime API" -> https://markstream.simonhe.me/guide/solid-api
 - "run playground-solid locally" -> https://markstream.simonhe.me/guide/playground#solid-playground
 - "fix CSS, SSR, or missing peer issues" -> https://markstream.simonhe.me/guide/troubleshooting-path
 - "browse all built-in components with live previews" -> https://markstream.simonhe.me/components/

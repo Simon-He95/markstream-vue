@@ -58,16 +58,35 @@ const missing = [...required].filter(name => !(name in solid))
 assert.deepEqual(missing, [], 'Missing Vue 3 runtime API counterparts')
 function properties(filename, name) {
   const source = ts.createSourceFile(filename, readFileSync(filename, 'utf8'), ts.ScriptTarget.Latest, true)
-  return source.statements.find(statement => ts.isInterfaceDeclaration(statement) && statement.name.text === name).members.map(member => member.name.getText(source))
+  const declaration = source.statements.find(statement => ts.isInterfaceDeclaration(statement) && statement.name.text === name)
+  const result = new Map()
+  for (const clause of declaration.heritageClauses ?? []) {
+    for (const base of clause.types) {
+      for (const [name, contract] of properties(filename, base.expression.getText(source)))
+        result.set(name, contract)
+    }
+  }
+  for (const member of declaration.members)
+    result.set(member.name.getText(source), { type: member.type.getText(source).replace(/\s/g, ''), optional: !!member.questionToken })
+  return result
 }
 for (const name of ['NodeRendererProps']) {
   const expected = properties(path.join(repoRoot, 'src/types/node-renderer-props.ts'), name)
-  const implemented = new Set(properties(path.join(packageRoot, 'src/types/node-renderer-props.ts'), name))
-  assert.deepEqual(expected.filter(name => !implemented.has(name)), [], `Missing ${name} options`)
+  const implemented = properties(path.join(packageRoot, 'src/types/node-renderer-props.ts'), name)
+  for (const [property, contract] of expected) {
+    const actual = implemented.get(property)
+    assert.ok(actual, `Missing ${name}.${property}`)
+    // Solid accepts readonly AST arrays and nullable signal values.
+    if (property === 'nodes')
+      assert.deepEqual(actual, { type: 'readonlyBaseNode[]|null', optional: true })
+    else
+      assert.deepEqual(actual, contract, `${name}.${property} contract differs`)
+  }
 }
 for (const name of ['CodeBlockNodeProps', 'PreCodeNodeProps', 'MermaidBlockNodeProps', 'D2BlockNodeProps', 'InfographicBlockNodeProps', 'ImageNodeProps', 'LinkNodeProps', 'MathBlockNodeProps', 'MathInlineNodeProps']) {
   const expected = properties(path.join(repoRoot, 'src/types/component-props.ts'), name)
-  const implemented = new Set(properties(path.join(packageRoot, 'src/types/component-props.ts'), name))
-  assert.deepEqual(expected.filter(name => !implemented.has(name)), [], `Missing ${name} options`)
+  const implemented = properties(path.join(packageRoot, 'src/types/component-props.ts'), name)
+  for (const [property, contract] of expected)
+    assert.deepEqual(implemented.get(property), contract, `${name}.${property} contract differs`)
 }
-console.log(`Vue 3 parity API: ${required.size} runtime exports and 10 component/renderer option contracts passed`)
+console.log(`Vue 3 parity API: ${required.size} runtime exports and 10 inherited component/renderer property signatures passed; runtime behavior is checked separately`)

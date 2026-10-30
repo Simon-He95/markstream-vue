@@ -55,7 +55,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 - Docs URL: https://markstream.simonhe.me/frameworks/solid
 - Playground URL: https://markstream-solid.pages.dev/
 - Peer dependencies: @antv/infographic, @terrastruct/d2, katex, mermaid, solid-js, stream-diffs
-- Keywords: none
+- Keywords: solid, solidjs, markdown, streaming-markdown, ai-chat, sse, ssr, katex, mermaid, markstream-solid
 - Key capabilities: content and nodes input paths; smooth streaming; virtual history capture and restoration; native Solid components and provider; Mermaid, KaTeX, D2 and infographic; stream-diffs code blocks; browser/server conditional exports; worker subpaths; px and Tailwind CSS
 - Known limitations: Workspace preview; npm publication and the hosted playground deployment are pending. Use pnpm play:solid locally or pack parser/core/Solid together for an external app.
 
@@ -103,7 +103,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### stream-markdown-parser
 - Package name: stream-markdown-parser
-- Version: 1.2.22
+- Version: 1.2.23
 - Maturity label: stable
 - Framework/runtime: Any JavaScript or TypeScript app
 - Description: Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.
@@ -116,7 +116,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-core
 - Package name: markstream-core
-- Version: 2.0.21
+- Version: 2.0.22
 - Maturity label: stable
 - Framework/runtime: Framework-agnostic utilities
 - Description: Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream

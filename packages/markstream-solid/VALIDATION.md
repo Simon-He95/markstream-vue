@@ -6,8 +6,8 @@
 
 | 检查 | 结果 |
 | --- | --- |
-| Vue 3 公开 API 对照 | 181 个运行时导出对应项、10 组组件/渲染器属性契约通过 |
-| Solid 客户端单元测试 | 11 个文件，85 个测试通过 |
+| Vue 3 公开 API 对照 | 181 个运行时对应名、10 组继承参数的类型/可选性契约及独立行为测试通过 |
+| Solid 客户端单元测试 | 13 个文件，95 个测试通过 |
 | Solid SSR 单元测试 | 3 个测试通过 |
 | 公共 parser 单元测试 | 72 个文件，727 个测试通过；新增 19 项脚注分片回归 |
 | 公共 core 单元测试 | 8 个文件，103 个测试通过 |
@@ -128,8 +128,19 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 
 新增 19 项 parser 回归，覆盖数字/下划线/中文标签、列表/引用嵌套、每一个字符前缀、streamParse 开/关、增量对冷解析、final 对直接完整解析，以及普通方括号公式、显式 TeX、跨行公式。旧中间态测试改为断言尾部歧义暂缓、final 保留字面文本、完成定义恢复真实脚注。公共 parser 727 测试、122 项公开 API/声明契约及五个固定种子的增量/冷解析差分场景通过。
 
-生产浏览器从共用默认示例取原脚注定义，用同样的 20 段前置历史、滚动容器、worker 和渲染设置同时驱动 Vue 3 / Solid。1 / 7 / 64 字符分片 × smooth 关闭/开启共六组，关键的 `[`, `[^`, `[^1]`, `[^1]:`, `[^1]: ` 均停留 100ms；持续逐帧记录两端内容高度、底部追随、数学块/脚注数，防止快速分片偶然绕过错误状态。最终比较脚注/引用数量、正文及全文恢复结果。两端脚注的最终包装高度不同，记录不据此宣称所有几何都一致；本场景检查无错误公式、无回退及内容一致。
+生产浏览器从共用默认示例取原脚注定义，用同样的 20 段前置历史、滚动容器、worker 和渲染设置同时驱动 Vue 3 / Solid。1 / 7 / 64 字符分片 × smooth 关闭/开启共六组，关键的 `[`, `[^`, `[^1]`, `[^1]:`, `[^1]: ` 均停留 100ms；持续逐帧记录两端内容高度、底部追随、数学块/脚注数，防止快速分片偶然绕过错误状态。最终比较脚注/引用数量、正文及全文恢复结果。脚注包装层现已补齐 margin containment；新增几何检查确认同一单段落脚注在两端均为 85px。本场景同时检查无错误公式、无回退及内容一致。
 
 逐帧原始数据和汇总见 [footnote-streaming.json](./benchmarks/footnote-streaming.json) 与 [footnote-validation.json](./benchmarks/footnote-validation.json)。原有完整播放、时间线、嵌套引用及八组生产性能场景也继续执行，性能门禁没有放宽。
 
 本轮六组脚注场景的两端均为零回退、零错误数学块；从 `[^` 到 `[^1]: ` 的阶段内容高度都稳定在 1,116px。每组均验证一个真实引用和一个脚注，final 后全文与直接恢复一致。原默认播放三轮零回退，现有八组性能门禁、时间线、嵌套引用、可选 worker 与预览回归全部通过。
+
+## 最终审查补齐（2026-10-31）
+
+- 时间线：修复同一帧多次测量的锚点互相覆盖、旧锚点覆盖用户导航；测量和线程恢复的命令调用不收集额外响应式依赖。协调/虚拟行关闭 content-visibility 的 intrinsic 占位，与 Vue 的布局边界一致。保留 5s 导航门禁，4 倍 CPU 降速真实进入、Message 999/0、退出/重入通过；失败会保存 scrollTop/height/items/spacers 和截图。远端 Ubuntu CI 必须通过后才能合并。
+- 组件：ReferenceNode 转发 click/enter/leave 与 messageId/threadId；MathBlockNode 按 cacheScope/indexKey 读写 renderer 拥有的待定高度缓存，成功清除；Mermaid 稳定延时和 initial/max/attempts 轮询参数有假时钟行为测试。脚注包含边界对齐为 85px。图片慢请求仅释放 settle deadline，不伪报加载失败；属性更新保留已加载 URL，fallback 配置更新仍能重试。
+- 包消费：core 版本升至 2.0.22、parser 至 1.2.23，避免依赖旧 registry 的同版本缺导出/缺修复。已验证这两个版本尚未发布；prepublish 依赖门禁和 family 顺序要求先发布它们。此任务只准备发布链路，不发布 npm。Solid 稳定 tag、preview、family/preflight/verify/dry-run 均接入。
+- Worker：真实外部三包 tarball（无源码 alias）和已安装 peer store 验证 Vite ESM 文件 worker；KaTeX/mhchem、块/行内数学、Mermaid parse 和 SVG 均成功。指南修正 worker.format=es + 非 inline 导入。该检查已加入 CI，结果见 [packed-workers.json](./benchmarks/packed-workers.json)。
+- 文档/skills：新增中英完整组件/API 参考、继承参数表和 202 个运行时签名索引，并校验参数/导出覆盖。组件页链接 Solid TSX 参考，LLM 路由/文件更新。新增 Solid skill，通用安装/自定义组件路由接入，CLI 实际复制安装确认 12 项。
+- SEO：Solid playground 使用自身 robots/sitemap/noindex lab headers、canonical、OG/Twitter、JSON-LD；logo/favicon/OG 图片继续复用共享文件。构建输出验证通过，文档站新 API 页面含更新时间与双语 SEO。既有 compare 页面过期提示没有伪造日期。
+
+本地全仓 3,551、Solid 95 + 3、类型检查、构建、完整生产浏览器、独立打包消费、继承签名/API 文档覆盖、Docs/LLM/SEO 均通过。第二轮审查与远端 head CI 通过作为最终合并条件。

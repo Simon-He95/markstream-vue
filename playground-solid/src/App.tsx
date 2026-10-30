@@ -387,7 +387,7 @@ export default function App() {
             </section>
           </Show>
           <main ref={messages} class="chat-messages chatbot-messages" data-testid="preview">
-            <Show when={timeline()}><MarkstreamVirtualTimeline style={{ height: '70vh' }} items={timelineItems} threadKey="solid-playground" renderItem={item => <MarkdownRender content={item.content} final isDark={settings.dark} />} /></Show>
+            <Show when={timeline()}><MarkstreamVirtualTimeline style={{ height: '70vh' }} items={timelineItems} threadKey="solid-playground" /></Show>
             <MarkdownRender ref={value => renderer = value} style={{ display: timeline() ? 'none' : undefined }} content={stream.content()} final={stream.final()} isDark={settings.dark} smoothStreaming={settings.smooth} codeBlockDarkTheme={settings.codeTheme} codeBlockLightTheme={settings.codeTheme} themes={[settings.codeTheme, settings.codeTheme]} htmlPolicy={settings.htmlPolicy} customHtmlTags={['thinking']} customComponents={{ thinking: Thinking, image: PinnedImageNode }} class="chat-messages__content" data-theme={settings.brand || undefined} {...props()} />
           </main>
         </div>

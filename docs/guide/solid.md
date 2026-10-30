@@ -13,6 +13,8 @@ keywords:
 
 `markstream-solid` is the native SolidJS 1.9 renderer. It shares the Markstream parser and framework-independent core with Vue 3, and uses Solid components, signals, accessors, callbacks, and context for rendering.
 
+[Complete component and API reference](/guide/solid-api)
+
 ## Install and requirements
 
 The Solid package is currently available from this repository's workspace. It has not been published to npm yet. Start with the local playground:
@@ -43,6 +45,7 @@ import solid from 'vite-plugin-solid'
 
 export default defineConfig({
   plugins: [solid({ ssr: true })],
+  worker: { format: 'es' },
 })
 ```
 
@@ -143,8 +146,8 @@ Vite-compatible browser entries can inject KaTeX and Mermaid workers once at app
 
 ```ts
 import { setKaTeXWorker, setMermaidWorker } from 'markstream-solid'
-import KatexWorker from 'markstream-solid/workers/katexRenderer.worker?worker&inline'
-import MermaidWorker from 'markstream-solid/workers/mermaidParser.worker?worker&inline'
+import KatexWorker from 'markstream-solid/workers/katexRenderer.worker?worker'
+import MermaidWorker from 'markstream-solid/workers/mermaidParser.worker?worker'
 
 setKaTeXWorker(new KatexWorker())
 setMermaidWorker(new MermaidWorker())
@@ -238,3 +241,5 @@ Run `pnpm play:solid` from the repository root and open `http://localhost:4178`.
 - [Playground source](https://github.com/Simon-He95/markstream-vue/tree/main/playground-solid)
 - [API parity and shared core](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/PARITY.md)
 - [Validation and performance data](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/VALIDATION.md)
+
+Mermaid split modules require file workers with `worker.format="es"`; avoid inline Blob mode. See the component/API reference for CDN setup and complete options.

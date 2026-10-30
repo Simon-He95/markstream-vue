@@ -42,6 +42,7 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
   const inViewport = useHeavyNodeVisibility(props, () => root)
   let disposed = false
   let copyTimer: ReturnType<typeof setTimeout> | undefined
+  let renderLatest: (() => Promise<void>) | undefined
   const [pending, setPending] = createSignal(true)
   const [svg, setSvg] = createSignal('')
   const [renderError, setRenderError] = createSignal('')
@@ -87,14 +88,22 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
     const isLoading = loading()
     const options = settings()
     const wait = delay()
+    const stableDelay = Math.max(0, props.contentStableDelayMs ?? 500)
+    const changedAt = Date.now()
     const captured = { type: 'code_block', code: content, language: props.kind, loading: isLoading, raw: '' }
     setPending(true)
     let cancelled = false
+    let rendering = false
+    let stableTimer: ReturnType<typeof setTimeout> | undefined
     let stage: HTMLDivElement | undefined
     let handle: {
       dispose: () => void
     } | undefined
     const render = async () => {
+      if (cancelled || disposed || rendering)
+        return
+      rendering = true
+      setPending(true)
       stage = document.createElement('div')
       stage.style.cssText = `position:fixed;left:-100000px;top:0;visibility:hidden;pointer-events:none;width:${root.getBoundingClientRect().width || 800}px`
       stage.innerHTML = renderMarkdownNodeToHtml(captured as any)
@@ -119,8 +128,17 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
           viewport.replaceChildren(props.kind === 'infographic' ? rendered.cloneNode(true) : rendered)
           setSvg(new XMLSerializer().serializeToString(rendered))
           setRenderError('')
-          if (!userMode())
-            setSourceMode(false)
+          if (!userMode()) {
+            if (props.kind !== 'mermaid' || !isLoading) {
+              setSourceMode(false)
+            }
+            else {
+              stableTimer = setTimeout(() => {
+                if (!cancelled && !disposed && !userMode())
+                  setSourceMode(false)
+              }, Math.max(0, stableDelay - (Date.now() - changedAt)))
+            }
+          }
         }
         else if (!isLoading && content.trim()) {
           const failure = new Error(`${props.kind} preview could not be rendered`)
@@ -133,18 +151,48 @@ export function DiagramBlockNode(input: DiagramProps): JSX.Element {
           setRenderError(String(error))
       }
       finally {
+        rendering = false
         handle?.dispose()
         stage.remove()
         if (!cancelled && !disposed)
           setPending(false)
       }
     }
+    renderLatest = render
     const timer = setTimeout(() => void render(), wait)
     onCleanup(() => {
       cancelled = true
       clearTimeout(timer)
+      clearTimeout(stableTimer)
+      if (renderLatest === render)
+        renderLatest = undefined
       handle?.dispose()
       stage?.remove()
+    })
+  })
+  createEffect(() => {
+    if (props.kind !== 'mermaid' || sourceMode() || svg() || !loading() || !inViewport())
+      return
+    let delay = Math.max(120, props.previewPollDelayMs ?? 800)
+    const maximumDelay = Math.max(delay, props.previewPollMaxDelayMs ?? 4000)
+    const maximumAttempts = Math.max(1, Math.trunc(props.previewPollMaxAttempts ?? 12))
+    let attempts = 0
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout>
+    const poll = async () => {
+      if (cancelled || disposed)
+        return
+      attempts++
+      await renderLatest?.()
+      if (!cancelled && !disposed && !svg() && attempts < maximumAttempts) {
+        delay = Math.min(Math.floor(delay * 1.5), maximumDelay)
+        timer = setTimeout(() => void poll(), delay)
+      }
+    }
+    timer = setTimeout(() => void poll(), delay)
+    onCleanup(() => {
+      cancelled = true
+      clearTimeout(timer)
     })
   })
   createEffect(() => {

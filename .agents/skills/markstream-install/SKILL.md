@@ -1,6 +1,6 @@
 ---
 name: markstream-install
-description: Install and wire markstream-vue, markstream-react, markstream-vue2, markstream-angular, or markstream-svelte into an existing repository. Use when Codex needs to choose the right package, install the smallest framework-specific peer-dependency set, fix CSS/reset order, choose Vue 3 renderer mode and built-in, plain, or custom code-block paths, decide between `content`, `nodes`, and Vue 3 virtual-scroll coordination, or add a minimal working renderer example.
+description: Install and wire markstream-vue, markstream-react, markstream-vue2, markstream-angular, markstream-svelte, or markstream-solid into an existing repository. Use when Codex needs to choose the right package, install the smallest framework-specific peer-dependency set, fix CSS/reset order, choose Vue 3 renderer mode and built-in, plain, or custom code-block paths, decide between `content`, `nodes`, and Vue 3 virtual-scroll coordination, or add a minimal working renderer example.
 ---
 
 # Markstream Install
@@ -13,8 +13,9 @@ Read [references/scenarios.md](references/scenarios.md) before making dependency
 
 1. Detect the target framework and CSS stack.
    - Check `package.json`, app entry files, Tailwind or UnoCSS config, and whether the repo is SSR or streaming-focused.
-   - Choose the package that matches the host app: `markstream-vue`, `markstream-vue2`, `markstream-react`, `markstream-angular`, or `markstream-svelte`.
+   - Choose the package that matches the host app: `markstream-vue`, `markstream-vue2`, `markstream-react`, `markstream-angular`, `markstream-svelte`, or `markstream-solid`.
    - Use `markstream-svelte` only for Svelte 5 apps.
+   - Detect `solid-js` / `@solidjs/start` before classifying TSX as React. For Solid 1.9/SolidStart, follow [markstream-solid](../markstream-solid/SKILL.md), including workspace-preview dependencies, ESM file workers and scoped SSR configuration.
 2. Install the smallest peer set that matches the requested features.
    - Add peers only for features the user actually needs. Check the chosen package's `peerDependencies`; peer availability differs by renderer.
    - Vue 3 fenced code uses the built-in renderer automatically. Add `stream-diffs` for the enhanced File/Diff surface, omit it for automatic `<pre><code>` fallback, or set `render-code-blocks-as-pre` to force the plain path.

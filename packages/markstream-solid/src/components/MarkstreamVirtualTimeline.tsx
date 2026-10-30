@@ -1,7 +1,7 @@
 import type { Component, JSX } from 'solid-js'
 import type { MarkstreamVirtualMetrics, MarkstreamVirtualState } from '../types/node-renderer-props'
 import type { MarkstreamThreadVirtualState, MarkstreamTimelineItem, MarkstreamVirtualTimelineProps } from '../virtual-adapter'
-import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, For, onCleanup, onMount, Show, untrack } from 'solid-js'
 import { Dynamic, isServer } from 'solid-js/web'
 import { estimateMarkstreamTimelineItemHeight, getMarkstreamTimelineItemKey, useMarkstreamVirtualAdapter } from '../virtual-adapter'
 import { NodeRenderer } from './NodeRenderer'
@@ -115,6 +115,8 @@ export function MarkstreamVirtualTimeline<T = MarkstreamTimelineItem>(props: Mar
   let restoreFrame: number | undefined
   let restoreTimer: ReturnType<typeof setTimeout> | undefined
   let destroyed = false
+  let wasNearBottom = true
+  let lastScrollTop = 0
   const [scrollTop, setScrollTop] = createSignal(0)
   const [viewportHeight, setViewportHeight] = createSignal(800)
   const [sizeRevision, setSizeRevision] = createSignal(0)
@@ -221,12 +223,15 @@ export function MarkstreamVirtualTimeline<T = MarkstreamTimelineItem>(props: Mar
     scrollToBottom() {
       if (root) {
         root.scrollTop = layout().tree.total
+        lastScrollTop = root.scrollTop
         setScrollTop(root.scrollTop)
       }
     },
     scrollToOffset(offset) {
       if (root) {
         root.scrollTop = offset
+        lastScrollTop = root.scrollTop
+        wasNearBottom = root.scrollHeight - root.scrollTop - root.clientHeight <= 48
         setScrollTop(root.scrollTop)
       }
     },
@@ -277,12 +282,11 @@ export function MarkstreamVirtualTimeline<T = MarkstreamTimelineItem>(props: Mar
       cancelAnimationFrame(restoreFrame)
     clearTimeout(restoreTimer)
   })
-  let wasNearBottom = true
   onMount(() => {
     props.ref?.(handle)
     const observer = new ResizeObserver(() => {
       setViewportHeight(root.clientHeight)
-      if (props.stickToBottom !== false && (props.stickToBottom === true || wasNearBottom))
+      if (props.stickToBottom !== false && (props.stickToBottom === true || (wasNearBottom && (root.scrollTop === lastScrollTop || root.scrollHeight - root.scrollTop - root.clientHeight <= 48))))
         handle.scrollToBottom()
     })
     observer.observe(root)
@@ -290,21 +294,28 @@ export function MarkstreamVirtualTimeline<T = MarkstreamTimelineItem>(props: Mar
     createEffect(() => {
       const count = props.items.length
       sizeRevision()
-      if (count && props.stickToBottom !== false && (props.stickToBottom === true || wasNearBottom))
-        queueMicrotask(() => handle.scrollToBottom())
+      if (count && props.stickToBottom !== false && (props.stickToBottom === true || wasNearBottom)) {
+        const previousTop = root.scrollTop
+        queueMicrotask(() => {
+          if (!destroyed && (props.stickToBottom === true || (wasNearBottom && root.scrollTop === previousTop)))
+            handle.scrollToBottom()
+        })
+      }
     })
     let previousThread = String(props.threadKey ?? '')
     createEffect(() => {
       const thread = String(props.threadKey ?? '')
       const initial = props.initialThreadState
-      if (thread !== previousThread) {
-        measured.clear()
-        previousThread = thread
-        handle.scrollToOffset(0)
-      }
-      const state = initial?.threadKey === thread ? initial : threads.get(thread)
-      if (state)
-        restoreWithPaint(state)
+      untrack(() => {
+        if (thread !== previousThread) {
+          measured.clear()
+          previousThread = thread
+          handle.scrollToOffset(0)
+        }
+        const state = initial?.threadKey === thread ? initial : threads.get(thread)
+        if (state)
+          restoreWithPaint(state)
+      })
     })
     onCleanup(() => observer.disconnect())
   })
@@ -322,7 +333,7 @@ export function MarkstreamVirtualTimeline<T = MarkstreamTimelineItem>(props: Mar
     onMount(() => {
       createEffect(() => {
         const current = item()
-        adapter.measureItem(current, rowProps.record.index, element)
+        untrack(() => adapter.measureItem(current, rowProps.record.index, element))
         onCleanup(() => adapter.unobserveItem(rowProps.record.key))
       })
     })
@@ -354,8 +365,9 @@ export function MarkstreamVirtualTimeline<T = MarkstreamTimelineItem>(props: Mar
       aria-busy={restorePaint()}
       style={{ 'overflow': 'auto', 'overflow-anchor': 'none', 'position': 'relative', 'height': '100%', ...props.style }}
       onScroll={() => {
-        setScrollTop(root.scrollTop)
-        wasNearBottom = layout().tree.total - root.scrollTop - root.clientHeight <= 48
+        lastScrollTop = root.scrollTop
+        wasNearBottom = root.scrollHeight - root.scrollTop - root.clientHeight <= 48
+        setScrollTop(lastScrollTop)
         saveState()
       }}
     >

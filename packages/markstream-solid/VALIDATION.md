@@ -7,7 +7,7 @@
 | 检查 | 结果 |
 | --- | --- |
 | Vue 3 公开 API 对照 | 181 个运行时导出对应项、10 组组件/渲染器属性契约通过 |
-| Solid 客户端单元测试 | 10 个文件，81 个测试通过 |
+| Solid 客户端单元测试 | 10 个文件，82 个测试通过 |
 | Solid SSR 单元测试 | 3 个测试通过 |
 | 公共 core 单元测试 | 8 个文件，103 个测试通过 |
 | Vue 3 / Solid pre → highlight 几何交接 | wrap / scroll、首次导航 / 刷新、窄屏、明暗主题全部通过 |
@@ -102,3 +102,13 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 连续三轮默认完整播放均为零滚动回退，完成时底部距离不超过 1px，且两张图实际解码为 128×128 和 400×400。rAF 帧间隔 P95 依次为 18.3 / 18.6 / 18.0 ms；最大长任务为 65 / 0 / 0 ms。三轮轨迹保存在 [playbacks.json](./benchmarks/playbacks.json)，组件摘要保存于 [component-validation.json](./benchmarks/component-validation.json)。标题 Image 的错误路由修复前 DOM 见 [image-diagnosis-before.json](./benchmarks/image-diagnosis-before.json)。
 
 本轮同场景 restore-batched 的 Solid 中位耗时由 799.5 ms 降至 218.8 ms（本轮 Vue 3 为 246.8 ms）。新增真正分批场景 Vue 3 / Solid 为 727.8 / 400.0 ms，更新 P95 为 61.9 / 17.0 ms；每个框架每轮均断言分批增量合计 1,000 节点。恢复门禁收紧为 `max(300ms, Vue 3 × 1.5)`，原有更新 P95 门禁保持不变。立即恢复依然可能产生长任务，需短帧时应使用真正分批或节点窗口。
+
+## Virtual timeline 入口回归
+
+真实点击 1,000 条 Markdown 消息的 Virtual timeline 时，restoreState 的 effect 调用了读取 metrics / offsets 又写入高度 revision 的恢复函数，意外订阅了它自己写回的信号，循环触发直到栈溢出。heightCache 恢复路径具有相同问题。现在恢复操作置于 untrack 中，仅外部传入的状态/触发项/缓存变化触发 effect；外部状态继续更新和正常测量仍生效。
+
+新增已知宽度 640px 的单测，在修复前稳定抛出 Maximum call stack size exceeded；修复后状态和独立高度缓存都能应用，并继续接受新状态及测量。此前 jsdom 的零宽度和普通 user-message 时间线没有覆盖这条 Markdown 状态恢复路径。
+
+生产浏览器分别在 streaming 和 restore 完成后真实点击进入、滚到 Message 999、返回 Message 0、退出，并验证页面保持响应。两轮首尾分别只挂载 18 / 20 条消息，没有浏览器错误。82 个客户端测试、3 个 SSR 测试、类型检查、打包消费者与完整生产浏览器回归通过。原始数据见 [timeline.json](./benchmarks/timeline.json)，截图见 [timeline.png](../../playground-solid/screenshots/timeline.png)。
+
+全量复测还捕获一条独立的共享 parser 前缀歧义：脚注定义尚未收到冒号时，`[^1]` 暂时成为 math_block，随后转成 footnote，可出现约 8–11px 收缩。这与本次时间线递归无关；后续三轮完整回归通过，但不能据此排除该偶发分片情形。诊断轨迹见 [footnote-prefix-rollback.json](./benchmarks/footnote-prefix-rollback.json)。本次没有改动共享 parser 的数学语法。

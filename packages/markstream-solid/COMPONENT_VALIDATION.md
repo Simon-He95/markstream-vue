@@ -44,3 +44,7 @@ Vue 基线同时加载基础 CSS，使用匹配的 KaTeX / Mermaid worker 和高
 Solid playground 的线上地址按 Svelte 的方式配置为 `https://markstream-solid.pages.dev/`；目前尚未部署，本地入口为 `http://localhost:4178`。
 
 本轮三次默认完整播放均零回退、无失败图片；普通完成态恢复和真正分批恢复分别测量。最新数字与修复前生产基线见 [VALIDATION.md](./VALIDATION.md)，三轮播放原始数据见 [playbacks.json](./benchmarks/playbacks.json)。
+
+## Virtual timeline 栈溢出
+
+时间线中的 Markdown 子渲染器会回填 restoreState；恢复 effect 意外追踪了恢复函数内部读取的高度信号，同时恢复函数再次写入该信号，形成同步循环。恢复调用使用 untrack 隔离，保留外部状态/缓存的响应式入口。新增已知宽度状态恢复单测和真实按钮的两轮进入、首尾导航、退出回归。原因、覆盖与独立脚注前缀观察见 [VALIDATION.md](./VALIDATION.md#virtual-timeline-入口回归)。

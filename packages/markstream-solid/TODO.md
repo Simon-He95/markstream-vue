@@ -54,3 +54,10 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Share playground static assets, bundle the demo PNG, defer incomplete image URLs and verify both decoded images.
 - [x] Restrict tag-based custom component routing to HTML nodes; preserve Image headings, ordinary paragraphs and typed custom node metadata.
 - [x] Continue bottom following while final input drains through smooth rendering; assert the finished viewport remains at the bottom.
+
+## Virtual timeline entry
+
+- [x] Reproduce the Markdown timeline stack overflow and isolate restoreState / heightCache effect dependencies.
+- [x] Verify known-width reactive restoration, changed incoming state and independent height caches.
+- [x] Click the real playground entry during streaming and after restore; navigate 1,000 Markdown items and exit with bounded DOM and no browser errors.
+- [ ] Resolve the independent shared-parser footnote prefix being temporarily classified as bracket math before its colon arrives; keep the captured rollback trace.

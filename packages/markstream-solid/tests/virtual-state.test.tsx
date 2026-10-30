@@ -1,4 +1,4 @@
-import type { MarkstreamRendererHandle } from '../src'
+import type { MarkstreamRendererHandle, MarkstreamVirtualState } from '../src'
 import { createSignal } from 'solid-js'
 import { render } from 'solid-js/web'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -82,6 +82,27 @@ describe('vue 3 renderer options and virtual state parity', () => {
     update([{ ...initial, children: [{ type: 'text', content: 'changed child with identical raw' }] }])
     handle.restoreVirtualState(state)
     expect(handle.getVirtualMetrics().measuredCount).toBe(0)
+  })
+  it('restores reactive state and height caches at a known width without subscribing to its own measurements', async () => {
+    let handle!: MarkstreamRendererHandle
+    const [restoration, setRestoration] = createSignal<{ restoreState?: MarkstreamVirtualState, heightCache?: MarkstreamVirtualState['heightCache'] }>({})
+    dispose = render(() => <MarkdownRender ref={value => handle = value} content={'one\n\ntwo'} final smoothStreaming={false} batchRendering={false} viewportPriority={false} maxLiveNodes={0} virtualScroll={{ ...restoration(), enabled: true, sessionKey: 'reactive-restore', heightCacheWidth: 640 }} />, host)
+    const root = host.querySelector('.markdown-renderer') as HTMLElement
+    Object.defineProperty(root, 'clientWidth', { value: 640 })
+    for (const slot of root.querySelectorAll<HTMLElement>('.node-slot'))
+      vi.spyOn(slot, 'getBoundingClientRect').mockReturnValue({ width: 640, height: 40, top: 0, bottom: 40 } as DOMRect)
+    await handle.forceMeasure()
+    const snapshot = handle.captureVirtualState()!
+    expect(snapshot.heightCache).toHaveLength(2)
+    expect(() => setRestoration({ restoreState: snapshot })).not.toThrow()
+    const resized = snapshot.heightCache!.map(entry => ({ ...entry, height: 60 }))
+    setRestoration({ restoreState: { ...snapshot, heightCache: resized } })
+    expect(handle.getVirtualMetrics().totalHeight).toBe(120)
+    expect(() => setRestoration({ heightCache: snapshot.heightCache })).not.toThrow()
+    expect(handle.getVirtualMetrics().totalHeight).toBe(80)
+    await handle.forceMeasure()
+    expect(handle.getVirtualMetrics().measuredCount).toBe(2)
+    expect(host.textContent).toBe('onetwo')
   })
   it('keeps a restored bottom anchor through late height changes until the user scrolls away', async () => {
     let handle!: MarkstreamRendererHandle

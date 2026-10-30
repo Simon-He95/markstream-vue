@@ -52,6 +52,37 @@ try {
   })
   await page.goto(url)
   await page.waitForFunction(() => !!window.__markstreamSolid)
+  const timelineRounds = []
+  for (let round = 0; round < 2; round++) {
+    if (round)
+      await page.evaluate(() => window.__markstreamSolid.restore('Ready for timeline'))
+    const started = performance.now()
+    await page.getByRole('button', { name: 'Virtual timeline', exact: true }).click({ timeout: 5000 })
+    const timeline = page.locator('.markstream-virtual-timeline')
+    await timeline.waitFor({ state: 'visible', timeout: 5000 })
+    await page.waitForFunction(() => {
+      const count = document.querySelectorAll('.markstream-timeline-item').length
+      return count > 0 && count < 60
+    }, null, { timeout: 5000 })
+    const mountedMs = performance.now() - started
+    await page.waitForTimeout(250)
+    await timeline.evaluate(root => root.scrollTop = root.scrollHeight)
+    await page.waitForFunction(() => document.querySelector('.markstream-virtual-timeline')?.textContent.includes('Message 999'), null, { timeout: 5000 })
+    await page.waitForTimeout(250)
+    const bottom = await timeline.evaluate(root => ({ rows: root.querySelectorAll('.markstream-timeline-item').length, scrollTop: root.scrollTop }))
+    assert.ok(bottom.rows < 60 && bottom.scrollTop > 0, `Markdown timeline stays windowed at the last item: ${JSON.stringify(bottom)}`)
+    if (!round)
+      await page.screenshot({ path: path.join(outputDir, 'timeline.png') })
+    await timeline.evaluate(root => root.scrollTop = 0)
+    await page.waitForFunction(() => document.querySelector('.markstream-virtual-timeline')?.textContent.includes('Message 0'), null, { timeout: 5000 })
+    const top = await timeline.evaluate(root => ({ rows: root.querySelectorAll('.markstream-timeline-item').length, scrollTop: root.scrollTop }))
+    assert.ok(top.rows < 60 && top.scrollTop === 0, 'Markdown timeline returns to the first item')
+    await page.getByRole('button', { name: 'Virtual timeline', exact: true }).click({ timeout: 5000 })
+    assert.equal(await timeline.count(), 0)
+    timelineRounds.push({ inputState: round ? 'restored' : 'streaming', mountedMs, bottom, top })
+  }
+  assert.deepEqual(errors, [], 'entering, navigating and leaving a Markdown timeline must not recurse')
+  await writeFile(path.join(outputDir, 'timeline.json'), `${JSON.stringify({ rounds: timelineRounds, errors }, null, 2)}\n`)
   await page.evaluate(() => {
     window.__markstreamSolid.restore('# Solid playground\n\nStreaming Markdown with **Solid**.\n\n```ts\nconst value = 42\n```\n\nInline math: $E = mc^2$.\n\n```mermaid\nflowchart LR\nStream --> Solid\n```')
     window.__markstreamSolid.update({ viewportPriority: false, deferNodesUntilVisible: false, smoothStreaming: false })

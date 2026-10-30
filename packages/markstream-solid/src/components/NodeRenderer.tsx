@@ -625,13 +625,13 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       const state = props.virtualScroll?.restoreState
       const trigger = props.virtualScroll?.restoreAnchor
       if (state)
-        restoreVirtualState(state, { restoreAnchor: !!trigger, restoreToken: trigger })
+        untrack(() => restoreVirtualState(state, { restoreAnchor: !!trigger, restoreToken: trigger }))
     })
     createEffect(() => {
       const entries = props.virtualScroll?.heightCache
       const width = props.virtualScroll?.heightCacheWidth
       if (entries && width != null)
-        restoreVirtualState({ ...captureVirtualState()!, width, heightCache: entries })
+        untrack(() => restoreVirtualState({ ...captureVirtualState()!, width, heightCache: entries }))
     })
     createEffect(() => {
       nodes()

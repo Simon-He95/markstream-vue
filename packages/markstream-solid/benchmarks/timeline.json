@@ -1,0 +1,36 @@
+{
+  "rounds": [
+    {
+      "inputState": "streaming",
+      "mountedMs": 567.7647080000002,
+      "bottom": {
+        "rows": 18,
+        "scrollTop": 349201
+      },
+      "top": {
+        "rows": 20,
+        "scrollTop": 0
+      }
+    },
+    {
+      "inputState": "restored",
+      "mountedMs": 600.342416,
+      "bottom": {
+        "rows": 18,
+        "scrollTop": 349201
+      },
+      "top": {
+        "rows": 20,
+        "scrollTop": 0
+      }
+    }
+  ],
+  "errors": [],
+  "browser": "Chrome 156.0.8078.49",
+  "items": 1000,
+  "beforeFix": {
+    "error": "Maximum call stack size exceeded",
+    "effect": "NodeRenderer reactive restoreState / heightCache",
+    "knownWidthRegression": "fails before untrack, passes after untrack"
+  }
+}

@@ -5,6 +5,18 @@ import solid from 'vite-plugin-solid'
 
 export default defineConfig({
   base: './',
+  publicDir: resolve(import.meta.dirname, '../public'),
+  css: {
+    postcss: {
+      plugins: [{
+        postcssPlugin: 'markstream-solid-playground-themes',
+        Rule(rule) {
+          if (rule.source?.input.file?.includes('/themes/'))
+            rule.selector = rule.selector.replaceAll('.markstream-vue', '.markstream-solid')
+        },
+      }],
+    },
+  },
   plugins: [solid({ ssr: true, hot: false }), vue()],
   server: { fs: { allow: [resolve(import.meta.dirname, '..')] } },
   worker: { format: 'es' },

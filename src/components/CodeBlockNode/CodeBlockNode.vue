@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { CodeBlockNodeProps, CodeBlockPreviewPayload, CodeBlockTheme, CodeBlockThemeProp } from '../../types/component-props'
 import type { StreamDiffsDiffEditorViewLike, StreamDiffsDisposableLike, StreamDiffsEditorViewLike, StreamDiffsModule, StreamDiffsNamespaceLike, StreamDiffsRuntimeOptions } from './streamDiffs'
+import { buildStreamDiffsSurfaceCSS, DEFAULT_PRE_CODE_FONT_SIZE, DEFAULT_PRE_CODE_LINE_HEIGHT, estimateDiffStats, isDiffCodeBlock, preCodeThemeLooksDark, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemeName, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
 import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, shallowRef, useAttrs, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 // Tooltip is provided as a singleton via composable to avoid many DOM nodes
@@ -13,14 +14,6 @@ import { MARKSTREAM_NODE_LIFECYCLE_KEY } from '../../utils/nodeLifecycle'
 import { resolveLanguageIcon } from '../../utils/resolveLanguageIcon'
 import { safeCancelRaf, safeRaf } from '../../utils/safeRaf'
 import PreCodeBlock from '../PreCodeNode/PreCodeBlock.vue'
-import { resolvePreCodeThemePalette } from '../PreCodeNode/preCodeTheme'
-import { preCodeThemeLooksDark, resolvePreCodeThemeName } from '../PreCodeNode/preCodeThemeName'
-import {
-  DEFAULT_PRE_CODE_FONT_SIZE,
-  DEFAULT_PRE_CODE_LINE_HEIGHT,
-  resolvePreCodeVisualOptions,
-} from '../PreCodeNode/preCodeVisual'
-import { estimateDiffStats, isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption } from './codeBlockHeader'
 import CodeBlockShell from './CodeBlockShell.vue'
 import HtmlPreviewFrame from './HtmlPreviewFrame.vue'
 import {
@@ -3259,31 +3252,6 @@ function themeLooksDark(theme: CodeBlockTheme | null | undefined) {
   return preCodeThemeLooksDark(themeName, props.isDark === true)
 }
 
-function buildStreamDiffsOverflowCSS(overflow: 'scroll' | 'wrap') {
-  const whiteSpace = overflow === 'wrap' ? 'pre-wrap' : 'pre'
-  const overflowWrap = overflow === 'wrap' ? 'anywhere' : 'normal'
-  return `
-[data-file] [data-line],
-[data-diff] [data-line] {
-  white-space: ${whiteSpace} !important;
-  overflow-wrap: ${overflowWrap} !important;
-  word-break: normal !important;
-}`
-}
-
-function buildStreamDiffsMetadataCSS() {
-  return `
-[data-no-newline],
-[data-gutter-buffer="metadata"] {
-  --diffs-computed-decoration-bg: var(--markstream-diff-metadata-bg) !important;
-  --diffs-computed-diff-line-bg: var(--markstream-diff-metadata-bg) !important;
-  --diffs-computed-selected-line-bg: var(--markstream-diff-metadata-bg) !important;
-  --diffs-line-bg: var(--markstream-diff-metadata-bg) !important;
-  color: var(--markstream-diff-metadata-fg) !important;
-  background-color: var(--markstream-diff-metadata-bg) !important;
-}`
-}
-
 function buildStreamDiffsRuntimeOptions() {
   const visualOptions = preFallbackVisualOptions.value
   const nextOptions = {
@@ -3322,12 +3290,7 @@ function buildStreamDiffsRuntimeOptions() {
   const configuredUnsafeCSS = typeof nextOptions.unsafeCSS === 'string'
     ? nextOptions.unsafeCSS
     : ''
-  const overflowCSS = buildStreamDiffsOverflowCSS(visualOptions.overflow)
-  const metadataCSS = buildStreamDiffsMetadataCSS()
-  nextOptions.unsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }
-${overflowCSS}
-${metadataCSS}
-${configuredUnsafeCSS}`.trim()
+  nextOptions.unsafeCSS = buildStreamDiffsSurfaceCSS(visualOptions.overflow, configuredUnsafeCSS)
 
   return nextOptions
 }

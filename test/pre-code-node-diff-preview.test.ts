@@ -6,16 +6,45 @@ import { defineComponent, h, nextTick, ref } from 'vue'
 import PreCodeNode from '../src/components/PreCodeNode'
 
 describe('pre code node diff preview', () => {
-  it('clears async diff measurement state after a chunk failure', () => {
-    const source = readFileSync('src/components/PreCodeNode/PreCodeNode.vue', 'utf8')
-    const start = source.indexOf('function scheduleDiffLineMetricsSync()')
-    const end = source.indexOf('function setupDiffResizeObserver', start)
-    const scheduler = source.slice(start, end)
+  it('coalesces diff measurements and cancels pending work on unmount', async () => {
+    const callbacks = new Map<number, FrameRequestCallback>()
+    let frame = 0
+    const request = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.set(++frame, callback)
+      return frame
+    })
+    const cancel = vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => callbacks.delete(id))
+    let resize: ResizeObserverCallback | undefined
+    const disconnect = vi.fn()
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(callback: ResizeObserverCallback) {
+        resize = callback
+      }
 
-    expect(scheduler).toContain('}, () => {')
-    expect(scheduler).toContain('diffMetricsModule = null')
-    expect(scheduler).toContain('.finally(() => {')
-    expect(scheduler).toContain('diffLineMetricsRaf = null')
+      observe() {}
+      disconnect = disconnect
+    })
+    const wrapper = mount(PreCodeNode, {
+      attrs: { class: 'is-wrap' },
+      props: { showLineNumbers: true, node: { type: 'code_block', language: 'ts', diff: true, originalCode: 'before', updatedCode: 'after', code: '', raw: '' } },
+    })
+    await nextTick()
+    resize?.([], {} as ResizeObserver)
+    resize?.([], {} as ResizeObserver)
+    expect(request).toHaveBeenCalledTimes(1)
+    callbacks.get(1)?.(0)
+    await nextTick()
+    resize?.([], {} as ResizeObserver)
+    expect(request).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+    expect(cancel).toHaveBeenCalledWith(2)
+    expect(disconnect).toHaveBeenCalled()
+    callbacks.get(2)?.(0)
+    resize?.([], {} as ResizeObserver)
+    expect(request).toHaveBeenCalledTimes(2)
+    request.mockRestore()
+    cancel.mockRestore()
+    vi.unstubAllGlobals()
   })
 
   it('styles async code block loading content inside the bordered shell', () => {

@@ -1,9 +1,13 @@
 import { render } from 'solid-js/web'
+import '@unocss/reset/tailwind.css'
 import 'markstream-solid/index.css'
 import 'katex/dist/katex.min.css'
 import './style.css'
 
-if (new URLSearchParams(location.search).has('hydrate')) {
+if (location.pathname === '/line-number-handoff-check') {
+  void import('./HandoffCheck').then(module => render(() => <module.default />, document.getElementById('root')!))
+}
+else if (new URLSearchParams(location.search).has('hydrate')) {
   void import('./hydrate')
 }
 else if (new URLSearchParams(location.search).has('benchmark')) {

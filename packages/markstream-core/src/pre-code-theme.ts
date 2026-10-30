@@ -1,5 +1,5 @@
-import type { PreCodeThemeInput } from './preCodeThemeName'
-import { preCodeThemeLooksDark, resolvePreCodeThemeName } from './preCodeThemeName'
+import type { PreCodeThemeInput } from './pre-code-theme-name'
+import { preCodeThemeLooksDark, resolvePreCodeThemeName } from './pre-code-theme-name'
 
 interface PreCodeThemePalette {
   builtin: boolean

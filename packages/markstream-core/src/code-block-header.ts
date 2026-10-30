@@ -1,4 +1,11 @@
-import type { CodeBlockDiffHideUnchangedRegions, CodeBlockDiffHideUnchangedRegionsOptions } from '../../types/component-props'
+export interface CodeBlockDiffHideUnchangedRegionsOptions {
+  enabled?: boolean
+  contextLineCount?: number
+  minimumLineCount?: number
+  revealLineCount?: number
+}
+
+export type CodeBlockDiffHideUnchangedRegions = boolean | CodeBlockDiffHideUnchangedRegionsOptions
 
 export function resolveDiffHideUnchangedRegionsOption(value: unknown): CodeBlockDiffHideUnchangedRegions {
   if (typeof value === 'boolean')

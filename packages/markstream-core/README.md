@@ -116,3 +116,5 @@ import {
 ## License
 
 MIT
+
+Code-block helpers shared by Vue 3 and Solid include fence/header and diff-stat resolution, pre-code theme/visual/layout options, diff row measurement and stream-diffs surface CSS. The core package contains no Vue or Solid bindings; browser measurement and gesture helpers only access the DOM when invoked.

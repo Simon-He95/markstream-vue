@@ -1,14 +1,13 @@
 import type { JSX } from 'solid-js'
 import type { SolidCodeBlockNodeProps } from './CodeBlockNode'
+import { isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemePalette } from 'markstream-core'
 import { createMemo, createSignal, mergeProps, onCleanup, Show, useContext } from 'solid-js'
 import { MarkstreamConfigContext } from '../configuration'
 import { useSafeI18n } from '../i18n/useSafeI18n'
 import { copyTextToClipboard } from '../utils/clipboard'
 import { languageIconsRevision, languageMap, normalizeLanguageIdentifier } from '../utils/languageIcon'
 import { resolveLanguageIcon } from '../utils/resolveLanguageIcon'
-import { isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption } from './codeBlockHeader'
 import { PreCodeNode } from './PreCodeNode'
-import { resolvePreCodeThemePalette } from './preCodeTheme'
 import { ToolbarButton } from './ToolbarButton'
 
 export function PreCodeBlock(input: SolidCodeBlockNodeProps): JSX.Element {
@@ -49,17 +48,33 @@ export function PreCodeBlock(input: SolidCodeBlockNodeProps): JSX.Element {
     <div class="code-block-container code-block-pre" classList={{ 'markstream-solid': !props.context, 'dark': !!props.isDark }} style={{ '--markstream-code-fallback-bg': palette().background, '--markstream-code-fallback-fg': palette().foreground, '--code-line-number': palette().lineNumber, '--markstream-diff-added-bg': palette().diffAddedLine, '--markstream-diff-removed-bg': palette().diffRemovedLine }}>
       <Show when={props.showHeader !== false}>
         <div class="code-block-header">
-          <div class="code-block-title">
-            <span class="code-language-icon" innerHTML={icon()} />
-            <span>
+          <div class="code-block-title code-header-main">
+            <span class="code-block-language-icon" innerHTML={icon()} />
+            <span class="code-header-title">
               {header().title}
               <Show when={header().caption}><small>{header().caption}</small></Show>
             </span>
           </div>
-          <Show when={props.showCopyButton !== false}><ToolbarButton label={t(copied() ? 'common.copied' : 'common.copy')} onClick={() => void copy()} showTooltips={props.showTooltips} isDark={props.isDark}>{copied() ? '✓' : 'Copy'}</ToolbarButton></Show>
+          <Show when={props.showCopyButton !== false}>
+            <ToolbarButton label={t(copied() ? 'common.copied' : 'common.copy')} onClick={() => void copy()} showTooltips={props.showTooltips} isDark={props.isDark}>
+              <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
+                <Show
+                  when={copied()}
+                  fallback={(
+                    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                      <rect width="14" height="14" x="8" y="8" rx="2" />
+                      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                    </g>
+                  )}
+                >
+                  <path fill="none" stroke="currentColor" stroke-width="2" d="m5 12 4 4L19 6" />
+                </Show>
+              </svg>
+            </ToolbarButton>
+          </Show>
         </div>
       </Show>
-      <PreCodeNode context={props.context} node={props.node} loading={props.loading} showLineNumbers={props.showLineNumbers ?? props.codeBlockOptions?.disableLineNumbers !== true} diffInline={props.codeBlockOptions?.diffStyle === 'unified'} diffHideUnchangedRegions={resolveDiffHideUnchangedRegionsOption(props.codeBlockOptions)} codeBlockOptions={props.codeBlockOptions} />
+      <PreCodeNode themeName={palette().name} context={props.context} node={props.node} loading={props.loading} showLineNumbers={props.showLineNumbers ?? props.codeBlockOptions?.disableLineNumbers !== true} diffInline={props.codeBlockOptions?.diffStyle === 'unified'} diffHideUnchangedRegions={resolveDiffHideUnchangedRegionsOption(props.codeBlockOptions)} codeBlockOptions={props.codeBlockOptions} />
     </div>
   )
 }

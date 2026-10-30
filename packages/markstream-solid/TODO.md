@@ -26,3 +26,11 @@ Publishing remains a separate release action. Vue-specific framework bindings us
 - [x] Renderer mode, DOM mode, typewriter, parse coalescing, viewport deferral and batching options.
 - [x] Virtual metrics, state capture/restore, height caches and outer timeline integration.
 - [x] Public API/consumer checks, optional heavy-node browser regressions, streaming/restoration/performance comparison.
+
+## Playground UI and pre/highlight handoff
+
+- [x] Align the chat shell, Controls sidebar, themes and speed simulator with Vue 3; share CSS, options, sample and chunk scheduling.
+- [x] Share code header/theme/visual/layout/surface and diff measurement helpers through core; remove duplicate Vue/Solid utility files.
+- [x] Align code headers, gutter/padding, fonts, wrapping, tab size and scrollbar reservation; eagerly render the initial batch.
+- [x] Run the existing Vue 3 handoff assertions against Solid in wrap/scroll, dark/light, first navigation/reload and narrow layouts.
+- [x] Cover native playback controls, source restoration, Unicode transport and mobile/dark settings in the production browser regression.

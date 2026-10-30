@@ -56,7 +56,7 @@ function scrubSvgElement(svgEl: SVGElement) {
   }
 }
 
-export function toSafeSvgMarkup(svg: string | null | undefined) {
+export function toSafeSvgMarkup(svg: string | null | undefined, rootClassName?: string) {
   if (typeof DOMParser === 'undefined')
     return ''
   if (!svg)
@@ -70,6 +70,8 @@ export function toSafeSvgMarkup(svg: string | null | undefined) {
 
   const svgElement = svgEl as unknown as SVGElement
   scrubSvgElement(svgElement)
+  if (rootClassName)
+    svgElement.classList.add(rootClassName)
   return svgElement.outerHTML
 }
 

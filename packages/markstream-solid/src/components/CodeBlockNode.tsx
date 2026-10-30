@@ -2,6 +2,7 @@ import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
 import type { StreamDiffsRuntimeHelpers } from '../optional/streamDiffs'
 import type { CodeBlockNodeProps, CodeBlockPreviewPayload } from '../types/component-props'
+import { buildStreamDiffsSurfaceCSS, estimateDiffStats, isDiffCodeBlock, preCodeThemeLooksDark, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
 import { createEffect, createMemo, createSignal, mergeProps, onCleanup, onMount, Show, useContext } from 'solid-js'
 import { MarkstreamConfigContext } from '../configuration'
 import { useSafeI18n } from '../i18n/useSafeI18n'
@@ -11,12 +12,9 @@ import { hideTooltip, showTooltipForAnchor } from '../tooltip/singletonTooltip'
 import { copyTextToClipboard } from '../utils/clipboard'
 import { languageIconsRevision, languageMap, normalizeLanguageIdentifier, resolveLanguageId } from '../utils/languageIcon'
 import { resolveLanguageIcon } from '../utils/resolveLanguageIcon'
-import { estimateDiffStats, isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption } from './codeBlockHeader'
 import { HtmlPreviewFrame } from './HtmlPreviewFrame'
 import { useNodeLifecycle } from './lifecycle'
 import { PreCodeNode } from './PreCodeNode'
-import { resolvePreCodeThemePalette } from './preCodeTheme'
-import { preCodeThemeLooksDark } from './preCodeThemeName'
 import { ToolbarButton } from './ToolbarButton'
 import { useHeavyNodeVisibility } from './viewport'
 
@@ -83,6 +81,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   })
   const theme = createMemo(() => typeof props.theme === 'string' ? props.theme : props.isDark ? props.theme?.dark ?? props.darkTheme ?? props.themes?.[0] ?? 'vitesse-dark' : props.theme?.light ?? props.lightTheme ?? props.themes?.[1] ?? 'vitesse-light')
   const surfaceDark = createMemo(() => typeof props.theme === 'string' ? preCodeThemeLooksDark(props.theme, props.isDark === true) : props.isDark === true)
+  const visual = createMemo(() => resolvePreCodeVisualOptions({ ...props.codeBlockOptions, fontSize: fontSize() }))
   const palette = createMemo(() => resolvePreCodeThemePalette(props))
   const previewable = createMemo(() => props.isShowPreview && (language() === 'html' || language() === 'svg'))
   const showNumbers = createMemo(() => props.showLineNumbers ?? props.codeBlockOptions?.disableLineNumbers !== true)
@@ -119,6 +118,11 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
       disableFileHeader: true,
       disableLineNumbers: !numbers,
       fontSize: font,
+      fontFamily: visual().fontFamily,
+      lineHeight: visual().lineHeight,
+      wordWrap: visual().overflow === 'wrap' ? 'on' : 'off',
+      overflow: visual().overflow,
+      unsafeCSS: buildStreamDiffsSurfaceCSS(visual().overflow, options?.unsafeCSS),
       MAX_HEIGHT: expanded() ? Infinity : options?.maxHeight ?? 500,
       workerManager: options?.workerManager ?? getStreamDiffsWorkerPool() ?? undefined,
       stream: false,
@@ -266,9 +270,9 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
           <Show
             when={props.headerLeft !== undefined}
             fallback={(
-              <div class="code-block-title">
-                <span class="code-language-icon" innerHTML={icon()} />
-                <span>
+              <div class="code-block-title code-header-main">
+                <span class="code-block-language-icon" innerHTML={icon()} />
+                <span class="code-header-title">
                   {header().title}
                   <Show when={header().caption}><small>{header().caption}</small></Show>
                 </span>
@@ -280,7 +284,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
           <Show
             when={props.headerRight !== undefined}
             fallback={(
-              <div class="code-block-actions">
+              <div class="code-block-actions code-header-actions">
                 <Show when={stats()}>
                   <span class="code-diff-stats" aria-label={`Added ${stats()!.added}, removed ${stats()!.removed}`}>
                     <span class="removed">
@@ -293,8 +297,24 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
                     </span>
                   </span>
                 </Show>
-                <Show when={props.showCopyButton}><ToolbarButton {...buttonProps()} label={t(copied() ? 'common.copied' : 'common.copy')} onClick={() => void copy()}>{copied() ? '✓' : 'Copy'}</ToolbarButton></Show>
-                <Show when={props.showCollapseButton}><ToolbarButton {...buttonProps()} label={t(collapsed() ? 'common.expand' : 'common.collapse')} pressed={collapsed()} onClick={() => setCollapsed(value => !value)}>{collapsed() ? '▸' : '▾'}</ToolbarButton></Show>
+                <Show when={props.showCopyButton}>
+                  <ToolbarButton {...buttonProps()} label={t(copied() ? 'common.copied' : 'common.copy')} onClick={() => void copy()}>
+                    <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
+                      <Show
+                        when={copied()}
+                        fallback={(
+                          <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                            <rect width="14" height="14" x="8" y="8" rx="2" />
+                            <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                          </g>
+                        )}
+                      >
+                        <path fill="none" stroke="currentColor" stroke-width="2" d="m5 12 4 4L19 6" />
+                      </Show>
+                    </svg>
+                  </ToolbarButton>
+                </Show>
+                <Show when={props.showCollapseButton}><ToolbarButton {...buttonProps()} label={t(collapsed() ? 'common.expand' : 'common.collapse')} pressed={collapsed()} onClick={() => setCollapsed(value => !value)}><svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" d={collapsed() ? 'm9 5 7 7-7 7' : 'm5 9 7 7 7-7'} /></svg></ToolbarButton></Show>
                 <Show when={(props.showFontSizeButtons && props.enableFontSizeControl) || props.showExpandButton || (previewable() && props.showPreviewButton)}>
                   <div class="code-more">
                     <button
@@ -313,7 +333,13 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
                         setMore(value => !value)
                       }}
                     >
-                      ⋮
+                      <svg viewBox="0 0 24 24" class="action-icon" aria-hidden="true">
+                        <g fill="currentColor">
+                          <circle cx="12" cy="5" r="2" />
+                          <circle cx="12" cy="12" r="2" />
+                          <circle cx="12" cy="19" r="2" />
+                        </g>
+                      </svg>
                     </button>
                     <Show when={more()}>
                       <div ref={menu} class="code-more-menu" role="menu">
@@ -346,8 +372,8 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
         </div>
       </Show>
       <div class="code-block-body" style={{ 'display': collapsed() ? 'none' : undefined, 'max-height': expanded() ? 'none' : `${props.codeBlockOptions?.maxHeight ?? 500}px`, 'overflow': expanded() ? 'visible' : 'auto' }}>
-        <div ref={host} class="code-block-editor" style={{ 'position': ready() ? undefined : 'absolute', 'visibility': ready() ? undefined : 'hidden', 'pointer-events': ready() ? undefined : 'none', 'width': '100%', 'top': '0', 'left': '0' }} />
-        <Show when={!ready()}><Show when={props.stream === false && loading()} fallback={<PreCodeNode node={props.node} context={props.context} loading={loading()} showLineNumbers={showNumbers()} diffInline={props.codeBlockOptions?.diffStyle === 'unified'} diffHideUnchangedRegions={resolveDiffHideUnchangedRegionsOption(props.codeBlockOptions)} codeBlockOptions={{ ...props.codeBlockOptions, fontSize: fontSize() }} />}><div class="code-block-loading" role="status">Loading code…</div></Show></Show>
+        <div ref={host} class="code-block-editor code-editor-container" style={{ 'position': ready() ? undefined : 'absolute', 'visibility': ready() ? undefined : 'hidden', 'pointer-events': ready() ? undefined : 'none', 'min-width': '0', 'width': '100%', 'top': '0', 'left': '0', '--diffs-font-family': visual().fontFamily, '--diffs-font-size': `${fontSize()}px`, '--diffs-line-height': `${visual().lineHeight}px`, '--diffs-tab-size': String(visual().tabSize), '--diffs-scrollbar-gutter-override': '0px', '--diffs-gap-block': props.codeBlockOptions?.padding != null ? `${visual().padding}px` : undefined }} />
+        <Show when={!ready()}><Show when={props.stream === false && loading()} fallback={<PreCodeNode themeName={palette().name} node={props.node} context={props.context} loading={loading()} showLineNumbers={showNumbers()} diffInline={props.codeBlockOptions?.diffStyle === 'unified'} diffHideUnchangedRegions={resolveDiffHideUnchangedRegionsOption(props.codeBlockOptions)} codeBlockOptions={{ ...props.codeBlockOptions, fontSize: fontSize() }} />}><div class="code-block-loading" role="status">Loading code…</div></Show></Show>
       </div>
       <Show when={preview()}><HtmlPreviewFrame code={props.node.code} isDark={props.isDark} htmlPreviewAllowScripts={props.htmlPreviewAllowScripts} htmlPreviewSandbox={props.htmlPreviewSandbox} onClose={() => setPreview(false)} /></Show>
     </div>

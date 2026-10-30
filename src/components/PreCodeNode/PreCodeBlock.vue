@@ -1,16 +1,14 @@
 <script setup lang="ts">
+import type { ResolvedPreCodeVisualOptions } from 'markstream-core'
 import type { CSSProperties } from 'vue'
 import type { CodeBlockNodeProps, CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes, PreCodeNodeProps } from '../../types/component-props'
-import type { ResolvedPreCodeVisualOptions } from './preCodeVisual'
+import { isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffInlineLayout, resolvePreCodeLayoutStyle, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
 import { computed, inject, onBeforeUnmount, ref, useAttrs } from 'vue'
 import { languageIconsRevision, languageMap, normalizeLanguageIdentifier } from '../../utils'
 import { MARKSTREAM_LANGUAGE_ICON_RESOLVER_KEY } from '../../utils/languageIconContext'
 import { resolveLanguageIcon } from '../../utils/resolveLanguageIcon'
-import { isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffInlineLayout } from '../CodeBlockNode/codeBlockHeader'
 import CodeBlockShell from '../CodeBlockNode/CodeBlockShell.vue'
 import PreCodeNode from './PreCodeNode.vue'
-import { resolvePreCodeThemePalette } from './preCodeTheme'
-import { resolvePreCodeVisualOptions } from './preCodeVisual'
 
 interface PreCodeBlockProps extends PreCodeNodeProps {
   codeBlockOptions?: CodeBlockOptions
@@ -112,9 +110,6 @@ const preClass = computed(() => [
 ])
 const preStyle = computed<CSSProperties>(() => {
   const visual = visualOptions.value
-  const horizontalPadding = props.codeBlockOptions?.padding == null
-    ? '1ch'
-    : `${visual.padding}px`
   const reservedDiffHeight = isDiff.value
     && typeof props.reservedHeightPx === 'number'
     && Number.isFinite(props.reservedHeightPx)
@@ -123,18 +118,7 @@ const preStyle = computed<CSSProperties>(() => {
     : undefined
 
   return {
-    '--markstream-code-font-family': visual.fontFamily,
-    '--markstream-code-padding-x': horizontalPadding,
-    '--markstream-code-padding-y': `${visual.padding}px`,
-    '--markstream-code-padding-bottom': `${visual.paddingBottom}px`,
-    '--markstream-code-scrollbar-gutter': `${visual.scrollbarGutter}px`,
-    '--markstream-code-tab-size': String(visual.tabSize),
-    ...(isDiff.value ? { '--markstream-pre-diff-line-height': `${visual.lineHeight}px` } : {}),
-    '--markstream-pre-line-number-top': `${visual.padding}px`,
-    '--markstream-pre-line-number-left': '0px',
-    '--markstream-pre-line-number-padding-left': '2ch',
-    '--markstream-pre-line-number-padding-right': '1ch',
-    '--markstream-pre-line-number-separator-width': '2px',
+    ...resolvePreCodeLayoutStyle(visual, { padding: props.codeBlockOptions?.padding, showLineNumbers: showLineNumbers.value, diff: isDiff.value }),
     ...(themePalette.value.builtin
       ? {
           '--markstream-code-theme-bg': themePalette.value.background,
@@ -151,34 +135,7 @@ const preStyle = computed<CSSProperties>(() => {
     '--markstream-pre-resolved-theme-bg': themePalette.value.background,
     '--markstream-pre-resolved-theme-fg': themePalette.value.foreground,
     '--markstream-pre-resolved-theme-line-number': themePalette.value.lineNumber,
-    '--markstream-pre-line-number-gap-to-code': horizontalPadding,
     '--markstream-diff-fallback-handoff-height': reservedDiffHeight ?? 'auto',
-    'backgroundColor': 'var(--markstream-code-fallback-bg, var(--markstream-code-theme-bg, var(--markstream-pre-resolved-theme-bg)))',
-    'boxSizing': 'border-box',
-    'color': 'var(--markstream-code-fallback-fg, var(--markstream-code-theme-fg, var(--markstream-pre-resolved-theme-fg)))',
-    'fontFamily': visual.fontFamily,
-    'fontSize': `${visual.fontSize}px`,
-    'lineHeight': `${visual.lineHeight}px`,
-    'margin': '0',
-    'maxHeight': `${visual.maxHeight}px`,
-    'overflow': 'auto',
-    'overflowX': visual.overflow === 'wrap' ? 'hidden' : 'auto',
-    'overflowY': 'auto',
-    'paddingBottom': `${visual.paddingBottom}px`,
-    'paddingLeft': showLineNumbers.value
-      ? 'var(--markstream-code-padding-left)'
-      : horizontalPadding,
-    'paddingRight': horizontalPadding,
-    'paddingTop': `${visual.padding}px`,
-    // stream-diffs removes the diff surface's scrollbar gutter in wrap mode;
-    // do not reserve a native gutter in the fallback or its split panes start
-    // several pixels earlier than the enhanced surface.
-    'scrollbarGutter': isDiff.value ? 'auto' : 'stable',
-    'tabSize': visual.tabSize,
-    'whiteSpace': visual.overflow === 'scroll' ? 'pre' : 'pre-wrap',
-    'overflowWrap': visual.overflow === 'wrap' ? 'anywhere' : 'normal',
-    'wordBreak': 'normal',
-    'width': '100%',
     ...(reservedDiffHeight
       ? {
           height: reservedDiffHeight,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { DiffLineMetric } from 'markstream-core'
 import type { PreCodeNodeProps } from '../../types/component-props'
-import type { DiffLineMetric } from './preCodeDiffMetrics'
-import { buildDiffPreviewPanes, createDiffMatchCache } from 'markstream-core'
+import { buildDiffPreviewPanes, createDiffMatchCache, measurePreCodeDiffLines } from 'markstream-core'
 
 import { computed, normalizeClass, normalizeStyle, onBeforeUnmount, ref, useAttrs, watch } from 'vue'
 
@@ -250,7 +250,6 @@ const preRef = ref<HTMLPreElement | null>(null)
 
 const diffLineMetrics = ref<DiffLineMetric[]>([])
 let diffLineMetricsRaf: number | null = null
-let diffMetricsModule: Promise<typeof import('./preCodeDiffMetrics')> | null = null
 let disposed = false
 let diffResizeObserver: ResizeObserver | null = null
 
@@ -268,16 +267,10 @@ function scheduleDiffLineMetricsSync() {
   if (diffLineMetricsRaf != null)
     return
 
-  const module = diffMetricsModule ??= import('./preCodeDiffMetrics')
   diffLineMetricsRaf = window.requestAnimationFrame(() => {
-    void module.then(({ measurePreCodeDiffLines }) => {
-      if (!disposed && preRef.value)
-        diffLineMetrics.value = measurePreCodeDiffLines(preRef.value, diffLineMetrics.value)
-    }, () => {
-      diffMetricsModule = null
-    }).finally(() => {
-      diffLineMetricsRaf = null
-    })
+    if (!disposed && preRef.value)
+      diffLineMetrics.value = measurePreCodeDiffLines(preRef.value, diffLineMetrics.value)
+    diffLineMetricsRaf = null
   })
 }
 

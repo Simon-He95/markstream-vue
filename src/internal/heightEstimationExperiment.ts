@@ -1,9 +1,8 @@
 import type { PreparedText } from '@chenglou/pretext'
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { CodeBlockOptions } from '../types/component-props'
+import { resolveDiffInlineLayout, resolvePreCodeVisualOptions } from 'markstream-core'
 import { shallowRef } from 'vue'
-import { resolveDiffInlineLayout } from '../components/CodeBlockNode/codeBlockHeader'
-import { resolvePreCodeVisualOptions } from '../components/PreCodeNode/preCodeVisual'
 
 type WhiteSpaceMode = 'normal' | 'pre-wrap'
 type EstimateKind = 'simple-text' | 'code-block'

@@ -19,19 +19,19 @@ markstream-solid {
 
 /* Theme variables for renderer colors */
 .markstream-solid {
-  --border: 214.3 31.8% 91.4%;
+  --border: 0 0% 87%;
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --secondary: 210 40% 96%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
+  --foreground: 0 0% 10%;
+  --secondary: 0 0% 93.5%;
+  --muted: 0 0% 96.5%;
+  --muted-foreground: 0 0% 43%;
   --ms-background: var(--background);
   --ms-foreground: var(--foreground);
   --ms-muted: var(--muted);
   --ms-muted-foreground: var(--muted-foreground);
   --ms-secondary: var(--secondary);
   --ms-secondary-foreground: var(--foreground);
-  --ms-accent: 210 40% 91%;
+  --ms-accent: 0 0% 91%;
   --ms-accent-foreground: var(--foreground);
   --ms-border: var(--border);
   --ms-popover: var(--background);
@@ -74,9 +74,9 @@ markstream-solid {
   --ms-ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ms-shadow-subtle: 0 1px 3px 0 hsl(var(--ms-foreground) / 0.06);
   --ms-shadow-modal: 0 10px 15px -3px hsl(var(--ms-foreground) / 0.1), 0 4px 6px -4px hsl(var(--ms-foreground) / 0.1);
-  color: hsl(var(--foreground));
-  font:
-    400 16px/1.72 "IBM Plex Sans", "Segoe UI", sans-serif;
+  --ms-font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  color: hsl(var(--ms-foreground));
+  font: 400 16px/1.75 var(--ms-font-sans);
   word-break: break-word;
   position: relative;
 }
@@ -94,13 +94,13 @@ markstream-solid {
 
 .dark .markstream-solid,
 .markstream-solid.dark {
-  --border: 217.2 32.6% 17.5%;
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --secondary: 217.2 32.6% 17.5%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  --ms-accent: 217.2 32.6% 24%;
+  --border: 0 0% 20%;
+  --background: 0 0% 7%;
+  --foreground: 0 0% 93%;
+  --secondary: 0 0% 16%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 60%;
+  --ms-accent: 0 0% 24%;
   --code-fg: hsl(0 0% 93%);
   --code-bg: #111827;
   --code-header-bg: hsl(var(--ms-muted));
@@ -1652,6 +1652,7 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .code-block-body {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   overflow: hidden;
   background: var(--markstream-code-fallback-bg, var(--code-bg));
@@ -2942,3 +2943,10 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .diagram-content {max-width:100%;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;}
 .markstream-solid.code-block-container {margin:1rem 0;border:1px solid var(--code-border);border-radius:var(--ms-radius,.5rem);color:var(--code-fg);background:var(--code-bg);}
 .markstream-solid.diagram-block-container {margin:1rem 0;border:1px solid var(--diagram-border);border-radius:var(--ms-radius,.5rem);overflow:hidden;background:var(--diagram-bg);}
+
+.markstream-solid .code-block-header {padding:6px 10px;font-family:ui-sans-serif,system-ui,sans-serif;}
+.markstream-solid .code-header-main {gap:10px;}
+.markstream-solid .code-header-title {font-size:12px;color:hsl(var(--ms-muted-foreground));font-family:inherit;}
+.markstream-solid .code-header-actions {gap:2px;}
+.markstream-solid .code-block-header .code-action-btn:not([role="menuitem"]) {width:26px;height:26px;padding:6px;line-height:1;}
+.markstream-solid .code-block-header .code-action-btn .action-icon {width:14px;height:14px;display:block;}

@@ -19,24 +19,25 @@ import { reuseParsedNodes, sameParserValue } from './shared/reuseParsedNodes'
 import { buildVirtualMeasurementKey, buildVirtualRendererLayoutKey } from './virtualLayoutKey'
 
 export interface MarkdownRenderProps extends NodeRendererProps {
-  class?: string
-  className?: string
-  style?: JSX.CSSProperties
-  onCopy?: (code: string) => void
-  onCopyCode?: (payload: {
+  'data-theme'?: string
+  'class'?: string
+  'className'?: string
+  'style'?: JSX.CSSProperties
+  'onCopy'?: (code: string) => void
+  'onCopyCode'?: (payload: {
     type: 'copy'
     text: string
   }) => void
-  onHandleArtifactClick?: (payload: CodeBlockPreviewPayload) => void
-  ref?: (handle: MarkstreamRendererHandle) => void
-  onHeightChange?: (metrics: MarkstreamVirtualMetrics) => void
-  onVirtualStateChange?: (state: MarkstreamVirtualState) => void
-  onAnchorChange?: (anchor: MarkstreamVirtualAnchor) => void
-  onRenderSettled?: (metrics: MarkstreamVirtualMetrics) => void
-  onRenderFinal?: (metrics: MarkstreamVirtualMetrics) => void
-  onClick?: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent>
-  onMouseover?: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent>
-  onMouseout?: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent>
+  'onHandleArtifactClick'?: (payload: CodeBlockPreviewPayload) => void
+  'ref'?: (handle: MarkstreamRendererHandle) => void
+  'onHeightChange'?: (metrics: MarkstreamVirtualMetrics) => void
+  'onVirtualStateChange'?: (state: MarkstreamVirtualState) => void
+  'onAnchorChange'?: (anchor: MarkstreamVirtualAnchor) => void
+  'onRenderSettled'?: (metrics: MarkstreamVirtualMetrics) => void
+  'onRenderFinal'?: (metrics: MarkstreamVirtualMetrics) => void
+  'onClick'?: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent>
+  'onMouseover'?: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent>
+  'onMouseout'?: JSX.EventHandlerUnion<HTMLDivElement, MouseEvent>
 }
 const SmoothScope = createContext<() => boolean>(() => false)
 const RendererScope = createContext<() => NodeRendererProps>(() => ({}))
@@ -693,7 +694,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     })
   })
   const Content = () => (
-    <div ref={root} class={`markstream-solid markdown-renderer ${props.class ?? props.className ?? ''}`} classList={{ 'dark': !!props.isDark, 'virtualized': virtual(), 'typewriter-simple-cursor': simpleCursor() }} style={{ position: 'relative', ...props.style }} data-custom-id={props.customId} data-rendered-nodes={visible().length} data-total-nodes={nodes().length} data-stream-caught-up={!enabled() || stream.snapshot().caughtUp ? 'true' : 'false'} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
+    <div ref={root} class={`markstream-solid markdown-renderer ${props.class ?? props.className ?? ''}`} classList={{ 'dark': !!props.isDark, 'virtualized': virtual(), 'typewriter-simple-cursor': simpleCursor() }} style={{ position: 'relative', ...props.style }} data-theme={props['data-theme']} data-custom-id={props.customId} data-rendered-nodes={visible().length} data-total-nodes={nodes().length} data-stream-caught-up={!enabled() || stream.snapshot().caughtUp ? 'true' : 'false'} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
       <Show when={range().start > 0}><div class="virtual-spacer" aria-hidden="true" style={{ height: `${offsets()[range().start]}px` }} /></Show>
       <Show
         when={minimalDom() || props.renderAsFragment}
@@ -701,7 +702,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
           <For each={visibleIndices()}>
             {(index) => {
               const node = createMemo(() => nodes()[index])
-              return <NodeSlot node={node()} index={index} indexKey={`${props.indexKey ?? 'markdown'}-${index}`} context={context()} defer={shellDeferral()} margin={props.viewportPriorityOptions?.rootMargin ?? '400px'} estimatedHeight={(offsets()[index + 1] ?? 48) - (offsets()[index] ?? 0)} />
+              return <NodeSlot node={node()} index={index} indexKey={`${props.indexKey ?? 'markdown'}-${index}`} context={context()} defer={shellDeferral() && index >= (props.initialRenderBatchSize ?? 40)} margin={props.viewportPriorityOptions?.rootMargin ?? '400px'} estimatedHeight={(offsets()[index + 1] ?? 48) - (offsets()[index] ?? 0)} />
             }}
           </For>
         )}

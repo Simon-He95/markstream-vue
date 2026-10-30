@@ -1,0 +1,18 @@
+
+.handoff-check {
+  padding: 24px;
+  font-family: system-ui, sans-serif;
+  background: #f5f7fb;
+  min-height: 100vh;
+}
+.handoff-check.dark {
+  background: #0b1220;
+  color: #e2e8f0;
+}
+.col {
+  max-width: 860px;
+  margin-bottom: 32px;
+}
+.handoff-check h2 {
+  margin-top: 20px;
+}

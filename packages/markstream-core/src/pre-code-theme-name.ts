@@ -1,11 +1,9 @@
-import type { CodeBlockTheme, CodeBlockThemeProp } from '../types/component-props'
-
 export interface PreCodeThemeInput {
   isDark?: boolean
-  theme?: CodeBlockThemeProp
-  darkTheme?: CodeBlockTheme
-  lightTheme?: CodeBlockTheme
-  themes?: readonly CodeBlockTheme[]
+  theme?: string | { dark: string, light: string }
+  darkTheme?: string
+  lightTheme?: string
+  themes?: readonly string[]
 }
 
 export function resolvePreCodeThemeName(input: PreCodeThemeInput): string {

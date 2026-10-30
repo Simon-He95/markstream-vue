@@ -33,5 +33,5 @@ export function NodeSlot(props: {
       onCleanup(() => observer.disconnect())
     })
   })
-  return <div ref={slot} class="node-slot" data-node-index={props.index} data-node-type={props.node.type} data-node-deferred={!ready() ? 'true' : undefined} style={{ 'min-height': ready() ? undefined : `${props.estimatedHeight}px` }}><Show when={ready()}><div class="node-content" classList={{ 'fade-node': props.context.fade !== false && props.node.type !== 'code_block' }}><RenderNode node={props.node} context={props.context} indexKey={props.indexKey} /></div></Show></div>
+  return <div ref={slot} class="node-slot" data-node-index={props.index} data-node-type={props.node.type} data-node-deferred={!ready() ? 'true' : undefined} style={{ 'min-height': ready() ? undefined : `${props.estimatedHeight}px` }}><Show when={ready()}><div class="node-content" classList={{ 'fade-node': props.context.fade !== false && props.context.final !== true && props.node.type !== 'code_block' }}><RenderNode node={props.node} context={props.context} indexKey={props.indexKey} /></div></Show></div>
 }

@@ -1,16 +1,14 @@
+import type { DiffLineMetric } from 'markstream-core'
 import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
 import type { CodeBlockOptions, PreCodeNodeProps } from '../types/component-props'
-import type { DiffLineMetric } from './preCodeDiffMetrics'
-import { buildDiffPreviewPanes, createDiffMatchCache } from 'markstream-core'
+import { buildDiffPreviewPanes, createDiffMatchCache, isDiffCodeBlock, measurePreCodeDiffLines, resolvePreCodeLayoutStyle, resolvePreCodeVisualOptions } from 'markstream-core'
 import { createEffect, createMemo, createSignal, Index, onCleanup, onMount, Show } from 'solid-js'
-import { isDiffCodeBlock } from './codeBlockHeader'
-import { measurePreCodeDiffLines } from './preCodeDiffMetrics'
-import { resolvePreCodeVisualOptions } from './preCodeVisual'
 import { resolveCodeBlockLanguage } from './shared/node-helpers'
 
 export function PreCodeNode(props: PreCodeNodeProps & Omit<NodeComponentProps, 'node'> & {
   codeBlockOptions?: CodeBlockOptions
+  themeName?: string
   class?: string
   style?: JSX.CSSProperties
 }): JSX.Element {
@@ -54,8 +52,19 @@ export function PreCodeNode(props: PreCodeNodeProps & Omit<NodeComponentProps, '
       })
     })
   })
+  const preStyle = createMemo<JSX.CSSProperties>(() => {
+    const options = visual()
+    return {
+      ...resolvePreCodeLayoutStyle(options, { padding: (props.codeBlockOptions ?? props.context?.codeBlockOptions)?.padding, showLineNumbers: props.showLineNumbers, diff: diff() }),
+      '--markstream-pre-resolved-theme-bg': 'var(--code-bg)',
+      '--markstream-pre-resolved-theme-fg': 'var(--code-fg)',
+      '--markstream-pre-line-number-width': `${Math.max(2, String(code().split(/\r\n|\r|\n/).length).length)}ch`,
+      'min-height': props.reservedHeightPx ? `${props.reservedHeightPx}px` : undefined,
+      ...props.style,
+    }
+  })
   const Content = () => (
-    <pre ref={root} class={`pre-code markstream-pre language-${resolveCodeBlockLanguage(props.node as any)} ${props.class ?? ''}`} classList={{ 'markstream-pre--line-numbers': !!props.showLineNumbers, 'markstream-pre--diff-preview': diff(), 'markstream-pre--diff-inline': !!props.diffInline }} data-markstream-pre="1" data-markstream-code-loading={loading() ? '1' : undefined} aria-busy={loading()} style={{ 'font-family': visual().fontFamily, 'font-size': `${visual().fontSize}px`, 'line-height': `${visual().lineHeight}px`, 'tab-size': visual().tabSize, 'white-space': visual().overflow === 'scroll' ? 'pre' : 'pre-wrap', 'padding': `${visual().padding}px`, 'max-height': `${visual().maxHeight}px`, '--markstream-pre-line-number-width': `${Math.max(2, String(code().split(/\r\n|\r|\n/).length).length)}ch`, 'min-height': props.reservedHeightPx ? `${props.reservedHeightPx}px` : undefined, ...props.style }}>
+    <pre ref={root} class={`pre-code code-pre-fallback markstream-pre language-${resolveCodeBlockLanguage(props.node as any)} ${props.class ?? ''}`} classList={{ 'markstream-pre--line-numbers': !!props.showLineNumbers, 'markstream-pre--diff-preview': diff(), 'markstream-pre--diff-inline': !!props.diffInline, 'is-wrap': wrap() }} data-markstream-pre="1" data-markstream-code-theme={props.themeName} data-markstream-code-loading={loading() ? '1' : undefined} aria-busy={loading()} style={preStyle()}>
       <Show
         when={diff()}
         fallback={(
@@ -64,7 +73,7 @@ export function PreCodeNode(props: PreCodeNodeProps & Omit<NodeComponentProps, '
               when={props.showLineNumbers && wrap()}
               fallback={(
                 <>
-                  <Show when={props.showLineNumbers}><span class="markstream-pre__line-numbers" aria-hidden="true">{numbers()}</span></Show>
+                  <Show when={props.showLineNumbers}><span class="markstream-pre__line-numbers" aria-hidden="true"><span class="markstream-pre__line-numbers-text">{numbers()}</span></span></Show>
                   <code class={`markstream-pre__code language-${resolveCodeBlockLanguage(props.node as any)}`} translate="no">{code()}</code>
                 </>
               )}

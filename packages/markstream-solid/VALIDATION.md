@@ -7,10 +7,12 @@
 | 检查 | 结果 |
 | --- | --- |
 | Vue 3 公开 API 对照 | 181 个运行时导出对应项、10 组组件/渲染器属性契约通过 |
-| Solid 客户端单元测试 | 7 个文件，63 个测试通过 |
+| Solid 客户端单元测试 | 7 个文件，64 个测试通过 |
 | Solid SSR 单元测试 | 3 个测试通过 |
-| 原仓库全量测试 | 392 个文件，3,528 个测试通过（限并发完整运行） |
-| 根目录及 Solid 类型检查 | 通过 |
+| 公共 core 单元测试 | 8 个文件，103 个测试通过 |
+| Vue 3 / Solid pre → highlight 几何交接 | wrap / scroll、首次导航 / 刷新、窄屏、明暗主题全部通过 |
+| 原仓库全量测试 | 393 个文件，3,532 个测试通过（限并发完整运行） |
+| 根目录及 Solid 类型检查、根库构建 | 通过 |
 | Solid browser/node 构建、声明、CSS、worker/utils/tailwind 子路径 | 通过 |
 | tarball 独立安装、外部 TSX 消费者及 SSR | 通过；临时消费者没有 Vue/React，也没有安装可选 peers |
 | Solid playground 生产构建 | 通过 |
@@ -18,7 +20,7 @@
 | peer dependencies、frozen lockfile | 通过 |
 | 仓库 lint | 排除任务开始前已有的未跟踪 video/ 目录后通过；本次没有修改该目录 |
 
-默认并发的仓库测试首轮出现动态导入错误及超时；失败的 10 个文件限并发复跑后 287 个用例通过，随后完整限并发运行的 3,528 个用例全部通过。未修改旧测试或 Vue 库源码来放宽断言。完整命令为：
+仓库全量测试使用限并发运行。共享样式提取改变了内联 CSS 属性顺序，相应更新一个代码块快照；移除 lazy measurement chunk 后，将旧的源码字符串检查替换为实际的 rAF 合并、卸载取消及旧回调行为测试。没有放宽几何交接断言。完整命令为：
 
 ```bash
 pnpm exec vitest --run --maxWorkers=2 --testTimeout=30000 --hookTimeout=30000
@@ -28,6 +30,9 @@ jsdom 对旧高度估算器的 Canvas getContext 打印未实现提示，但最�
 
 ## 回归场景
 
+- 与 Vue 3 共用聊天页 CSS、速度面板 CSS、主题列表、Markdown 样例与分片采样算法；实际操作品牌/代码主题、HTML policy、TPS/两种随机传输、源码编辑/恢复及手机端深色设置。
+- 代码头的 padding/gap、Material 图标、26px 按钮，pre/highlight 的字体、行高、tab size、gutter、滚动条及 wrap/scroll。首批节点立即渲染；实测换行交接首字符横向差约 0.03px、纵坐标相同，切换前后块高度均为 383px（本机）。
+- 共用 ReadableStream 的 1 字符 Unicode 分片回归；修复 UTF-16 代理对被拆开编码时 emoji 损坏的问题。
 - 1 / 7 / 64 / 1024 字符分片，与直接 final 渲染比较；覆盖中英文、emoji、格式化文本、列表、表格、链接及未闭合围栏。
 - 非追加替换、清空、全量恢复后续流、重复 final、平滑流收尾、simple/precise 光标收尾及卸载清理。
 - 根、段落、文本、代码 DOM 引用复用；编辑器实例增量更新；已完成代码块不因后续段落重复更新。
@@ -42,7 +47,7 @@ jsdom 对旧高度估算器的 Canvas getContext 打印未实现提示，但最�
 
 ## 性能方法
 
-Chrome 156.0.8078.49，1440 × 1000。原始记录时间：2026-10-30T08:30:17.108Z。生产构建中 Vue 3 / Solid 使用相同 parser、语料和渲染选项；可选集成在 playground 中 dedupe 为同一依赖实例。预热 1 轮、测量 3 轮，交替框架顺序后取中位数。
+Chrome 156.0.8078.49，1440 × 1000。原始记录时间：2026-10-30T09:24:45.176Z。生产构建中 Vue 3 / Solid 使用相同 parser、语料和渲染选项；可选集成在 playground 中 dedupe 为同一依赖实例。预热 1 轮、测量 3 轮，交替框架顺序后取中位数。
 
 普通恢复语料是 250 个章节、1,000 个顶层节点、40,478 字符；普通流式使用 12 个章节、每帧追加 128 字符。长历史追加先渲染这 1,000 个节点，种子恢复不计时，然后继续追加尾部。重内容包含真实代码高亮、diff、KaTeX 和 Mermaid，等待相应 DOM 目标出现。D2/infographic 做了真实浏览器功能验证，未将它们的渲染耗时纳入比较表。
 
@@ -50,19 +55,19 @@ Chrome 156.0.8078.49，1440 × 1000。原始记录时间：2026-10-30T08:30:17.1
 
 | 场景 | 总耗时 ms（Vue 3 / Solid） | 更新 P95 ms（Vue 3 / Solid） | 帧间隔 P95 ms（Vue 3 / Solid） | 长任务次数（Vue 3 / Solid） |
 | --- | --- | --- | --- | --- |
-| 全量立即恢复 | 257.7 / 181.6 | 197.5 / 168.6 | 257.7 / 178.9 | 1 / 1 |
-| 64 节点窗口恢复 | 51.9 / 22.3 | 48.2 / 20.2 | 49.4 / 21.8 | 0 / 0 |
-| 分批恢复 | 247.3 / 766.6 | 237.0 / 15.4 | 247.3 / 17.7 | 1 / 0 |
-| 普通流式更新 | 266.5 / 266.4 | 4.2 / 3.2 | 17.5 / 17.4 | 0 / 0 |
-| 重内容恢复 | 33.6 / 33.2 | 3.3 / 3.0 | 21.2 / 19.4 | 0 / 0 |
-| 重内容流式更新 | 116.8 / 116.3 | 2.0 / 1.8 | 17.5 / 17.7 | 0 / 0 |
-| 1,000 节点历史后继续追加 | 148.9 / 189.1 | 61.8 / 38.5 | 64.5 / 42.0 | 1 / 0 |
+| 全量立即恢复 | 264.2 / 208.7 | 205.1 / 195.4 | 264.0 / 206.5 | 1 / 1 |
+| 64 节点窗口恢复 | 56.2 / 21.4 | 52.3 / 19.4 | 53.7 / 21.0 | 1 / 0 |
+| 分批恢复 | 263.8 / 766.6 | 253.1 / 15.7 | 263.8 / 18.4 | 1 / 0 |
+| 普通流式更新 | 261.5 / 266.6 | 5.1 / 3.1 | 17.6 / 17.3 | 0 / 0 |
+| 重内容恢复 | 34.3 / 33.3 | 3.3 / 3.6 | 23.0 / 19.2 | 0 / 0 |
+| 重内容流式更新 | 116.8 / 117.7 | 2.0 / 1.8 | 17.6 / 17.5 | 0 / 0 |
+| 1,000 节点历史后继续追加 | 139.2 / 181.1 | 57.4 / 39.8 | 60.3 / 46.5 | 1 / 0 |
 
 立即恢复和窗口恢复在本机语料中 Solid 耗时较低；分批恢复的完整落地时间更长，但首次更新和帧间隔更短，并避免了本轮的长任务。长历史追加的 Solid 更新 P95 较低，但端到端耗时并非所有场景都更短，不能宣称全面更快。布局包装层、调度与框架运行时不同，DOM 元素数也不同。
 
 初次加入长历史追加测试时触发了回归阈值。CPU 采样显示主要开销是稳定历史节点重复参与响应式传播，解析只占少部分；修复包括解析配置去重、结构相同节点复用、每个逻辑索引的 memo 及细粒度 store context。新增引用回填和稳定前缀更新测试，避免复用造成旧内容。浏览器更新回归阈值为 `max(100ms, Vue 3 P95 × 2)`；内容、DOM/实例复用和活动节点上限独立断言。
 
-原始数据和截图位于仓库根目录 `.tmp/solid/performance.json`、`.tmp/solid/measurements.json`、`.tmp/solid/playground.png`、`.tmp/solid/parity.png`，由测试生成且被 git 忽略。本页保存本轮摘要。
+原始数据和截图位于仓库根目录 `.tmp/solid/performance.json`、`.tmp/solid/measurements.json`、`.tmp/solid/playground.png`、`.tmp/solid/parity.png`，由测试生成且被 git 忽略。本页保存本轮摘要；本轮完整原始数据另存为 [benchmarks/performance.json](./benchmarks/performance.json)。
 
 ## 重复执行
 
@@ -71,6 +76,8 @@ pnpm --filter markstream-solid typecheck
 pnpm test:solid
 pnpm test:smoke:solid
 pnpm test:e2e:solid-playground
+pnpm test:e2e:line-number-handoff-playgrounds --framework=vue3,solid
+CODE_OVERFLOW=scroll pnpm test:e2e:line-number-handoff-playgrounds --framework=vue3,solid
 pnpm typecheck
 pnpm exec vitest --run --maxWorkers=2 --testTimeout=30000 --hookTimeout=30000
 pnpm exec eslint . --cache --ignore-pattern 'video/**'

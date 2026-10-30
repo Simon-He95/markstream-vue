@@ -194,6 +194,19 @@ describe('solid renderer streaming and restore', () => {
     expect(view.host.textContent).toContain('<div>safe</div>')
     expect(view.host.querySelector('.rich-node div')).toBeNull()
   })
+  it('renders the initial batch immediately and defers later shells until observed', () => {
+    vi.stubGlobal('IntersectionObserver', class {
+      observe() { }
+      disconnect() { }
+    })
+    const view = mount({ 'content': '# title\n\nFirst\n\nLater', 'final': true, 'initialRenderBatchSize': 2, 'maxLiveNodes': 220, 'deferNodesUntilVisible': true, 'data-theme': 'claude' })
+    expect(view.host.querySelector('h1')?.textContent).toBe('title')
+    expect(view.host.querySelector('p')?.textContent).toBe('First')
+    expect(view.host.querySelectorAll('[data-node-deferred="true"]')).toHaveLength(1)
+    expect(view.host.querySelector('.fade-node')).toBeNull()
+    expect(view.host.querySelector('.markdown-renderer')?.getAttribute('data-theme')).toBe('claude')
+  })
+
   it('batches full history restoration and cancels pending work on unmount', async () => {
     vi.useFakeTimers()
     const content = Array.from({ length: 200 }, (_, index) => `paragraph ${index}`).join('\n\n')

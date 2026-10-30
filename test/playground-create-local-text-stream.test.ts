@@ -31,6 +31,31 @@ describe('playground local text stream', () => {
     controller.abort()
   })
 
+  it('preserves Unicode characters when a one-unit chunk crosses a surrogate pair', async () => {
+    vi.useFakeTimers()
+    const source = 'a🚀中文😀z'
+    const stream = createLocalTextStream(source, {
+      chunkDelayMin: 1,
+      chunkDelayMax: 1,
+      chunkSizeMin: 1,
+      chunkSizeMax: 1,
+      sliceMode: 'pure-random',
+    })
+    const reader = stream.getReader()
+    const decoder = new TextDecoder()
+    const output = (async () => {
+      let text = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done)
+          return text + decoder.decode()
+        text += decoder.decode(value, { stream: true })
+      }
+    })()
+    await vi.runAllTimersAsync()
+    expect(await output).toBe(source)
+  })
+
   it('keeps boundary-aware mode snapped to token boundaries', async () => {
     vi.useFakeTimers()
     const controller = new AbortController()

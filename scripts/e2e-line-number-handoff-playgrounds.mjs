@@ -14,6 +14,7 @@ const overflowMode = process.env.CODE_OVERFLOW === 'scroll' ? 'scroll' : 'wrap'
 const route = `/line-number-handoff-check?theme=dark&codeOverflow=${overflowMode}`
 const frameworkSpecs = {
   vue3: { directory: 'playground', runner: 'vite' },
+  solid: { directory: 'playground-solid', runner: 'vite' },
   vue2: { directory: 'playground-vue2', prepare: 'vue2', runner: 'vite' },
   vue2cli: { directory: 'playground-vue2-cli', prepare: 'vue2', runner: 'vue-cli' },
   react18: { directory: 'playground-react18', runner: 'vite' },
@@ -31,8 +32,8 @@ const preparationSpecs = {
   react: ['--dir', 'packages/markstream-react', 'build'],
   octane: ['--dir', 'packages/markstream-octane', 'build'],
 }
-const vue3HeaderParityFrameworks = new Set(['vue3', 'vue2', 'react18', 'react19', 'angular', 'next14', 'next15'])
-const strictCodeHandoffFrameworks = new Set(['vue2', 'react18', 'svelte'])
+const vue3HeaderParityFrameworks = new Set(['vue3', 'vue2', 'react18', 'react19', 'angular', 'next14', 'next15', 'solid'])
+const strictCodeHandoffFrameworks = new Set(['vue2', 'react18', 'svelte', 'solid'])
 const codeCharacterHandoffTolerance = 0.05
 const stableHeaderFrameworks = new Set(['vue2'])
 const activeServers = new Set()

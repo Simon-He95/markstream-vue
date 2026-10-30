@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
+import { resolvePreCodeThemePalette } from 'markstream-core'
 import { describe, expect, it } from 'vitest'
 import PreCodeBlock from '../src/components/PreCodeNode/PreCodeBlock.vue'
-import { resolvePreCodeThemePalette } from '../src/components/PreCodeNode/preCodeTheme'
 
 const node = {
   type: 'code_block' as const,

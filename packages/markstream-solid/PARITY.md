@@ -26,6 +26,22 @@
 | 外层会话列表 | MarkstreamVirtualTimeline / useMarkstreamVirtualAdapter；窗口、测量、锚点、缓存、线程隔离和旧任务清理 | virtual-state、virtual-adapter |
 | 包与 worker | browser/node 条件导出、SSR/hydration、utils、worker clients/CDN helpers/worker 入口、CSS 和 tailwind 入口 | API gate、SSR、消费者 smoke、浏览器 |
 
+## 公共实现审查
+
+| 公共能力 | 复用来源 | 框架层保留的部分 |
+| --- | --- | --- |
+| 平滑流与 streaming 文本状态 | `markstream-core` 的 stream controller / text-state resolver | Solid accessor、effect 和卸载绑定 |
+| diff 预览与匹配缓存 | `markstream-core` 的 `buildDiffPreviewPanes` / `createDiffMatchCache` | Solid 行节点与 ResizeObserver 调度 |
+| 代码头、diff 统计、主题、字体/行高、padding/gutter、diff 行测量、运行时 surface CSS | Vue 3 与 Solid 直接导入同一份 `markstream-core` 工具 | 各自组件、ref、事件与编辑器生命周期 |
+| 通用 SVG 清洗 | Vue D2 与 Solid 直接导入 `markstream-core` 的 `toSafeSvgMarkup`；保留 Vue D2 的 root class | 各自预览容器、下载和 artifact 事件 |
+| Mermaid theme directive 与图表平移 | `markstream-core` 的 directive / pan gesture | 实例加载、可见性与 Solid 事件绑定 |
+| Markdown AST、HTML 标签/属性与 Mermaid SVG 清洗 | `stream-markdown-parser` | Solid 节点组件及 provider 配置 |
+| playground 外观与分片模拟 | `playground-shared`；共用 Vue playground 的纯数据/流生成函数 | 原生 Solid 控件与 TPS/stream 生命周期 |
+
+代码块纯工具已移除 Vue/Solid 各自的副本。框架响应式状态、provider、SSR/hydration 与 DOM 生命周期继续留在各自包中，避免 core 依赖 Vue 或 Solid。
+
+预览到高亮交接复用 Vue 3 的 gutter、padding、字体与运行时 CSS 契约；浏览器检查覆盖 wrap/scroll、首次导航/刷新、窄屏、明暗主题、首字符坐标、切换边界高度及无空白帧。首批节点直接渲染，后续节点才按视口推迟。
+
 ## 框架绑定方式
 
 Vue 的 `app.use(VueRendererMarkdown)` 对应 Solid 的 `MarkstreamProvider`，不会引入 Vue 运行时。Vue 的事件、具名插槽与组件 ref 分别使用 Solid 回调、`headerLeft` / `headerRight` JSX/render props 与 `ref={handle => ...}`。流式 composable 的响应式值使用 `source()`、`visible()`、`done()`、`final()` 等 accessor，也保留 `snapshot()`。

@@ -40,4 +40,4 @@ jobs:
       - name: Publish preview packages
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm dlx pkg-pr-new publish . ./packages/markdown-parser ./packages/markstream-octane ./packages/markstream-react ./packages/markstream-vue2
+        run: pnpm dlx pkg-pr-new publish . ./packages/markdown-parser ./packages/markstream-core ./packages/markstream-solid ./packages/markstream-octane ./packages/markstream-react ./packages/markstream-vue2

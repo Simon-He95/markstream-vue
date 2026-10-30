@@ -1,0 +1,339 @@
+:is(.markstream-vue, .markstream-solid) {
+
+  /* Base tokens — self-contained defaults.
+   * Override --ms-* directly to customise (e.g. .markstream-vue { --ms-foreground: ... }). */
+  --ms-background:              0 0% 100%;
+  --ms-foreground:              0 0% 10%;
+
+  --ms-muted:                   0 0% 96.5%;
+  --ms-muted-foreground:        0 0% 43%;
+
+  --ms-secondary:               0 0% 93.5%;
+  --ms-secondary-foreground:    0 0% 10%;
+
+  --ms-accent:                  0 0% 91%;
+  --ms-accent-foreground:       0 0% 10%;
+
+  --ms-primary:                 0 0% 10%;
+  --ms-primary-foreground:      0 0% 100%;
+
+  --ms-destructive:             0 62% 52%;
+  --ms-destructive-foreground:  0 0% 100%;
+
+  --ms-border:                  0 0% 87%;
+  --ms-ring:                    0 0% 10%;
+
+  --ms-popover:                 0 0% 100%;
+  --ms-popover-foreground:      0 0% 10%;
+
+  --ms-radius:                  0.5rem;
+
+  /* Extension: markdown-specific, no shadcn collision
+   * Functional colors: unified sat ~58-64%, lightness tuned for
+   * equal visual weight on neutral canvas.
+   * Highlight & warning use dark foreground (light bg). */
+  --ms-info:                    215 60% 50%;
+  --ms-info-foreground:         0 0% 100%;
+
+  --ms-success:                 152 56% 39%;
+  --ms-success-foreground:      0 0% 100%;
+
+  --ms-warning:                 38 64% 46%;
+  --ms-warning-foreground:      0 0% 9%;
+
+  --ms-diff-added:              152 50% 36%;
+  --ms-diff-removed:            0 58% 48%;
+
+  --ms-highlight:               50 60% 72%;
+  --ms-highlight-foreground:    0 0% 0%;
+
+  --ms-font-sans:               ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --ms-font-mono:               ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.dark :is(.markstream-vue, .markstream-solid),
+:is(.markstream-vue, .markstream-solid).dark {
+
+  /* Dark defaults
+   * Neutral steps: bg 7 → muted 12 → secondary 16 → border 20 → accent 24
+   * Ensures each surface level is visually distinguishable. */
+  --ms-background:              0 0% 7%;
+  --ms-foreground:              0 0% 93%;
+
+  --ms-muted:                   0 0% 12%;
+  --ms-muted-foreground:        0 0% 60%;
+
+  --ms-secondary:               0 0% 16%;
+  --ms-secondary-foreground:    0 0% 93%;
+
+  --ms-accent:                  0 0% 24%;
+  --ms-accent-foreground:       0 0% 93%;
+
+  --ms-primary:                 0 0% 93%;
+  --ms-primary-foreground:      0 0% 10%;
+
+  --ms-destructive:             0 60% 50%;
+  --ms-destructive-foreground:  0 0% 93%;
+
+  --ms-border:                  0 0% 20%;
+  --ms-ring:                    0 0% 80%;
+
+  --ms-popover:                 0 0% 9%;
+  --ms-popover-foreground:      0 0% 93%;
+
+  /* Extension: dark overrides — lightness lifted for readability */
+  --ms-info:                    215 55% 62%;
+  --ms-info-foreground:         0 0% 100%;
+
+  --ms-success:                 152 48% 55%;
+  --ms-success-foreground:      0 0% 100%;
+
+  --ms-warning:                 32 65% 58%;
+  --ms-warning-foreground:      0 0% 9%;
+
+  --ms-diff-added:              152 42% 60%;
+  --ms-diff-removed:            0 58% 58%;
+
+  --ms-highlight:               48 65% 50%;
+  --ms-highlight-foreground:    0 0% 0%;
+
+  /* Shadows: use black in dark mode (foreground is bright, would glow) */
+  --ms-shadow-subtle: 0 1px 3px 0 hsl(0 0% 0% / 0.25);
+  --ms-shadow-popover: 0 4px 6px -1px hsl(0 0% 0% / 0.2),
+                       0 2px 4px -2px hsl(0 0% 0% / 0.15);
+  --ms-shadow-modal: 0 10px 15px -3px hsl(0 0% 0% / 0.5),
+                     0 4px 6px -4px hsl(0 0% 0% / 0.4);
+  --ms-shadow-preview: 0 10px 40px hsl(0 0% 0% / 0.6);
+
+  /* Tooltip: subtle lift from black, muted text */
+  --tooltip-bg:                 hsl(0 0% 12%);
+  --tooltip-fg:                 hsl(0 0% 72%);
+
+  /* Code block defaults stay stable across renderers; explicit editor themes
+   * can still paint the enhanced surface. */
+  --code-bg:                    #111827;
+  --code-header-bg:             hsl(var(--ms-muted));
+
+  /* Admonition: stronger tint on dark backgrounds */
+  --admonition-note-header-bg:  color-mix(in srgb, hsl(var(--ms-info)) 12%, transparent);
+  --admonition-tip-header-bg:   color-mix(in srgb, hsl(var(--ms-success)) 12%, transparent);
+  --admonition-warn-header-bg:  color-mix(in srgb, hsl(var(--ms-warning)) 12%, transparent);
+  --admonition-danger-header-bg: color-mix(in srgb, hsl(var(--ms-destructive)) 12%, transparent);
+}
+
+:is(.markstream-vue, .markstream-solid) {
+
+  /* ── Base typography (inherited by all children) ── */
+  font-family: var(--ms-font-sans);
+  font-size: var(--ms-text-body);
+  line-height: var(--ms-leading-body);
+
+  /* ── Inline code ── */
+  --inline-code-bg:             hsl(var(--ms-secondary));
+  --inline-code-fg:             hsl(var(--ms-foreground) / 0.75);
+  --inline-code-border:         hsl(var(--ms-border) / 0.9);
+
+  /* ── Code block ── */
+  --code-bg:                    #fff;
+  --code-fg:                    hsl(var(--ms-foreground));
+  --code-border:                hsl(var(--ms-border));
+  --code-header-bg:             hsl(var(--ms-secondary));
+  --code-selection-bg:          hsl(var(--ms-accent) / 0.3);
+  --code-line-number:           hsl(var(--ms-muted-foreground));
+  --markstream-code-line-number-align: right;
+
+  /* ── Code block actions ── */
+  --code-action-fg:             hsl(var(--ms-muted-foreground));
+  --code-action-hover-bg:       hsl(var(--ms-accent));
+  --code-action-hover-fg:       hsl(var(--ms-accent-foreground));
+  --code-action-active-bg:      hsl(var(--ms-primary));
+  --code-action-active-fg:      hsl(var(--ms-primary-foreground));
+
+  /* ── Diff ── */
+  --diff-added-fg:              hsl(var(--ms-diff-added));
+  --diff-removed-fg:            hsl(var(--ms-diff-removed));
+  --diff-added-bg:              hsl(var(--ms-diff-added) / 0.1);
+  --diff-added-inline-bg:       hsl(var(--ms-diff-added) / 0.2);
+  --diff-removed-bg:            hsl(var(--ms-diff-removed) / 0.1);
+  --diff-removed-inline-bg:     hsl(var(--ms-diff-removed) / 0.2);
+
+  /* ── Blockquote ── */
+  --blockquote-border:          hsl(var(--ms-muted-foreground) / 0.2);
+
+  /* ── Admonition ── */
+  --admonition-bg:              hsl(var(--ms-muted));
+  --admonition-border:          hsl(var(--ms-border));
+  --admonition-fg:              hsl(var(--ms-foreground));
+  --admonition-muted:           hsl(var(--ms-muted-foreground));
+  --admonition-header-bg:       hsl(var(--ms-muted) / 0.5);
+  --admonition-note:            hsl(var(--ms-info));
+  --admonition-tip:             hsl(var(--ms-success));
+  --admonition-warning:         hsl(var(--ms-warning));
+  --admonition-danger:          hsl(var(--ms-destructive));
+  --admonition-note-header-bg:  color-mix(in srgb, hsl(var(--ms-info)) 6%, transparent);
+  --admonition-tip-header-bg:   color-mix(in srgb, hsl(var(--ms-success)) 6%, transparent);
+  --admonition-warn-header-bg:  color-mix(in srgb, hsl(var(--ms-warning)) 6%, transparent);
+  --admonition-danger-header-bg: color-mix(in srgb, hsl(var(--ms-destructive)) 6%, transparent);
+
+  /* ── Table ── */
+  --table-border:               hsl(var(--ms-border));
+  --table-header-bg:            hsl(var(--ms-muted));
+
+  /* ── Link ── */
+  --link-color:                 hsl(var(--ms-info));
+
+  /* ── List ── */
+  --list-marker:                hsl(var(--ms-muted-foreground) / 0.5);
+  --list-counter-marker:        hsl(var(--ms-muted-foreground));
+
+  /* ── Thematic break (HR) ── */
+  --hr-border:                  hsl(var(--ms-border));
+
+  /* ── Highlight ── */
+  --highlight-bg:               hsl(var(--ms-highlight));
+
+  /* ── Footnote ── */
+  --footnote-border:            hsl(var(--ms-border));
+
+  /* ── Tooltip ── */
+  --tooltip-bg:                 hsl(0 0% 18%);
+  --tooltip-fg:                 hsl(0 0% 88%);
+  --tooltip-border:             hsl(var(--ms-border));
+
+  /* ── Modal ── */
+  --modal-overlay:              hsl(0 0% 0% / 0.7);
+  --modal-bg:                   hsl(var(--ms-popover));
+  --modal-fg:                   hsl(var(--ms-popover-foreground));
+
+  /* ── Diagram containers (Mermaid / D2 / Infographic) ── */
+  --diagram-bg:                 hsl(var(--ms-muted));
+  --diagram-border:             hsl(var(--ms-border));
+  --diagram-header-bg:          hsl(var(--ms-muted));
+
+  /* ── Loading states ── */
+  --loading-spinner:            hsl(var(--ms-muted-foreground));
+  --loading-shimmer:            hsl(var(--ms-muted) / 0.5);
+
+  /* ── Image ── */
+  --image-placeholder-bg:       hsl(var(--ms-muted));
+
+  /* ── Focus ring ── */
+  --focus-ring:                 hsl(var(--ms-ring));
+
+  /* =======================================================================
+     Layer 2b: Spacing, Shadow, Animation, Border, Size Tokens
+     These are non-color tokens for layout theming and density control.
+     ======================================================================= */
+
+  /* ── Spacing scale ── */
+  --ms-space-1: 0.25rem;
+  --ms-space-1_5: 0.375rem;
+  --ms-space-2: 0.5rem;
+  --ms-space-2_5: 0.625rem;
+  --ms-space-3: 0.75rem;
+  --ms-space-4: 1rem;
+  --ms-space-5: 1.25rem;
+  --ms-space-6: 1.5rem;
+  --ms-space-8: 2rem;
+  --ms-space-12: 3rem;
+
+  /* ── Document flow spacing ── */
+  --ms-flow-paragraph-y: 1.5em;
+  --ms-flow-list-y: 1em;
+  --ms-flow-list-item-y: 0.25em;
+  --ms-flow-list-indent: calc(13 / 8 * 1em);
+  --ms-flow-list-indent-mobile: calc(14 / 9 * 1em);
+  --ms-flow-table-y: 2em;
+  --ms-flow-table-cell: 0.5em 0.75em;
+  --ms-flow-blockquote-y: 1.25em;
+  --ms-flow-blockquote-indent: 1.25em;
+  --ms-flow-admonition-y: 1.25em;
+  --ms-flow-footnote-y: 0.5em;
+  --ms-flow-hr-y: 2.5em;
+  --ms-flow-diagram-y: 1.5em;
+  --ms-flow-codeblock-y: 1.5em;
+  --ms-flow-definition-term-mt: 0.75em;
+  --ms-flow-definition-desc-ml: 1.25em;
+  --ms-flow-definition-desc-mb: 0.5em;
+
+  /* ── Heading rhythm ── */
+  --ms-flow-heading-1-mt: 0;
+  --ms-flow-heading-1-mb: 1em;
+  --ms-flow-heading-2-mt: 2em;
+  --ms-flow-heading-2-mb: 0.75em;
+  --ms-flow-heading-3-mt: 1.5em;
+  --ms-flow-heading-3-mb: 0.6em;
+  --ms-flow-heading-4-mt: 1.25em;
+  --ms-flow-heading-4-mb: 0.4em;
+  --ms-flow-heading-5-mt: 1em;
+  --ms-flow-heading-5-mb: 0.25em;
+  --ms-flow-heading-6-mt: 1em;
+  --ms-flow-heading-6-mb: 0.25em;
+
+  /* ── Typography ── */
+  --ms-text-body: 1rem;
+  --ms-leading-body: 1.75;
+  --ms-text-h1: 2.25rem;
+  --ms-text-h2: 1.5rem;
+  --ms-text-h3: 1.25rem;
+  --ms-text-h4: 1rem;
+  --ms-text-h5: 1rem;
+  --ms-text-h6: 1rem;
+  --ms-leading-h1: 1.2;
+  --ms-leading-h2: 1.35;
+  --ms-leading-h3: 1.5;
+  --ms-weight-h1: 700;
+  --ms-weight-h2: 600;
+  --ms-weight-h3: 600;
+  --ms-weight-h4: 600;
+  --ms-text-label: 0.75rem;
+  --ms-action-btn-padding: 0.375rem;
+  --ms-action-btn-icon: 0.875rem;
+
+  /* ── Panel insets & layout gaps ── */
+  --ms-inset-panel-x: 0.625rem;
+  --ms-inset-panel-y: 0.375rem;
+  --ms-inset-panel-body-sm: 0.5rem;
+  --ms-inset-panel-body: 1rem;
+  --ms-inset-admonition-body-top: 0.5rem;
+  --ms-inset-admonition-body-bottom: 0.75rem;
+  --ms-gap-header: var(--ms-space-4);
+  --ms-gap-header-main: var(--ms-space-2_5);
+  --ms-gap-header-actions: var(--ms-space-2);
+
+  /* ── Shadows ── */
+  --ms-shadow-subtle: 0 1px 3px 0 hsl(var(--ms-foreground) / 0.06);
+  --ms-shadow-popover: 0 4px 6px -1px hsl(var(--ms-foreground) / 0.1),
+                       0 2px 4px -2px hsl(var(--ms-foreground) / 0.1);
+  --ms-shadow-modal: 0 10px 15px -3px hsl(var(--ms-foreground) / 0.1),
+                     0 4px 6px -4px hsl(var(--ms-foreground) / 0.1);
+  --ms-shadow-preview: 0 10px 40px hsl(var(--ms-foreground) / 0.25);
+
+  /* ── Animation ── */
+  --ms-duration-fast: 120ms;
+  --ms-duration-standard: 180ms;
+  --ms-duration-overlay: 200ms;
+  --ms-duration-emphasis: 220ms;
+  --ms-duration-slow: 300ms;
+  --ms-duration-stream: 280ms;
+  --ms-ease-linear: linear;
+  --ms-ease-standard: ease;
+  --ms-ease-out: ease-out;
+  --ms-ease-in-out: ease-in-out;
+  --ms-ease-spring: cubic-bezier(.16, 1, .3, 1);
+
+  /* ── Border & focus ── */
+  --ms-border-width: 1px;
+  --ms-border-width-strong: 4px;
+  --ms-focus-ring-width: 2px;
+  --ms-focus-ring-offset: 2px;
+
+  /* ── Container sizes ── */
+  --ms-size-diagram-min-height: 360px;
+  --ms-size-code-max-height: 500px;
+  --ms-size-image-max-width: 24rem;
+  --ms-size-image-min-width: 8rem;
+  --ms-size-image-min-height: 1.5em;
+  --ms-size-math-min-height: 40px;
+  --ms-size-skeleton-min-height: 120px;
+}

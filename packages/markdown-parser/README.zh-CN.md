@@ -63,6 +63,8 @@ parseMarkdownToStructure(markdown, md) → AST (ParsedNode[])
 
 多次解析时复用同一个 `md` 实例可以避免重复注册插件。与 [`markstream-vue`](https://www.npmjs.com/package/markstream-vue) 一起使用时，你可以把 AST 传给 `<MarkdownRender :nodes="nodes" />`，或仅传入原始 `content` 并共享同一套解析配置。
 
+当 `final: false` 时，输入末尾独立且未解析的脚注定义前缀（如 `[^`、`[^id]`、`[^id]: `）会暂缓输出，等待正文或换行，避免先渲染成方括号公式、临时文本或空脚注。已知引用仍正常渲染；`final: true` 会输出未完成的字面文本及合法的空定义。
+
 ### 增量 / 流式示例
 
 处理 AI/SSE 流时，可以复用同一个 `md` 实例不停地对累积缓冲区解析，并把 AST 推送给 UI（例如 `markstream-vue`）：

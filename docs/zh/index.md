@@ -2,7 +2,7 @@
 layout: home
 title: 'Markstream：面向 AI 应用的流式 Markdown 渲染器'
 titleTemplate: false
-description: 面向 AI 应用的多框架流式 Markdown 渲染器家族，支持 Vue、React、Svelte、Angular、Nuxt 和 Next.js。处理 LLM token 流、SSE/WebSocket 输出、AI 聊天、长文档、渐进式 Mermaid、KaTeX 和流式代码块。
+description: 面向 AI 应用的多框架流式 Markdown 渲染器家族，支持 Vue、React、SolidJS、Svelte、Angular、Nuxt 和 Next.js。处理 LLM token 流、SSE/WebSocket 输出、AI 聊天、长文档、渐进式 Mermaid、KaTeX 和流式代码块。
 keywords:
   - 流式 Markdown 渲染器
   - AI 聊天 Markdown 渲染器
@@ -17,7 +17,7 @@ keywords:
 hero:
   name: Markstream
   text: 面向 AI 应用的流式 Markdown 渲染器
-  tagline: Vue • React • Svelte • Angular • Nuxt • Next.js
+  tagline: Vue • React • SolidJS • Svelte • Angular • Nuxt • Next.js
   image:
     src: /markstream-hero.webp
     alt: markstream-vue 流式 Markdown playground 插画
@@ -33,7 +33,7 @@ hero:
       link: /zh/guide/troubleshooting-path
 ---
 
-适用于 AI 应用的多框架流式 Markdown 渲染器家族，支持 Mermaid 渐进渲染、流式代码块对比和高性能大文档处理 — 覆盖 Vue、React、Svelte、Angular、Nuxt 和 Next.js。
+适用于 AI 应用的多框架流式 Markdown 渲染器家族，支持 Mermaid 渐进渲染、流式代码块对比和高性能大文档处理 — 覆盖 Vue、React、SolidJS、Svelte、Angular、Nuxt 和 Next.js。
 
 下方的能力卡片会用 `markstream-vue` 像真实 AI 输出一样逐 token 流式播放：未闭合语法保持稳定、代码块渐进出现、语法闭合的瞬间图表立即渲染。
 

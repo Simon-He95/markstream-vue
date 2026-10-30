@@ -1,0 +1,4 @@
+interface:
+  display_name: Markstream Solid
+  short_description: Integrate SolidJS Markdown, workers, streaming and virtual history
+  default_prompt: Use $markstream-solid to integrate the native Solid renderer with reactive props, scoped configuration and verified worker/SSR boundaries.

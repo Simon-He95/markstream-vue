@@ -1,0 +1,36 @@
+{
+  "context": "Independent default-playground prefix ambiguity observed during timeline regression work",
+  "events": [
+    {
+      "time": 13548.900000095367,
+      "heightDelta": -11.21875,
+      "scrollDelta": -12,
+      "changed": [
+        {
+          "before": {
+            "index": "103",
+            "type": "math_block",
+            "height": 55.21875,
+            "top": 889.328125,
+            "text": "1",
+            "math": [
+              {
+                "text": "1",
+                "h": 55.21875,
+                "mode": "katex"
+              }
+            ]
+          },
+          "after": {
+            "index": "103",
+            "type": "footnote",
+            "height": 37,
+            "top": 901.328125,
+            "text": "See design/architecture.md for t↩︎",
+            "math": []
+          }
+        }
+      ]
+    }
+  ]
+}

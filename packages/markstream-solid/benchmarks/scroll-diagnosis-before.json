@@ -1,0 +1,304 @@
+{
+  "drops": [
+    {
+      "time": 853.7000002861023,
+      "delta": -226.15625,
+      "changed": []
+    },
+    {
+      "time": 7462.800000190735,
+      "delta": -68,
+      "changed": [
+        {
+          "before": {
+            "index": "59",
+            "type": "code_block",
+            "height": 311,
+            "text": "JSON-1+11{2  \"name\": \"markstream-vue\",3  \"type\": \"module\",4  \"version\": \"0.0.49\",5  \"packageManager\"",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 311,
+                "loading": "true",
+                "text": "sitory\": {10    \"type\": \"git\",11    \"url\": \"git + git@github.com:Simon-He95No newline at end of file"
+              },
+              {
+                "class": "pre-code code-pre-fallback markstream-pre language-jsonpackagejson markstream-pre--line-numbers markstream-pre--diff-preview is-wrap",
+                "height": 268,
+                "loading": "true",
+                "text": "sitory\": {10    \"type\": \"git\",11    \"url\": \"git + git@github.com:Simon-He95No newline at end of file"
+              }
+            ]
+          },
+          "after": {
+            "index": "59",
+            "type": "code_block",
+            "height": 243,
+            "text": "JSON-1+11{2  \"name\": \"markstream-vue\",3  \"type\": \"module\",4  \"version\": \"0.0.49\",5  \"packageManager\"",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 243,
+                "loading": "true",
+                "text": "ders Markdown string content as HTML, supporting custom components and advanced markdown features.\","
+              },
+              {
+                "class": "pre-code code-pre-fallback markstream-pre language-jsonpackagejson markstream-pre--line-numbers markstream-pre--diff-preview is-wrap markstream-pre--diff-collapsed",
+                "height": 200,
+                "loading": "true",
+                "text": "ders Markdown string content as HTML, supporting custom components and advanced markdown features.\","
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "time": 8345,
+      "delta": -18,
+      "changed": [
+        {
+          "before": {
+            "index": "61",
+            "type": "code_block",
+            "height": 149,
+            "text": "Pythonfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 149,
+                "loading": "true",
+                "text": "Pythonfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n"
+              },
+              {
+                "class": "pre-code code-pre-fallback markstream-pre language-pythonsrcserverapppy markstream-pre--line-numbers is-wrap",
+                "height": 106,
+                "loading": "true",
+                "text": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n"
+              }
+            ]
+          },
+          "after": {
+            "index": "61",
+            "type": "code_block",
+            "height": 131,
+            "text": "Python",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 131,
+                "loading": "true",
+                "text": "Python"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "time": 10705.5,
+      "delta": -12,
+      "changed": [
+        {
+          "before": {
+            "index": "71",
+            "type": "code_block",
+            "height": 553,
+            "text": "\n  \n\nMermaidPreviewSourcegraph TD\n    Kira_Yamato[基拉·大和]\n    Lacus_Clyne[拉克丝·克莱因]\n    Athrun_Zala[阿斯",
+            "blocks": []
+          },
+          "after": {
+            "index": "71",
+            "type": "code_block",
+            "height": 541,
+            "text": "\n  \n\nMermaidPreviewSourcegraph TD\n    Kira_Yamato[基拉·大和]\n    Lacus_Clyne[拉克丝·克莱因]\n    Athrun_Zala[阿斯",
+            "blocks": []
+          }
+        }
+      ]
+    }
+  ],
+  "backwards": [
+    {
+      "time": 7462.800000190735,
+      "delta": -68,
+      "heightDelta": -68,
+      "changed": [
+        {
+          "before": {
+            "index": "59",
+            "type": "code_block",
+            "height": 311,
+            "text": "JSON-1+11{2  \"name\": \"markstream-vue\",3  \"type\": \"module\",4  \"version\": \"0.0.49\",5  \"packageManager\"",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 311,
+                "loading": "true",
+                "text": "sitory\": {10    \"type\": \"git\",11    \"url\": \"git + git@github.com:Simon-He95No newline at end of file"
+              },
+              {
+                "class": "pre-code code-pre-fallback markstream-pre language-jsonpackagejson markstream-pre--line-numbers markstream-pre--diff-preview is-wrap",
+                "height": 268,
+                "loading": "true",
+                "text": "sitory\": {10    \"type\": \"git\",11    \"url\": \"git + git@github.com:Simon-He95No newline at end of file"
+              }
+            ]
+          },
+          "after": {
+            "index": "59",
+            "type": "code_block",
+            "height": 243,
+            "text": "JSON-1+11{2  \"name\": \"markstream-vue\",3  \"type\": \"module\",4  \"version\": \"0.0.49\",5  \"packageManager\"",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 243,
+                "loading": "true",
+                "text": "ders Markdown string content as HTML, supporting custom components and advanced markdown features.\","
+              },
+              {
+                "class": "pre-code code-pre-fallback markstream-pre language-jsonpackagejson markstream-pre--line-numbers markstream-pre--diff-preview is-wrap markstream-pre--diff-collapsed",
+                "height": 200,
+                "loading": "true",
+                "text": "ders Markdown string content as HTML, supporting custom components and advanced markdown features.\","
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "time": 8345,
+      "delta": -18,
+      "heightDelta": -18,
+      "changed": [
+        {
+          "before": {
+            "index": "61",
+            "type": "code_block",
+            "height": 149,
+            "text": "Pythonfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 149,
+                "loading": "true",
+                "text": "Pythonfrom fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n"
+              },
+              {
+                "class": "pre-code code-pre-fallback markstream-pre language-pythonsrcserverapppy markstream-pre--line-numbers is-wrap",
+                "height": 106,
+                "loading": "true",
+                "text": "from fastapi import FastAPI\nfrom pydantic import BaseModel\n\napp = FastAPI()\n"
+              }
+            ]
+          },
+          "after": {
+            "index": "61",
+            "type": "code_block",
+            "height": 131,
+            "text": "Python",
+            "blocks": [
+              {
+                "class": "code-block-container",
+                "height": 131,
+                "loading": "true",
+                "text": "Python"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "time": 10705.5,
+      "delta": -12,
+      "heightDelta": -12,
+      "changed": [
+        {
+          "before": {
+            "index": "71",
+            "type": "code_block",
+            "height": 553,
+            "text": "\n  \n\nMermaidPreviewSourcegraph TD\n    Kira_Yamato[基拉·大和]\n    Lacus_Clyne[拉克丝·克莱因]\n    Athrun_Zala[阿斯",
+            "blocks": []
+          },
+          "after": {
+            "index": "71",
+            "type": "code_block",
+            "height": 541,
+            "text": "\n  \n\nMermaidPreviewSourcegraph TD\n    Kira_Yamato[基拉·大和]\n    Lacus_Clyne[拉克丝·克莱因]\n    Athrun_Zala[阿斯",
+            "blocks": []
+          }
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "images": [
+    {
+      "src": "https://vuejs.org/images/logo.png",
+      "currentSrc": "https://vuejs.org/images/logo.png",
+      "width": 400,
+      "complete": true
+    }
+  ],
+  "failed": [
+    {
+      "url": "https://v/",
+      "error": {
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    },
+    {
+      "url": "https://vuej/",
+      "error": {
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    },
+    {
+      "url": "https://vuejs.or/",
+      "error": {
+        "errorText": "net::ERR_NAME_NOT_RESOLVED"
+      }
+    },
+    {
+      "url": "https://vuejs.org/imag",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://vuejs.org/images/l",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://vuejs.org/images/logo",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://vuejs.org/images/logo.pn",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    },
+    {
+      "url": "https://vuejs.org/im",
+      "error": {
+        "errorText": "net::ERR_ABORTED"
+      }
+    }
+  ],
+  "mode": "development",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "fixture": "default playground, TPS 300, four Unicode characters per token, smooth streaming enabled",
+  "note": "Diagnostic node geometry only; compare production performance separately."
+}

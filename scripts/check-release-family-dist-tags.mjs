@@ -13,6 +13,7 @@ const packageJsonPaths = [
   'packages/markstream-svelte/package.json',
   'packages/markstream-angular/package.json',
   'packages/markstream-vue2/package.json',
+  'packages/markstream-solid/package.json',
 ]
 
 for (const packageJsonPath of packageJsonPaths) {

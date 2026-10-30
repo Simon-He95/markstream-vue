@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { SimpleInlineNode } from '../SimpleInlineRenderer/simpleInline'
+import type { SimpleInlineNode } from 'markstream-core'
+import { getPlainTextContent, resolveSimpleInlineChildren } from 'markstream-core'
 import { computed, onBeforeUnmount, provide, ref, watch } from 'vue'
 import { useCustomNodeComponents } from '../../utils/nodeComponents'
 import NodeRenderer from '../NodeRenderer'
 import SimpleInlineRenderer from '../SimpleInlineRenderer'
-import { getPlainTextContent, resolveSimpleInlineChildren } from '../SimpleInlineRenderer/simpleInline'
 
 type TableCellChildNode = SimpleInlineNode & {
   raw: string

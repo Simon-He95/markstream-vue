@@ -1,0 +1,30 @@
+{
+  "rounds": [
+    {
+      "inputState": "streaming",
+      "mountedMs": 906.2881250000005,
+      "bottom": {
+        "rows": 12,
+        "scrollTop": 354585
+      },
+      "top": {
+        "rows": 20,
+        "scrollTop": 0
+      }
+    },
+    {
+      "inputState": "restored",
+      "mountedMs": 556.1154170000009,
+      "bottom": {
+        "rows": 12,
+        "scrollTop": 354585
+      },
+      "top": {
+        "rows": 20,
+        "scrollTop": 0
+      }
+    }
+  ],
+  "errors": [],
+  "cpuThrottleRate": 4
+}

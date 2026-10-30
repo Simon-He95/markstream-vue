@@ -8,6 +8,14 @@
     "primaryTitle": "React streaming Markdown renderer"
   },
   {
+    "query": "solidjs streaming markdown renderer",
+    "queryZh": "solidjs 流式 markdown 渲染器",
+    "intent": "framework",
+    "target": "/frameworks/solid",
+    "targetZh": "/zh/frameworks/solid",
+    "primaryTitle": "SolidJS streaming Markdown renderer for AI chat"
+  },
+  {
     "query": "nextjs ai chat markdown renderer",
     "queryZh": "nextjs ai 聊天 markdown 渲染",
     "intent": "framework",

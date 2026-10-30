@@ -93,6 +93,7 @@ jobs:
             markstream-react) PACKAGE_DIR="packages/markstream-react"; PACKAGE_JSON="packages/markstream-react/package.json" ;;
             markstream-svelte) PACKAGE_DIR="packages/markstream-svelte"; PACKAGE_JSON="packages/markstream-svelte/package.json" ;;
             markstream-vue2) PACKAGE_DIR="packages/markstream-vue2"; PACKAGE_JSON="packages/markstream-vue2/package.json" ;;
+            markstream-solid) PACKAGE_DIR="packages/markstream-solid"; PACKAGE_JSON="packages/markstream-solid/package.json" ;;
             *) echo "Unknown package: ${PACKAGE_NAME}" >&2; exit 1 ;;
           esac
 

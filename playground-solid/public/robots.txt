@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /component-parity
+Disallow: /line-number-handoff-check
+Disallow: /hydrate.html
+
+Sitemap: https://markstream-solid.pages.dev/sitemap.xml

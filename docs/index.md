@@ -2,7 +2,7 @@
 layout: home
 title: 'Markstream: Streaming Markdown renderers for AI apps'
 titleTemplate: false
-description: Streaming Markdown renderers for AI applications across Vue, React, Svelte, Angular, Nuxt, and Next.js. Render LLM token streams, SSE/WebSocket output, AI chat messages, and long documents with progressive Mermaid, KaTeX, and streaming code blocks.
+description: Streaming Markdown renderers for AI applications across Vue, React, SolidJS, Svelte, Angular, Nuxt, and Next.js. Render LLM token streams, SSE/WebSocket output, AI chat messages, and long documents with progressive Mermaid, KaTeX, and streaming code blocks.
 keywords:
   - streaming Markdown renderer
   - AI chat Markdown renderer
@@ -17,7 +17,7 @@ keywords:
 hero:
   name: Markstream
   text: Streaming Markdown renderers for AI apps
-  tagline: Vue • React • Svelte • Angular • Nuxt • Next.js
+  tagline: Vue • React • SolidJS • Svelte • Angular • Nuxt • Next.js
   image:
     src: /markstream-hero.webp
     alt: markstream-vue streaming Markdown playground illustration
@@ -33,7 +33,7 @@ hero:
       link: /guide/troubleshooting-path
 ---
 
-A streaming-friendly Markdown renderer family with progressive Mermaid support, streaming diff code blocks, and high-performance handling of large documents — available for Vue, React, Svelte, Angular, Nuxt, and Next.js.
+A streaming-friendly Markdown renderer family with progressive Mermaid support, streaming diff code blocks, and high-performance handling of large documents — available for Vue, React, SolidJS, Svelte, Angular, Nuxt, and Next.js.
 
 The showcase cards below replay their markdown as a live token stream through `markstream-vue` — incomplete syntax stays stable, code blocks appear progressively, and diagrams render the moment they close.
 

@@ -62,6 +62,8 @@ function detailLink(slug: string): string {
       </p>
     </div>
 
+    <p><a :href="isZh ? '/zh/guide/solid-api#组件' : '/guide/solid-api#components'">{{ isZh ? 'SolidJS 组件、参数与 TSX 示例' : 'SolidJS component props and TSX examples' }}</a></p>
+
     <ComponentDemo v-if="entry.mdSnippet" :md="entry.mdSnippet" :slug="entry.slug" />
 
     <div class="ms-detail-actions">

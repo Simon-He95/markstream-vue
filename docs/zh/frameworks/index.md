@@ -1,6 +1,6 @@
 ---
 title: Markstream 框架选择
-description: 为 Vue、React、Svelte、Angular、Nuxt 和 Next.js 选择合适的 Markstream 流式 Markdown 渲染器。
+description: 为 Vue、React、SolidJS、Svelte、Angular、Nuxt 和 Next.js 选择合适的 Markstream 流式 Markdown 渲染器。
 keywords:
   - Markstream 框架包
   - 按框架选择流式 Markdown 渲染器
@@ -14,7 +14,7 @@ keywords:
 
 # Markstream 框架包
 
-Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、React、Svelte、Angular、Nuxt 和 Next.js。各框架包共享同一套流式 Markdown 思路：直接传入 `content`，或在高频流式输出里外部解析成 `nodes`；重型块如 Mermaid、KaTeX、代码块和长文档虚拟化按需启用。
+Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、React、SolidJS、Svelte、Angular、Nuxt 和 Next.js。各框架包共享同一套流式 Markdown 思路：直接传入 `content`，或在高频流式输出里外部解析成 `nodes`；重型块如 Mermaid、KaTeX、代码块和长文档虚拟化按需启用。
 
 ## 按框架选择
 
@@ -22,6 +22,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | --- | --- | --- | --- | --- |
 | Vue 3 / Nuxt / VitePress | `markstream-vue` | stable | `pnpm add markstream-vue` | [Vue](/zh/frameworks/vue) / [Nuxt](/zh/frameworks/nuxt) |
 | React / Next.js / Remix | `markstream-react` | beta | `pnpm add markstream-react` | [React](/zh/frameworks/react) / [Next.js](/zh/frameworks/next) |
+| SolidJS 1.9 | `markstream-solid` | 工作区预览 | workspace / tarball | [SolidJS](/zh/frameworks/solid) |
 | Svelte 5 | `markstream-svelte` | beta | `pnpm add markstream-svelte svelte@^5` | [Svelte](/zh/frameworks/svelte) |
 | Angular standalone | `markstream-angular` | alpha | `pnpm add markstream-angular` | [Angular](/zh/frameworks/angular) |
 | Vue 2.6 / 2.7 | `markstream-vue2` | compatibility | `pnpm add markstream-vue2` | [Vue 2](/zh/frameworks/vue2) |
@@ -34,6 +35,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | Vue AI 聊天 | `markstream-vue` | 最成熟的渲染器，Vue/Nuxt 文档最完整 |
 | React AI 聊天 | `markstream-react` | 面向 React 流式渲染；直接竞品对比优先看 Streamdown |
 | Next.js SSR-first Markdown | `markstream-react/next` | 先输出服务端 HTML，再做客户端增强 |
+| SolidJS AI 聊天 | `markstream-solid` | 原生 Solid signal / context、SSR 与虚拟历史 |
 | Svelte 5 AI 聊天 | `markstream-svelte` | Svelte 5 渲染器，复用 Markstream parser 行为 |
 | Angular standalone 应用 | `markstream-angular` | Angular 20+ standalone component |
 | Vue 2 存量 AI 聊天 | `markstream-vue2` | Vue 2.6 / 2.7 兼容包；高频长流建议传 `nodes` |
@@ -48,6 +50,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | `markstream-vue` | stable | 主线渲染器，文档最完整 |
 | `stream-markdown-parser` | stable | renderer 共享的 parser-only 包 |
 | `markstream-react` | beta | React 与 Next.js 入口分开说明 |
+| `markstream-solid` | 工作区预览 | SolidJS 1.9；npm 发布前使用工作区或 tarball |
 | `markstream-svelte` | beta / experimental | 仅支持 Svelte 5 |
 | `markstream-angular` | alpha | Angular standalone component |
 | `markstream-vue2` | compatibility | Vue 2.6 / 2.7 兼容包；新 Vue 3 项目不应优先使用 |
@@ -75,6 +78,15 @@ import 'markstream-react/index.css'
 
 export function Message({ content, isDone }: { content: string, isDone: boolean }) {
   return <MarkdownRender content={content} final={isDone} fade={false} />
+}
+```
+
+```tsx [SolidJS]
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+
+export function Message(props: { content: string, done: boolean }) {
+  return <MarkdownRender mode="chat" content={props.content} final={props.done} />
 }
 ```
 
@@ -137,3 +149,5 @@ pnpm add markstream-vue2
 ```
 
 需要最小可运行示例时看 [多框架快速开始](/zh/quick-start)。如果你已经确定框架，直接进入对应页面会更快。
+
+- [SolidJS 接入与 playground](/zh/guide/solid)：工作区安装、流式输入、workers 和 SSR。

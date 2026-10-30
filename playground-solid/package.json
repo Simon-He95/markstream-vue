@@ -1,0 +1,22 @@
+{
+  "name": "playground-solid",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 4178",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4178"
+  },
+  "dependencies": {
+    "markstream-solid": "workspace:*",
+    "solid-js": "^1.9.0",
+    "vue": "^3.5.25"
+  },
+  "devDependencies": {
+    "@unocss/reset": "^0.61.9",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vite-plugin-solid": "^2.11.0"
+  }
+}

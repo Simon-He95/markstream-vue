@@ -1,0 +1,158 @@
+[
+  {
+    "content": ">>>I'll create a simple Electron + Vue chat application demo. Here's the structure:",
+    "frameworks": [
+      {
+        "framework": "vue3",
+        "quotes": [
+          {
+            "x": 33,
+            "y": 135,
+            "width": 738,
+            "height": 108
+          },
+          {
+            "x": 56,
+            "y": 155,
+            "width": 715,
+            "height": 68
+          },
+          {
+            "x": 79,
+            "y": 175,
+            "width": 692,
+            "height": 28
+          }
+        ]
+      },
+      {
+        "framework": "solid",
+        "quotes": [
+          {
+            "x": 829,
+            "y": 135,
+            "width": 738,
+            "height": 28
+          },
+          {
+            "x": 852,
+            "y": 135,
+            "width": 715,
+            "height": 28
+          },
+          {
+            "x": 875,
+            "y": 135,
+            "width": 692,
+            "height": 28
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "content": "> Outer paragraph\n>\n>> Middle paragraph\n>>\n>>> Inner paragraph",
+    "frameworks": [
+      {
+        "framework": "vue3",
+        "quotes": [
+          {
+            "x": 33,
+            "y": 135,
+            "width": 738,
+            "height": 220
+          },
+          {
+            "x": 56,
+            "y": 211,
+            "width": 715,
+            "height": 124
+          },
+          {
+            "x": 79,
+            "y": 287,
+            "width": 692,
+            "height": 28
+          }
+        ]
+      },
+      {
+        "framework": "solid",
+        "quotes": [
+          {
+            "x": 829,
+            "y": 135,
+            "width": 738,
+            "height": 132
+          },
+          {
+            "x": 852,
+            "y": 187,
+            "width": 715,
+            "height": 80
+          },
+          {
+            "x": 875,
+            "y": 239,
+            "width": 692,
+            "height": 28
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "content": "> A quoted paragraph.\n>\n> - Nested item",
+    "frameworks": [
+      {
+        "framework": "vue3",
+        "quotes": [
+          {
+            "x": 33,
+            "y": 135,
+            "width": 738,
+            "height": 120
+          }
+        ]
+      },
+      {
+        "framework": "solid",
+        "quotes": [
+          {
+            "x": 829,
+            "y": 135,
+            "width": 738,
+            "height": 80
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "content": "> Single paragraph.",
+    "frameworks": [
+      {
+        "framework": "vue3",
+        "quotes": [
+          {
+            "x": 33,
+            "y": 135,
+            "width": 738,
+            "height": 28
+          }
+        ]
+      },
+      {
+        "framework": "solid",
+        "quotes": [
+          {
+            "x": 829,
+            "y": 135,
+            "width": 738,
+            "height": 28
+          }
+        ]
+      }
+    ]
+  }
+]

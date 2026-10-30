@@ -1,0 +1,205 @@
+{
+  "timestamp": "2026-10-30T18:05:21.063Z",
+  "browser": "156.0.8078.74",
+  "viewport": {
+    "width": 1600,
+    "height": 1100
+  },
+  "scrollContainerHeight": 240,
+  "fixture": "Original shared default footnote definition with 20 identical history paragraphs and the original reference text",
+  "heldPrefixMs": 100,
+  "cases": [
+    {
+      "smoothStreaming": false,
+      "chunkSize": 1,
+      "frameP95MsCombined": 18.4,
+      "frameworks": {
+        "vue3": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            600,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        },
+        "solid": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        }
+      }
+    },
+    {
+      "smoothStreaming": false,
+      "chunkSize": 7,
+      "frameP95MsCombined": 18.2,
+      "frameworks": {
+        "vue3": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            600,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        },
+        "solid": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        }
+      }
+    },
+    {
+      "smoothStreaming": false,
+      "chunkSize": 64,
+      "frameP95MsCombined": 18.6,
+      "frameworks": {
+        "vue3": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            600,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        },
+        "solid": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        }
+      }
+    },
+    {
+      "smoothStreaming": true,
+      "chunkSize": 1,
+      "frameP95MsCombined": 18.2,
+      "frameworks": {
+        "vue3": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        },
+        "solid": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        }
+      }
+    },
+    {
+      "smoothStreaming": true,
+      "chunkSize": 7,
+      "frameP95MsCombined": 18.4,
+      "frameworks": {
+        "vue3": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        },
+        "solid": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        }
+      }
+    },
+    {
+      "smoothStreaming": true,
+      "chunkSize": 64,
+      "frameP95MsCombined": 18.3,
+      "frameworks": {
+        "vue3": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        },
+        "solid": {
+          "backwards": 0,
+          "maxMathBlocks": 0,
+          "initialMeasuredHeightRange": [
+            1116,
+            1116
+          ],
+          "pendingHeightMin": 1116,
+          "pendingHeightMax": 1116,
+          "references": 1,
+          "fullRestoreMatches": true
+        }
+      }
+    }
+  ],
+  "parserTests": 727,
+  "newParserRegressions": 19,
+  "rootTests": 3551,
+  "publicApiContracts": 122,
+  "coldParseDifferentialFixtures": 5,
+  "rendererHeightCompensationAdded": false
+}

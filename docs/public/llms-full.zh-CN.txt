@@ -45,6 +45,20 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 - 核心能力：content 输入路径；nodes 输入路径；安全 HTML 策略；渐进式 Mermaid；KaTeX 数学；stream-diffs 代码块；自定义 Octane 组件；客户端与服务端构建；worker 子路径；移动端 px CSS 与 Tailwind CSS 导出
 - 已知限制：需要 Octane ^0.1.21 及对应 compiler/Vite 配置。API 仍是 beta，且不提供虚拟化。
 
+### markstream-solid
+- 包名：markstream-solid
+- 版本：2.0.21
+- 成熟度标签：工作区预览
+- 框架/运行时：SolidJS 1.9 原生组件、SSR 与 hydration
+- 描述：SolidJS streaming Markdown renderer for AI chat, incremental Markdown and long document restoration.
+- Homepage：https://markstream.simonhe.me/frameworks/solid
+- 文档 URL：https://markstream.simonhe.me/frameworks/solid
+- Playground URL：https://markstream-solid.pages.dev/
+- Peer dependencies：@antv/infographic, @terrastruct/d2, katex, mermaid, solid-js, stream-diffs
+- Keywords：solid, solidjs, markdown, streaming-markdown, ai-chat, sse, ssr, katex, mermaid, markstream-solid
+- 核心能力：content 与 nodes 输入；平滑流式输出；虚拟历史捕获与恢复；原生 Solid 组件和 provider；Mermaid、KaTeX、D2 和 infographic；stream-diffs 代码块；browser/server 条件导出；worker 子路径；px 与 Tailwind CSS
+- 已知限制：工作区预览；npm 包与线上 playground 尚未部署。先用 pnpm play:solid，独立应用需一起打包 parser/core/Solid。
+
 ### markstream-svelte
 - 包名：markstream-svelte
 - 版本：2.0.21
@@ -89,7 +103,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### stream-markdown-parser
 - 包名：stream-markdown-parser
-- 版本：1.2.22
+- 版本：1.2.23
 - 成熟度标签：稳定
 - 框架/运行时：任意 JavaScript 或 TypeScript 应用
 - 描述：Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.
@@ -102,7 +116,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 
 ### markstream-core
 - 包名：markstream-core
-- 版本：2.0.21
+- 版本：2.0.22
 - 成熟度标签：稳定
 - 框架/运行时：框架无关工具
 - 描述：Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream
@@ -134,6 +148,14 @@ Octane:
 pnpm add markstream-octane octane
 import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
+```
+
+SolidJS 1.9（工作区预览，尚未发布 npm）：
+```txt
+pnpm install
+pnpm play:solid
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
 ```
 
 Svelte 5:
@@ -183,6 +205,7 @@ Vue 可选 peer：
 - markstream-vue2：仅用于 Vue 2.6 / 2.7 兼容。
 - markstream-react：React、Next.js、Remix renderer。
 - markstream-octane：原生 Octane 客户端/服务端 renderer。
+- markstream-solid：原生 SolidJS 1.9 工作区预览；npm 发布与线上部署尚未完成。
 - markstream-svelte：仅用于 Svelte 5。
 - markstream-angular：Angular standalone renderer。
 - stream-markdown-parser：只提供 parser，不渲染 UI 组件。
@@ -190,20 +213,20 @@ Vue 可选 peer：
 
 ## 功能矩阵
 
-| 功能 | markstream-vue | markstream-react | markstream-octane | markstream-svelte | markstream-angular |
-| --- | --- | --- | --- | --- | --- |
-| content 模式 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| nodes 模式 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| 渐进式 Mermaid | 支持 | 支持 | 支持 | 支持 | 支持 |
-| KaTeX 数学 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| 流式代码块 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| 虚拟化 | 支持 | 支持 | 不支持 | 支持 | 支持 |
-| 安全 HTML 策略 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| 自定义组件 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| SSR 支持 | 支持 | 支持 | 支持 | 有限 | 有限 |
-| Worker 导入 | 支持 | 支持 | 支持 | 支持 | 支持 |
-| 移动端 px CSS | 支持 | 支持 | 支持 | 支持 | 不支持 |
-| Tailwind 支持 | 支持 | 支持 | 支持 | 支持 | 不支持 |
+| 功能 | markstream-vue | markstream-react | markstream-octane | markstream-svelte | markstream-angular | markstream-solid |
+| --- | --- | --- | --- | --- | --- | --- |
+| content 模式 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| nodes 模式 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| 渐进式 Mermaid | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| KaTeX 数学 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| 流式代码块 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| 虚拟化 | 支持 | 支持 | 不支持 | 支持 | 支持 | 支持 |
+| 安全 HTML 策略 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| 自定义组件 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| SSR 支持 | 支持 | 支持 | 支持 | 有限 | 有限 | 支持 |
+| Worker 导入 | 支持 | 支持 | 支持 | 支持 | 支持 | 支持 |
+| 移动端 px CSS | 支持 | 支持 | 支持 | 支持 | 不支持 | 支持 |
+| Tailwind 支持 | 支持 | 支持 | 支持 | 支持 | 不支持 | 支持 |
 
 ## 对比指南
 
@@ -251,6 +274,7 @@ Vue 可选 peer：
 ## SEO 上下文 - 哪些查询应指向哪些页面
 
 - "react 流式 markdown 渲染器" -> /zh/frameworks/react
+- "solidjs 流式 markdown 渲染器" -> /zh/frameworks/solid
 - "nextjs ai 聊天 markdown 渲染" -> /zh/frameworks/next 或 /zh/frameworks/react
 - "vue 流式 markdown 渲染器" -> /zh/frameworks/vue
 - "Nuxt Markdown 流式渲染" -> /zh/frameworks/nuxt

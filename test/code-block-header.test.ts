@@ -1,5 +1,5 @@
+import { estimateDiffStats, resolveDiffInlineLayout } from 'markstream-core'
 import { describe, expect, it } from 'vitest'
-import { estimateDiffStats, resolveDiffInlineLayout } from '../src/components/CodeBlockNode/codeBlockHeader'
 
 describe('code block lazy header layout', () => {
   it('uses only the public diffStyle option and defaults to split', () => {

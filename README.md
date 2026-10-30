@@ -2,7 +2,7 @@
 
 `markstream-vue` is a Vue 3 / Nuxt / VitePress streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long AI responses, Mermaid, KaTeX, and streaming code blocks.
 
-Markstream is the renderer family for Vue, React, Octane, Svelte, Angular, and Vue 2. Use sibling packages for non-Vue frameworks; use `markstream-vue` when your Vue/Nuxt/VitePress UI needs stable partial Markdown states, mobile WebView rendering, safe component rendering, and progressive heavy blocks.
+Markstream is the renderer family for Vue, React, Octane, Solid, Svelte, Angular, and Vue 2. Use sibling packages for non-Vue frameworks; use `markstream-vue` when your Vue/Nuxt/VitePress UI needs stable partial Markdown states, mobile WebView rendering, safe component rendering, and progressive heavy blocks.
 
 [![中文版](https://img.shields.io/badge/docs-中文文档-blue)](README.zh-CN.md)
 [![Docs](https://img.shields.io/badge/docs-vitepress-blue)](https://markstream.simonhe.me/)
@@ -79,6 +79,7 @@ Start with the [framework overview](https://markstream.simonhe.me/frameworks) if
 | `markstream-vue` | Vue 3 / Nuxt / VitePress | `pnpm add markstream-vue` | [Framework overview](https://markstream.simonhe.me/frameworks) · [Vue landing](https://markstream.simonhe.me/frameworks/vue) · [Nuxt landing](https://markstream.simonhe.me/frameworks/nuxt) |
 | `markstream-react` | React / Next.js / Remix | `pnpm add markstream-react` | [React landing](https://markstream.simonhe.me/frameworks/react) · [Next.js landing](https://markstream.simonhe.me/frameworks/next) |
 | `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [Package guide](./packages/markstream-octane/README.md) · [Local playground](./playground-octane) |
+| `markstream-solid` | SolidJS 1.9 | Workspace package | [Package guide](./packages/markstream-solid/README.md) · [Local playground](./playground-solid) |
 | `markstream-svelte` | Svelte 5 | `pnpm add markstream-svelte svelte@^5` | [Svelte landing](https://markstream.simonhe.me/frameworks/svelte) · [Quick start](https://markstream.simonhe.me/guide/svelte) |
 | `markstream-angular` | Angular standalone | `pnpm add markstream-angular` | [Angular landing](https://markstream.simonhe.me/frameworks/angular) · [Quick start](https://markstream.simonhe.me/guide/angular-quick-start) |
 | `markstream-vue2` | Vue 2.6 / 2.7 | `pnpm add markstream-vue2` | [Vue 2 landing](https://markstream.simonhe.me/frameworks/vue2) · [Quick start](https://markstream.simonhe.me/guide/vue2-quick-start) |
@@ -180,6 +181,8 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 - Discord: https://discord.gg/vkzdkjeRCW
 
 ## Repository skills and prompts
+
+SolidJS/SolidStart integrations have a dedicated `markstream-solid` skill under `.agents/skills/markstream-solid`, with reactive TSX, packed workers, SSR, scoped components and the complete Solid API guide.
 
 If you want the AI assets without cloning the repo:
 

@@ -81,6 +81,27 @@ jobs:
           pnpm --filter markstream-octane test
           pnpm run test:smoke:octane
 
+      - name: Solid package checks (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          pnpm --filter markstream-solid typecheck
+          pnpm test:solid
+          pnpm test:smoke:solid
+          node scripts/smoke-solid-workers.mjs
+          pnpm test:e2e:solid-playground
+          node scripts/check-solid-playground-seo.mjs
+          node scripts/check-solid-api-docs.mjs
+
+      - name: Upload Solid validation reports
+        if: always() && matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: solid-validation
+          path: |
+            .tmp/solid/*.json
+            .tmp/solid/*.png
+          if-no-files-found: ignore
+
       - name: Svelte package tests (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm --filter markstream-svelte test
@@ -127,7 +148,9 @@ jobs:
         # invariant, and the Web Vitals CLS budgets for code blocks are too loose
         # (0.15 / 0.8) to catch a regression of this size.
         if: matrix.os == 'ubuntu-latest'
-        run: pnpm run test:e2e:line-number-handoff-playgrounds --framework=vue3
+        run: |
+          pnpm run test:e2e:line-number-handoff-playgrounds --framework=vue3,solid
+          CODE_OVERFLOW=scroll pnpm run test:e2e:line-number-handoff-playgrounds --framework=solid
 
       - name: Virtual scroll playground stress e2e (scheduled/manual, Ubuntu only)
         if: >

@@ -1,6 +1,6 @@
 ---
 title: Multi-framework Quick Start
-description: Install the right Markstream renderer for Vue, React, Svelte, or Angular and render the first streaming Markdown message.
+description: Install the right Markstream renderer for Vue, React, SolidJS, Svelte, or Angular and render the first streaming Markdown message.
 keywords:
   - multi-framework quick start
   - vue react svelte angular markdown
@@ -49,6 +49,25 @@ export function Message({ content, isDone }: { content: string, isDone: boolean 
 ```
 
 Use root `markstream-react` in a client component for live SSE/WebSocket surfaces. Use [Next.js](/frameworks/next) for SSR-first or server-only Markdown rendering.
+
+## SolidJS 1.9
+
+The Solid package is currently a workspace preview. Run the local demo or follow the [Solid guide](/guide/solid) to pack it for an external app before npm publication.
+
+```bash
+pnpm install
+pnpm build:solid
+pnpm play:solid
+```
+
+```tsx
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+
+export function Message(props: { content: string, done: boolean }) {
+  return <MarkdownRender mode="chat" content={props.content} final={props.done} />
+}
+```
 
 ## Svelte 5
 

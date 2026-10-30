@@ -84,7 +84,12 @@ export function createLocalTextStream(
           ? snapChunkToBoundary(content, currentPosition, rawChunkSize)
           : rawChunkSize
         const delay = randomInt(options.chunkDelayMin, options.chunkDelayMax, random)
-        const chunkContent = content.slice(currentPosition, currentPosition + chunkSize)
+        let end = Math.min(content.length, currentPosition + chunkSize)
+        const last = content.charCodeAt(end - 1)
+        const next = content.charCodeAt(end)
+        if (last >= 0xD800 && last <= 0xDBFF && next >= 0xDC00 && next <= 0xDFFF)
+          end++
+        const chunkContent = content.slice(currentPosition, end)
 
         await sleep(delay)
         if (control.signal?.aborted)
@@ -101,7 +106,7 @@ export function createLocalTextStream(
           delay,
         })
 
-        currentPosition += chunkSize
+        currentPosition = end
       }
 
       try {

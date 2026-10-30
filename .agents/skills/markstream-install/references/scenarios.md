@@ -9,6 +9,7 @@
 | React 18+ | `markstream-react` |
 | Angular 20+ | `markstream-angular` |
 | Svelte 5 | `markstream-svelte` |
+| SolidJS 1.9 / SolidStart | `markstream-solid` |
 
 ## Peer selection
 
@@ -40,3 +41,7 @@ Peer sets are package-specific. Confirm the selected package's current `peerDepe
   - `fade` controls node enter and streamed-text fade animations. Vue 3 `chat`/`minimal` modes default it to `false`; Vue 3 `docs` mode defaults it to `true`.
   - In Vue 3 (including Nuxt), `smooth-streaming` controls output pacing and `fade` controls opacity; they can be enabled together. `mode="chat"` keeps `fade=false` as a lightweight default. Add `fade` when gradual text reveal is desired; keep it off when animation cost matters more.
 - `nodes` + `final`: worker-preparsed content, shared AST stores, custom AST transforms, or cases where another layer already owns parsing.
+
+## Solid-specific setup
+
+Use the `markstream-solid` skill and [Solid API reference](https://markstream.simonhe.me/guide/solid-api). Use `vite-plugin-solid`, camelCase TSX props/callbacks and accessors. File workers require Vite `worker.format = "es"`; Mermaid inline workers cannot resolve its split diagram modules. Workspace previews require parser/core/Solid tarballs built together; publication requires the corresponding new dependency versions.

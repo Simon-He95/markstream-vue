@@ -1,0 +1,588 @@
+/* Minimal, safe defaults to reduce flicker during frequent text updates */
+:is(.markstream-vue, .markstream-solid) pre[class^='language-'],
+:is(.markstream-vue, .markstream-solid) pre[class*=' language-'] {
+  /* Ensure code layout is stable */
+  white-space: pre;
+  overflow: auto;
+  tab-size: var(--markstream-code-tab-size, 4);
+  font-variant-ligatures: none;
+  /* Isolate painting/layout to this block to avoid ancestor reflow jank */
+  contain: content;
+  /* Hint GPU compositing on WebKit/Blink to reduce paint flashing */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-font-smoothing: antialiased;
+}
+:is(.markstream-vue, .markstream-solid) pre[class^='language-'] > code,
+:is(.markstream-vue, .markstream-solid) pre[class*=' language-'] > code {
+  display: block;
+}
+
+:is(.markstream-vue, .markstream-solid) pre[data-markstream-pre='1']:not(.markstream-pre--diff-preview) {
+  background: var(--markstream-code-fallback-bg, var(--markstream-code-theme-bg, var(--code-bg)));
+  color: var(--markstream-code-fallback-fg, var(--markstream-code-theme-fg, var(--code-fg)));
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers {
+  position: relative;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.code-pre-fallback[data-markstream-code-loading='1'] {
+  --markstream-pre-line-number-top: var(--markstream-code-padding-y, 8px);
+  --markstream-pre-line-number-left: 0px;
+  --markstream-pre-line-number-width: 2ch;
+  --markstream-pre-line-number-padding-left: 2ch;
+  --markstream-pre-line-number-padding-right: 1ch;
+  --markstream-pre-line-number-separator-width: 2px;
+  --markstream-code-padding-left: calc(2ch + 2ch + 1ch + 2px + 1ch);
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--markstream-code-padding-y, 8px) var(--markstream-code-padding-x, 1ch);
+  padding-left: var(--markstream-code-padding-left);
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--markstream-code-fallback-bg, var(--markstream-code-theme-bg, var(--code-bg)));
+  color: var(--markstream-code-fallback-fg, var(--markstream-code-theme-fg, var(--code-fg)));
+  font-family: var(--markstream-code-font-family, \"SF Mono\", Monaco, Consolas, \"Ubuntu Mono\", \"Liberation Mono\", \"Courier New\", monospace);
+  font-size: var(--vscode-editor-font-size, 12px);
+  line-height: var(--vscode-editor-line-height, 18px);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__line-numbers {
+  position: absolute;
+  top: var(--markstream-pre-line-number-top, 0);
+  left: var(--markstream-pre-line-number-left, 0);
+  box-sizing: content-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: var(--markstream-pre-line-number-width, 2ch);
+  min-width: var(--markstream-pre-line-number-width, 2ch);
+  padding-left: var(--markstream-pre-line-number-padding-left, 2ch);
+  padding-right: var(--markstream-pre-line-number-padding-right, 1ch);
+  border-right: var(--markstream-pre-line-number-separator-width, 2px) solid transparent;
+  color: var(--code-line-number);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  pointer-events: none;
+  user-select: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers:not(.markstream-pre--diff-preview):not(.code-pre-fallback) > .markstream-pre__code {
+  box-sizing: border-box;
+  min-width: 100%;
+  padding-left: var(--markstream-code-padding-left, 52px);
+  padding-right: var(--markstream-code-padding-x, 12px);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__code--wrapped {
+  white-space: pre-wrap;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__code--wrapped > .markstream-pre__logical-line {
+  position: relative;
+  display: block;
+  min-height: 1lh;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__code--wrapped > .markstream-pre__logical-line::before {
+  position: absolute;
+  left: calc(-1 * var(--markstream-code-padding-left, 52px));
+  box-sizing: content-box;
+  width: var(--markstream-pre-line-number-width, 2ch);
+  padding-left: var(--markstream-pre-line-number-padding-left, 2ch);
+  color: var(--code-line-number);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  text-align: right;
+  white-space: pre;
+  content: attr(data-line-number);
+  pointer-events: none;
+  user-select: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__line-numbers > .markstream-pre__line-number {
+  display: block;
+  min-height: 1lh;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--line-numbers > .markstream-pre__line-numbers > .markstream-pre__line-numbers-text {
+  display: block;
+  min-height: 1lh;
+  text-align: right;
+  white-space: pre;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview {
+  box-sizing: border-box;
+  /* The diff rows manage their own number-column padding, so the pre itself
+     must not add another left padding. `!important` so the loading-placeholder
+     rule (`pre[data-markstream-code-loading='1']`) cannot double-count it. */
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  width: 100%;
+
+  --markstream-pre-diff-gutter-marker-width: 4px;
+  --markstream-pre-diff-gutter-gap: 1ch;
+  --markstream-pre-diff-code-gap: 1ch;
+  --markstream-pre-diff-code-padding: 0px;
+  --markstream-diff-added-fg: var(--diff-added-fg, #2f8f68);
+  --markstream-diff-removed-fg: var(--diff-removed-fg, #c24141);
+  --markstream-diff-added-line-fill: var(--diff-added-bg, rgb(47 143 104 / 12%));
+  --markstream-diff-removed-line-fill: var(--diff-removed-bg, rgb(194 65 65 / 12%));
+  --markstream-diff-added-gutter: linear-gradient(
+    90deg,
+    var(--markstream-diff-added-fg) 0 var(--markstream-pre-diff-gutter-marker-width),
+    transparent var(--markstream-pre-diff-gutter-marker-width) 100%
+  );
+  --markstream-diff-removed-gutter: linear-gradient(
+    90deg,
+    var(--markstream-diff-removed-fg) 0 var(--markstream-pre-diff-gutter-marker-width),
+    transparent var(--markstream-pre-diff-gutter-marker-width) 100%
+  );
+  --markstream-pre-diff-line-number-width: 2ch;
+  --markstream-pre-diff-line-number-padding-left: 2ch;
+  --markstream-pre-diff-line-number-padding-right: 1ch;
+  --markstream-pre-diff-line-number-separator-width: 2px;
+  --markstream-pre-diff-pane-min-width: 225px;
+  --markstream-pre-diff-line-number-box-width: calc(
+    var(--markstream-pre-diff-line-number-padding-left)
+    + var(--markstream-pre-diff-line-number-width)
+    + var(--markstream-pre-diff-line-number-padding-right)
+    + var(--markstream-pre-diff-line-number-separator-width)
+  );
+  --markstream-pre-diff-line-number-bg: var(--markstream-diff-line-number-bg, transparent);
+  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
+  --markstream-pre-diff-line-number-left: 0px;
+  --markstream-pre-diff-line-number-align: var(--markstream-diff-line-number-align, right);
+  --markstream-pre-diff-code-fill-left: calc(
+    var(--markstream-pre-diff-line-number-left)
+    + var(--markstream-pre-diff-line-number-box-width)
+  );
+  --markstream-pre-diff-code-left: calc(
+    var(--markstream-pre-diff-code-fill-left)
+    + var(--markstream-pre-diff-line-number-gap-to-code)
+    + var(--markstream-pre-diff-code-padding)
+  );
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.code-pre-fallback.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap) {
+  scrollbar-width: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.code-pre-fallback.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap)::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.is-wrap {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-inline {
+  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
+  --markstream-pre-diff-line-number-left: 0px;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview > .markstream-pre__diff-code {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  font: inherit;
+  line-height: inherit;
+  min-width: 100%;
+  width: 100%;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.is-wrap > .markstream-pre__diff-code {
+  grid-template-columns: minmax(var(--markstream-pre-diff-pane-min-width, 225px), 1fr) minmax(var(--markstream-pre-diff-pane-min-width, 225px), 1fr);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-inline > .markstream-pre__diff-code {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap) > .markstream-pre__diff-code {
+  grid-template-columns: minmax(100%, max-content);
+  width: 100%;
+  min-width: max-content;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-pane {
+  min-width: 0;
+  overflow: hidden;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview:not(.is-wrap):not(.markstream-pre--diff-inline) .markstream-pre__diff-pane {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-pane-content {
+  display: block;
+  min-width: 100%;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview:not(.is-wrap):not(.markstream-pre--diff-inline) .markstream-pre__diff-pane-content {
+  width: max-content;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-inline:not(.is-wrap) .markstream-pre__diff-pane {
+  min-width: max-content;
+  width: 100%;
+  overflow: visible;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-pane--modified {
+  --markstream-pre-diff-line-number-gap-to-code: var(--markstream-pre-diff-code-gap);
+  --markstream-pre-diff-line-number-left: 0px;
+  /* The finalized highlight surface separates its split columns with a clean
+     background gap (pierre's 1ch line paddings plus background-colored column
+     borders), not a colored 1px divider line. Keep the pre fallback visually
+     identical: drop the divider so the middle between the two columns reads
+     as a 2ch white gap. */
+  box-shadow: none;
+}
+
+/* Match the finalized highlight surface's 2ch white split divider: pierre's
+   split lines carry 1ch inline padding on each side of the code content. The
+   left pane mirrors the text's 1ch right padding toward the seam; the right
+   pane already spaces its text 1ch past the line-number gutter
+   (`--markstream-pre-diff-line-number-gap-to-code`), so no extra left padding
+   is added there — adding one would push the right column's content one `ch`
+   away from the line numbers compared with the highlight surface. */
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--original .markstream-pre__diff-line:not(.markstream-pre__diff-line--collapsed) .markstream-pre__diff-content {
+  padding-right: 1ch;
+}
+
+/* Split view: the collapsed "N unmodified lines" pill must read as ONE
+   continuous pill spanning both columns (pierre's split separators meet at the
+   middle divider). The left pane extends its pill flush to its right edge and
+   the right pane starts flush at its own left edge, so the two halves abut
+   exactly at the column seam; the inner corners are squared so there is no
+   notch where they meet. */
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--original .markstream-pre__diff-line--collapsed::before {
+  right: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--modified .markstream-pre__diff-line--collapsed::before {
+  left: 0px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
+}
+
+/* The modified (right) pane's collapsed row is only the empty half of the
+   continuous pill — the finalized surface renders the "N unmodified lines"
+   widget once on the original side. Hide the duplicated chevron/icon so the
+   right half stays clean (matches the highlight surface). */
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview:not(.markstream-pre--diff-inline) .markstream-pre__diff-pane--modified .markstream-pre__diff-line--collapsed > .markstream-pre__diff-collapsed-icon {
+  display: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 100%;
+  min-height: var(
+    --markstream-pre-diff-synced-row-height,
+    var(--markstream-pre-diff-line-height, 18px)
+  );
+  padding-left: var(--markstream-pre-diff-code-left);
+  line-height: var(--markstream-pre-diff-line-height, 18px);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line::before {
+  content: '';
+  position: absolute;
+  left: var(--markstream-pre-diff-code-fill-left);
+  right: 0;
+  top: 0;
+  height: var(
+    --markstream-pre-diff-synced-row-height,
+    var(--markstream-pre-diff-line-height, 18px)
+  );
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line::after {
+  content: '';
+  position: absolute;
+  left: var(--markstream-pre-diff-line-number-left);
+  top: 0;
+  width: var(--markstream-pre-diff-line-number-box-width);
+  height: var(
+    --markstream-pre-diff-synced-row-height,
+    var(--markstream-pre-diff-line-height, 18px)
+  );
+  z-index: 0;
+  pointer-events: none;
+  background: var(--markstream-pre-diff-line-number-bg);
+  box-shadow: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-rail {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  height: var(
+    --markstream-pre-diff-synced-row-height,
+    var(--markstream-pre-diff-line-height, 18px)
+  );
+  width: var(--markstream-pre-diff-gutter-marker-width, 4px);
+  min-width: var(--markstream-pre-diff-gutter-marker-width, 4px);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-number {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  left: var(--markstream-pre-diff-line-number-left);
+  width: var(--markstream-pre-diff-line-number-width);
+  min-width: var(--markstream-pre-diff-line-number-width);
+  height: var(
+    --markstream-pre-diff-synced-row-height,
+    var(--markstream-pre-diff-line-height, 18px)
+  );
+  box-sizing: content-box;
+  background: var(--markstream-pre-diff-line-number-bg);
+  box-shadow: none;
+  padding-left: var(--markstream-pre-diff-line-number-padding-left, 2ch);
+  padding-right: var(--markstream-pre-diff-line-number-padding-right, 1ch);
+  border-right: var(--markstream-pre-diff-line-number-separator-width, 2px) solid var(--markstream-diff-editor-bg, var(--code-bg));
+  color: var(--code-line-number);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--markstream-pre-diff-line-height, 18px);
+  text-align: var(--markstream-pre-diff-line-number-align, right);
+  user-select: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-number {
+  background: var(--markstream-diff-added-number-fill, var(--markstream-diff-added-line-fill, transparent));
+  color: var(--markstream-diff-added-fg, var(--code-line-number));
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-number {
+  background: var(--markstream-diff-removed-number-fill, var(--markstream-diff-removed-line-fill, transparent));
+  color: var(--markstream-diff-removed-fg, var(--code-line-number));
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-content {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: max-content;
+  min-width: 100%;
+  line-height: var(--markstream-pre-diff-line-height, 18px);
+  white-space: inherit;
+  overflow-wrap: normal;
+  word-break: normal;
+  line-break: auto;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.is-wrap .markstream-pre__diff-content {
+  box-sizing: border-box;
+  width: auto;
+  min-width: 0;
+  padding-right: 1ch;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-content-inner {
+  white-space: inherit;
+  overflow-wrap: inherit;
+  word-break: inherit;
+  line-break: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--hunk {
+  color: var(--markstream-diff-unchanged-fg, var(--code-line-number));
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--hunk::before {
+  background: var(--markstream-diff-unchanged-bg, transparent);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer::before {
+  background-image: linear-gradient(
+    -45deg,
+    color-mix(in srgb, currentColor 20%, transparent) 12.5%,
+    transparent 12.5%,
+    transparent 50%,
+    color-mix(in srgb, currentColor 20%, transparent) 50%,
+    color-mix(in srgb, currentColor 20%, transparent) 62.5%,
+    transparent 62.5%,
+    transparent 100%
+  );
+  background-size: 10px 10px;
+  opacity: 0.38;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata {
+  color: var(--markstream-diff-metadata-fg, var(--code-line-number));
+  background: var(--markstream-diff-metadata-bg, var(--code-bg));
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata::after,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata > .markstream-pre__diff-rail,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--metadata > .markstream-pre__diff-number {
+  display: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-inline .markstream-pre__diff-line--metadata + .markstream-pre__diff-line--metadata {
+  margin-top: calc(-1 * var(--markstream-pre-diff-line-height, 18px));
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer::after,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer > .markstream-pre__diff-rail,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer > .markstream-pre__diff-number,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--spacer > .markstream-pre__diff-content {
+  display: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview.markstream-pre--diff-collapsed:not(.code-pre-fallback) {
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed {
+  /* The finalized highlight surface renders its "N unmodified lines" widget as a
+     32px pill separated from the surrounding diff rows by an 8px gap on each
+     side (pierre's `line-info` separator with its 8px `--diffs-gap-fallback`).
+     The first/last collapsed rows drop the outer gap (pierre's
+     `data-separator-first/last` rules): a terminal row reuses the pre's own
+     8px bottom padding so the pill sits at the bottom of the pre. */
+  min-height: calc(
+    var(--markstream-pre-diff-collapsed-row-height, 32px)
+    + var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px))
+    + var(--markstream-pre-diff-collapsed-row-gap-bottom, var(--markstream-pre-diff-collapsed-row-gap, 8px))
+  );
+  padding:
+    var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px))
+    0
+    var(--markstream-pre-diff-collapsed-row-gap-bottom, var(--markstream-pre-diff-collapsed-row-gap, 8px));
+  /* Match the finalized separator's text: pierre paints "N unmodified lines" in
+     its header/sans-serif font in the muted `--diffs-fg-number` gray
+     (`color-mix(in lab, fg 65%, bg)`), not the code's monospace foreground. */
+  color: color-mix(
+    in lab,
+    var(--markstream-code-theme-fg, var(--markstream-code-fallback-fg, var(--markstream-pre-resolved-theme-fg, var(--code-fg, #000)))) 65%,
+    var(--markstream-code-theme-bg, var(--markstream-code-fallback-bg, var(--markstream-pre-resolved-theme-bg, var(--code-bg, #fff))))
+  );
+  font-family: var(
+    --markstream-pre-diff-header-font,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    'Noto Sans',
+    'Liberation Sans',
+    Arial,
+    sans-serif
+  );
+  line-height: var(--markstream-pre-diff-collapsed-row-height, 32px);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed::before {
+  top: var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px));
+  left: 8px;
+  right: 8px;
+  height: var(--markstream-pre-diff-collapsed-row-height, 32px);
+  border-radius: 6px;
+  background: var(--markstream-diff-unchanged-bg, rgb(0 0 0 / 4%));
+}
+
+/* First collapsed region: flush against the top diff rows (pierre's
+   `data-separator-first` clears the leading margin). */
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed-first {
+  --markstream-pre-diff-collapsed-row-gap-top: 0px;
+}
+
+/* Terminal collapsed region: the pill sits at the bottom of the pre and the
+   pre's own 8px bottom padding provides the gap (pierre's
+   `data-separator-last` clears the trailing margin). */
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed-last {
+  --markstream-pre-diff-collapsed-row-gap-bottom: 0px;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed::after,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-rail,
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-number {
+  display: none;
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-content {
+  width: 100%;
+  min-width: 0;
+  /* Match the finalized separator's text offset: pierre's `line-info` pill
+     sits 8px from the code-area left (`padding-inline: 8px`), the text
+     follows a 34px expand-button column, and the content itself carries
+     `padding: 0 1ch` (8px + 34px + 1ch). */
+  padding-left: calc(8px + 34px + 1ch);
+  line-height: var(--markstream-pre-diff-collapsed-row-height, 32px);
+}
+
+/* Mirror pierre's `diffs-icon-expand` chevron occupying the 34px column left
+   of the "N unmodified lines" text, so the fallback pill matches the
+   finalized separator (same color, same position, non-interactive). */
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--collapsed > .markstream-pre__diff-collapsed-icon {
+  position: absolute;
+  left: 8px;
+  top: var(--markstream-pre-diff-collapsed-row-gap-top, var(--markstream-pre-diff-collapsed-row-gap, 8px));
+  width: 34px;
+  height: var(--markstream-pre-diff-collapsed-row-height, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  pointer-events: none;
+
+  & svg {
+    fill: currentColor;
+    flex: none;
+  }
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--added::before {
+  background: var(--markstream-diff-added-line-fill, transparent);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed::before {
+  background: var(--markstream-diff-removed-line-fill, transparent);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--added > .markstream-pre__diff-rail {
+  background: var(--markstream-diff-added-gutter, currentColor);
+}
+
+:is(.markstream-vue, .markstream-solid) pre.markstream-pre--diff-preview .markstream-pre__diff-line--removed > .markstream-pre__diff-rail {
+  background: var(--markstream-diff-removed-gutter, currentColor);
+}
+
+/* Keyboard accessibility: visible focus when scroll container is focused */
+:is(.markstream-vue, .markstream-solid) pre[class^='language-']:focus,
+:is(.markstream-vue, .markstream-solid) pre[class*=' language-']:focus {
+  outline: var(--ms-focus-ring-width) solid var(--focus-ring);
+  outline-offset: var(--ms-focus-ring-offset);
+}

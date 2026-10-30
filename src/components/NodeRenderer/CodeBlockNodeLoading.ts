@@ -1,15 +1,8 @@
 import type { CodeBlockNodeProps } from '../../types/component-props'
-import { buildDiffPreviewPanes, createDiffMatchCache } from 'markstream-core'
+import { buildDiffPreviewPanes, createDiffMatchCache, isDiffCodeBlock, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
 import { defineComponent, h } from 'vue'
 import { getLanguageIcon, languageMap, normalizeLanguageIdentifier } from '../../utils/languageIcon'
-import {
-  isDiffCodeBlock,
-  resolveCodeBlockHeader,
-  resolveDiffHideUnchangedRegionsOption,
-} from '../CodeBlockNode/codeBlockHeader'
 import PreCodeNode from '../PreCodeNode'
-import { resolvePreCodeThemePalette } from '../PreCodeNode/preCodeTheme'
-import { resolvePreCodeVisualOptions } from '../PreCodeNode/preCodeVisual'
 import './codeBlockNodeLoading.css'
 
 type CodeBlockFallbackProps = CodeBlockNodeProps & Record<string, unknown>

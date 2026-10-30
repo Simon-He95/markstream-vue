@@ -45,6 +45,20 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 - Key capabilities: content input path; nodes input path; safe HTML policy; progressive Mermaid; KaTeX math; stream-diffs code blocks; custom Octane components; client and server builds; worker subpaths; mobile px CSS and Tailwind CSS exports
 - Known limitations: Requires Octane ^0.1.21 and its compiler/Vite setup. Beta API. Virtualization is not available.
 
+### markstream-solid
+- Package name: markstream-solid
+- Version: 2.0.21
+- Maturity label: workspace preview
+- Framework/runtime: SolidJS 1.9 native components, SSR and hydration
+- Description: SolidJS streaming Markdown renderer for AI chat, incremental Markdown and long document restoration.
+- Homepage: https://markstream.simonhe.me/frameworks/solid
+- Docs URL: https://markstream.simonhe.me/frameworks/solid
+- Playground URL: https://markstream-solid.pages.dev/
+- Peer dependencies: @antv/infographic, @terrastruct/d2, katex, mermaid, solid-js, stream-diffs
+- Keywords: solid, solidjs, markdown, streaming-markdown, ai-chat, sse, ssr, katex, mermaid, markstream-solid
+- Key capabilities: content and nodes input paths; smooth streaming; virtual history capture and restoration; native Solid components and provider; Mermaid, KaTeX, D2 and infographic; stream-diffs code blocks; browser/server conditional exports; worker subpaths; px and Tailwind CSS
+- Known limitations: Workspace preview; npm publication and the hosted playground deployment are pending. Use pnpm play:solid locally or pack parser/core/Solid together for an external app.
+
 ### markstream-svelte
 - Package name: markstream-svelte
 - Version: 2.0.21
@@ -89,7 +103,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### stream-markdown-parser
 - Package name: stream-markdown-parser
-- Version: 1.2.22
+- Version: 1.2.23
 - Maturity label: stable
 - Framework/runtime: Any JavaScript or TypeScript app
 - Description: Framework-agnostic streaming Markdown parser that outputs structured nodes for Markstream renderers and custom render pipelines.
@@ -102,7 +116,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 
 ### markstream-core
 - Package name: markstream-core
-- Version: 2.0.21
+- Version: 2.0.22
 - Maturity label: stable
 - Framework/runtime: Framework-agnostic utilities
 - Description: Framework-agnostic smooth streaming controller and streaming text state utilities for Markstream
@@ -134,6 +148,14 @@ Octane:
 pnpm add markstream-octane octane
 import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
+```
+
+SolidJS 1.9 (workspace preview; npm publication pending):
+```txt
+pnpm install
+pnpm play:solid
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
 ```
 
 Svelte 5:
@@ -183,6 +205,7 @@ Standard Markdown is Nuxt SSR-safe. Add a client-only boundary only for browser-
 - markstream-vue2: Vue 2.6 / 2.7 compatibility renderer only.
 - markstream-react: React, Next.js, and Remix renderer.
 - markstream-octane: native Octane client/server renderer.
+- markstream-solid: native SolidJS 1.9 workspace preview; npm publication and hosted deployment are pending.
 - markstream-svelte: Svelte 5 renderer only.
 - markstream-angular: Angular standalone renderer.
 - stream-markdown-parser: parser only; it does not render UI components.
@@ -190,20 +213,20 @@ Standard Markdown is Nuxt SSR-safe. Add a client-only boundary only for browser-
 
 ## Feature Matrix
 
-| Feature | markstream-vue | markstream-react | markstream-octane | markstream-svelte | markstream-angular |
-| --- | --- | --- | --- | --- | --- |
-| content input path | yes | yes | yes | yes | yes |
-| nodes input path | yes | yes | yes | yes | yes |
-| Progressive Mermaid | yes | yes | yes | yes | yes |
-| KaTeX math | yes | yes | yes | yes | yes |
-| Streaming code blocks | yes | yes | yes | yes | yes |
-| Virtualization | yes | yes | no | yes | yes |
-| Safe HTML policy | yes | yes | yes | yes | yes |
-| Custom components | yes | yes | yes | yes | yes |
-| SSR support | yes | yes | yes | limited | limited |
-| Worker imports | yes | yes | yes | yes | yes |
-| Mobile px CSS | yes | yes | yes | yes | no |
-| Tailwind support | yes | yes | yes | yes | no |
+| Feature | markstream-vue | markstream-react | markstream-octane | markstream-svelte | markstream-angular | markstream-solid |
+| --- | --- | --- | --- | --- | --- | --- |
+| content input path | yes | yes | yes | yes | yes | yes |
+| nodes input path | yes | yes | yes | yes | yes | yes |
+| Progressive Mermaid | yes | yes | yes | yes | yes | yes |
+| KaTeX math | yes | yes | yes | yes | yes | yes |
+| Streaming code blocks | yes | yes | yes | yes | yes | yes |
+| Virtualization | yes | yes | no | yes | yes | yes |
+| Safe HTML policy | yes | yes | yes | yes | yes | yes |
+| Custom components | yes | yes | yes | yes | yes | yes |
+| SSR support | yes | yes | yes | limited | limited | yes |
+| Worker imports | yes | yes | yes | yes | yes | yes |
+| Mobile px CSS | yes | yes | yes | yes | no | yes |
+| Tailwind support | yes | yes | yes | yes | no | yes |
 
 ## Comparison Guidance
 
@@ -251,6 +274,7 @@ Standard Markdown is Nuxt SSR-safe. Add a client-only boundary only for browser-
 ## SEO Context - Which Queries Should Surface Which Page
 
 - "react streaming markdown renderer" -> /frameworks/react
+- "solidjs streaming markdown renderer" -> /frameworks/solid
 - "nextjs ai chat markdown renderer" -> /frameworks/next or /frameworks/react
 - "vue streaming markdown renderer" -> /frameworks/vue
 - "Nuxt SSR markdown renderer" -> /frameworks/nuxt

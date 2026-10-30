@@ -1,0 +1,25 @@
+{
+  "phase": "After asset fixes, before custom-node routing fix",
+  "expected": "h2 containing Image",
+  "actual": {
+    "html": "<span class=\"pinned-image-node\" data-pinned-image-state=\"error\"><!--$--><!--/--><!--$--><!--/--><!--$--><span class=\"pinned-image-node__error\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M2 2h20v10h-2V4H4v9.586l5-5L14.414 14 13 15.414l-4-4-5 5V20h8v2H2z\"></path></svg><!--$-->Image failed to load<!--/--></span><!--/--></span>",
+    "parents": [
+      {
+        "cls": "heading-node heading-2",
+        "text": "Image failed to load",
+        "html": "<span class=\"pinned-image-node\" data-pinned-image-state=\"error\"><!--$--><!--/--><!--$--><!--/--><!--$--><span class=\"pinned-image-node__error\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M2 2h20v10h-2V4H4v9.586l5-5L14.414 14 13 15.414l-4-4-5 5V20h8v2H2z\"></path></svg><!--$-->Image failed to load<!--/--></span><!--/--></span>"
+      },
+      {
+        "cls": "node-content",
+        "text": "Image failed to load",
+        "html": "<h2 class=\"heading-node heading-2\"><span class=\"pinned-image-node\" data-pinned-image-state=\"error\"><!--$--><!--/--><!--$--><!--/--><!--$--><span class=\"pinned-image-node__error\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M2 2h20v10h-2V4H4v9.586l5-5L14.414 14 13 15.414l-4-4-5 5V20h8v2H2z\"></path></svg><!--$-->Image failed to load<!--/--></span><!--/--></span></h2>"
+      },
+      {
+        "cls": "node-slot",
+        "type": "heading",
+        "text": "Image failed to load",
+        "html": "<div class=\"node-content\"><h2 class=\"heading-node heading-2\"><span class=\"pinned-image-node\" data-pinned-image-state=\"error\"><!--$--><!--/--><!--$--><!--/--><!--$--><span class=\"pinned-image-node__error\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M2 2h20v10h-2V4H4v9.586l5-5L14.414 14 13 15.414l-4-4-5 5V20h8v2H2z\"></path></svg><!--$-->Image failed to load<!--/--></span><!--/--></span></h2></div>"
+      }
+    ]
+  }
+}

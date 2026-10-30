@@ -256,18 +256,16 @@ describe('parseMarkdownToStructure - incremental/mid-typing states', () => {
   })
 
   describe('footnote reference mid-states', () => {
-    it('"[^1" remains text; "[^1]" may become a footnote_reference depending on plugins', () => {
-      const a = parseMarkdownToStructure('[^1', md)
-      expect(collect(a, 'footnote_reference').length).toBe(0)
-      const b = parseMarkdownToStructure('[^1]', md)
-      // token type may be 'footnote_reference' or fall back to text if plugin config defers
-      const got = collect(b, 'footnote_reference')
-      if (got.length === 0) {
-        expect(textIncludes(b, '[^1]')).toBe(true)
+    it('defers ambiguous trailing footnote prefixes and flushes literal text on final', () => {
+      for (const prefix of ['[^1', '[^1]']) {
+        expect(parseMarkdownToStructure(prefix, md, { final: false })).toEqual([])
+        const final = parseMarkdownToStructure(prefix, md, { final: true })
+        expect(textIncludes(final, prefix)).toBe(true)
+        expect(collect(final, 'math_block')).toHaveLength(0)
       }
-      else {
-        expect(got.length).toBeGreaterThanOrEqual(1)
-      }
+      const defined = parseMarkdownToStructure('Reference[^1].\n\n[^1]: Note.', md, { final: false })
+      expect(collect(defined, 'footnote_reference')).toHaveLength(1)
+      expect(collect(defined, 'footnote')).toHaveLength(1)
     })
   })
 

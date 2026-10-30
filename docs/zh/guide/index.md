@@ -76,6 +76,13 @@ Vue 3 和 Nuxt 项目直接按下面三步接入。其他框架先从 [框架选
 | [安装](/zh/guide/angular-installation) | Angular 专用安装 |
 | [快速开始](/zh/guide/angular-quick-start) | standalone Angular 示例 |
 
+### SolidJS (markstream-solid)
+
+| 页面 | 描述 |
+| --- | --- |
+| [快速开始](/zh/guide/solid) | 工作区／tarball 接入、Solid TSX、流式输入、workers、自定义组件、SSR 与恢复 |
+| [框架总览](/zh/frameworks/solid) | 功能与工作区预览状态 |
+
 ### Svelte (markstream-svelte)
 
 | 页面 | 描述 |

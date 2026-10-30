@@ -144,3 +144,9 @@ Vue 的插件、事件、slots 与 ref 使用 Solid 的 provider、回调、JSX/
 - SEO：Solid playground 使用自身 robots/sitemap/noindex lab headers、canonical、OG/Twitter、JSON-LD；logo/favicon/OG 图片继续复用共享文件。构建输出验证通过，文档站新 API 页面含更新时间与双语 SEO。既有 compare 页面过期提示没有伪造日期。
 
 本地全仓 3,551、Solid 95 + 3、类型检查、构建、完整生产浏览器、独立打包消费、继承签名/API 文档覆盖、Docs/LLM/SEO 均通过。第二轮审查与远端 head CI 通过作为最终合并条件。
+
+## Linux 首屏空内容占位回退
+
+第二轮远端 CI 中时间线首尾导航通过，但默认播放的后续导航在约 414ms 出现 226px 回退。以 Arial 字体、6 倍 CPU 降速并在第一帧跟随到底部，复现根容器无子节点时从 660px 缩到 433.84375px，差值恰好是 226.15625px；没有节点或图表交接。原因是 content-visibility:auto 的 600px 初始高度占位，加上 60px padding，早于真实空布局参与滚动。
+
+初始 intrinsic 高度改为 0，保留 auto 记住已测量高度及原有可见性优化。新增生产浏览器回归从首帧空内容开始采样、模拟底部锚点并保存逐帧记录；6 倍 CPU 下初始高度即为 433.84375px，无回退。原三轮完整播放和性能断言保持不变。[修复前几何](./benchmarks/initial-layout-before.json) / [修复后首屏逐帧记录](./benchmarks/initial-layout.json)。

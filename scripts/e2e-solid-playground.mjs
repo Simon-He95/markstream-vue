@@ -51,6 +51,43 @@ try {
       }
     }
   })
+  const initialPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const initialSession = await initialPage.context().newCDPSession(initialPage)
+  await initialSession.send('Emulation.setCPUThrottlingRate', { rate: 6 })
+  await initialPage.addInitScript(() => {
+    const data = window.__initialLayout = { samples: [], backwards: [], active: true }
+    document.addEventListener('DOMContentLoaded', () => {
+      const style = document.createElement('style')
+      style.textContent = '.playground-root { --play-font-display: Arial, sans-serif; --play-font-mono: monospace; }'
+      document.head.append(style)
+    })
+    const sample = () => {
+      const root = document.querySelector('.chat-wrapper')
+      const renderer = document.querySelector('.chat-messages > .markdown-renderer')
+      if (root && renderer) {
+        const height = renderer.getBoundingClientRect().height
+        // Exercise bottom following before Chromium resolves the first auto-containment layout.
+        if (!data.samples.length)
+          root.scrollTop = root.scrollHeight
+        const next = { time: performance.now(), height, top: root.scrollTop, nodes: renderer.children.length, intrinsic: getComputedStyle(renderer).containIntrinsicSize }
+        const previous = data.samples.at(-1)
+        if (previous && next.top < previous.top - 2)
+          data.backwards.push({ before: previous, after: next })
+        data.samples.push(next)
+        if (next.time - data.samples[0].time > 1000)
+          data.active = false
+      }
+      if (data.active)
+        requestAnimationFrame(sample)
+    }
+    requestAnimationFrame(sample)
+  })
+  await initialPage.goto(url)
+  await initialPage.waitForFunction(() => window.__initialLayout?.active === false)
+  const initialLayout = await initialPage.evaluate(() => window.__initialLayout)
+  await writeFile(path.join(outputDir, 'initial-layout.json'), `${JSON.stringify(initialLayout, null, 2)}\n`)
+  assert.deepEqual(initialLayout.backwards, [], 'empty renderer intrinsic sizing must not roll back an initial bottom anchor')
+  await initialPage.close()
   await page.goto(url)
   await page.waitForFunction(() => !!window.__markstreamSolid)
   const defaultSource = await page.evaluate(() => window.__markstreamSolid.getSource())

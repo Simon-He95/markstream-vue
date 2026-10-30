@@ -1,0 +1,48 @@
+[
+  {
+    "before": {
+      "t": 718,
+      "height": 660,
+      "scrollTop": 226,
+      "nodes": [],
+      "renderer": {
+        "height": 660,
+        "visibility": "auto",
+        "intrinsic": "auto 800px auto 600px",
+        "rect": {
+          "x": 79,
+          "y": 541.15625,
+          "width": 998,
+          "height": 660,
+          "top": 541.15625,
+          "right": 1077,
+          "bottom": 1201.15625,
+          "left": 79
+        },
+        "count": 0
+      }
+    },
+    "after": {
+      "t": 849.9000000953674,
+      "height": 433.84375,
+      "scrollTop": 0,
+      "nodes": [],
+      "renderer": {
+        "height": 433.84375,
+        "visibility": "auto",
+        "intrinsic": "auto 800px auto 600px",
+        "rect": {
+          "x": 79,
+          "y": 541.15625,
+          "width": 998,
+          "height": 433.84375,
+          "top": 541.15625,
+          "right": 1077,
+          "bottom": 975,
+          "left": 79
+        },
+        "count": 0
+      }
+    }
+  }
+]

@@ -25,7 +25,7 @@ markstream-solid {
 .markstream-solid.markdown-renderer {
   contain: layout;
   content-visibility: auto;
-  contain-intrinsic-size: 800px 600px;
+  contain-intrinsic-size: 800px 0;
 }
 
 .markstream-solid.virtualized {
@@ -2309,7 +2309,7 @@ body > div[id^="dmermaid-"] {
 .markstream-solid.virtualized .node-slot,.markstream-solid.virtualized .node-content,.markstream-solid.virtual-scroll-coordinated .node-slot,.markstream-solid.virtual-scroll-coordinated .node-content {display:flow-root;}
 .markstream-solid .footnote-node {display:flex;font-size:14px;line-height:1.625;margin:var(--ms-flow-footnote-y) 0;border-top:1px solid var(--footnote-border);padding-top:8px;}
 .markstream-solid .code-pre-fallback code {color:inherit;font:inherit;background:transparent;}
-.markstream-solid.markdown-renderer {contain-intrinsic-size:auto 800px auto 600px;}
+.markstream-solid.markdown-renderer {contain-intrinsic-size:auto 800px auto 0px;}
 .markstream-solid.markdown-renderer.virtualized,.markstream-solid.markdown-renderer.virtual-scroll-coordinated {content-visibility:visible;contain-intrinsic-size:none;}
 .markstream-solid .text-node-stream-delta {animation:markstream-solid-stream-fade var(--stream-update-fade-duration,var(--fade-duration,200ms)) var(--stream-update-fade-ease,var(--fade-ease,cubic-bezier(.2,0,.4,1))) both;}
 @keyframes markstream-solid-stream-fade {from{opacity:0}to{opacity:1}}

@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-10-30T15:22:08.925Z",
+  "timestamp": "2026-10-30T18:05:21.063Z",
   "styleCases": 43,
   "propertiesPerCase": 25,
   "variants": [
@@ -30,7 +30,7 @@
   "solidBlockWorkerRenders": 2,
   "solidInlineWorkerRenders": 1,
   "defaultPlayback": {
-    "frameP95Ms": 18,
+    "frameP95Ms": 18.2,
     "maxLongTaskMs": 0,
     "longTaskCount": 0,
     "backwards": [],
@@ -41,7 +41,7 @@
         "height": 128
       },
       {
-        "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
+        "src": "http://127.0.0.1:61285/assets/vue-logo-C0QQ1j6M.png",
         "width": 400,
         "height": 400
       }
@@ -50,8 +50,8 @@
   },
   "defaultPlaybacks": [
     {
-      "frameP95Ms": 19.4,
-      "maxLongTaskMs": 64,
+      "frameP95Ms": 20.6,
+      "maxLongTaskMs": 63,
       "longTaskCount": 1,
       "backwards": [],
       "images": [
@@ -61,7 +61,7 @@
           "height": 128
         },
         {
-          "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
+          "src": "http://127.0.0.1:61285/assets/vue-logo-C0QQ1j6M.png",
           "width": 400,
           "height": 400
         }
@@ -69,7 +69,7 @@
       "bottomGap": 0
     },
     {
-      "frameP95Ms": 19.6,
+      "frameP95Ms": 17.9,
       "maxLongTaskMs": 0,
       "longTaskCount": 0,
       "backwards": [],
@@ -80,7 +80,7 @@
           "height": 128
         },
         {
-          "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
+          "src": "http://127.0.0.1:61285/assets/vue-logo-C0QQ1j6M.png",
           "width": 400,
           "height": 400
         }
@@ -88,7 +88,7 @@
       "bottomGap": 0
     },
     {
-      "frameP95Ms": 18,
+      "frameP95Ms": 18.2,
       "maxLongTaskMs": 0,
       "longTaskCount": 0,
       "backwards": [],
@@ -99,7 +99,7 @@
           "height": 128
         },
         {
-          "src": "http://127.0.0.1:51348/assets/vue-logo-C0QQ1j6M.png",
+          "src": "http://127.0.0.1:61285/assets/vue-logo-C0QQ1j6M.png",
           "width": 400,
           "height": 400
         }

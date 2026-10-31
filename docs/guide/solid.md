@@ -17,7 +17,13 @@ keywords:
 
 ## Install and requirements
 
-The Solid package is currently available from this repository's workspace. It has not been published to npm yet. Start with the local playground:
+Install in a SolidJS 1.9 or SolidStart application:
+
+```bash
+pnpm add markstream-solid solid-js@^1.9
+```
+
+To run the repository playground:
 
 ```bash
 pnpm install
@@ -25,7 +31,7 @@ pnpm build:solid
 pnpm play:solid
 ```
 
-For another app in the same pnpm workspace, add `markstream-solid` with the `workspace:*` protocol and install `solid-js@^1.9`. For an external app, build and pack the parser, core, and Solid packages together:
+For another app in the same pnpm workspace, add `markstream-solid` with the `workspace:*` protocol and install `solid-js@^1.9`. To test unpublished workspace changes in an external app, build and pack the parser, core, and Solid packages together:
 
 ```bash
 pnpm build:solid

@@ -51,12 +51,10 @@ Next.js 里，实时 SSE/WebSocket 区域用 root `markstream-react` 放在 `'us
 
 ## SolidJS 1.9
 
-当前 Solid 包通过仓库工作区提供，尚未发布到 npm。先运行本地演示，或按 [Solid 指南](/zh/guide/solid) 打包给独立应用使用。
+安装原生 Solid 渲染器。编译配置、workers、SSR 与虚拟历史见 [Solid 指南](/zh/guide/solid)。
 
 ```bash
-pnpm install
-pnpm build:solid
-pnpm play:solid
+pnpm add markstream-solid solid-js@^1.9
 ```
 
 ```tsx

@@ -83,7 +83,7 @@ If the first render fails, use [Troubleshooting by Symptom](/guide/troubleshooti
 | Page | Description |
 | --- | --- |
 | [Quick Start](/guide/solid) | Workspace/tarball setup, Solid TSX, streaming, workers, custom components, SSR and restoration |
-| [Framework overview](/frameworks/solid) | Capabilities and workspace preview status |
+| [Framework overview](/frameworks/solid) | Capabilities and installation |
 
 ### Svelte (markstream-svelte)
 

@@ -1,8 +1,8 @@
 # Markstream — Streaming Markdown renderers for AI chat
 
-`markstream-vue` is a Vue 3 / Nuxt / VitePress streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long AI responses, Mermaid, KaTeX, and streaming code blocks.
+Markstream is a streaming Markdown renderer family for Vue, React, Octane, SolidJS, Svelte, Angular, and Vue 2, with AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long AI responses, Mermaid, KaTeX, and streaming code blocks.
 
-Markstream is the renderer family for Vue, React, Octane, Solid, Svelte, Angular, and Vue 2. Use sibling packages for non-Vue frameworks; use `markstream-vue` when your Vue/Nuxt/VitePress UI needs stable partial Markdown states, mobile WebView rendering, safe component rendering, and progressive heavy blocks.
+Use sibling packages for non-Vue frameworks; use `markstream-vue` when your Vue/Nuxt/VitePress UI needs stable partial Markdown states, mobile WebView rendering, safe component rendering, and progressive heavy blocks.
 
 [![中文版](https://img.shields.io/badge/docs-中文文档-blue)](README.zh-CN.md)
 [![Docs](https://img.shields.io/badge/docs-vitepress-blue)](https://markstream.simonhe.me/)
@@ -18,6 +18,7 @@ Vue package:
 Other packages:
 
 [![markstream-react npm version](https://img.shields.io/npm/v/markstream-react?label=markstream-react)](https://www.npmjs.com/package/markstream-react)
+[![markstream-solid npm version](https://img.shields.io/npm/v/markstream-solid?label=markstream-solid)](https://www.npmjs.com/package/markstream-solid)
 [![markstream-svelte npm version](https://img.shields.io/npm/v/markstream-svelte?label=markstream-svelte)](https://www.npmjs.com/package/markstream-svelte)
 [![markstream-angular npm version](https://img.shields.io/npm/v/markstream-angular?label=markstream-angular)](https://www.npmjs.com/package/markstream-angular)
 [![markstream-vue2 npm version](https://img.shields.io/npm/v/markstream-vue2?label=markstream-vue2)](https://www.npmjs.com/package/markstream-vue2)
@@ -79,7 +80,7 @@ Start with the [framework overview](https://markstream.simonhe.me/frameworks) if
 | `markstream-vue` | Vue 3 / Nuxt / VitePress | `pnpm add markstream-vue` | [Framework overview](https://markstream.simonhe.me/frameworks) · [Vue landing](https://markstream.simonhe.me/frameworks/vue) · [Nuxt landing](https://markstream.simonhe.me/frameworks/nuxt) |
 | `markstream-react` | React / Next.js / Remix | `pnpm add markstream-react` | [React landing](https://markstream.simonhe.me/frameworks/react) · [Next.js landing](https://markstream.simonhe.me/frameworks/next) |
 | `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [Package guide](./packages/markstream-octane/README.md) · [Local playground](./playground-octane) |
-| `markstream-solid` | SolidJS 1.9 | Workspace package | [Package guide](./packages/markstream-solid/README.md) · [Local playground](./playground-solid) |
+| `markstream-solid` | SolidJS 1.9 / SolidStart | `pnpm add markstream-solid solid-js@^1.9` | [Solid guide](https://markstream.simonhe.me/guide/solid) · [Components and API](https://markstream.simonhe.me/guide/solid-api) |
 | `markstream-svelte` | Svelte 5 | `pnpm add markstream-svelte svelte@^5` | [Svelte landing](https://markstream.simonhe.me/frameworks/svelte) · [Quick start](https://markstream.simonhe.me/guide/svelte) |
 | `markstream-angular` | Angular standalone | `pnpm add markstream-angular` | [Angular landing](https://markstream.simonhe.me/frameworks/angular) · [Quick start](https://markstream.simonhe.me/guide/angular-quick-start) |
 | `markstream-vue2` | Vue 2.6 / 2.7 | `pnpm add markstream-vue2` | [Vue 2 landing](https://markstream.simonhe.me/frameworks/vue2) · [Quick start](https://markstream.simonhe.me/guide/vue2-quick-start) |
@@ -91,6 +92,7 @@ Start with the [framework overview](https://markstream.simonhe.me/frameworks) if
 - **Vue 3 / Nuxt / VitePress** → `markstream-vue`
 - **React / Next.js / Remix** → `markstream-react`
 - **Octane** → `markstream-octane`
+- **SolidJS 1.9 / SolidStart** → `markstream-solid`
 - **Svelte 5** → `markstream-svelte`
 - **Angular standalone** → `markstream-angular`
 - **Vue 2.6 / 2.7** → `markstream-vue2`
@@ -103,7 +105,7 @@ Start with the [framework overview](https://markstream.simonhe.me/frameworks) if
 
 The stable surface includes `MarkdownRender`, streaming content rendering, pre-parsed node rendering, the safe HTML policy, optional Mermaid / KaTeX / D2 / Infographic integrations, enhanced code blocks, virtual-scroll coordination, CSS exports, worker client subpaths, and SSR imports for Vite / Nuxt / VitePress.
 
-Cross-framework renderers (`markstream-react`, `markstream-octane`, `markstream-svelte`, `markstream-angular`, `markstream-vue2`) are available and actively developed. Check each package page for API maturity, framework support, and known limitations.
+Cross-framework renderers (`markstream-react`, `markstream-octane`, `markstream-solid`, `markstream-svelte`, `markstream-angular`, `markstream-vue2`) are available and actively developed. Check each package page for API maturity, framework support, and known limitations.
 
 For the full release contract and Go / No-Go checklist, see [1.0 Release Readiness](./docs/guide/release-1-0.md). For reproducible performance evidence, run `pnpm benchmark:1.0` and use the generated [1.0 Benchmark Report](./docs/guide/benchmark-1-0.md).
 
@@ -140,7 +142,7 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 - Purpose-built for **streaming Markdown** (AI/chat/SSE), designed to minimize flicker and keep memory predictable.
 - **Two render modes**: virtual window for long docs, incremental batching for “typing” effects.
 - **Progressive diagrams** (Mermaid) and **streaming code blocks** (stream-diffs) that keep up with diffs.
-- Works with **raw Markdown strings or pre-parsed nodes**, with custom framework components in Vue, React, Octane, Svelte, and Angular.
+- Works with **raw Markdown strings or pre-parsed nodes**, with custom framework components in Vue, React, Octane, SolidJS, Svelte, and Angular.
 - TypeScript-first, ship-ready defaults — import CSS and render.
 
 ## Choose Your Path
@@ -161,6 +163,7 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 | Vue 3 | https://markstream-vue.simonhe.me/ |
 | React | https://markstream-react.pages.dev/ |
 | Octane | `pnpm play:octane` |
+| SolidJS | `pnpm play:solid` · [Playground guide](./playground-solid) |
 | Svelte | https://markstream-svelte.pages.dev/ |
 | Angular | https://markstream-angular.pages.dev/ |
 | Nuxt | https://markstream-nuxt.pages.dev/ |
@@ -270,6 +273,23 @@ export function Message(props: { content: string, isDone: boolean }) {
 ```
 
 Add `octane/compiler/vite` to Vite and configure `.tsrx` as shown in the [package guide](./packages/markstream-octane/README.md). The package ships precompiled client and server entries; application source still uses the normal Octane compiler.
+
+### SolidJS / SolidStart
+
+```bash
+pnpm add markstream-solid solid-js@^1.9
+```
+
+```tsx
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+
+export function Message(props: { content: string, isDone: boolean }) {
+  return <MarkdownRender mode="chat" content={props.content} final={props.isDone} />
+}
+```
+
+Read props in JSX to preserve reactivity. See the [Solid guide](https://markstream.simonhe.me/guide/solid) and [complete API](https://markstream.simonhe.me/guide/solid-api) for compiler setup, workers, SSR, and component props.
 
 ### Svelte 5
 

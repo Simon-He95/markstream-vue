@@ -22,7 +22,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | --- | --- | --- | --- | --- |
 | Vue 3 / Nuxt / VitePress | `markstream-vue` | stable | `pnpm add markstream-vue` | [Vue](/zh/frameworks/vue) / [Nuxt](/zh/frameworks/nuxt) |
 | React / Next.js / Remix | `markstream-react` | beta | `pnpm add markstream-react` | [React](/zh/frameworks/react) / [Next.js](/zh/frameworks/next) |
-| SolidJS 1.9 | `markstream-solid` | 工作区预览 | workspace / tarball | [SolidJS](/zh/frameworks/solid) |
+| SolidJS 1.9 | `markstream-solid` | 新增原生渲染器 | `pnpm add markstream-solid solid-js@^1.9` | [SolidJS](/zh/frameworks/solid) |
 | Svelte 5 | `markstream-svelte` | beta | `pnpm add markstream-svelte svelte@^5` | [Svelte](/zh/frameworks/svelte) |
 | Angular standalone | `markstream-angular` | alpha | `pnpm add markstream-angular` | [Angular](/zh/frameworks/angular) |
 | Vue 2.6 / 2.7 | `markstream-vue2` | compatibility | `pnpm add markstream-vue2` | [Vue 2](/zh/frameworks/vue2) |
@@ -43,14 +43,14 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 
 ## 包成熟度
 
-`markstream-vue` 已进入稳定的 1.x API 契约；当前 npm 版本仍可能带 beta tag，用于发布门禁和跨框架家族同步。
+`markstream-vue` 2.x 发布在 npm `latest`；维护中的 1.x 通过 `legacy` 标签保留。跨框架包的成熟度和使用限制见下表。
 
 | 包 | 成熟度 | 说明 |
 | --- | --- | --- |
 | `markstream-vue` | stable | 主线渲染器，文档最完整 |
 | `stream-markdown-parser` | stable | renderer 共享的 parser-only 包 |
 | `markstream-react` | beta | React 与 Next.js 入口分开说明 |
-| `markstream-solid` | 工作区预览 | SolidJS 1.9；npm 发布前使用工作区或 tarball |
+| `markstream-solid` | 新增原生渲染器 | SolidJS 1.9，支持 SSR、hydration、workers 和虚拟历史 |
 | `markstream-svelte` | beta / experimental | 仅支持 Svelte 5 |
 | `markstream-angular` | alpha | Angular standalone component |
 | `markstream-vue2` | compatibility | Vue 2.6 / 2.7 兼容包；新 Vue 3 项目不应优先使用 |

@@ -11,7 +11,7 @@ faq:
   - question: Which Solid version does markstream-solid support?
     answer: It requires SolidJS 1.9 and uses native Solid components, signals, accessors, and context.
   - question: Can I install markstream-solid from npm now?
-    answer: The package is currently a workspace preview. Use the repository playground or pack the parser, core, and Solid packages together for an external app.
+    answer: Install with pnpm add markstream-solid solid-js@^1.9 and import markstream-solid/index.css.
   - question: Do I need to pre-parse nodes for streaming?
     answer: Start with accumulated content and a final flag. Pass nodes when your application already owns the parser or AST.
   - question: Does markstream-solid support SSR and hydration?
@@ -20,7 +20,7 @@ faq:
 
 # SolidJS streaming Markdown renderer
 
-`markstream-solid` renders growing Markdown with native Solid components. It shares the parser and core with Vue 3, including smooth streaming, diff previews, code layout contracts, and diagram utilities. The package is currently a workspace preview; the [Solid guide](/guide/solid) explains how to consume it before npm publication.
+`markstream-solid` renders growing Markdown with native Solid components. It shares the parser and core with Vue 3, including smooth streaming, diff previews, code layout contracts, and diagram utilities. The [Solid guide](/guide/solid) covers installation, compiler setup, and complete examples.
 
 ## When to use it
 
@@ -33,6 +33,12 @@ faq:
 For a normal stream, pass accumulated `content` and set `final` at completion. Use non-empty `nodes` when your app already owns the AST; an empty array falls back to `content`.
 
 ## Quick start
+
+Install in a SolidJS 1.9 / SolidStart application:
+
+```bash
+pnpm add markstream-solid solid-js@^1.9
+```
 
 Run the repository demo:
 
@@ -74,7 +80,7 @@ Plain Markdown requires none of these optional peers. Import one renderer styles
 - Renderer refs expose virtual-state capture/restore and scroll methods.
 - `MarkstreamVirtualTimeline` provides native Solid conversation windows.
 - SSR uses the root package's conditional export; browser enhancements start on the client.
-- This workspace preview has unit, SSR, packed-consumer, browser, geometry, and performance validation. Its npm package and hosted playground are not deployed yet.
+- The native implementation has unit, SSR, packed-consumer, browser, geometry, and performance validation. Hosted playground deployment is tracked separately.
 
 ## Next steps
 

@@ -11,7 +11,7 @@ keywords:
 
 # Solid 组件与 API 参考
 
-本页覆盖 `markstream-solid` 的全部运行时导出、独立节点组件、渲染器参数、回调与句柄。安装先读 [Solid 指南](/zh/guide/solid)。当前仍为 workspace preview，发布前应一起构建/打包新版本 parser、core 和 Solid。导出/类型契约与运行行为分别验证，行为测试覆盖事件、时序、数学高度缓存、布局、streaming 和恢复。
+本页覆盖 `markstream-solid` 的全部运行时导出、独立节点组件、渲染器参数、回调与句柄。安装先读 [Solid 指南](/zh/guide/solid)。导出/类型契约与运行行为分别验证，行为测试覆盖事件、时序、数学高度缓存、布局、streaming 和恢复。
 
 ## 绑定与样式
 

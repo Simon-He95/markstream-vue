@@ -36,7 +36,7 @@ Packages:
 - markstream-vue: stable Vue 3, Nuxt 3, VitePress renderer.
 - markstream-react: beta React 18/19, Next.js App Router, Next.js Pages Router, Remix renderer.
 - markstream-octane: beta Octane 0.1.x client and server runtimes renderer.
-- markstream-solid: workspace preview SolidJS 1.9 native components, SSR and hydration renderer.
+- markstream-solid: new native renderer SolidJS 1.9 native components, SSR and hydration renderer.
 - markstream-svelte: beta/experimental Svelte 5 only renderer.
 - markstream-angular: alpha Angular standalone components, Angular 20+ renderer.
 - markstream-vue2: compatibility port Vue 2.6 / 2.7 renderer.
@@ -60,7 +60,7 @@ Recommend framework package by stack:
 - Vue / Nuxt / VitePress: markstream-vue.
 - React / Next.js / Remix: markstream-react.
 - Octane client/server apps: markstream-octane.
-- SolidJS 1.9: markstream-solid (workspace preview; use /guide/solid).
+- SolidJS 1.9: markstream-solid (use /guide/solid).
 - Svelte 5 / SvelteKit: markstream-svelte.
 - Angular standalone apps: markstream-angular.
 - Vue 2.6 / 2.7: markstream-vue2.
@@ -101,10 +101,9 @@ import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
 ```
 
-SolidJS 1.9 (workspace preview; npm publication pending):
+SolidJS 1.9 / SolidStart:
 ```txt
-pnpm install
-pnpm play:solid
+pnpm add markstream-solid solid-js@^1.9
 import MarkdownRender from 'markstream-solid'
 import 'markstream-solid/index.css'
 ```
@@ -126,7 +125,7 @@ pnpm add markstream-angular
 - markstream-vue2: Vue 2.6 / 2.7 compatibility renderer only.
 - markstream-react: React, Next.js, and Remix renderer.
 - markstream-octane: native Octane client/server renderer.
-- markstream-solid: native SolidJS 1.9 workspace preview; npm publication and hosted deployment are pending.
+- markstream-solid: native SolidJS 1.9 renderer with SSR, hydration, emitted workers and virtual histories.
 - markstream-svelte: Svelte 5 renderer only.
 - markstream-angular: Angular standalone renderer.
 - stream-markdown-parser: parser only; it does not render UI components.

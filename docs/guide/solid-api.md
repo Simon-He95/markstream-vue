@@ -11,7 +11,7 @@ keywords:
 
 # Solid components and API reference
 
-This page covers every runtime export of `markstream-solid`, standalone node components, renderer props, callbacks and handles. Start with [the Solid guide](/guide/solid) for installation. This is currently a workspace preview: pack the new parser/core/Solid versions together until published. Package presence/type signatures and runtime parity are separate checks; behavioral tests cover callbacks, timing, scoped math heights, layout, streaming and restoration.
+This page covers every runtime export of `markstream-solid`, standalone node components, renderer props, callbacks and handles. Start with [the Solid guide](/guide/solid) for installation. Package presence/type signatures and runtime parity are separate checks; behavioral tests cover callbacks, timing, scoped math heights, layout, streaming and restoration.
 
 ## Bindings and styles
 

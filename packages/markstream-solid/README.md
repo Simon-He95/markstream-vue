@@ -4,7 +4,13 @@ Native SolidJS 1.9 renderer using Markstream's shared parser and stream controll
 
 ## Install and compiler setup
 
-The package is currently a workspace preview; npm publication is pending. From this repository:
+Install in a SolidJS 1.9 or SolidStart application:
+
+```bash
+pnpm add markstream-solid solid-js@^1.9
+```
+
+From this repository:
 
 ```bash
 pnpm install
@@ -12,7 +18,7 @@ pnpm build:solid
 pnpm play:solid
 ```
 
-Applications in the same pnpm workspace can depend on `markstream-solid` using `workspace:*`, with `solid-js@^1.9`. For external apps, build and pack `stream-markdown-parser`, `markstream-core`, and `markstream-solid` together; see the [Solid installation guide](https://markstream.simonhe.me/guide/solid#install-and-requirements) and [packed consumer smoke](../../scripts/smoke-solid-package.mjs).
+Applications in the same pnpm workspace can depend on `markstream-solid` using `workspace:*`, with `solid-js@^1.9`. To test unpublished workspace changes in external apps, build and pack `stream-markdown-parser`, `markstream-core`, and `markstream-solid` together; see the [Solid installation guide](https://markstream.simonhe.me/guide/solid#install-and-requirements) and [packed consumer smoke](../../scripts/smoke-solid-package.mjs).
 
 Compile application TSX with `vite-plugin-solid` in Vite, and use `"jsx": "preserve"` / `"jsxImportSource": "solid-js"` in TypeScript. SolidStart manages its own compiler setup. The distributed library contains compiled browser/server JavaScript and declarations.
 

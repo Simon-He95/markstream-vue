@@ -123,14 +123,14 @@ const packageEntries = [
     kind: 'renderer',
     frameworkEn: 'SolidJS 1.9 native components, SSR and hydration',
     frameworkZh: 'SolidJS 1.9 原生组件、SSR 与 hydration',
-    maturityEn: 'workspace preview',
-    maturityZh: '工作区预览',
+    maturityEn: 'new native renderer',
+    maturityZh: '新增原生渲染器',
     docsPath: '/frameworks/solid',
     playground: 'https://markstream-solid.pages.dev/',
     capabilitiesEn: ['content and nodes input paths', 'smooth streaming', 'virtual history capture and restoration', 'native Solid components and provider', 'Mermaid, KaTeX, D2 and infographic', 'stream-diffs code blocks', 'browser/server conditional exports', 'worker subpaths', 'px and Tailwind CSS'],
     capabilitiesZh: ['content 与 nodes 输入', '平滑流式输出', '虚拟历史捕获与恢复', '原生 Solid 组件和 provider', 'Mermaid、KaTeX、D2 和 infographic', 'stream-diffs 代码块', 'browser/server 条件导出', 'worker 子路径', 'px 与 Tailwind CSS'],
-    limitationsEn: ['Workspace preview; npm publication and the hosted playground deployment are pending. Use pnpm play:solid locally or pack parser/core/Solid together for an external app.'],
-    limitationsZh: ['工作区预览；npm 包与线上 playground 尚未部署。先用 pnpm play:solid，独立应用需一起打包 parser/core/Solid。'],
+    limitationsEn: ['Requires SolidJS 1.9 and the Solid compiler. Hosted playground deployment is pending; use pnpm play:solid locally.'],
+    limitationsZh: ['需要 SolidJS 1.9 及 Solid 编译器。线上 playground 部署待完成，可先运行 pnpm play:solid。'],
   },
   {
     id: 'markstream-svelte',
@@ -400,10 +400,9 @@ import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
 \`\`\`
 
-SolidJS 1.9 (workspace preview; npm publication pending):
+SolidJS 1.9 / SolidStart:
 \`\`\`txt
-pnpm install
-pnpm play:solid
+pnpm add ${installSpecifier('markstream-solid')} solid-js@^1.9
 import MarkdownRender from 'markstream-solid'
 import 'markstream-solid/index.css'
 \`\`\`
@@ -442,10 +441,9 @@ import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
 \`\`\`
 
-SolidJS 1.9（工作区预览，尚未发布 npm）：
+SolidJS 1.9 / SolidStart：
 \`\`\`txt
-pnpm install
-pnpm play:solid
+pnpm add ${installSpecifier('markstream-solid')} solid-js@^1.9
 import MarkdownRender from 'markstream-solid'
 import 'markstream-solid/index.css'
 \`\`\`
@@ -527,7 +525,7 @@ const doNotConfuseEn = `## Do Not Confuse
 - markstream-vue2: Vue 2.6 / 2.7 compatibility renderer only.
 - markstream-react: React, Next.js, and Remix renderer.
 - markstream-octane: native Octane client/server renderer.
-- markstream-solid: native SolidJS 1.9 workspace preview; npm publication and hosted deployment are pending.
+- markstream-solid: native SolidJS 1.9 renderer with SSR, hydration, emitted workers and virtual histories.
 - markstream-svelte: Svelte 5 renderer only.
 - markstream-angular: Angular standalone renderer.
 - stream-markdown-parser: parser only; it does not render UI components.
@@ -539,7 +537,7 @@ const doNotConfuseZh = `## 不要混淆
 - markstream-vue2：仅用于 Vue 2.6 / 2.7 兼容。
 - markstream-react：React、Next.js、Remix renderer。
 - markstream-octane：原生 Octane 客户端/服务端 renderer。
-- markstream-solid：原生 SolidJS 1.9 工作区预览；npm 发布与线上部署尚未完成。
+- markstream-solid：原生 SolidJS 1.9 渲染器，支持 SSR、hydration、独立 worker 与虚拟历史。
 - markstream-svelte：仅用于 Svelte 5。
 - markstream-angular：Angular standalone renderer。
 - stream-markdown-parser：只提供 parser，不渲染 UI 组件。
@@ -684,7 +682,7 @@ Recommend framework package by stack:
 - Vue / Nuxt / VitePress: markstream-vue.
 - React / Next.js / Remix: markstream-react.
 - Octane client/server apps: markstream-octane.
-- SolidJS 1.9: markstream-solid (workspace preview; use /guide/solid).
+- SolidJS 1.9: markstream-solid (use /guide/solid).
 - Svelte 5 / SvelteKit: markstream-svelte.
 - Angular standalone apps: markstream-angular.
 - Vue 2.6 / 2.7: markstream-vue2.
@@ -843,7 +841,7 @@ ${rendererLines}
 - Vue / Nuxt / VitePress：markstream-vue。
 - React / Next.js / Remix：markstream-react。
 - Octane 客户端/服务端应用：markstream-octane。
-- SolidJS 1.9：markstream-solid（工作区预览，参见 /zh/guide/solid）。
+- SolidJS 1.9：markstream-solid（参见 /zh/guide/solid）。
 - Svelte 5 / SvelteKit：markstream-svelte。
 - Angular standalone：markstream-angular。
 - Vue 2.6 / 2.7：markstream-vue2。

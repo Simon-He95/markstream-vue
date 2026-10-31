@@ -52,12 +52,10 @@ Use root `markstream-react` in a client component for live SSE/WebSocket surface
 
 ## SolidJS 1.9
 
-The Solid package is currently a workspace preview. Run the local demo or follow the [Solid guide](/guide/solid) to pack it for an external app before npm publication.
+Install the native Solid renderer. See the [Solid guide](/guide/solid) for compiler setup, workers, SSR and virtual history.
 
 ```bash
-pnpm install
-pnpm build:solid
-pnpm play:solid
+pnpm add markstream-solid solid-js@^1.9
 ```
 
 ```tsx

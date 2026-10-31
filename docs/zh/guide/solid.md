@@ -17,7 +17,13 @@ keywords:
 
 ## 安装与环境要求
 
-Solid 包当前通过本仓库工作区提供，尚未发布到 npm。先运行本地 playground：
+在 SolidJS 1.9 或 SolidStart 应用中安装：
+
+```bash
+pnpm add markstream-solid solid-js@^1.9
+```
+
+在本仓库运行 playground：
 
 ```bash
 pnpm install
@@ -25,7 +31,7 @@ pnpm build:solid
 pnpm play:solid
 ```
 
-同一个 pnpm workspace 内的业务应用可通过 `workspace:*` 添加 `markstream-solid`，并安装 `solid-js@^1.9`。独立应用需要一起构建并打包 parser、core 和 Solid：
+同一个 pnpm workspace 内的业务应用可通过 `workspace:*` 添加 `markstream-solid`，并安装 `solid-js@^1.9`。如需在独立应用中验证尚未发布的工作区修改，可以一起构建并打包 parser、core 和 Solid：
 
 ```bash
 pnpm build:solid

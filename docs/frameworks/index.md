@@ -21,7 +21,7 @@ Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Ang
 | --- | --- | --- | --- | --- | --- |
 | Vue 3 / Nuxt / VitePress | `markstream-vue` | stable | `pnpm add markstream-vue` | [Vue](/frameworks/vue) / [Nuxt](/frameworks/nuxt) | Most mature renderer |
 | React / Next.js / Remix | `markstream-react` | beta | `pnpm add markstream-react` | [React](/frameworks/react) / [Next.js](/frameworks/next) | SSR entries for Next.js |
-| SolidJS 1.9 | `markstream-solid` | workspace preview | workspace / tarball | [SolidJS](/frameworks/solid) | Native Solid; npm publication pending |
+| SolidJS 1.9 | `markstream-solid` | new native renderer | `pnpm add markstream-solid solid-js@^1.9` | [SolidJS](/frameworks/solid) | SSR, hydration, workers and virtual history |
 | Svelte 5 | `markstream-svelte` | beta | `pnpm add markstream-svelte svelte@^5` | [Svelte](/frameworks/svelte) | Svelte 5 only |
 | Angular standalone | `markstream-angular` | alpha | `pnpm add markstream-angular` | [Angular](/frameworks/angular) | Angular 20+ standalone |
 | Vue 2.6 / 2.7 | `markstream-vue2` | compatibility | `pnpm add markstream-vue2` | [Vue 2](/frameworks/vue2) | Legacy Vue 2; Vue 2.6 needs `@vue/composition-api` |
@@ -42,14 +42,14 @@ Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Ang
 
 ## Package maturity
 
-`markstream-vue` has a stable 1.x API contract. Current npm versions may still carry beta tags while the 1.0 release gate and cross-framework package family are finalized.
+`markstream-vue` 2.x is published on npm latest; the maintained 1.x line is preserved on legacy. Cross-framework maturity and usage limits are listed below.
 
 | Package | Maturity | Notes |
 | --- | --- | --- |
 | `markstream-vue` | stable | Main renderer, most documented path |
 | `stream-markdown-parser` | stable | Parser-only package shared by renderers |
 | `markstream-react` | beta | React and Next.js entries are documented separately |
-| `markstream-solid` | workspace preview | SolidJS 1.9; use workspace or tarballs before npm publication |
+| `markstream-solid` | new native renderer | SolidJS 1.9 with SSR, hydration, workers and virtual history |
 | `markstream-svelte` | beta / experimental | Svelte 5 only |
 | `markstream-angular` | alpha | Angular standalone component |
 | `markstream-vue2` | compatibility | Vue 2.6 / 2.7 legacy support; not the first choice for new Vue 3 projects |

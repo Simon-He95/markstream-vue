@@ -48,7 +48,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 ### markstream-solid
 - 包名：markstream-solid
 - 版本：2.0.21
-- 成熟度标签：工作区预览
+- 成熟度标签：新增原生渲染器
 - 框架/运行时：SolidJS 1.9 原生组件、SSR 与 hydration
 - 描述：SolidJS streaming Markdown renderer for AI chat, incremental Markdown and long document restoration.
 - Homepage：https://markstream.simonhe.me/frameworks/solid
@@ -57,7 +57,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 - Peer dependencies：@antv/infographic, @terrastruct/d2, katex, mermaid, solid-js, stream-diffs
 - Keywords：solid, solidjs, markdown, streaming-markdown, ai-chat, sse, ssr, katex, mermaid, markstream-solid
 - 核心能力：content 与 nodes 输入；平滑流式输出；虚拟历史捕获与恢复；原生 Solid 组件和 provider；Mermaid、KaTeX、D2 和 infographic；stream-diffs 代码块；browser/server 条件导出；worker 子路径；px 与 Tailwind CSS
-- 已知限制：工作区预览；npm 包与线上 playground 尚未部署。先用 pnpm play:solid，独立应用需一起打包 parser/core/Solid。
+- 已知限制：需要 SolidJS 1.9 及 Solid 编译器。线上 playground 部署待完成，可先运行 pnpm play:solid。
 
 ### markstream-svelte
 - 包名：markstream-svelte
@@ -150,10 +150,9 @@ import { NodeRenderer } from 'markstream-octane'
 import 'markstream-octane/index.css'
 ```
 
-SolidJS 1.9（工作区预览，尚未发布 npm）：
+SolidJS 1.9 / SolidStart：
 ```txt
-pnpm install
-pnpm play:solid
+pnpm add markstream-solid solid-js@^1.9
 import MarkdownRender from 'markstream-solid'
 import 'markstream-solid/index.css'
 ```
@@ -205,7 +204,7 @@ Vue 可选 peer：
 - markstream-vue2：仅用于 Vue 2.6 / 2.7 兼容。
 - markstream-react：React、Next.js、Remix renderer。
 - markstream-octane：原生 Octane 客户端/服务端 renderer。
-- markstream-solid：原生 SolidJS 1.9 工作区预览；npm 发布与线上部署尚未完成。
+- markstream-solid：原生 SolidJS 1.9 渲染器，支持 SSR、hydration、独立 worker 与虚拟历史。
 - markstream-svelte：仅用于 Svelte 5。
 - markstream-angular：Angular standalone renderer。
 - stream-markdown-parser：只提供 parser，不渲染 UI 组件。

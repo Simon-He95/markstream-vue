@@ -1,10 +1,10 @@
 # Markstream
 
-> 面向 AI 应用的多框架流式 Markdown 渲染器家族 — 支持 Vue、React、Octane、Svelte、Angular、Nuxt 和 Next.js。
+> 面向 AI 应用的多框架流式 Markdown 渲染器家族 — 支持 Vue、React、Octane、SolidJS、Svelte、Angular、Nuxt 和 Next.js。
 
 Markstream 专为在用户眼前持续变化的 Markdown 场景而构建：LLM token 流、SSE/WebSocket 输出、AI 聊天消息、未闭合 Markdown 中间态、长文档、渐进式 Mermaid 图表、KaTeX 数学公式、流式代码块以及安全的组件化渲染。
 
-Vue 3、Nuxt 和 VitePress 项目优先使用 `markstream-vue`；React、Octane、Svelte、Angular、Vue 2 项目使用对应 sibling package。普通 AI 聊天可以直接传不断累积的 `content` 字符串，只有外层已经负责解析、batch 或 worker AST 时才需要 `nodes` 路径。
+Vue 3、Nuxt 和 VitePress 项目优先使用 `markstream-vue`；React、Octane、SolidJS、Svelte、Angular、Vue 2 项目使用对应 sibling package。普通 AI 聊天可以直接传不断累积的 `content` 字符串，只有外层已经负责解析、batch 或 worker AST 时才需要 `nodes` 路径。
 
 [![English](https://img.shields.io/badge/docs-English-blue)](README.md)
 [![Docs](https://img.shields.io/badge/docs-中文文档-blue)](https://markstream.simonhe.me/zh/guide)
@@ -20,6 +20,7 @@ Vue 包：
 其它框架包：
 
 [![markstream-react npm version](https://img.shields.io/npm/v/markstream-react?label=markstream-react)](https://www.npmjs.com/package/markstream-react)
+[![markstream-solid npm version](https://img.shields.io/npm/v/markstream-solid?label=markstream-solid)](https://www.npmjs.com/package/markstream-solid)
 [![markstream-svelte npm version](https://img.shields.io/npm/v/markstream-svelte?label=markstream-svelte)](https://www.npmjs.com/package/markstream-svelte)
 [![markstream-angular npm version](https://img.shields.io/npm/v/markstream-angular?label=markstream-angular)](https://www.npmjs.com/package/markstream-angular)
 [![markstream-vue2 npm version](https://img.shields.io/npm/v/markstream-vue2?label=markstream-vue2)](https://www.npmjs.com/package/markstream-vue2)
@@ -41,7 +42,7 @@ Vue 包：
 | `markstream-vue` | Vue 3 / Nuxt / VitePress | `pnpm add markstream-vue` | [框架总览](https://markstream.simonhe.me/zh/frameworks) · [Vue 指南](https://markstream.simonhe.me/zh/frameworks/vue) · [Nuxt 指南](https://markstream.simonhe.me/zh/frameworks/nuxt) |
 | `markstream-react` | React / Next.js / Remix | `pnpm add markstream-react` | [React 指南](https://markstream.simonhe.me/zh/frameworks/react) · [Next.js 指南](https://markstream.simonhe.me/zh/frameworks/next) |
 | `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [包使用指南](./packages/markstream-octane/README.md) · [本地 Playground](./playground-octane) |
-| `markstream-solid` | SolidJS 1.9 | 工作区包 | [包使用指南](./packages/markstream-solid/README.md) · [本地 Playground](./playground-solid) |
+| `markstream-solid` | SolidJS 1.9 / SolidStart | `pnpm add markstream-solid solid-js@^1.9` | [Solid 指南](https://markstream.simonhe.me/zh/guide/solid) · [组件与 API](https://markstream.simonhe.me/zh/guide/solid-api) |
 | `markstream-svelte` | Svelte 5 | `pnpm add markstream-svelte svelte@^5` | [Svelte 指南](https://markstream.simonhe.me/zh/frameworks/svelte) |
 | `markstream-angular` | Angular standalone | `pnpm add markstream-angular` | [Angular 指南](https://markstream.simonhe.me/zh/frameworks/angular) |
 | `markstream-vue2` | Vue 2.6 / 2.7 | `pnpm add markstream-vue2` | [Vue 2 指南](https://markstream.simonhe.me/zh/frameworks/vue2) · [快速开始](https://markstream.simonhe.me/zh/guide/vue2-quick-start) |
@@ -53,6 +54,7 @@ Vue 包：
 - **Vue 3 / Nuxt / VitePress** → `markstream-vue`
 - **React / Next.js / Remix** → `markstream-react`
 - **Octane** → `markstream-octane`
+- **SolidJS 1.9 / SolidStart** → `markstream-solid`
 - **Svelte 5** → `markstream-svelte`
 - **Angular standalone** → `markstream-angular`
 - **Vue 2.6 / 2.7** → `markstream-vue2`
@@ -65,7 +67,7 @@ Vue 包：
 
 稳定面包括：`MarkdownRender`、流式内容渲染、预解析节点渲染、安全 HTML 策略、可选 Mermaid / KaTeX / D2 / Infographic 集成、增强代码块、虚拟滚动协调、CSS 导出、worker client 子路径以及 Vite / Nuxt / VitePress 的 SSR 导入。
 
-跨框架渲染器（`markstream-react`、`markstream-octane`、`markstream-svelte`、`markstream-angular`、`markstream-vue2`）已可用并积极开发中。请查看各包文档了解 API 成熟度、框架支持和已知限制。
+跨框架渲染器（`markstream-react`、`markstream-octane`、`markstream-solid`、`markstream-svelte`、`markstream-angular`、`markstream-vue2`）已可用并积极开发中。请查看各包文档了解 API 成熟度、框架支持和已知限制。
 
 - [速览](#速览)
 - [按场景选择入口](#按场景选择入口)
@@ -98,7 +100,7 @@ Vue 包：
 - 为 **流式 Markdown**（AI/聊天/SSE）打造，目标是减少闪烁并保持内存可预期。
 - **双渲染模式**：长文档虚拟化窗口，或“打字机”式增量批次。
 - **渐进式图表**（Mermaid）与 **流式代码块**（stream-diffs），跟上 diff/增量输出。
-- 同时支持 **Markdown 字符串或预解析节点**，可在 Vue、React、Octane、Svelte 和 Angular 中嵌入 **自定义框架组件**。
+- 同时支持 **Markdown 字符串或预解析节点**，可在 Vue、React、Octane、SolidJS、Svelte 和 Angular 中嵌入 **自定义框架组件**。
 - TypeScript 优先，开箱默认即可上线（导入 CSS 即用）。
 
 ## 按场景选择入口
@@ -119,6 +121,7 @@ Vue 包：
 | Vue 3 | https://markstream-vue.simonhe.me/ |
 | React | https://markstream-react.pages.dev/ |
 | Octane | `pnpm play:octane` |
+| SolidJS | `pnpm play:solid` · [Playground 指南](./playground-solid) |
 | Svelte | https://markstream-svelte.pages.dev/ |
 | Angular | https://markstream-angular.pages.dev/ |
 | Nuxt | https://markstream-nuxt.pages.dev/ |
@@ -139,6 +142,8 @@ Vue 包：
 - Discord： https://discord.gg/vkzdkjeRCW
 
 ## 仓库内的 skills 和 prompts
+
+SolidJS / SolidStart 接入使用 [markstream-solid skill](./.agents/skills/markstream-solid/SKILL.md)，覆盖响应式 TSX、workers、SSR、作用域配置和完整组件/API。
 
 如果你想直接拿到 AI 资产，而不是先克隆仓库：
 
@@ -244,6 +249,23 @@ export function Message(props: { content: string, isDone: boolean }) {
 ```
 
 请按[包使用指南](./packages/markstream-octane/README.md)在 Vite 中启用 `octane/compiler/vite` 并配置 `.tsrx`。发布包已经包含编译后的 client/server 入口，应用源码仍按正常 Octane 流程编译。
+
+### SolidJS / SolidStart
+
+```bash
+pnpm add markstream-solid solid-js@^1.9
+```
+
+```tsx
+import MarkdownRender from 'markstream-solid'
+import 'markstream-solid/index.css'
+
+export function Message(props: { content: string, isDone: boolean }) {
+  return <MarkdownRender mode="chat" content={props.content} final={props.isDone} />
+}
+```
+
+在 JSX 中读取 props 以保持响应式。编译配置、workers、SSR 和组件参数见 [Solid 指南](https://markstream.simonhe.me/zh/guide/solid)及[完整 API](https://markstream.simonhe.me/zh/guide/solid-api)。
 
 ### Svelte 5
 

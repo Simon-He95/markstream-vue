@@ -1,3 +1,32 @@
+## [2.0.22](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.21...markstream-vue@2.0.22) (2026-10-31)
+
+### Features
+
+* Add `markstream-solid`, a native SolidJS 1.9 renderer with reactive TSX, scoped providers, SSR/hydration, streaming, history restoration, virtual timelines, CSS variants and worker subpaths.
+* Add the Solid playground, bilingual component/API documentation and integration skill; align code headers, pre/highlight geometry, diagrams, math and nested blockquotes with Vue 3.
+
+### Bug Fixes
+
+* **parser:** defer ambiguous streaming footnote definitions and prevent their interpretation as block math, eliminating prefix rollback for all renderers.
+* **solid:** stabilize streaming layout, bottom following and full restoration; fix recursive timeline restoration, stale scroll anchors and initial intrinsic-size rollback.
+* **release:** include Solid in family version/tag ordering and build parser/core before the Solid package in clean CI environments.
+
+### Shared Core
+
+* Reuse framework-independent code surfaces, header controls, themes, measurements, SVG handling, simple inline helpers and streaming text state across Vue 3 and Solid.
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.23`
+* `markstream-core@2.0.22`
+* `markstream-vue@2.0.22`
+* `markstream-react@2.0.22`
+* `markstream-octane@2.0.22`
+* `markstream-solid@2.0.22` (first release)
+* `markstream-svelte@2.0.22`
+* `markstream-angular@2.0.22`
+* `markstream-vue2@2.0.22`
+
 ## [2.0.21](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.20...markstream-vue@2.0.21) (2026-10-26)
 
 

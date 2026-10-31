@@ -132,6 +132,7 @@ describe('release dependency gates', () => {
       ['markstream-react', 'packages/markstream-react', 'packages/markstream-react/package.json'],
       ['markstream-svelte', 'packages/markstream-svelte', 'packages/markstream-svelte/package.json'],
       ['markstream-vue2', 'packages/markstream-vue2', 'packages/markstream-vue2/package.json'],
+      ['markstream-solid', 'packages/markstream-solid', 'packages/markstream-solid/package.json'],
     ]
 
     for (const [name, packageDir, packageJson] of mappings) {
@@ -448,6 +449,7 @@ describe('release dependency gates', () => {
       'packages/markstream-react/package.json',
       'packages/markstream-svelte/package.json',
       'packages/markstream-vue2/package.json',
+      'packages/markstream-solid/package.json',
     ]) {
       const frameworkPackageJson = readPackageJson(path)
       const scripts = frameworkPackageJson.scripts

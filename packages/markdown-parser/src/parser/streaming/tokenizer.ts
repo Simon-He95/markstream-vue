@@ -159,9 +159,21 @@ export function parseTopLevelTokens(
     return md.parse(source, env)
   }
 
+  const previousTokens = md.stream!.peek?.()
+  const previousTailIndex = (previousTokens?.length ?? 0) - 1
+  const listBeforeRule = previousTokens?.[previousTailIndex]?.type === 'hr'
+    && previousTokens?.[previousTailIndex - 1]?.type === 'bullet_list_close'
+    ? previousTokens[previousTailIndex - 1].markup
+    : undefined
+
   runtime.markStreamParseStarted()
   const tokens = md.stream!.parse!(source, getStableStreamEnv(runtime, env))
-  if (shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)) {
+  // A trailing `* **` can turn from a rule into a continuation of the preceding list.
+  // Reparse both groups instead of retaining the list closed by the temporary rule.
+  const continuedList = listBeforeRule !== undefined
+    && tokens[previousTailIndex]?.type === 'bullet_list_open'
+    && tokens[previousTailIndex].markup === listBeforeRule
+  if (continuedList || shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)) {
     runtime.resetStreamOnly()
     runtime.topLevelStreamParseMode = 'sync'
     return md.parse(source, env)

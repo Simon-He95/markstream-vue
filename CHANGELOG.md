@@ -1,4 +1,30 @@
+## [2.0.23](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.22...markstream-vue@2.0.23) (2026-10-31)
+
+### Bug Fixes
+
+* **parser:** reparse a temporary thematic rule when it becomes a continuation of the preceding list, keeping streaming output identical to a cold parse with structured node reuse enabled or disabled.
+* **ci:** run the real streaming corpus parity check on main and pull requests so documentation changes that expose parser boundary bugs fail before release tags are pushed.
+
+### Release Recovery
+
+* Resume the coordinated renderer release blocked in 2.0.22 by parser corpus mismatches. Existing tags and the published core package remain unchanged.
+* First npm release of `markstream-solid`, including the native renderer, workers, CSS variants, SSR/hydration, playground, bilingual guides and component/API reference introduced in the previous release attempt.
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.24`
+* `markstream-core@2.0.23`
+* `markstream-vue@2.0.23`
+* `markstream-react@2.0.23`
+* `markstream-octane@2.0.23`
+* `markstream-solid@2.0.23` (first release)
+* `markstream-svelte@2.0.23`
+* `markstream-angular@2.0.23`
+* `markstream-vue2@2.0.23`
+
 ## [2.0.22](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.21...markstream-vue@2.0.22) (2026-10-31)
+
+Only `markstream-core@2.0.22` was published. Parser and renderer publication was blocked by the structured streaming corpus check; 2.0.23 retries the coordinated release with the parser fix.
 
 ### Features
 
@@ -22,7 +48,7 @@
 * `markstream-vue@2.0.22`
 * `markstream-react@2.0.22`
 * `markstream-octane@2.0.22`
-* `markstream-solid@2.0.22` (first release)
+* `markstream-solid@2.0.22` (publication blocked by parser verification)
 * `markstream-svelte@2.0.22`
 * `markstream-angular@2.0.22`
 * `markstream-vue2@2.0.22`

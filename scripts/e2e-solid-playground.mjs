@@ -106,7 +106,11 @@ try {
       return count > 0 && count < 60
     }, null, { timeout: 5000 })
     const mountedMs = performance.now() - started
-    assert.equal(await timeline.locator('.markdown-renderer').evaluateAll(nodes => nodes.every(node => getComputedStyle(node).contentVisibility === 'visible')), true, 'outer-coordinated rows must not use intrinsic-size placeholders')
+    const coordinatedRows = await timeline.evaluate(root => [...root.querySelectorAll('.markdown-renderer')].map(node => ({
+      itemKey: node.closest('.markstream-timeline-item')?.getAttribute('data-item-key'),
+      visibility: getComputedStyle(node).contentVisibility,
+    })))
+    assert.ok(coordinatedRows.length > 0 && coordinatedRows.every(node => node.visibility === 'visible'), `outer-coordinated rows must not use intrinsic-size placeholders: ${JSON.stringify(coordinatedRows)}`)
     await page.waitForTimeout(250)
     await timeline.evaluate(root => root.scrollTop = root.scrollHeight)
     await page.waitForFunction(() => document.querySelector('.markstream-virtual-timeline')?.textContent.includes('Message 999'), null, { timeout: 5000 })

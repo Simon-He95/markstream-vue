@@ -558,6 +558,88 @@ describe('parseMarkdownToStructure stream parser integration', () => {
     expect(nodes.at(-1)?.type).toBe(expectedType)
   })
 
+  it.each([true, false])('continues a list after an ambiguous rule with structured reuse=%s', (reuseStableTopLevelNodes) => {
+    for (const [marker, pending, completed] of [
+      ['*', '* **', '* **bold** item\n'],
+      ['*', '* * *', '* * *text* item\n'],
+      ['-', '- --', '- --text item\n'],
+      ['-', '- - -', '- - -text item\n'],
+    ]) {
+      const md = getMarkdown(`stream-parser-rule-list-${pending}-${reuseStableTopLevelNodes}`)
+      const coldMd = getMarkdown(`stream-parser-rule-list-cold-${pending}-${reuseStableTopLevelNodes}`)
+      const base = `${buildLargeAppendFriendlyDoc(40)}${marker} first\n${marker} second\n`
+      let source = base
+      for (const tail of ['', pending, completed, `${completed}${marker} next\n`, `${completed}${marker} next\n\nEnd\n\n`]) {
+        source = base + tail
+        const streamed = parseMarkdownToStructure(source, md, {
+          final: false,
+          streamParse: true,
+          reuseStableTopLevelNodes,
+        })
+        expect(streamed).toEqual(parseMarkdownToStructure(source, coldMd, { final: false, streamParse: false }))
+      }
+      const timing: { processTokensReusedTopLevelNodes?: number } = {}
+      source += 'Another paragraph\n\n'
+      const appended = parseMarkdownToStructure(source, md, {
+        final: false,
+        streamParse: true,
+        reuseStableTopLevelNodes,
+        parserMetrics: timing,
+      })
+      expect(appended).toEqual(parseMarkdownToStructure(source, coldMd, { final: false, streamParse: false }))
+      if (reuseStableTopLevelNodes)
+        expect(timing.processTokensReusedTopLevelNodes).toBeGreaterThan(0)
+      expect(parseMarkdownToStructure(source, md, { final: true, streamParse: true, reuseStableTopLevelNodes }))
+        .toEqual(parseMarkdownToStructure(source, coldMd, { final: true, streamParse: false }))
+    }
+  })
+
+  it.each([
+    ['paragraph', 'A paragraph\n', '***'],
+    ['bullet list', '* first\n* second\n', '***'],
+    ['ordered list', '1. first\n2. second\n', '---'],
+    ['blockquote', '> A quote\n', '___'],
+  ])('reopens a %s when a partial rule becomes lazy paragraph text', (_name, block, rule) => {
+    for (const reuseStableTopLevelNodes of [true, false]) {
+      const md = getMarkdown(`stream-parser-lazy-rule-${_name}-${reuseStableTopLevelNodes}`)
+      const coldMd = getMarkdown(`stream-parser-lazy-rule-cold-${_name}-${reuseStableTopLevelNodes}`)
+      const base = buildLargeAppendFriendlyDoc(40) + block
+      for (const source of [base, base + rule, `${base}${rule}text\n`, `${base}${rule}text\n\nDone\n\n`]) {
+        const streamed = parseMarkdownToStructure(source, md, { final: false, streamParse: true, reuseStableTopLevelNodes })
+        expect(streamed).toEqual(parseMarkdownToStructure(source, coldMd, { final: false, streamParse: false }))
+      }
+      const source = `${base}${rule}text\n\nDone\n\n`
+      expect(parseMarkdownToStructure(source, md, { final: true, streamParse: true, reuseStableTopLevelNodes }))
+        .toEqual(parseMarkdownToStructure(source, coldMd, { final: true, streamParse: false }))
+    }
+  })
+
+  it('preserves a completed rule and a change of bullet marker', () => {
+    const md = getMarkdown('stream-parser-rule-stays-rule')
+    const coldMd = getMarkdown('stream-parser-rule-stays-rule-cold')
+    const base = `${buildLargeAppendFriendlyDoc(40)}* first\n* second\n* **`
+    for (const tail of ['', '\n\n* next\n', '\n\n* next\n- different marker\n']) {
+      const source = base + tail
+      const streamed = parseMarkdownToStructure(source, md, { final: false, streamParse: true, reuseStableTopLevelNodes: true })
+      expect(streamed).toEqual(parseMarkdownToStructure(source, coldMd, { final: false, streamParse: false }))
+      expect(streamed.some(node => node.type === 'thematic_break')).toBe(true)
+    }
+  })
+
+  it.each(['*', '-'])('keeps a different %s bullet list separate when a rule becomes a list', (marker) => {
+    const previousMarker = marker === '*' ? '-' : '*'
+    const md = getMarkdown(`stream-parser-rule-different-marker-${marker}`)
+    const base = `${buildLargeAppendFriendlyDoc(40)}${previousMarker} first\n${previousMarker} second\n${marker} ${marker}${marker}`
+    const first = parseMarkdownToStructure(base, md, { final: false, streamParse: true, reuseStableTopLevelNodes: true })
+    const source = `${base}text${marker}${marker} item\n`
+    const appended = parseMarkdownToStructure(source, md, { final: false, streamParse: true, reuseStableTopLevelNodes: true })
+    const cold = parseMarkdownToStructure(source, getMarkdown(`stream-parser-rule-different-marker-cold-${marker}`), { final: false, streamParse: false })
+
+    expect(appended).toEqual(cold)
+    expect(appended.filter(node => node.type === 'list')).toHaveLength(2)
+    expect(appended.find(node => node.type === 'list')).toBe(first.find(node => node.type === 'list'))
+  })
+
   it('reprocesses the previous last group when content becomes mixed', () => {
     const md = getMarkdown('stream-parser-mixed-last-group-overlap')
     const base = 'alpha\n\nbeta\n\n'

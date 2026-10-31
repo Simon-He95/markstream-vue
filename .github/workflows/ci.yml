@@ -66,6 +66,10 @@ jobs:
       - name: Run tests
         run: pnpm run build:parser && pnpm run build:core && nr test -- --run
 
+      - name: Parser streaming corpus parity (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: node scripts/validate-structured-reuse.mjs
+
       - name: Core package ESM/CJS smoke (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run test:smoke:core

@@ -101,7 +101,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "vite build --mode client && vite build --mode server && tsc -p tsconfig.build.json && postcss src/index.css -o dist/index.css && node scripts/finalize-build.mjs && node ../../scripts/generate-px-css.mjs && pnpm run check:parity",
+    "build": "pnpm --dir ../markdown-parser build && pnpm --dir ../markstream-core build && vite build --mode client && vite build --mode server && tsc -p tsconfig.build.json && postcss src/index.css -o dist/index.css && node scripts/finalize-build.mjs && node ../../scripts/generate-px-css.mjs && pnpm run check:parity",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ssr": "vitest run --config vitest.ssr.config.ts",

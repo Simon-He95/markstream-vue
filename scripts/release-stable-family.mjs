@@ -79,7 +79,7 @@ if (!args.apply && !args.version) {
 // major. Parser is skipped unless --parser-version is passed explicitly.
 // ---------------------------------------------------------------------------
 function buildMatrix(version, parserVersion) {
-  const adapters = ['markstream-react', 'markstream-octane', 'markstream-svelte', 'markstream-angular', 'markstream-vue2']
+  const adapters = ['markstream-react', 'markstream-octane', 'markstream-svelte', 'markstream-angular', 'markstream-vue2', 'markstream-solid']
   return [
     ...(parserVersion ? [{ name: 'stream-markdown-parser', dir: 'packages/markdown-parser', version: parserVersion }] : []),
     { name: 'markstream-core', dir: 'packages/markstream-core', version },
@@ -93,7 +93,7 @@ function buildMatrix(version, parserVersion) {
 }
 
 // Publish/tag dependency order — this is also the release-workflow queue order.
-const TAG_ORDER = ['stream-markdown-parser', 'markstream-core', 'markstream-vue', 'markstream-react', 'markstream-octane', 'markstream-svelte', 'markstream-angular', 'markstream-vue2']
+const TAG_ORDER = ['stream-markdown-parser', 'markstream-core', 'markstream-vue', 'markstream-react', 'markstream-octane', 'markstream-svelte', 'markstream-angular', 'markstream-vue2', 'markstream-solid']
 
 const targetVersion = args.version
 const matrix = buildMatrix(targetVersion, args.parserVersion)

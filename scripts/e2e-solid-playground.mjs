@@ -32,6 +32,11 @@ let page
 try {
   const url = `http://127.0.0.1:${port}`
   browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : { channel: 'chrome' }) })
+  const staticPage = await browser.newPage({ javaScriptEnabled: false })
+  await staticPage.goto(url)
+  assert.equal(await staticPage.locator('h1').textContent(), 'SolidJS streaming Markdown playground')
+  assert.equal(await staticPage.locator('a[href="https://markstream.simonhe.me/guide/solid"]').count(), 1)
+  await staticPage.close()
   page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
   const errors = []
   page.on('pageerror', error => errors.push(error.message))
@@ -90,6 +95,7 @@ try {
   await initialPage.close()
   await page.goto(url)
   await page.waitForFunction(() => !!window.__markstreamSolid)
+  assert.equal(await page.locator('#playground-intro').count(), 0)
   const defaultSource = await page.evaluate(() => window.__markstreamSolid.getSource())
   const timelineRounds = []
   const timelineSession = await page.context().newCDPSession(page)

@@ -57,7 +57,7 @@ Markstream 是面向 AI 应用的多框架流式 Markdown 渲染器家族。本�
 - Peer dependencies：@antv/infographic, @terrastruct/d2, katex, mermaid, solid-js, stream-diffs
 - Keywords：solid, solidjs, markdown, streaming-markdown, ai-chat, sse, ssr, katex, mermaid, markstream-solid
 - 核心能力：content 与 nodes 输入；平滑流式输出；虚拟历史捕获与恢复；原生 Solid 组件和 provider；Mermaid、KaTeX、D2 和 infographic；stream-diffs 代码块；browser/server 条件导出；worker 子路径；px 与 Tailwind CSS
-- 已知限制：需要 SolidJS 1.9 及 Solid 编译器。线上 playground 部署待完成，可先运行 pnpm play:solid。
+- 已知限制：需要 SolidJS 1.9 及 Solid 编译器。
 
 ### markstream-svelte
 - 包名：markstream-svelte

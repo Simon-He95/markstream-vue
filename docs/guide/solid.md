@@ -242,7 +242,7 @@ Run `pnpm play:solid` from the repository root and open `http://localhost:4178`.
 
 `/line-number-handoff-check` compares pre with highlighting. Add `?theme=dark&codeOverflow=scroll` for the dark scrolling case.
 
-- [Online playground](https://markstream-solid.pages.dev/) — deployment pending.
+- [Online playground](https://markstream-solid.pages.dev/)
 - [Playground instructions](/guide/playground#solid-playground)
 - [Playground source](https://github.com/Simon-He95/markstream-vue/tree/main/playground-solid)
 - [API parity and shared core](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/PARITY.md)

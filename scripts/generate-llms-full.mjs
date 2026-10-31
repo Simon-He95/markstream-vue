@@ -129,8 +129,8 @@ const packageEntries = [
     playground: 'https://markstream-solid.pages.dev/',
     capabilitiesEn: ['content and nodes input paths', 'smooth streaming', 'virtual history capture and restoration', 'native Solid components and provider', 'Mermaid, KaTeX, D2 and infographic', 'stream-diffs code blocks', 'browser/server conditional exports', 'worker subpaths', 'px and Tailwind CSS'],
     capabilitiesZh: ['content 与 nodes 输入', '平滑流式输出', '虚拟历史捕获与恢复', '原生 Solid 组件和 provider', 'Mermaid、KaTeX、D2 和 infographic', 'stream-diffs 代码块', 'browser/server 条件导出', 'worker 子路径', 'px 与 Tailwind CSS'],
-    limitationsEn: ['Requires SolidJS 1.9 and the Solid compiler. Hosted playground deployment is pending; use pnpm play:solid locally.'],
-    limitationsZh: ['需要 SolidJS 1.9 及 Solid 编译器。线上 playground 部署待完成，可先运行 pnpm play:solid。'],
+    limitationsEn: ['Requires SolidJS 1.9 and the Solid compiler.'],
+    limitationsZh: ['需要 SolidJS 1.9 及 Solid 编译器。'],
   },
   {
     id: 'markstream-svelte',

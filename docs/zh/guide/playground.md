@@ -15,7 +15,7 @@ keywords:
 
 - Vue 3: https://markstream-vue.simonhe.me/
 - React: https://markstream-react.pages.dev/
-- Solid: https://markstream-solid.pages.dev/（尚未部署，部署后可用）
+- Solid: https://markstream-solid.pages.dev/
 - React migration demo: https://markstream-react.pages.dev/migration-demo
 - Nuxt: https://markstream-nuxt.pages.dev/
 - Vue 2: https://markstream-vue2.pages.dev/
@@ -43,7 +43,7 @@ pnpm play
 
 ## Solid playground {#solid-playground}
 
-仓库目录为 `playground-solid`，入口与 Svelte 一样使用对应框架的 Pages 域名；线上部署尚未完成，可先在仓库根目录运行：
+打开 [线上 Solid playground](https://markstream-solid.pages.dev/)。源码位于 `playground-solid`，也可以在仓库根目录运行：
 
 ```bash
 pnpm install

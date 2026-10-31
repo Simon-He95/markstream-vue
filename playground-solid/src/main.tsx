@@ -5,6 +5,8 @@ import 'katex/dist/katex.min.css'
 import './style.css'
 import './workers'
 
+document.getElementById('playground-intro')!.remove()
+
 if (location.pathname === '/component-parity') {
   void import('./ComponentParity').then(module => render(() => <module.default />, document.getElementById('root')!))
 }

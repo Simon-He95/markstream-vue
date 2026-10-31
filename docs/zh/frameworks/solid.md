@@ -80,11 +80,11 @@ export function Message(props: { content: string, done: boolean }) {
 - renderer ref 提供虚拟状态捕获／恢复和滚动方法。
 - `MarkstreamVirtualTimeline` 提供原生 Solid 会话窗口。
 - SSR 使用根包的条件导出，浏览器增强在客户端启动。
-- 原生实现已覆盖单测、SSR、独立消费者、浏览器、几何和性能验证；线上 playground 部署状态单独维护。
+- 原生实现已覆盖单测、SSR、独立消费者、浏览器、几何和性能验证。
 
 ## 下一步
 
 - [完整 Solid 指南](/zh/guide/solid)
 - [Playground 使用说明](/zh/guide/playground#solid-playground)
-- [线上 playground](https://markstream-solid.pages.dev/)：部署后可用
+- [线上 playground](https://markstream-solid.pages.dev/)
 - [包 README](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-solid)

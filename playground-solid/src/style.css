@@ -1,6 +1,10 @@
 html, body, #root { height: 100%; margin: 0; padding: 0; }
 html { color: #334155; }
 html.dark { background: #121212; color: #e0e0e0; }
+#playground-intro { max-width: 760px; margin: 0 auto; padding: 32px 24px; font: 16px/1.6 system-ui, sans-serif; }
+#playground-intro h1 { font-size: 28px; font-weight: 600; }
+#playground-intro p, #playground-intro nav { margin-top: 16px; }
+#playground-intro a { text-decoration: underline; }
 .source-panel { padding: 18px 22px; border-bottom: 1px solid var(--play-border); }
 .source-panel textarea { display: block; width: 100%; height: 240px; margin-top: 10px; padding: 12px; resize: vertical; border: 1px solid var(--play-border); border-radius: 10px; background: var(--speed-subtle); color: var(--play-ink); font: 12px/1.6 var(--play-font-mono); }
 .source-panel textarea:focus-visible { outline: 2px solid var(--play-accent); outline-offset: 2px; }

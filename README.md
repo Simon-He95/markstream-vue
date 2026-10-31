@@ -163,7 +163,7 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 | Vue 3 | https://markstream-vue.simonhe.me/ |
 | React | https://markstream-react.pages.dev/ |
 | Octane | `pnpm play:octane` |
-| SolidJS | `pnpm play:solid` · [Playground guide](./playground-solid) |
+| SolidJS | https://markstream-solid.pages.dev/ · [Playground guide](./playground-solid) |
 | Svelte | https://markstream-svelte.pages.dev/ |
 | Angular | https://markstream-angular.pages.dev/ |
 | Nuxt | https://markstream-nuxt.pages.dev/ |

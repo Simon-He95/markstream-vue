@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { copyFileSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import autoprefixer from 'autoprefixer'
@@ -44,6 +44,10 @@ export default defineConfig({
     generateBundle() {
       for (const [url, file] of Object.entries(sharedAssets))
         this.emitFile({ type: 'asset', fileName: url.slice(1), source: readFileSync(file) })
+    },
+    writeBundle(options) {
+      for (const route of ['component-parity', 'line-number-handoff-check'])
+        copyFileSync(resolve(options.dir!, 'index.html'), resolve(options.dir!, `${route}.html`))
     },
   }],
   server: { fs: { allow: [resolve(import.meta.dirname, '..')] } },

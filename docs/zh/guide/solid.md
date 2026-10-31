@@ -242,7 +242,7 @@ export function History(props: { content: string }) {
 
 `/line-number-handoff-check` 对照原生 pre 与高亮。添加 `?theme=dark&codeOverflow=scroll` 可检查深色横向滚动场景。
 
-- [线上 playground](https://markstream-solid.pages.dev/)：尚未部署，部署后可用。
+- [线上 playground](https://markstream-solid.pages.dev/)
 - [Playground 使用说明](/zh/guide/playground#solid-playground)
 - [Playground 源码](https://github.com/Simon-He95/markstream-vue/tree/main/playground-solid)
 - [API 对齐与公共 core](https://github.com/Simon-He95/markstream-vue/blob/main/packages/markstream-solid/PARITY.md)

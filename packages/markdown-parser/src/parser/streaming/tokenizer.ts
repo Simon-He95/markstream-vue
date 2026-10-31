@@ -161,19 +161,20 @@ export function parseTopLevelTokens(
 
   const previousTokens = md.stream!.peek?.()
   const previousTailIndex = (previousTokens?.length ?? 0) - 1
-  const listBeforeRule = previousTokens?.[previousTailIndex]?.type === 'hr'
+  const hadTrailingRule = previousTokens?.[previousTailIndex]?.type === 'hr'
+  const listBeforeRule = hadTrailingRule
     && previousTokens?.[previousTailIndex - 1]?.type === 'bullet_list_close'
     ? previousTokens[previousTailIndex - 1].markup
     : undefined
 
   runtime.markStreamParseStarted()
   const tokens = md.stream!.parse!(source, getStableStreamEnv(runtime, env))
-  // A trailing `* **` can turn from a rule into a continuation of the preceding list.
-  // Reparse both groups instead of retaining the list closed by the temporary rule.
-  const continuedList = listBeforeRule !== undefined
-    && tokens[previousTailIndex]?.type === 'bullet_list_open'
-    && tokens[previousTailIndex].markup === listBeforeRule
-  if (continuedList || shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)) {
+  // An unfinished rule can become paragraph text or a continuation of the preceding list.
+  // Reparse its preceding boundary as well instead of keeping that block prematurely closed.
+  const replacement = tokens[previousTailIndex]
+  const continuedBlock = hadTrailingRule && (replacement?.type === 'paragraph_open'
+    || (listBeforeRule !== undefined && replacement?.type === 'bullet_list_open' && replacement.markup === listBeforeRule))
+  if (continuedBlock || shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)) {
     runtime.resetStreamOnly()
     runtime.topLevelStreamParseMode = 'sync'
     return md.parse(source, env)

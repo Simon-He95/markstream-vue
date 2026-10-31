@@ -594,6 +594,26 @@ describe('parseMarkdownToStructure stream parser integration', () => {
     }
   })
 
+  it.each([
+    ['paragraph', 'A paragraph\n', '***'],
+    ['bullet list', '* first\n* second\n', '***'],
+    ['ordered list', '1. first\n2. second\n', '---'],
+    ['blockquote', '> A quote\n', '___'],
+  ])('reopens a %s when a partial rule becomes lazy paragraph text', (_name, block, rule) => {
+    for (const reuseStableTopLevelNodes of [true, false]) {
+      const md = getMarkdown(`stream-parser-lazy-rule-${_name}-${reuseStableTopLevelNodes}`)
+      const coldMd = getMarkdown(`stream-parser-lazy-rule-cold-${_name}-${reuseStableTopLevelNodes}`)
+      const base = buildLargeAppendFriendlyDoc(40) + block
+      for (const source of [base, base + rule, `${base}${rule}text\n`, `${base}${rule}text\n\nDone\n\n`]) {
+        const streamed = parseMarkdownToStructure(source, md, { final: false, streamParse: true, reuseStableTopLevelNodes })
+        expect(streamed).toEqual(parseMarkdownToStructure(source, coldMd, { final: false, streamParse: false }))
+      }
+      const source = `${base}${rule}text\n\nDone\n\n`
+      expect(parseMarkdownToStructure(source, md, { final: true, streamParse: true, reuseStableTopLevelNodes }))
+        .toEqual(parseMarkdownToStructure(source, coldMd, { final: true, streamParse: false }))
+    }
+  })
+
   it('preserves a completed rule and a change of bullet marker', () => {
     const md = getMarkdown('stream-parser-rule-stays-rule')
     const coldMd = getMarkdown('stream-parser-rule-stays-rule-cold')

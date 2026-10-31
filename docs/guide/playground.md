@@ -16,7 +16,7 @@ This repository includes a playable demo under `/playground` that helps you test
 
 - Vue 3: https://markstream-vue.simonhe.me/
 - React: https://markstream-react.pages.dev/
-- Solid: https://markstream-solid.pages.dev/ (deployment pending)
+- Solid: https://markstream-solid.pages.dev/
 - React migration demo: https://markstream-react.pages.dev/migration-demo
 - Nuxt: https://markstream-nuxt.pages.dev/
 - Vue 2: https://markstream-vue2.pages.dev/
@@ -63,7 +63,7 @@ const md = '# Quick playground test\n\nThis is a demo.'
 
 ## Solid playground {#solid-playground}
 
-The source is in `playground-solid`. Its Pages URL follows the same convention as Svelte; deployment is pending. Run it locally from the repository root:
+Try the [online Solid playground](https://markstream-solid.pages.dev/). The source is in `playground-solid`. Run it locally from the repository root:
 
 ```bash
 pnpm install

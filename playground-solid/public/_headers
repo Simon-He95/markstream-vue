@@ -6,3 +6,6 @@
 
 /hydrate.html
   X-Robots-Tag: noindex, nofollow
+
+/hydrate
+  X-Robots-Tag: noindex, nofollow

@@ -80,11 +80,11 @@ Plain Markdown requires none of these optional peers. Import one renderer styles
 - Renderer refs expose virtual-state capture/restore and scroll methods.
 - `MarkstreamVirtualTimeline` provides native Solid conversation windows.
 - SSR uses the root package's conditional export; browser enhancements start on the client.
-- The native implementation has unit, SSR, packed-consumer, browser, geometry, and performance validation. Hosted playground deployment is tracked separately.
+- The native implementation has unit, SSR, packed-consumer, browser, geometry, and performance validation.
 
 ## Next steps
 
 - [Full Solid guide](/guide/solid)
 - [Playground instructions](/guide/playground#solid-playground)
-- [Online playground](https://markstream-solid.pages.dev/) — deployment pending
+- [Online playground](https://markstream-solid.pages.dev/)
 - [Package README](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-solid)

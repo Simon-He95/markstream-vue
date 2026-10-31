@@ -21,5 +21,21 @@
     <meta name="twitter:image" content="https://markstream-solid.pages.dev/og-image.png">
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Markstream Solid playground","applicationCategory":"DeveloperApplication","operatingSystem":"Web","url":"https://markstream-solid.pages.dev/","description":"Native SolidJS streaming Markdown playground with KaTeX, Mermaid and history restoration."}</script>
   </head>
-  <body><div id="root"></div><script type="module" src="/src/main.tsx"></script></body>
+  <body>
+    <main id="playground-intro">
+      <h1>SolidJS streaming Markdown playground</h1>
+      <p>Try markstream-solid, a native SolidJS 1.9 and SolidStart Markdown renderer for AI chat, SSE and WebSocket streams.</p>
+      <p>Explore incomplete Markdown, streaming code blocks, syntax highlighting, KaTeX math, Mermaid diagrams, and long conversation history restoration.</p>
+      <p>Install with <code>pnpm add markstream-solid solid-js@^1.9</code> and import <code>markstream-solid/index.css</code>.</p>
+      <nav aria-label="SolidJS resources">
+        <a href="https://markstream.simonhe.me/frameworks/solid">SolidJS overview</a> ·
+        <a href="https://markstream.simonhe.me/guide/solid">Installation and streaming guide</a> ·
+        <a href="https://markstream.simonhe.me/guide/solid-api">Components and API</a> ·
+        <a href="https://github.com/Simon-He95/markstream-vue">GitHub repository</a>
+      </nav>
+      <p>The interactive playground loads when JavaScript is enabled.</p>
+    </main>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

@@ -121,7 +121,7 @@ Vue 包：
 | Vue 3 | https://markstream-vue.simonhe.me/ |
 | React | https://markstream-react.pages.dev/ |
 | Octane | `pnpm play:octane` |
-| SolidJS | `pnpm play:solid` · [Playground 指南](./playground-solid) |
+| SolidJS | https://markstream-solid.pages.dev/ · [Playground 指南](./playground-solid) |
 | Svelte | https://markstream-svelte.pages.dev/ |
 | Angular | https://markstream-angular.pages.dev/ |
 | Nuxt | https://markstream-nuxt.pages.dev/ |

@@ -114,7 +114,7 @@ The production browser suite verifies streaming, full restoration, virtual scrol
 - [Solid framework overview](https://markstream.simonhe.me/frameworks/solid)
 - [English guide](https://markstream.simonhe.me/guide/solid) / [中文指南](https://markstream.simonhe.me/zh/guide/solid)
 - [Playground source and local commands](../../playground-solid/README.md)
-- [Online playground](https://markstream-solid.pages.dev/) — deployment pending; use `pnpm play:solid` locally.
+- [Online playground](https://markstream-solid.pages.dev/) — use `pnpm play:solid` to run it locally.
 
 The guide covers reactive SSE input, optional peers, workers, custom components, i18n/provider scope, HTML previews, SSR/hydration and virtual-history restoration. The playground follows the same Pages naming convention as Svelte.
 

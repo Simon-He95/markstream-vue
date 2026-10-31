@@ -41,7 +41,7 @@ Vue 基线同时加载基础 CSS，使用匹配的 KaTeX / Mermaid worker 和高
 
 这套门禁覆盖指定 AST、选项和交互状态。自定义组件、宿主覆盖 CSS、自定义字体与任意文档组合仍需要在宿主应用验证。默认示例在流式过程中保留已展示代码体的测量高度，完成态交接不再缩短页面；主动折叠、展开和字体调整仍生效。零回退门禁只适用于该固定输入、设置和视口，不能代表所有宿主样式与任意输入。
 
-Solid playground 的线上地址按 Svelte 的方式配置为 `https://markstream-solid.pages.dev/`；目前尚未部署，本地入口为 `http://localhost:4178`。
+Solid playground 已部署到 https://markstream-solid.pages.dev/，本地入口为 `http://localhost:4178`。
 
 本轮三次默认完整播放均零回退、无失败图片；普通完成态恢复和真正分批恢复分别测量。最新数字与修复前生产基线见 [VALIDATION.md](./VALIDATION.md)，三轮播放原始数据见 [playbacks.json](./benchmarks/playbacks.json)。
 

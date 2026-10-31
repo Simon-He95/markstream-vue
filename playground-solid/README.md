@@ -1,5 +1,7 @@
 # Solid playground
 
+Try the [online SolidJS streaming Markdown playground](https://markstream-solid.pages.dev/).
+
 Run `pnpm install` and `pnpm play:solid`, then open http://localhost:4178.
 
 The home page follows the Vue 3 playground: chat layout, responsive Controls sidebar, brand/code themes, HTML policy, dark mode, smooth streaming, Estimated TPS and random chunk profiles. Both playgrounds import the same page CSS, speed-panel CSS, theme lists, Markdown sample, chunk scheduler and ReadableStream generator. Solid owns the signals, components and stream lifecycle.
@@ -15,4 +17,4 @@ CODE_OVERFLOW=scroll pnpm test:e2e:line-number-handoff-playgrounds --framework=v
 
 `pnpm play:solid:build` creates the production playground. `pnpm test:e2e:solid-playground` verifies its controls, streaming/restoration, previews, virtualization, hydration and eight Vue 3/Solid performance scenarios. Generated data and screenshots are saved in `.tmp/solid/`.
 
-The build has its own canonical/social metadata, robots, sitemap and noindex lab headers; shared logo/OG assets are emitted from their existing sources. `pnpm play:solid:seo` checks the production output.
+The build includes a static introduction with installation and documentation links, canonical/social metadata, robots, sitemap and noindex lab headers. Lab routes allow crawling so search engines can read their noindex headers. Dedicated lab HTML files preserve their routes, while a custom `404.html` keeps unknown paths from serving the playground. Shared logo/OG assets are emitted from their existing sources. `pnpm play:solid:seo` checks the production output.

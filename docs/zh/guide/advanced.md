@@ -116,11 +116,11 @@ Vue 3、Vue 2、React、Octane、Svelte、Solid 和 Angular 的流式追加淡�
 
 收到当前文本 block 的 `text_end`（或等价结束事件）时，将该 block 对应的 `MarkdownRender` 的 `final` 设为 `true`。文字淡入与入场过渡立即停止，结束后的补齐不再播放 fade。多个 block 各自维护 `final`，互不影响。库不监听服务端事件，也不会把 Markdown 语法闭合自动当成传输结束。
 
-Vue 内置出字队列默认采用分帧收尾：不超过 1024 字符的小尾部直接提交；更大的积压按上一批的实际提交和布局耗时调整批量，通过 rAF 与后续任务交替推进。当前反馈目标为 12ms，每批通常为 256–1024 个字素，代码围栏开头保持原子性。淡入节点的回收也进入该队列；渲染完成态会等补齐及最终语义确认完成，不等同于刚收到传输结束信号。
+各框架的内置出字队列默认采用分帧收尾：不超过 1024 字符的小尾部直接提交；更大的积压按上一批的实际提交和布局耗时调整批量，通过 rAF 与后续任务交替推进。当前反馈目标为 12ms，每批通常为 256–1024 个字素，代码围栏开头保持原子性。淡入节点的回收也进入该队列；渲染完成态会等补齐及最终语义确认完成，不等同于刚收到传输结束信号。
 
 已完成内容的首次挂载、历史恢复和非追加替换保持原有行为，避免 SSR 水合闪空。该预算作用于内置 `content` 出字队列；`smooth-streaming="false"` 和直接传入 `nodes` 不经过这条队列。`smoothStreamingOptions: { flushOnFinish: false }` 保留普通 pacing 收尾，但仍立即停止 fade。
 
-12ms 是反馈目标，不是可抢占的硬上限。浏览器布局/GC、单个复杂 Markdown 单元或自定义解析回调仍可能超过预算。常规、最终形态可证明不变的段落/标题/列表/行内格式可直接复用解析结果；未闭合语法、HTML、数学和扩展等仍执行权威的 final 解析。外部 `useSmoothMarkdownStream` 的 `finish({ flush: true })` 仍是强制同步 flush，不自动获得 Vue 渲染预算；需要自行调度时可分次调用 `flush({ maxChars })`。
+12ms 是反馈目标，不是可抢占的硬上限。浏览器布局/GC、单个复杂 Markdown 单元或自定义解析回调仍可能超过预算。常规、最终形态可证明不变的段落/标题/列表/行内格式可直接复用解析结果；未闭合语法、HTML、数学和扩展等仍执行权威的 final 解析。外部 `useSmoothMarkdownStream` 的 `finish({ flush: true })` 仍是强制同步 flush，不自动获得 渲染器的帧预算；需要自行调度时可分次调用 `flush({ maxChars })`。
 
 时长和曲线仍可用 `--stream-update-fade-duration` / `--stream-update-fade-ease` 覆盖。系统启用减少动态效果时，淡入立即完成；`smooth-streaming="false"` 可单独关闭出字调度。
 

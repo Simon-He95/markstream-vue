@@ -1,6 +1,16 @@
 import { Buffer } from 'node:buffer'
 import { vi } from 'vitest'
 
+// Node's native Web Storage must not replace browser storage in JSDOM tests.
+const jsdomWindow = (globalThis as any).jsdom?.window
+if (jsdomWindow) {
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    writable: true,
+    value: jsdomWindow.localStorage,
+  })
+}
+
 class WorkerStub {
   onmessage: ((event: MessageEvent) => void) | null = null
   onerror: ((event: ErrorEvent) => void) | null = null

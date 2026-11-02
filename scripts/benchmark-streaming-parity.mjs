@@ -8,7 +8,7 @@ import { build, preview } from 'vite'
 
 const root = process.cwd()
 const output = path.join(root, '.tmp/streaming-parity')
-const names = (process.env.PARITY_FRAMEWORKS || 'vue,vue2,react,octane,svelte,solid,angular').split(',')
+const names = (process.env.PARITY_FRAMEWORKS || 'vue,vue2,vue26,react,octane,svelte,solid,angular').split(',')
 const defaults = { fade: true, batchRendering: false, deferNodesUntilVisible: false, viewportPriority: false, maxLiveNodes: 0, renderCodeBlocksAsPre: true, typewriter: false }
 const common = `const defaults = ${JSON.stringify(defaults)}; const host = document.getElementById('app');`
 const fixtures = {
@@ -32,9 +32,10 @@ Component({ selector: 'parity-app', standalone: true, imports: [NodeRenderer], t
 enableProdMode(); host.innerHTML = '<parity-app></parity-app>'; const app = await bootstrapApplication(App, { providers: [provideZonelessChangeDetection()] }); const component = app.components[0];
 window.set = async (content, final = false, smoothStreaming = false) => { Object.assign(component.instance, { content, final, smooth: smoothStreaming }); component.changeDetectorRef.detectChanges(); await Promise.resolve(); };`,
 }
+fixtures.vue26 = fixtures.vue2.replace('import Renderer from \'library\';', 'import Renderer, { VueRendererMarkdown } from \'library\'; import CompositionApi from \'@vue/composition-api\'; Vue.use(CompositionApi); Vue.use(VueRendererMarkdown);')
 mkdirSync(output, { recursive: true })
 for (const name of names.filter(name => !process.env.PARITY_BUILD_ONLY || process.env.PARITY_BUILD_ONLY.split(',').includes(name))) {
-  const pkg = name === 'vue' ? root : path.join(root, `packages/markstream-${name}`)
+  const pkg = name === 'vue' ? root : path.join(root, `packages/markstream-${name === 'vue26' ? 'vue2' : name}`)
   const require = createRequire(path.join(pkg, 'package.json'))
   const fixture = path.join(output, 'fixtures', name)
   mkdirSync(fixture, { recursive: true })
@@ -59,6 +60,12 @@ for (const name of names.filter(name => !process.env.PARITY_BUILD_ONLY || proces
     const appRequire = createRequire(path.join(root, 'playground-angular/package.json'))
     alias.push({ find: '@angular/platform-browser', replacement: appRequire.resolve('@angular/platform-browser') })
   }
+  if (name === 'vue26') {
+    const legacyRequire = createRequire(path.join(root, 'playground-vue2-cli/package.json'))
+    alias.push({ find: /^vue$/, replacement: legacyRequire.resolve('vue/dist/vue.runtime.esm.js') })
+    alias.push({ find: 'vue-demi', replacement: require.resolve('vue-demi/lib/v2/index.mjs') })
+    alias.push({ find: '@vue/composition-api', replacement: path.dirname(legacyRequire.resolve('@vue/composition-api/package.json')) })
+  }
   if (name === 'vue2') {
     alias.push({ find: /^vue$/, replacement: require.resolve('vue/dist/vue.runtime.esm.js') })
     alias.push({ find: 'vue-demi', replacement: require.resolve('vue-demi/lib/v2.7/index.mjs') })
@@ -66,6 +73,8 @@ for (const name of names.filter(name => !process.env.PARITY_BUILD_ONLY || proces
   await build({ configFile: false, root: fixture, base: `/${name}/`, logLevel: 'error', plugins, resolve: { alias, conditions: ['browser'] }, build: { target: 'esnext', outDir: path.join(output, 'site', name), emptyOutDir: true } })
   console.log(`Built ${name}`)
 }
+if (process.argv.includes('--build-only'))
+  process.exit(0)
 const server = await preview({ configFile: false, root, logLevel: 'error', build: { outDir: path.join(output, 'site') }, preview: { host: '127.0.0.1', port: 4213, strictPort: true } })
 const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
 const results = []

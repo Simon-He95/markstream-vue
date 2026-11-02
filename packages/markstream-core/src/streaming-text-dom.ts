@@ -1,28 +1,40 @@
 import { createStreamingTextFade } from './streaming-text-fade'
 
-export function createStreamingTextScope(scheduleCleanup: (work: () => void) => void) {
+export interface StreamingTextScope {
+  readonly final: boolean
+  scheduleCleanup: (work: () => void) => void
+  setFinal: (value: boolean) => void
+  subscribe: (listener: () => void) => () => void
+}
+
+export function createStreamingTextScope(scheduleCleanup: (work: () => void) => void, parent?: StreamingTextScope): StreamingTextScope {
   let final = false
   const listeners = new Set<() => void>()
   return {
-    get final() { return final },
-    scheduleCleanup,
+    get final(): boolean { return final || parent?.final === true },
+    scheduleCleanup: parent?.scheduleCleanup ?? scheduleCleanup,
     setFinal(value: boolean) {
       if (final === value)
         return
       final = value
+      if (parent?.final)
+        return
       for (const listener of [...listeners])
         listener()
     },
     subscribe(listener: () => void) {
       listeners.add(listener)
+      const unsubscribeParent = parent?.subscribe(() => {
+        if (!final)
+          listener()
+      })
       return () => {
         listeners.delete(listener)
+        unsubscribeParent?.()
       }
     },
   }
 }
-
-export type StreamingTextScope = ReturnType<typeof createStreamingTextScope>
 
 // The framework owns the host and its initial (SSR) text. This binding owns
 // subsequent children, so settled Text nodes survive both appends and selection.
@@ -128,6 +140,7 @@ export function createStreamingTextDom(host: HTMLElement, initial: string, scope
     controller.finishAll(true)
     publish()
     if (pending !== undefined) {
+      suffix?.remove()
       const rendered = settled + [...deltas.values()].map(element => element.textContent).join('')
       suffix = document.createTextNode(pending.slice(rendered.length))
       host.appendChild(suffix)

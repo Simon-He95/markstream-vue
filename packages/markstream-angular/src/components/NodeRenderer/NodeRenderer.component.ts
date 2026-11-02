@@ -141,8 +141,8 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
     { optional: true, skipSelf: true },
   )
 
-  private readonly ownTextScope = createStreamingTextScope(work => this.streamBridge!.scheduleCleanup(work))
-  get textScope() { return this.parentSmoothStreamingScope?.textScope ?? this.ownTextScope }
+  private readonly ownTextScope = createStreamingTextScope(work => this.streamBridge!.scheduleCleanup(work), this.parentSmoothStreamingScope?.textScope)
+  get textScope() { return this.ownTextScope }
 
   @ViewChild('root') private rootRef?: ElementRef<HTMLElement>
   @ViewChild('typewriterCursor') private typewriterCursorRef?: ElementRef<HTMLSpanElement>

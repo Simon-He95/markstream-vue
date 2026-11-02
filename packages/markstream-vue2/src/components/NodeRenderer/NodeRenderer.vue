@@ -292,8 +292,8 @@ const requestedFinal = computed<boolean | undefined>(() => {
 })
 
 const inheritedTextScope = inject<StreamingTextScope | undefined>('markstreamTextScope', undefined)
-const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup)
-provide('markstreamTextScope', inheritedTextScope ?? ownTextScope)
+const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup, inheritedTextScope)
+provide('markstreamTextScope', ownTextScope)
 watch(requestedFinal, value => ownTextScope.setFinal(value === true), { immediate: true, flush: 'sync' })
 
 const effectiveFinal = computed<boolean | undefined>(() => {

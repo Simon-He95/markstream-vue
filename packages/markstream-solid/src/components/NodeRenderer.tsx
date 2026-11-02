@@ -94,8 +94,8 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     onReady: setFinalReady,
   })
   onCleanup(streamBridge.dispose)
-  const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup)
-  const textScope = useContext(TextFinalContext) ?? ownTextScope
+  const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup, useContext(TextFinalContext))
+  const textScope = ownTextScope
   createEffect(() => ownTextScope.setFinal(requestedFinal() === true))
   createEffect(() => {
     const content = props.content ?? ''

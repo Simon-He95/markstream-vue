@@ -129,8 +129,8 @@
     return final ?? (base as any).final
   })
   const inheritedTextScope = getContext<StreamingTextScope | undefined>('markstreamTextFinal')
-  const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup)
-  setContext('markstreamTextFinal', inheritedTextScope ?? ownTextScope)
+  const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup, inheritedTextScope)
+  setContext('markstreamTextFinal', ownTextScope)
   $effect.pre(() => { ownTextScope.setFinal(requestedFinal === true) })
   const effectiveFinal = $derived.by(() => {
     if (smoothStreamingEnabled && requestedFinal != null)

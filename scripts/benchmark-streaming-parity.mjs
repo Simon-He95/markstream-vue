@@ -81,7 +81,7 @@ const server = await preview({ configFile: false, root, logLevel: 'error', build
 const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
 const results = []
 const revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
-const sourceFiles = execFileSync('git', ['diff', 'origin/main...HEAD', '--name-only'], { encoding: 'utf8' }).trim().split('\n').filter(file => /^(src\/|packages\/[^/]+\/src\/)/.test(file))
+const sourceFiles = execFileSync('git', ['diff', 'origin/main...HEAD', '--name-only'], { encoding: 'utf8' }).trim().split('\n').filter(file => /^(?:src\/|packages\/[^/]+\/src\/)/.test(file))
 const sourceHashes = Object.fromEntries(sourceFiles.map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
 try {
   const page = await browser.newPage({ viewport: { width: 1100, height: 900 } })

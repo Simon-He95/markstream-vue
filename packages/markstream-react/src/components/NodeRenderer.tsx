@@ -908,8 +908,8 @@ export function NodeRenderer<
   }, [props.final, props.parseOptions])
 
   const parentTextScope = React.useContext(TextFinalContext)
-  const ownTextScope = useRef(createStreamingTextScope(streamBridge.scheduleCleanup)).current
-  const textScope = parentTextScope ?? ownTextScope
+  const ownTextScope = useRef(createStreamingTextScope(streamBridge.scheduleCleanup, parentTextScope)).current
+  const textScope = ownTextScope
   useLayoutEffect(() => {
     ownTextScope.setFinal(requestedFinal === true)
   }, [ownTextScope, requestedFinal])

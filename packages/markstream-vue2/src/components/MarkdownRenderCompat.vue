@@ -17,6 +17,7 @@ export default defineComponent({
   },
   inject: {
     inheritedSmooth: { from: 'markstreamSmoothStreaming', default: undefined },
+    inheritedTextScope: { from: 'markstreamTextScope', default: undefined },
   },
   provide() {
     if (!this.legacyVue26)
@@ -75,7 +76,7 @@ export default defineComponent({
       legacyReady: false,
       legacyStream: null as ReturnType<typeof createSmoothMarkdownStream> | null,
       legacyBridge: null as ReturnType<typeof createRendererStreamBridge> | null,
-      legacyTextScope: createStreamingTextScope(work => this.legacyBridge?.scheduleCleanup(work)),
+      legacyTextScope: createStreamingTextScope(work => this.legacyBridge?.scheduleCleanup(work), (this as any).inheritedTextScope),
       instanceMsgId: this.customId
         ? `renderer-${this.customId}`
         : `renderer-${Date.now()}-${Math.random().toString(36).slice(2)}`,

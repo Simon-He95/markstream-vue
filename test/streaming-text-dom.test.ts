@@ -54,6 +54,32 @@ describe('shared streaming text DOM', () => {
     expect(host.textContent).toBe('Hello world, final tail')
     expect(host.querySelector('.text-node-stream-final')).toBeNull()
   })
+  it('finishes one nested block independently and inherits parent completion', () => {
+    const cleanups: Array<() => void> = []
+    const parent = createStreamingTextScope(work => cleanups.push(work))
+    const first = createStreamingTextScope(work => work(), parent)
+    const second = createStreamingTextScope(work => work(), parent)
+    const hosts = [first, second].map((scope) => {
+      const host = document.createElement('span')
+      host.textContent = 'Hello'
+      document.body.appendChild(host)
+      const binding = createStreamingTextDom(host, 'Hello', scope)
+      dispose.push(binding.dispose)
+      binding.update('Hello world', true)
+      return host
+    })
+    first.setFinal(true)
+    expect(hosts[0].querySelector('.text-node-stream-delta')).toBeNull()
+    expect(hosts[1].querySelector('.text-node-stream-delta')).not.toBeNull()
+    parent.setFinal(true)
+    expect(hosts[1].querySelector('.text-node-stream-delta')).toBeNull()
+    parent.setFinal(false)
+    expect(first.final).toBe(true)
+    expect(second.final).toBe(false)
+    cleanups.forEach(work => work())
+    expect(hosts.map(host => host.textContent)).toEqual(['Hello world', 'Hello world'])
+  })
+
   it('retains finished-word identity on continuation and resumes after effect replay', () => {
     const { host, binding } = setup()
     binding.update('Hello wor', true)

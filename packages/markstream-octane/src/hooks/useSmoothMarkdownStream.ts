@@ -3,7 +3,7 @@ import type {
   SmoothMarkdownStreamSnapshot,
 } from 'markstream-core'
 import { createSmoothMarkdownStream } from 'markstream-core'
-import { useEffect, useMemo, useRef, useState } from 'octane'
+import { useLayoutEffect, useMemo, useRef, useState } from 'octane'
 
 export type { SmoothMarkdownStreamOptions, SmoothMarkdownStreamSnapshot }
 
@@ -17,7 +17,7 @@ export function useSmoothMarkdownStream(options: SmoothMarkdownStreamOptions = {
 
   const [snapshot, setSnapshot] = useState<SmoothMarkdownStreamSnapshot>(() => controller.getSnapshot())
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const unsubscribe = controller.subscribe(() => {
       setSnapshot(controller.getSnapshot())
     })

@@ -4,7 +4,7 @@ import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemes } from '../types
 import type { NodeRendererProps } from './NodeRenderer/NodeRenderer.vue'
 import { createRendererStreamBridge, createSmoothMarkdownStream, createStreamingTextScope, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
 import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure, resolveCustomHtmlTags } from 'stream-markdown-parser'
-import { defineComponent } from 'vue-demi'
+import { defineComponent, markRaw } from 'vue-demi'
 import { isLegacyVue26Vm, resolveVueListeners } from '../utils/vue26'
 import NodeRenderer from './NodeRenderer'
 import LegacyNodesRenderer from './NodeRenderer/LegacyNodesRenderer.vue'
@@ -117,7 +117,12 @@ export default defineComponent({
         customHtmlTags: tags,
       })
       const md = this.customMarkdownIt ? this.customMarkdownIt(markdown) : markdown
-      return parseMarkdownToStructure(content, md, this.mergedParseOptions)
+      const options = this.mergedParseOptions ?? {}
+      return markRaw(parseMarkdownToStructure(content, md, {
+        ...options,
+        streamParse: options.streamParse ?? true,
+        reuseStableTopLevelNodes: !this.customMarkdownIt && !options.preTransformTokens && !options.postTransformTokens && !options.postTransformNodes,
+      }))
     },
     forwardedProps(): NodeRendererProps {
       return {

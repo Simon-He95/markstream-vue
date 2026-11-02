@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict'
-import { existsSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
@@ -42,7 +44,7 @@ for (const name of names.filter(name => !process.env.PARITY_BUILD_ONLY || proces
   if (!existsSync(path.join(fixture, 'node_modules')))
     symlinkSync(path.join(pkg, 'node_modules'), path.join(fixture, 'node_modules'))
   const entry = name === 'solid' ? 'main.tsx' : 'main.js'
-  writeFileSync(path.join(fixture, 'index.html'), `<html><head><meta charset="UTF-8"><style>body{font:16px/1.6 system-ui;margin:24px}#app{max-width:960px}</style></head><body><div id="app"></div><script type="module" src="./${entry}"></script></body></html>`)
+  writeFileSync(path.join(fixture, 'index.html'), `<!doctype html><html><head><meta charset="UTF-8"><style>body{font:16px/1.6 system-ui;margin:24px}#app{max-width:960px}</style></head><body><div id="app"></div><script type="module" src="./${entry}"></script></body></html>`)
   writeFileSync(path.join(fixture, entry), `import '${path.join(pkg, 'dist/index.css')}';\n${fixtures[name]}\nwindow.ready = true;`)
   const plugins = []
   if (name === 'solid') {
@@ -78,6 +80,9 @@ if (process.argv.includes('--build-only'))
 const server = await preview({ configFile: false, root, logLevel: 'error', build: { outDir: path.join(output, 'site') }, preview: { host: '127.0.0.1', port: 4213, strictPort: true } })
 const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
 const results = []
+const revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+const sourceFiles = execFileSync('git', ['diff', 'origin/main...HEAD', '--name-only'], { encoding: 'utf8' }).trim().split('\n').filter(file => /^(src\/|packages\/[^/]+\/src\/)/.test(file))
+const sourceHashes = Object.fromEntries(sourceFiles.map(file => [file, createHash('sha256').update(readFileSync(file)).digest('hex')]))
 try {
   const page = await browser.newPage({ viewport: { width: 1100, height: 900 } })
   const errors = []
@@ -189,7 +194,7 @@ try {
         assert.equal(run.immediate, true, `${name}: 1000-character flush`)
       results.push({ framework: name, scenario: scenario.id, cpuRate: 4, fade, ...run })
       console.log(JSON.stringify(results.at(-1)))
-      writeFileSync(path.join(output, 'results.json'), JSON.stringify({ browser: browser.version(), results, errors }, null, 2))
+      writeFileSync(path.join(output, 'results.json'), JSON.stringify({ generatedAt: new Date().toISOString(), revision, sourceHashes, browser: browser.version(), scope: 'One production-browser smoke run per framework and scenario at 4x CPU throttling. Frame intervals are a responsiveness proxy, not GPU dropped-frame counts. Completion checks poll DOM text every 50ms. These inputs differ from the Vue-only trace benchmark; compare within each report.', results, errors }, null, 2))
     }
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 })
   }

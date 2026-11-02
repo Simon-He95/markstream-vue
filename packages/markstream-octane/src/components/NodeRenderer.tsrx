@@ -1212,7 +1212,7 @@ export function NodeRenderer<
   const parsedNodes = stabilizeParsedNodes(rawParsedNodes, prevStableNodesRef.current)
   prevStableNodesRef.current = parsedNodes
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     streamBridge.update(props.content ?? '', hasNodes, smoothStreamingEnabled, requestedFinal, props.fade !== false)
   }, [hasNodes, props.content, requestedFinal, smoothStreamingEnabled, props.fade, streamBridge])
 

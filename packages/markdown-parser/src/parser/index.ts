@@ -23,6 +23,7 @@ import {
   resetTopLevelTokenizerForFinalAutoParse,
   shouldUseTopLevelStreamParse,
 } from './streaming/tokenizer'
+import { normalizeWindowsPathsInMarkdown } from './windows-paths'
 
 type ParseTimingMetrics = NonNullable<ParseOptions['parserMetrics']>
 
@@ -275,7 +276,10 @@ export function parseMarkdownToStructure(
   md: MarkdownIt,
   options: ParseOptions = {},
 ): ParsedNode[] {
-  const sourceMarkdown = (markdown ?? '').toString()
+  const rawMarkdown = (markdown ?? '').toString()
+  const sourceMarkdown = options.normalizeWindowsPaths === false
+    ? rawMarkdown
+    : normalizeWindowsPathsInMarkdown(rawMarkdown)
   const runtime = getParserRuntime(md)
   const validateLink = resolveValidateLink(md, options)
   const context = createParseContext(options, {

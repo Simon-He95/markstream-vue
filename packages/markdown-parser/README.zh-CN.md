@@ -280,6 +280,9 @@ interface ParseOptions {
   streamParse?: boolean | 'auto'
   // 解析 strong 时要求闭合 `**`（默认 false）
   requireClosingStrong?: boolean
+  // 解析前规范化 Windows 盘符/UNC 路径分隔符（默认 true），
+  // 避免路径中的 `\_` 被当作 Markdown 转义
+  normalizeWindowsPaths?: boolean
 }
 ```
 

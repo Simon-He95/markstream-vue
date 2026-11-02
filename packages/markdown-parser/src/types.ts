@@ -465,6 +465,12 @@ export interface ParseOptions {
   includeSourceMap?: boolean
   /** Reuse eligible stable top-level nodes between append-only stream parses. */
   reuseStableTopLevelNodes?: boolean
+  /**
+   * Normalize Windows drive and UNC path separators to `/` before Markdown
+   * parsing so `\_` in a path is not consumed as a Markdown escape.
+   * Defaults to true; set to false to parse the source verbatim.
+   */
+  normalizeWindowsPaths?: boolean
   /** Optional parser work/timing collector. */
   parserMetrics?: {
     tokenCloneMs?: number

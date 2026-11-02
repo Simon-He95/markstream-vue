@@ -282,6 +282,9 @@ interface ParseOptions {
   streamParse?: boolean | 'auto'
   // Require closing `**` for strong parsing (default: false)
   requireClosingStrong?: boolean
+  // Normalize Windows drive/UNC path separators before parsing (default: true).
+  // Prevents `\_` inside paths from being consumed as a Markdown escape.
+  normalizeWindowsPaths?: boolean
 }
 ```
 

@@ -85,6 +85,7 @@ class SmoothMarkdownStreamControllerImpl {
   private lastTick = 0
   private charBudget = 0
   private currentCps: number
+  private lastArrival: number | null = null
   private hasStarted = false
   private destroyed = false
 
@@ -201,8 +202,18 @@ class SmoothMarkdownStreamControllerImpl {
     this.source += chunk
     this.scanAppendedSource()
 
+    const t = now()
+    const arrivalCps = this.lastArrival == null
+      ? chunk.length
+      : chunk.length / Math.max(0.01, (t - this.lastArrival) / 1000)
+    this.currentCps = clamp(
+      this.lastArrival == null ? arrivalCps : this.currentCps * 0.9 + arrivalCps * 0.1,
+      this.minCharsPerSecond,
+      this.maxCharsPerSecond,
+    )
+    this.lastArrival = t
+
     if (wasIdle || (wasRevealBlocked && !this.isRevealBlocked())) {
-      const t = now()
       // Only apply startDelay for the very first batch of a new stream.
       // If the stream already had content and wasn't finished, skip the delay
       // so subsequent appends resume smoothly without an artificial pause.
@@ -230,6 +241,7 @@ class SmoothMarkdownStreamControllerImpl {
       this.discardConsumedAtomicRanges()
       this.charBudget = 0
       this.currentCps = this.minCharsPerSecond
+      this.lastArrival = null
       this.cancelLoop()
       this.emit()
       return
@@ -239,15 +251,22 @@ class SmoothMarkdownStreamControllerImpl {
     this.ensureLoop()
   }
 
-  flush = (): void => {
+  flush = (options?: { maxChars?: number }): void => {
     if (this.destroyed)
       return
 
     this.releaseTrailingFenceCandidate()
-    this.visible = this.source
+    if (options?.maxChars != null) {
+      const count = Math.trunc(toPositiveFiniteNumber(options.maxChars, 1))
+      this.visible += this.takeNextRevealSlice(count).text
+    }
+    else {
+      this.visible = this.source
+    }
     this.discardConsumedAtomicRanges()
     this.charBudget = 0
     this.currentCps = this.minCharsPerSecond
+    this.lastArrival = null
     this.cancelLoop()
     this.emit()
   }
@@ -287,6 +306,7 @@ class SmoothMarkdownStreamControllerImpl {
     this.lastTick = 0
     this.charBudget = 0
     this.currentCps = this.minCharsPerSecond
+    this.lastArrival = null
 
     this.emit()
   }
@@ -587,7 +607,6 @@ class SmoothMarkdownStreamControllerImpl {
       this.startedAt = 0
       this.lastTick = 0
       this.charBudget = 0
-      this.currentCps = this.minCharsPerSecond
       return
     }
 

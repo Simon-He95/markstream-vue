@@ -103,19 +103,8 @@ markstream-solid {
   width: 100%;
 }
 
-.markstream-solid .markstream-solid-text__stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
-  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
-  animation-fill-mode: both;
-}
 
-.markstream-solid .markstream-solid-text__stream-delta--a {
-  animation-name: markstream-solid-text-stream-update-fade-a;
-}
 
-.markstream-solid .markstream-solid-text__stream-delta--b {
-  animation-name: markstream-solid-text-stream-update-fade-b;
-}
 
 .markstream-solid h1,
 .markstream-solid h2,
@@ -219,15 +208,7 @@ markstream-solid {
   50% { opacity: var(--underline-opacity, 0.35); }
 }
 
-@keyframes markstream-solid-text-stream-update-fade-a {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
-@keyframes markstream-solid-text-stream-update-fade-b {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
 .markstream-solid .typewriter-cursor {
   position: absolute;
@@ -262,9 +243,6 @@ markstream-solid {
     opacity: var(--underline-rest-opacity, 0.18);
   }
 
-  .markstream-solid .markstream-solid-text__stream-delta {
-    animation: none !important;
-  }
 
   .markstream-solid .typewriter-node,
   .markstream-solid .fade-node {
@@ -2311,8 +2289,6 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .code-pre-fallback code {color:inherit;font:inherit;background:transparent;}
 .markstream-solid.markdown-renderer {contain-intrinsic-size:auto 800px auto 0px;}
 .markstream-solid.markdown-renderer.virtualized,.markstream-solid.markdown-renderer.virtual-scroll-coordinated {content-visibility:visible;contain-intrinsic-size:none;}
-.markstream-solid .text-node-stream-delta {animation:markstream-solid-stream-fade var(--stream-update-fade-duration,var(--fade-duration,200ms)) var(--stream-update-fade-ease,var(--fade-ease,cubic-bezier(.2,0,.4,1))) both;}
-@keyframes markstream-solid-stream-fade {from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce) {.markstream-solid .text-node-stream-delta {animation-duration:0s!important;}}
 .markstream-solid .heading-node {letter-spacing:normal;}
 .markstream-solid .math-loading-spinner {border-color:color-mix(in srgb,var(--loading-spinner) 15%,transparent);border-top-color:color-mix(in srgb,var(--loading-spinner) 80%,transparent);}
@@ -2335,3 +2311,27 @@ body > div[id^="dmermaid-"] {
 .markstream-solid .diagram-source-panel {padding:var(--ms-inset-panel-body);background:var(--diagram-bg);}
 .markstream-solid .diagram-source-code {margin:0;padding:0;font-family:var(--ms-font-mono);font-size:14px;line-height:20px;white-space:pre-wrap;text-align:left;color:hsl(var(--ms-foreground));background:transparent;border:0;border-radius:0;}
 .markstream-solid .d2-source-code {white-space:pre;line-height:1.5;}
+
+/* Streaming words share timing and identity across framework adapters. */
+:where(.markstream-solid) .text-node-stream-delta {
+  animation: markstream-solid-word-fade var(--stream-update-fade-duration, var(--fade-duration, 700ms)) var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.37, 0.55, 0.86, 0.88))) both;
+}
+:where(.markstream-solid) .text-node-stream-final {
+  animation: none !important;
+  opacity: 1;
+}
+@keyframes markstream-solid-word-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.markstream-solid) .text-node-stream-delta { animation-duration: 0s !important; }
+}
+
+:where(.markstream-solid)[data-stream-final] .fade-node,
+:where(.markstream-solid)[data-stream-final] .fade-enter-active,
+:where(.markstream-solid)[data-stream-final] .typewriter-enter-active {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1;
+}

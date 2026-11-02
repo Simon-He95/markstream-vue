@@ -1,0 +1,157 @@
+{
+  "browser": "156.0.8078.74",
+  "probes": [
+    {
+      "probe": "text",
+      "independence": {
+        "words": 20,
+        "sameAnimation": true,
+        "sameOpacity": true,
+        "duration": 700,
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)"
+      },
+      "natural": {
+        "peak": 43,
+        "remaining": 0,
+        "elements": 3,
+        "correct": true
+      },
+      "reducedMotion": true
+    },
+    {
+      "probe": "code",
+      "independence": {
+        "words": 20,
+        "sameAnimation": true,
+        "sameOpacity": true,
+        "duration": 700,
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)"
+      },
+      "natural": {
+        "peak": 43,
+        "remaining": 0,
+        "elements": 2,
+        "correct": true
+      },
+      "reducedMotion": true
+    }
+  ],
+  "runs": [
+    {
+      "scenario": "dense",
+      "variant": "before",
+      "taskMs": 359.19500000000005,
+      "deliveryMs": 2225.9000000953674,
+      "elapsedMs": 2547.4000000953674,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 6,
+      "peakPerNode": 3,
+      "peakElements": 179,
+      "remainingDeltas": 0,
+      "textLength": 482,
+      "complete": true
+    },
+    {
+      "scenario": "dense",
+      "variant": "tune",
+      "taskMs": 340.12000000000006,
+      "deliveryMs": 2224.699999809265,
+      "elapsedMs": 4073.9000000953674,
+      "frameP95Ms": 16.700000000000728,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 17,
+      "peakPerNode": 5,
+      "peakElements": 159,
+      "remainingDeltas": 0,
+      "textLength": 482,
+      "complete": true
+    },
+    {
+      "scenario": "burst",
+      "variant": "before",
+      "taskMs": 322.65099999999995,
+      "deliveryMs": 2199.7999997138977,
+      "elapsedMs": 4215.599999904633,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 33.19999999999982,
+      "framesOver25Ms": 1,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 3,
+      "peakElements": 257,
+      "remainingDeltas": 0,
+      "textLength": 987,
+      "complete": true
+    },
+    {
+      "scenario": "burst",
+      "variant": "tune",
+      "taskMs": 398.707,
+      "deliveryMs": 2204.3999996185303,
+      "elapsedMs": 4615.699999809265,
+      "frameP95Ms": 16.799999999999727,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 22,
+      "peakPerNode": 6,
+      "peakElements": 289,
+      "remainingDeltas": 0,
+      "textLength": 987,
+      "complete": true
+    },
+    {
+      "scenario": "slow",
+      "variant": "before",
+      "taskMs": 87.6,
+      "deliveryMs": 1802,
+      "elapsedMs": 2165.4000000953674,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 3,
+      "peakPerNode": 3,
+      "peakElements": 10,
+      "remainingDeltas": 0,
+      "textLength": 22,
+      "complete": true
+    },
+    {
+      "scenario": "slow",
+      "variant": "tune",
+      "taskMs": 99.315,
+      "deliveryMs": 1800.1000003814697,
+      "elapsedMs": 2216.5,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000068,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 22,
+      "complete": true
+    }
+  ],
+  "selection": {
+    "preserved": true,
+    "correct": true,
+    "remaining": 0
+  },
+  "errors": [],
+  "baselineRef": "4556e5d6b1ef9bb4476bf983123ac25a3b01b2a9",
+  "scope": "One smoke run per scenario and variant, sequential headless Chrome production fixtures at 1100x800. smoothStreaming=true; parseCoalesceMs=0 on both sides. TaskDuration includes stream delivery, backlog drain, fade completion and identical sampling. Not a GPU or repeatable throughput benchmark. Full-renderer peakDeltas/peakPerNode are sampled after input updates and may miss peaks between paced commits. The 250-word probes sample every word append."
+}

@@ -14,7 +14,7 @@ import { createSourceMapFromOffsets } from './node-source-map'
 import { applyPostTransformNodes, finalizeHtmlBlockLoading } from './nodes/finalize-nodes'
 import { getInternalNodeSourceRange, processTokensWithContext } from './nodes/token-to-nodes'
 import { createParseContext, ensureParseContext } from './parse-context'
-import { processTopLevelTokensWithReuse } from './reuse/structured-node-reuse'
+import { processTopLevelTokensWithReuse, reuseFinalizedStreamNodes } from './reuse/structured-node-reuse'
 import { computeSourceLineOffsets, getCachedSourceLineOffsets, getParserRuntime } from './runtime'
 import { createSourceLineMapper } from './source-line-mapper'
 import { getSafeMarkdown } from './streaming/safe-markdown'
@@ -298,6 +298,17 @@ export function parseMarkdownToStructure(
   })
 
   try {
+    const reuseStartedAt = options.parserMetrics ? getParserNow() : 0
+    const reused = reuseFinalizedStreamNodes(runtime, sourceMarkdown, context)
+    if (reused) {
+      addTiming(options.parserMetrics, 'processTokensReusedTopLevelNodes', reused.length)
+      runtime.resetStreamOnly()
+      if (options.debug)
+        console.log('Parsed Markdown Tree Structure:', reused)
+      return finishTimedParse(reused, options.parserMetrics, reuseStartedAt)
+    }
+    if (options.final === true && !context.isFragment && runtime.safeMarkdown)
+      runtime.resetDocument(true)
     return parseMarkdownWithContext(sourceMarkdown, context)
   }
   finally {

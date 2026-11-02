@@ -136,6 +136,7 @@ describe('node renderer smooth streaming', () => {
       props: {
         content: '',
         final: false,
+        fade: false,
         smoothStreaming: true,
         batchRendering: false,
         viewportPriority: false,
@@ -175,6 +176,7 @@ describe('node renderer smooth streaming', () => {
       props: {
         content: '',
         final: false,
+        fade: false,
         smoothStreaming: true,
         batchRendering: false,
         viewportPriority: false,
@@ -199,6 +201,33 @@ describe('node renderer smooth streaming', () => {
       const renderContent = wrapper.vm.$?.setupState?.renderContent as string | undefined
       expect(renderContent).toBe('```typescript\n')
       expect(wrapper.text()).not.toContain('Plain Text')
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('paces small animated appends instead of bypassing the reveal queue', async () => {
+    const queuedFrames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+      queuedFrames.push(callback)
+      return queuedFrames.length
+    })
+    vi.stubGlobal('cancelAnimationFrame', () => {})
+    const wrapper = mount(NodeRenderer, {
+      props: { content: '', final: false, fade: true, smoothStreaming: true, batchRendering: false, viewportPriority: false, deferNodesUntilVisible: false },
+    })
+    try {
+      for (const content of ['中', '中文', '中文测试'])
+        await wrapper.setProps({ content })
+      expect(wrapper.vm.$?.setupState?.renderContent).toBe('')
+      expect(queuedFrames.length).toBeGreaterThan(0)
+      const baseline = performance.now()
+      for (let step = 1; step <= 100 && queuedFrames.length; step++) {
+        queuedFrames.shift()?.(baseline + step * 50)
+        await nextTick()
+      }
+      expect(wrapper.text()).toBe('中文测试')
     }
     finally {
       wrapper.unmount()
@@ -707,7 +736,7 @@ describe('node renderer smooth streaming', () => {
     wrapper.unmount()
   })
 
-  it('final is gated by caughtUp when smooth streaming is active', async () => {
+  it('final is gated by caughtUp when flushOnFinish is explicitly disabled', async () => {
     // When smooth streaming is pacing content, final=true should not
     // reach the parser until visible has caught up with source.
     const queuedFrames: FrameRequestCallback[] = []
@@ -723,6 +752,7 @@ describe('node renderer smooth streaming', () => {
         content: '',
         typewriter: true,
         smoothStreaming: true,
+        smoothStreamingOptions: { flushOnFinish: false },
         batchRendering: false,
         viewportPriority: false,
         deferNodesUntilVisible: false,

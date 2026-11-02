@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import type { StreamingTextScope } from 'markstream-core'
 import type { BaseNode, HtmlPolicy, MarkdownIt, ParsedNode, ParseOptions } from 'stream-markdown-parser'
 import type { SmoothMarkdownStreamOptions } from '../../composables/useSmoothMarkdownStream'
 import type { VisibilityHandle } from '../../composables/viewportPriority'
 import type { CodeBlockNodeProps, CodeBlockOptions, CodeBlockPreviewPayload, CodeBlockTheme, CodeBlockThemes, D2BlockNodeProps, InfographicBlockNodeProps, MermaidBlockNodeProps } from '../../types/component-props'
-import { normalizeShikiLanguage } from 'markstream-core'
+import { createRendererStreamBridge, createStreamingTextScope, normalizeShikiLanguage, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
 import { getMarkdown, mergeCustomHtmlTags, parseMarkdownToStructure, resolveCustomHtmlTags } from 'stream-markdown-parser'
 import { h as createVNode } from 'vue'
 import { computed, getCurrentInstance, inject, markRaw, nextTick, onBeforeUnmount, onMounted, provide, reactive, ref, watch } from 'vue-demi'
@@ -211,7 +212,22 @@ const debugPerformanceEnabled = computed(() => props.debugPerformance && isClien
 const attrs = computed<Record<string, unknown>>(() => ((instance?.proxy as any)?.$attrs ?? {}) as Record<string, unknown>)
 const textStreamState = new Map<string, string>()
 const streamRenderVersion = ref(0)
-const smoothStream = useSmoothMarkdownStream(props.smoothStreamingOptions)
+const smoothStream = useSmoothMarkdownStream({ ...RENDERER_STREAM_DEFAULTS, ...props.smoothStreamingOptions, burstInitialContent: props.fade === false && !props.typewriter })
+const finalReady = ref(false)
+const streamBridge = createRendererStreamBridge({
+  ...smoothStream,
+  getSnapshot: () => ({ source: smoothStream.source.value, pendingChars: smoothStream.pendingChars.value, caughtUp: smoothStream.caughtUp.value }),
+}, {
+  flushOnFinish: props.smoothStreamingOptions?.flushOnFinish,
+  commit: async (work) => {
+    work()
+    await nextTick()
+  },
+  measure: () => { void containerRef.value?.offsetHeight },
+  onReady: (value) => { finalReady.value = value },
+})
+onBeforeUnmount(streamBridge.dispose)
+
 const resolvedShowTooltips = computed<boolean | undefined>(() => {
   if (typeof props.showTooltips === 'boolean')
     return props.showTooltips
@@ -275,12 +291,18 @@ const requestedFinal = computed<boolean | undefined>(() => {
   return props.final ?? base.final
 })
 
+const inheritedTextScope = inject<StreamingTextScope | undefined>('markstreamTextScope', undefined)
+const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup)
+provide('markstreamTextScope', inheritedTextScope ?? ownTextScope)
+watch(requestedFinal, value => ownTextScope.setFinal(value === true), { immediate: true, flush: 'sync' })
+
 const effectiveFinal = computed<boolean | undefined>(() => {
   const finalRequested = requestedFinal.value
 
   if (smoothStreamingEnabled.value && finalRequested != null) {
     return Boolean(
       finalRequested
+      && finalReady.value
       && smoothSourceSynced.value
       && smoothStream.caughtUp.value,
     )
@@ -298,37 +320,7 @@ const renderVersionSource = computed(() => {
 watch(
   [() => props.content, () => props.nodes, smoothStreamingEnabled, requestedFinal],
   ([content, nodes, enabled, finalRequested]) => {
-    if (nodes?.length) {
-      smoothStream.reset('')
-      return
-    }
-
-    const nextContent = content ?? ''
-
-    if (!enabled) {
-      smoothStream.reset(nextContent)
-      if (finalRequested)
-        smoothStream.finish({ flush: true })
-      return
-    }
-
-    const source = smoothStream.source.value
-
-    if (!nextContent) {
-      smoothStream.reset('')
-    }
-    else if (nextContent === source) {
-      // no-op
-    }
-    else if (nextContent.startsWith(source)) {
-      smoothStream.enqueue(nextContent.slice(source.length))
-    }
-    else {
-      smoothStream.reset(nextContent)
-    }
-
-    if (finalRequested)
-      smoothStream.finish()
+    streamBridge.update(content ?? '', !!nodes?.length, enabled, finalRequested, props.fade !== false)
   },
   { immediate: true },
 )
@@ -438,6 +430,7 @@ const effectiveCustomHtmlTagsSet = computed<Set<string>>(() => {
   return new Set(arr.map(t => String(t).trim().toLowerCase()).filter(Boolean))
 })
 
+const parsedSnapshots = new WeakMap<ParsedNode, ParsedNode>()
 const parsedNodes = computed<ParsedNode[]>(() => {
   if (isLegacyVue26Vm(instance?.proxy as any) && !props.content && Array.isArray(props.nodes))
     return EMPTY_PARSED_NODES
@@ -455,7 +448,13 @@ const parsedNodes = computed<ParsedNode[]>(() => {
     // provided markdown via `setGlobalMarkdown`, otherwise fall back
     // to the legacy `getMarkdown()` factory.
     const parseStart = debugPerformanceEnabled.value ? performance.now() : 0
-    const parsed = parseMarkdownToStructure(contentToParse, mdInstance.value, mergedParseOptions.value)
+    const base = mergedParseOptions.value
+    const reuse = !props.customMarkdownIt && !base.preTransformTokens && !base.postTransformTokens && !base.postTransformNodes
+    const parsed = parseMarkdownToStructure(contentToParse, mdInstance.value, {
+      ...base,
+      streamParse: base.streamParse ?? true,
+      reuseStableTopLevelNodes: reuse,
+    })
     if (debugPerformanceEnabled.value) {
       logPerf('parse(sync)', {
         ms: Math.round(performance.now() - parseStart),
@@ -463,7 +462,15 @@ const parsedNodes = computed<ParsedNode[]>(() => {
         contentLength: contentToParse.length,
       })
     }
-    return markRaw(cloneParsedNodeList(parsed))
+    return markRaw(parsed.map((node) => {
+      const cached = reuse ? parsedSnapshots.get(node) : undefined
+      if (cached)
+        return cached
+      const snapshot = cloneNodeValue(node)
+      if (reuse)
+        parsedSnapshots.set(node, snapshot)
+      return snapshot
+    }))
   }
   return []
 })
@@ -2501,6 +2508,7 @@ watch(
   <div
     ref="containerRef"
     class="markstream-vue2 markdown-renderer"
+    :data-stream-final="requestedFinal === true ? '' : undefined"
     :class="[{ dark: props.isDark }, { virtualized: virtualizationEnabled }]"
     :data-custom-id="props.customId"
     @click="handleContainerClick"

@@ -1362,6 +1362,7 @@ describe('node renderer virtual-scroll coordination', () => {
     for (let step = 1; step <= 520 && frames.length > 0; step++) {
       const callback = frames.shift()!
       callback(baseline + step * 80)
+      await new Promise(resolve => setTimeout(resolve, 0))
       await nextTick()
     }
 

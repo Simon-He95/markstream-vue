@@ -537,7 +537,7 @@ describe('typewriter cursor position', () => {
 
     await runNextFrame(queuedFrames, performance.now() + 16)
     expect(wrapper.get('.text-node').text()).toBe('hello world')
-    expect(measuredText).toBe(' world')
+    expect(measuredText).toBe('world')
 
     wrapper.unmount()
   })

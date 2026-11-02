@@ -2,7 +2,7 @@
  * Keep button defaults minimal, but don't override Tailwind utilities.
  * Use :where() to keep specificity low so `.markstream-vue2 .<utility>` wins.
  */
-:where(.markstream-vue2) button {
+:where(.markstream-vue2, .markdown-renderer) button {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -71,4 +71,28 @@ body > div[id^="dmermaid-"] {
   width: 100%;
   visibility: hidden;
   pointer-events: none;
+}
+
+/* Streaming words share timing and identity across framework adapters. */
+:where(.markstream-vue2, .markdown-renderer) .text-node-stream-delta {
+  animation: markstream-vue2-word-fade var(--stream-update-fade-duration, var(--fade-duration, 700ms)) var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.37, 0.55, 0.86, 0.88))) both;
+}
+:where(.markstream-vue2, .markdown-renderer) .text-node-stream-final {
+  animation: none !important;
+  opacity: 1;
+}
+@keyframes markstream-vue2-word-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.markstream-vue2, .markdown-renderer) .text-node-stream-delta { animation-duration: 0s !important; }
+}
+
+:where(.markstream-vue2)[data-stream-final] .fade-node,
+:where(.markstream-vue2)[data-stream-final] .fade-enter-active,
+:where(.markstream-vue2)[data-stream-final] .typewriter-enter-active {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1;
 }

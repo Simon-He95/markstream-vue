@@ -1,3 +1,6 @@
+import { TextFinalContext } from '../context/textFinal'
+import { createRendererStreamBridge, createStreamingTextScope, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
+import { flushSync } from 'octane'
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { StreamStateRef } from '../context/streamState'
 import type { VisibilityHandle } from '../context/viewportPriority.tsrx'
@@ -5,7 +8,7 @@ import type { HtmlComponentMap, StreamingComponentMap } from '../customComponent
 import type { NodeRendererProps, RenderContext } from '../types'
 import type { OctaneRefObject } from '../types/octane'
 import * as Octane from 'octane'
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'octane'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'octane'
 import {
   getMarkdown,
   mergeCustomHtmlTags,
@@ -727,6 +730,7 @@ const NodeRendererInner: Octane.ComponentBody<NodeRendererInnerProps> = ({
     <div
       ref={containerRef}
       className={`markstream-octane markdown-renderer${props.isDark ? ' dark' : ''}${virtualizationEnabled ? ' virtualized' : ''}`}
+      data-stream-final={(props.final ?? props.parseOptions?.final) === true ? '' : undefined}
       data-custom-id={props.customId}
       onClick={props.onClick}
       onMouseOver={handleMouseEvent(props.onMouseOver)}
@@ -736,7 +740,7 @@ const NodeRendererInner: Octane.ComponentBody<NodeRendererInnerProps> = ({
       {visibleNodes.map(({ node, index }) => {
         const canRender = shouldRenderNode(index)
         const placeholderHeight = nodeHeightsRef.current.get(index) ?? averageNodeHeight
-        const shouldAnimate = props.fade !== false
+        const shouldAnimate = props.fade !== false && (props.final ?? props.parseOptions?.final) !== true
           && node.type !== 'code_block'
           && !nodeSeenRef.current.has(index)
           && canRender
@@ -832,7 +836,19 @@ export function NodeRenderer<
   const textStreamStateRef = useRef(new Map<string, string>())
   const streamRenderVersionRef = useRef(0)
   const previousRenderVersionSourceRef = useRef<unknown>(null)
-  const smoothStream = useSmoothMarkdownStream(props.smoothStreamingOptions)
+  const smoothStream = useSmoothMarkdownStream({ ...RENDERER_STREAM_DEFAULTS, ...props.smoothStreamingOptions, burstInitialContent: props.fade === false && !props.typewriter })
+  const [finalReady, setFinalReady] = useState(false)
+  const bridgeRef = useRef<ReturnType<typeof createRendererStreamBridge> | null>(null)
+  if (!bridgeRef.current) {
+    bridgeRef.current = createRendererStreamBridge(smoothStream, {
+      flushOnFinish: props.smoothStreamingOptions?.flushOnFinish,
+      commit: work => { flushSync(work) },
+      measure: () => { void containerRef.current?.offsetHeight },
+      onReady: setFinalReady,
+    })
+  }
+  const streamBridge = bridgeRef.current
+  useEffect(() => () => streamBridge.dispose(), [streamBridge])
   const parentSmoothStreaming = Octane.useContext(SmoothStreamingContext)
   const warnedComponentMapConflictsRef = useRef(new Set<string>())
   const [hasMountedForSmoothStreaming, setHasMountedForSmoothStreaming] = useState(
@@ -872,6 +888,12 @@ export function NodeRenderer<
     return props.final ?? (base as any).final
   }, [props.final, props.parseOptions])
 
+  const parentTextScope = Octane.useContext(TextFinalContext)
+  const ownTextScope = useRef(createStreamingTextScope(streamBridge.scheduleCleanup)).current
+  const textScope = parentTextScope ?? ownTextScope
+  useLayoutEffect(() => {
+    ownTextScope.setFinal(requestedFinal === true)
+  }, [ownTextScope, requestedFinal])
   const rawContent = props.content ?? ''
   const smoothSourceSynced = hasNodes || smoothStream.source === rawContent
 
@@ -879,12 +901,14 @@ export function NodeRenderer<
     if (smoothStreamingEnabled && requestedFinal != null) {
       return Boolean(
         requestedFinal
+        && finalReady
         && smoothSourceSynced
         && smoothStream.caughtUp,
       )
     }
     return requestedFinal
   }, [
+    finalReady,
     requestedFinal,
     smoothSourceSynced,
     smoothStream.caughtUp,
@@ -1189,38 +1213,8 @@ export function NodeRenderer<
   prevStableNodesRef.current = parsedNodes
 
   useEffect(() => {
-    if (hasNodes) {
-      smoothStream.reset('')
-      return
-    }
-
-    const nextContent = props.content ?? ''
-
-    if (!smoothStreamingEnabled) {
-      smoothStream.reset(nextContent)
-      if (requestedFinal)
-        smoothStream.finish({ flush: true })
-      return
-    }
-
-    const source = smoothStream.getSnapshot().source
-
-    if (!nextContent) {
-      smoothStream.reset('')
-    }
-    else if (nextContent === source) {
-      // no-op
-    }
-    else if (nextContent.startsWith(source)) {
-      smoothStream.enqueue(nextContent.slice(source.length))
-    }
-    else {
-      smoothStream.reset(nextContent)
-    }
-
-    if (requestedFinal)
-      smoothStream.finish()
-  }, [hasNodes, props.content, requestedFinal, smoothStreamingEnabled])
+    streamBridge.update(props.content ?? '', hasNodes, smoothStreamingEnabled, requestedFinal, props.fade !== false)
+  }, [hasNodes, props.content, requestedFinal, smoothStreamingEnabled, props.fade, streamBridge])
 
   useEffect(() => {
     if (typeof window === 'undefined')
@@ -1362,7 +1356,7 @@ export function NodeRenderer<
   }
 
   return (
-    <StreamStateRefContext.Provider value={streamStateRef.current}>
+    <TextFinalContext.Provider value={textScope}><StreamStateRefContext.Provider value={streamStateRef.current}>
       <SmoothStreamingContext.Provider value={smoothStreamingEnabled}>
         <ViewportPriorityProvider
           getRoot={() => containerRef.current}
@@ -1379,7 +1373,7 @@ export function NodeRenderer<
           />
         </ViewportPriorityProvider>
       </SmoothStreamingContext.Provider>
-    </StreamStateRefContext.Provider>
+    </StreamStateRefContext.Provider></TextFinalContext.Provider>
   )
 }
 

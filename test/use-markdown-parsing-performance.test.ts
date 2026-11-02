@@ -206,6 +206,22 @@ describe('useMarkdownParsing performance behavior', () => {
     scope.stop()
   })
 
+  it('does not add a second parse delay to paced word fades, but honors explicit coalescing', () => {
+    const initial = 'hello '.repeat(18).trim()
+    const content = ref(initial)
+    const { props, scope, state } = createParsingState(content, ref(true), { fade: true })
+    try {
+      content.value = `${initial} world`
+      expect(state.parsedNodes.value[0]?.raw).toBe(content.value)
+      props.parseCoalesceMs = 1000
+      content.value += ' again'
+      expect(state.parsedNodes.value[0]?.raw).toBe(`${initial} world`)
+    }
+    finally {
+      scope.stop()
+    }
+  })
+
   it('flushes pending coalesced content immediately when final becomes true', async () => {
     vi.useFakeTimers()
     const initial = 'hello '.repeat(18).trim()

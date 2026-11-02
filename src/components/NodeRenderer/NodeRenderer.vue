@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { FootnoteNode as FootnoteNodeData, ParsedNode } from 'stream-markdown-parser'
+import type { VNodeRef } from 'vue'
 import type { EstimatedNodeHeight } from '../../internal/heightEstimationExperiment'
 import type { CustomComponents } from '../../types'
 import type { CodeBlockPreviewPayload } from '../../types/component-props'
@@ -417,11 +418,26 @@ const {
   renderContent,
   requestedFinal,
   effectiveFinal,
+  scheduleFinalCleanup,
 } = useSmoothStreamingBridge(rendererProps, {
   isClient,
   inheritedSmoothStreaming,
+  measureFinalCommit: () => { void containerRef.value?.offsetHeight },
 })
 const stableLayoutInitiallyFinal = requestedFinal.value === true
+const inheritedTextFinal = inject<{ value?: boolean } | undefined>('markstreamTextFinal', undefined)
+const textStreamFinal = computed(() => requestedFinal.value === true || inheritedTextFinal?.value === true)
+provide('markstreamTextFinal', textStreamFinal)
+const inheritedFinalCleanup = inject<((work: () => void) => void) | undefined>('markstreamFinalCleanup', undefined)
+provide('markstreamFinalCleanup', inheritedFinalCleanup ?? scheduleFinalCleanup)
+watch(textStreamFinal, (final) => {
+  if (!final)
+    return
+  // Turning Transition's css prop off does not cancel an enter already in flight.
+  containerRef.value?.querySelectorAll('.fade-enter-from, .fade-enter-active, .fade-enter-to').forEach((element) => {
+    element.classList.remove('fade-enter-from', 'fade-enter-active', 'fade-enter-to')
+  })
+}, { flush: 'post' })
 provide('markstreamSmoothStreaming', smoothStreamingEnabled)
 const contentStreamingTailActive = ref(false)
 const continuousStreamingObserved = ref(false)
@@ -4512,6 +4528,11 @@ function setNodeContentRef(index: number, key: string, el: HTMLElement | null) {
   else
     mountedNodeKeys.delete(key)
 
+  // Full renders without height measurement still re-invoke every function
+  // ref. Avoid allocating and deleting a version entry for each settled node.
+  if (el && !shouldMeasureNodeHeights.value && !nodeContentRegistration.has(index))
+    return
+
   if (el) {
     const node = parsedNodes.value[index]
     const registered = nodeContentRegistration.get(index)
@@ -5637,12 +5658,15 @@ const d2Bindings = computed(() => ({
 const infographicBindings = computed(() => ({
   ...(rendererProps.infographicProps || {}),
 }))
-const nonCodeBindings = computed(() => ({
-  typewriter: typewriterEnabled.value,
-  fade: rendererProps.fade,
-  // Forward customHtmlTags for non-whitelisted tag detection in child components
-  customHtmlTags: mergedParseOptions.value.customHtmlTags,
-}))
+let previousNonCodeBindings: { typewriter: boolean, fade: boolean | undefined, customHtmlTags: readonly string[] | undefined } | undefined
+const nonCodeBindings = computed(() => {
+  const typewriter = typewriterEnabled.value
+  const fade = rendererProps.fade
+  const customHtmlTags = mergedParseOptions.value.customHtmlTags
+  if (previousNonCodeBindings?.typewriter === typewriter && previousNonCodeBindings.fade === fade && previousNonCodeBindings.customHtmlTags === customHtmlTags)
+    return previousNonCodeBindings
+  return previousNonCodeBindings = { typewriter, fade, customHtmlTags }
+})
 const linkBindings = computed(() => ({
   ...nonCodeBindings.value,
   ...(typeof resolvedShowTooltips.value === 'boolean' ? { showTooltip: resolvedShowTooltips.value } : {}),
@@ -5700,6 +5724,8 @@ function hasSlotChildren(node: ParsedNode) {
 }
 
 interface RenderedItemLike {
+  slotRef: VNodeRef
+  contentRef: VNodeRef
   index: number
   node: ParsedNode
   /** Loading value captured from the source node when cached props were built. */
@@ -6017,6 +6043,8 @@ function buildRenderedItem(item: { node: ParsedNode, index: number }, globalSign
   const customNodeProps = mergeProps(customBindings, baseNodeProps, globalNodeProps, copyEvents)
 
   const renderedItem: RenderedItemLike = {
+    slotRef: el => setNodeSlotElement(item.index, el as HTMLElement | null),
+    contentRef: el => setNodeContentRef(item.index, renderedItem.vnodeKey, el as HTMLElement | null),
     node,
     sourceLoading: loading,
     index: item.index,
@@ -6845,14 +6873,14 @@ onBeforeUnmount(() => {
     <template v-else>
       <template v-for="item in renderedItems" :key="item.vnodeKey">
         <div
-          :ref="el => setNodeSlotElement(item.index, el as HTMLElement | null)"
+          :ref="item.slotRef"
           class="node-slot"
           :data-node-index="item.index"
           :data-node-type="item.node.type"
         >
           <div
             v-if="mountedNodeKeys.has(item.vnodeKey) || shouldRenderNode(item.index)"
-            :ref="el => setNodeContentRef(item.index, item.vnodeKey, el as HTMLElement | null)"
+            :ref="item.contentRef"
             class="node-content"
           >
             <!-- Skip wrapping code_block nodes in transitions to avoid touching stream-diffs internals -->
@@ -6861,7 +6889,6 @@ onBeforeUnmount(() => {
               :item="item"
               :source-nodes="props.nodes"
               :fade="rendererProps.fade"
-              :final="requestedFinal"
               :nested-renderer-props="item.rendersCustomNode ? nestedRendererProps : undefined"
             />
 

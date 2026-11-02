@@ -1,50 +1,29 @@
 <script lang="ts">
   import type { SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
-  import { resolveStreamingTextState } from 'markstream-core'
+  import type { StreamingTextScope } from 'markstream-core'
+  import { createStreamingTextDom, createStreamingTextScope } from 'markstream-core'
+  import { getContext, onMount, untrack } from 'svelte'
   import { getString } from './shared/node-helpers'
 
-  interface Props {
-    node: SvelteRenderableNode
-    context?: SvelteRenderContext
-    indexKey?: string | number
-    typewriter?: boolean
-  }
-
-  let {
-    node,
-    context = undefined,
-    indexKey = undefined,
-    typewriter = undefined
-  }: Props = $props()
-
-  let previousKey = ''
-  let previousContent = ''
-  let deltaClass = 'markstream-svelte-text__stream-delta--a'
-
-  const content = $derived(getString((node as any)?.content ?? (node as any)?.raw))
-  const centered = $derived(Boolean((node as any)?.center))
-  const streamKey = $derived(String(context?.customId ?? 'global') + ':' + String(context?.streamRenderVersion ?? 0) + ':' + String(indexKey ?? 'node'))
-  const fadeEnabled = $derived(context?.fade !== false)
-
-  const streamInfo = $derived.by(() => {
-    const state = context?.textStreamState
-    const previous = streamKey === previousKey ? previousContent : (state?.get(streamKey) ?? '')
-
-    const result = resolveStreamingTextState({
-      nextContent: content,
-      previousContent: previous,
-      typewriterEnabled: fadeEnabled,
-    })
-
-    if (result.appended)
-      deltaClass = deltaClass.endsWith('--a') ? 'markstream-svelte-text__stream-delta--b' : 'markstream-svelte-text__stream-delta--a'
-
-    previousKey = streamKey
-    previousContent = content
-    state?.set(streamKey, content)
-
-    return { stableContent: result.settledContent, deltaContent: result.streamedDelta, deltaClass }
+  let { node, context, indexKey, typewriter }: { node: SvelteRenderableNode, context?: SvelteRenderContext, indexKey?: string | number, typewriter?: boolean } = $props()
+  const scope = getContext<StreamingTextScope | undefined>('markstreamTextFinal')
+  const localScope = createStreamingTextScope(work => work())
+  const content = $derived(getString(node.content ?? node.raw))
+  const initial = untrack(() => content)
+  let host: HTMLElement
+  let binding = $state<ReturnType<typeof createStreamingTextDom>>()
+  onMount(() => {
+    binding = createStreamingTextDom(host, initial, scope ?? localScope)
+    return () => binding?.dispose()
+  })
+  $effect(() => {
+    if (!scope)
+      localScope.setFinal(context?.final === true)
+    const key = indexKey == null ? '' : String(indexKey)
+    binding?.update(content, context?.fade !== false, key ? context?.textStreamState?.get(key) : undefined)
+    if (key)
+      context?.textStreamState?.set(key, content)
   })
 </script>
 
-<span data-typewriter={context?.typewriter === true ? '1' : undefined} class:markstream-svelte-text--centered={centered} class="markstream-svelte-text-node text-node">{streamInfo.stableContent}{#if streamInfo.deltaContent}<span class="markstream-svelte-text__stream-delta text-node-stream-delta {streamInfo.deltaClass}">{streamInfo.deltaContent}</span>{/if}</span>
+<span bind:this={host} class="markstream-svelte-text-node text-node" class:markstream-svelte-text--centered={!!node.center} data-typewriter={(typewriter ?? context?.typewriter) ? '1' : undefined}><span>{initial}</span></span>

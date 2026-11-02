@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { mount } from '@vue/test-utils'
 import { getMarkdown, parseMarkdownToStructure } from 'stream-markdown-parser'
 import { describe, expect, it, vi } from 'vitest'
@@ -7,38 +5,6 @@ import NodeRenderer from '../packages/markstream-vue2/src/components/NodeRendere
 import { flushAll } from './setup/flush-all'
 
 describe('markstream-vue2 text node streaming consistency', () => {
-  it('keeps the stale-delta settle hook wired to outer stream ticks', () => {
-    const nodeRendererSource = readFileSync(
-      resolve(process.cwd(), 'packages/markstream-vue2/src/components/NodeRenderer/NodeRenderer.vue'),
-      'utf8',
-    )
-    const textNodeSource = readFileSync(
-      resolve(process.cwd(), 'packages/markstream-vue2/src/components/TextNode/TextNode.vue'),
-      'utf8',
-    )
-    const inlineCodeNodeSource = readFileSync(
-      resolve(process.cwd(), 'packages/markstream-vue2/src/components/InlineCodeNode/InlineCodeNode.vue'),
-      'utf8',
-    )
-
-    expect(nodeRendererSource).toContain('const streamRenderVersion = ref(0)')
-    expect(nodeRendererSource).toContain('provide(\'markstreamStreamVersion\', streamRenderVersion)')
-    expect(nodeRendererSource).toContain('const renderVersionSource = computed(() => {')
-    expect(nodeRendererSource).toContain('watch(')
-    expect(nodeRendererSource).toContain('renderVersionSource,')
-
-    expect(textNodeSource).toContain('inject<{ value?: number } | undefined>(\'markstreamStreamVersion\', undefined)')
-    expect(textNodeSource).toContain('[() => props.node.content, streamStateKey, fadeEnabled, () => inheritedStreamVersion?.value]')
-    expect(textNodeSource).toContain('if (normalized === previousContent)')
-    expect(textNodeSource).toContain('settleFadingSegments()')
-    expect(textNodeSource).toContain('settleAndMergeSegments(segments.value, segmentId)')
-    expect(textNodeSource).toContain('{ ...lastSegment, content: lastSegment.content + appendedContent }')
-    expect(textNodeSource).toContain(':key="segment.id"')
-    expect(inlineCodeNodeSource).toContain('settleAndMergeSegments(segments.value, segmentId)')
-    expect(inlineCodeNodeSource).toContain('{ ...lastSegment, content: lastSegment.content + appendedContent }')
-    expect(inlineCodeNodeSource).toContain(':key="segment.id"')
-  })
-
   it('keeps explanatory list text visible while an inline code span is still streaming', async () => {
     const originalWarn = console.warn
     const originalError = console.error

@@ -1,24 +1,16 @@
 import type { ComputedRef } from 'vue'
 import type { NodeRendererProps } from '../../../types/node-renderer-props'
-import { computed, onMounted, ref, watch } from 'vue'
+import { createRendererStreamBridge, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
+import { computed, nextTick, onMounted, onScopeDispose, ref, watch } from 'vue'
 import { useSmoothMarkdownStream } from '../../../composables/useSmoothMarkdownStream'
 import { isTypewriterEnabled } from '../../../utils/typewriter'
 
 type RendererParseOptions = NonNullable<NodeRendererProps['parseOptions']>
 
-const DEFAULT_RENDERER_SMOOTH_STREAMING_OPTIONS = {
-  maxCharsPerSecond: 3000,
-  maxCommitFps: 20,
-  maxCharsPerCommit: 160,
-  catchUpLatencyMs: 220,
-  catchUpThreshold: 400,
-}
-
-const CONTINUOUS_STREAM_CHUNK_MAX_LENGTH = 8
-
 export interface SmoothStreamingBridgeOptions {
   isClient: boolean
   inheritedSmoothStreaming?: { value?: boolean }
+  measureFinalCommit?: () => void
 }
 
 export interface SmoothStreamingBridge {
@@ -28,6 +20,7 @@ export interface SmoothStreamingBridge {
   renderContent: ComputedRef<string>
   requestedFinal: ComputedRef<boolean | undefined>
   effectiveFinal: ComputedRef<boolean | undefined>
+  scheduleFinalCleanup: (work: () => void) => void
 }
 
 export function useSmoothStreamingBridge(
@@ -35,12 +28,28 @@ export function useSmoothStreamingBridge(
   options: SmoothStreamingBridgeOptions,
 ): SmoothStreamingBridge {
   const smoothStream = useSmoothMarkdownStream({
-    ...DEFAULT_RENDERER_SMOOTH_STREAMING_OPTIONS,
+    ...RENDERER_STREAM_DEFAULTS,
     ...props.smoothStreamingOptions,
-    // One-shot large content reveals fence-safely in one commit instead of
-    // pacing per character; typewriter mode keeps the paced reveal.
-    burstInitialContent: !isTypewriterEnabled(props.typewriter),
+    // Animated streams must also pace large chunks instead of revealing a
+    // whole paragraph in the same animation frame.
+    burstInitialContent: props.fade === false && !isTypewriterEnabled(props.typewriter),
   })
+  const flush = props.smoothStreamingOptions?.flushOnFinish !== false
+
+  const finalReady = ref(false)
+  const bridge = createRendererStreamBridge({
+    ...smoothStream,
+    getSnapshot: () => ({ source: smoothStream.source.value, pendingChars: smoothStream.pendingChars.value, caughtUp: smoothStream.caughtUp.value }),
+  }, {
+    flushOnFinish: flush,
+    commit: async (work) => {
+      work()
+      await nextTick()
+    },
+    measure: options.measureFinalCommit,
+    onReady: (value) => { finalReady.value = value },
+  })
+  onScopeDispose(bridge.dispose)
 
   const smoothStreamingEligible = computed(() => {
     if (props.smoothStreaming === false)
@@ -90,80 +99,15 @@ export function useSmoothStreamingBridge(
     const finalRequested = requestedFinal.value
 
     if (smoothStreamingEnabled.value && finalRequested != null)
-      return finalRequested ? smoothStream.caughtUp.value : false
+      return finalRequested ? finalReady.value && smoothStream.caughtUp.value : false
 
     return finalRequested
   })
 
-  let consecutiveSmallAppends = 0
-  let continuousSmallStream = false
-
-  function resetContinuousStreamDetection() {
-    consecutiveSmallAppends = 0
-    continuousSmallStream = false
-  }
-
   watch(
     [() => props.content, () => props.nodes, smoothStreamingEnabled, requestedFinal],
     ([content, nodes, enabled, finalRequested]) => {
-      if (nodes?.length) {
-        resetContinuousStreamDetection()
-        smoothStream.reset('')
-        return
-      }
-
-      const nextContent = content ?? ''
-
-      if (!enabled) {
-        resetContinuousStreamDetection()
-        smoothStream.reset(nextContent)
-
-        if (finalRequested)
-          smoothStream.finish({ flush: true })
-
-        return
-      }
-
-      const source = smoothStream.source.value
-
-      if (!nextContent) {
-        resetContinuousStreamDetection()
-        smoothStream.reset('')
-      }
-      else if (nextContent === source) {
-        // no-op
-      }
-      else if (nextContent.startsWith(source)) {
-        const appended = nextContent.slice(source.length)
-        const pendingBeforeAppend = smoothStream.pendingChars.value
-        if (appended.length <= CONTINUOUS_STREAM_CHUNK_MAX_LENGTH) {
-          consecutiveSmallAppends++
-          if (continuousSmallStream || (
-            consecutiveSmallAppends >= 2
-            && pendingBeforeAppend <= CONTINUOUS_STREAM_CHUNK_MAX_LENGTH
-          )) {
-            continuousSmallStream = true
-            // The startsWith check above already proved nextContent extends
-            // source, so tell the controller to skip its internal re-check
-            // (another O(accumulated source) comparison per chunk).
-            smoothStream.reset(nextContent, { prefixKnown: true })
-          }
-          else {
-            smoothStream.enqueue(appended)
-          }
-        }
-        else {
-          resetContinuousStreamDetection()
-          smoothStream.enqueue(appended)
-        }
-      }
-      else {
-        resetContinuousStreamDetection()
-        smoothStream.reset(nextContent)
-      }
-
-      if (finalRequested)
-        smoothStream.finish()
+      bridge.update(content ?? '', !!nodes?.length, enabled, finalRequested, props.fade !== false)
     },
     { immediate: true },
   )
@@ -175,5 +119,6 @@ export function useSmoothStreamingBridge(
     renderContent,
     requestedFinal,
     effectiveFinal,
+    scheduleFinalCleanup: bridge.scheduleCleanup,
   }
 }

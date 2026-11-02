@@ -11,7 +11,10 @@ export function useStreamingTextFade(initialContent: string) {
     segments.value = state.segments
   }
   function update(content: string, persistedContent: string | undefined, enabled: boolean) {
-    controller.update(content, persistedContent, enabled)
+    // Hidden tabs can postpone animationend; keep background updates static
+    // rather than accumulating active word nodes until the tab is visible.
+    const visible = typeof document === 'undefined' || document.visibilityState !== 'hidden'
+    controller.update(content, persistedContent, enabled && visible)
     publish()
   }
   function finish(id: number, defer = false) {
@@ -22,5 +25,9 @@ export function useStreamingTextFade(initialContent: string) {
     controller.settleFinished()
     publish()
   }
-  return { settledContent, segments, update, finish, settleFinished }
+  function finishAll(defer = false) {
+    controller.finishAll(defer)
+    publish()
+  }
+  return { settledContent, segments, update, finish, finishAll, settleFinished }
 }

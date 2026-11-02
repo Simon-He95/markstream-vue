@@ -96,12 +96,12 @@ describe('markstream-react text streaming fade', () => {
     expect(host.querySelectorAll('.text-node-stream-delta')).toHaveLength(0)
     expect(host.querySelectorAll('.text-node > span')).toHaveLength(1)
     expect(host.querySelector('.text-node > span')).toBe(settledSegment)
-    expect(settledSegment?.textContent).toBe('HelloWorldAgain')
+    expect(settledSegment?.textContent).toBe('Hello')
     expect(activeSegment?.isConnected).toBe(false)
     expect(host.textContent).toBe('HelloWorldAgain')
 
     await act(async () => {
-      root.render(renderText('HelloWorldAgainNext'))
+      root.render(renderText('HelloWorldAgain Next'))
     })
     await flushReact()
 
@@ -118,7 +118,8 @@ describe('markstream-react text streaming fade', () => {
 
     expect(host.querySelectorAll('.text-node > span')).toHaveLength(1)
     expect(host.querySelector('.text-node > span')).toBe(settledSegment)
-    expect(settledSegment?.textContent).toBe('HelloWorldAgainNext')
+    expect(settledSegment?.textContent).toBe('Hello')
+    expect(host.textContent).toBe('HelloWorldAgain Next')
 
     await act(async () => {
       root.unmount()
@@ -248,7 +249,7 @@ describe('markstream-react text streaming fade', () => {
     })
   })
 
-  it('settles a finished strong-node delta when following sibling text keeps streaming', async () => {
+  it('keeps a strong-node word fading until animationend while its sibling streams', async () => {
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
 
     const host = document.createElement('div')
@@ -282,6 +283,10 @@ describe('markstream-react text streaming fade', () => {
     })
     await flushReact()
 
+    expect(host.querySelector('.strong-node .text-node-stream-delta')).toBe(strongDelta)
+    await act(async () => {
+      strongDelta?.dispatchEvent(new Event('animationend', { bubbles: true }))
+    })
     strongDelta = host.querySelector('.strong-node .text-node-stream-delta')
     expect(strongDelta).toBeNull()
     expect(host.querySelector('.strong-node')?.textContent).toBe('记忆化递归（动态规划）')
@@ -392,7 +397,7 @@ describe('markstream-react text streaming fade', () => {
 
     expect(inlineCode?.querySelectorAll('span')).toHaveLength(1)
     expect(inlineCode?.querySelector('span')).toBe(settledSegment)
-    expect(settledSegment?.textContent).toBe('foobarbaz')
+    expect(settledSegment?.textContent).toBe('foo')
 
     await act(async () => {
       root.unmount()

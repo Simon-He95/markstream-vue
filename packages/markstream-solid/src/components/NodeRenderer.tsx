@@ -2,6 +2,7 @@ import type { JSX } from 'solid-js'
 import type { CodeBlockPreviewPayload } from '../types/component-props'
 import type { MarkstreamRendererHandle, MarkstreamVirtualAnchor, MarkstreamVirtualMetrics, MarkstreamVirtualReason, MarkstreamVirtualState } from '../types/node-renderer-props'
 import type { NodeRendererProps, SolidRenderableNode } from './shared/node-helpers'
+import { createRendererStreamBridge, createStreamingTextScope, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
 import { createContext, createEffect, createMemo, createSignal, For, Index, mergeProps, onCleanup, onMount, sharedConfig, Show, untrack, useContext } from 'solid-js'
 import { createStore, reconcile } from 'solid-js/store'
 import { isServer } from 'solid-js/web'
@@ -17,6 +18,7 @@ import { RenderNode } from './RenderNode'
 import { buildRenderContext, resolveParsedNodes } from './shared/node-helpers'
 import { computeLiveRange, resolveVirtualizationEnabled } from './shared/render-window'
 import { reuseParsedNodes, sameParserValue } from './shared/reuseParsedNodes'
+import { TextFinalContext } from './textFinal'
 import { buildVirtualMeasurementKey, buildVirtualRendererLayoutKey } from './virtualLayoutKey'
 
 export interface MarkdownRenderProps extends NodeRendererProps {
@@ -78,43 +80,37 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
   let root!: HTMLDivElement
   const [hydrating, setHydrating] = createSignal(!isServer && !!sharedConfig.context)
   const parentSmooth = useContext(SmoothScope)
-  const stream = useSmoothMarkdownStream(props.smoothStreamingOptions)
+  const stream = useSmoothMarkdownStream({ ...RENDERER_STREAM_DEFAULTS, ...props.smoothStreamingOptions, burstInitialContent: props.fade === false && !props.typewriter })
   if (hydrating())
     stream.reset(props.content ?? '')
   const enabled = createMemo(() => !isServer && !hydrating() && !props.nodes?.length && props.smoothStreaming !== false
     && (props.smoothStreaming === true || (!parentSmooth() && (!!props.typewriter || (props.maxLiveNodes ?? 220) <= 0))))
   const requestedFinal = createMemo(() => props.final ?? props.parseOptions?.final)
+  const [finalReady, setFinalReady] = createSignal(false)
+  const streamBridge = createRendererStreamBridge(stream, {
+    flushOnFinish: props.smoothStreamingOptions?.flushOnFinish,
+    commit: (work) => { work() },
+    measure: () => { void root?.offsetHeight },
+    onReady: setFinalReady,
+  })
+  onCleanup(streamBridge.dispose)
+  const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup)
+  const textScope = useContext(TextFinalContext) ?? ownTextScope
+  createEffect(() => ownTextScope.setFinal(requestedFinal() === true))
   createEffect(() => {
     const content = props.content ?? ''
     const final = requestedFinal()
     const pacing = enabled()
     const hasNodes = !!props.nodes?.length
-    untrack(() => {
-      if (hasNodes) {
-        stream.reset('')
-        return
-      }
-      if (!pacing) {
-        stream.reset(content)
-        if (final)
-          stream.finish({ flush: true })
-        return
-      }
-      const source = stream.snapshot().source
-      if (!content || !content.startsWith(source))
-        stream.reset(content)
-      else if (content !== source)
-        stream.enqueue(content.slice(source.length))
-      if (final)
-        stream.finish()
-    })
+    const fade = props.fade !== false
+    untrack(() => streamBridge.update(content, hasNodes, pacing, final, fade))
   })
   const paced = createMemo(() => enabled() ? stream.snapshot().visible : props.content)
   const [content, setContent] = createSignal(paced())
   let lastParse = 0
   createEffect(() => {
     const next = paced()
-    const coalesce = enabled() && !(requestedFinal() && stream.snapshot().caughtUp) ? Math.max(0, props.parseCoalesceMs ?? 80) : 0
+    const coalesce = enabled() && !(requestedFinal() && stream.snapshot().caughtUp) ? Math.max(0, props.parseCoalesceMs ?? (props.fade === false ? 80 : 0)) : 0
     const wait = Math.max(0, coalesce - (Date.now() - lastParse))
     const commit = () => {
       lastParse = Date.now()
@@ -128,7 +124,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     onCleanup(() => clearTimeout(timer))
   })
   const final = createMemo(() => enabled() && requestedFinal() != null
-    ? !!requestedFinal() && stream.snapshot().source === (props.content ?? '') && stream.snapshot().caughtUp
+    ? !!requestedFinal() && finalReady() && stream.snapshot().source === (props.content ?? '') && stream.snapshot().caughtUp
     : requestedFinal())
   const parseConfiguration = createMemo(() => ({
     nodes: props.nodes,
@@ -716,7 +712,7 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
     })
   })
   const Content = () => (
-    <div ref={root} class={`markstream-solid markdown-renderer ${props.class ?? props.className ?? ''}`} classList={{ 'dark': !!props.isDark, 'virtualized': virtual(), 'virtual-scroll-coordinated': props.virtualScroll?.enabled === true, 'typewriter-simple-cursor': simpleCursor() }} style={{ position: 'relative', ...props.style }} data-theme={props['data-theme']} data-custom-id={props.customId} data-rendered-nodes={visible().length} data-total-nodes={nodes().length} data-stream-caught-up={!enabled() || stream.snapshot().caughtUp ? 'true' : 'false'} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
+    <div ref={root} data-stream-final={requestedFinal() === true ? '' : undefined} class={`markstream-solid markdown-renderer ${props.class ?? props.className ?? ''}`} classList={{ 'dark': !!props.isDark, 'virtualized': virtual(), 'virtual-scroll-coordinated': props.virtualScroll?.enabled === true, 'typewriter-simple-cursor': simpleCursor() }} style={{ position: 'relative', ...props.style }} data-theme={props['data-theme']} data-custom-id={props.customId} data-rendered-nodes={visible().length} data-total-nodes={nodes().length} data-stream-caught-up={!enabled() || stream.snapshot().caughtUp ? 'true' : 'false'} onClick={props.onClick} onMouseOver={props.onMouseover} onMouseOut={props.onMouseout}>
       <Show when={range().start > 0}><div class="virtual-spacer" aria-hidden="true" style={{ height: `${offsets()[range().start]}px` }} /></Show>
       <Show
         when={minimalDom() || props.renderAsFragment}
@@ -735,6 +731,6 @@ export function NodeRenderer(input: MarkdownRenderProps): JSX.Element {
       <Show when={virtual() && range().end < nodes().length}><div class="virtual-spacer" aria-hidden="true" style={{ height: `${offsets()[nodes().length] - offsets()[range().end]}px` }} /></Show>
     </div>
   )
-  return <RendererScope.Provider value={nestedProps}><SmoothScope.Provider value={enabled}><MathHeightCacheContext.Provider value={mathHeights}><NodeLifecycleContext.Provider value={lifecycle}><Show when={props.renderAsFragment} fallback={<Content />}><Index each={visible()}>{(node, index) => <RenderNode node={node()} context={context()} indexKey={`${props.indexKey ?? 'fragment'}-${index}`} />}</Index></Show></NodeLifecycleContext.Provider></MathHeightCacheContext.Provider></SmoothScope.Provider></RendererScope.Provider>
+  return <TextFinalContext.Provider value={textScope}><RendererScope.Provider value={nestedProps}><SmoothScope.Provider value={enabled}><MathHeightCacheContext.Provider value={mathHeights}><NodeLifecycleContext.Provider value={lifecycle}><Show when={props.renderAsFragment} fallback={<Content />}><Index each={visible()}>{(node, index) => <RenderNode node={node()} context={context()} indexKey={`${props.indexKey ?? 'fragment'}-${index}`} />}</Index></Show></NodeLifecycleContext.Provider></MathHeightCacheContext.Provider></SmoothScope.Provider></RendererScope.Provider></TextFinalContext.Provider>
 }
 export default NodeRenderer

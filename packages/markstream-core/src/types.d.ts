@@ -8,6 +8,8 @@ export interface SmoothMarkdownStreamOptions {
     startDelayMs?: number;
     maxCharsPerCommit?: number;
     flushOnFinish?: boolean;
+    burstInitialContent?: boolean;
+    burstRevealThresholdChars?: number;
 }
 export interface SmoothMarkdownStreamSnapshot {
     source: string;
@@ -26,8 +28,8 @@ export interface SmoothMarkdownStreamController {
     finish: (options?: {
         flush?: boolean;
     }) => void;
-    flush: () => void;
-    reset: (initialMarkdown?: string) => void;
+    flush: (options?: { maxChars?: number }) => void;
+    reset: (initialMarkdown?: string, options?: { prefixKnown?: boolean }) => void;
     pause: () => void;
     resume: () => void;
     destroy: () => void;

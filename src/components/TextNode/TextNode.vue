@@ -13,6 +13,10 @@ const props = defineProps<{
 defineEmits(['copy'])
 const attrs = useAttrs()
 const inheritedFade = inject<{ value?: boolean } | undefined>('markstreamFade', undefined)
+const inheritedTextFinal = inject<{ value?: boolean } | undefined>('markstreamTextFinal', undefined)
+const textFinal = computed(() => inheritedTextFinal?.value === true)
+const scheduleFinalCleanup = inject<((work: () => void) => void) | undefined>('markstreamFinalCleanup', undefined)
+let alive = true
 const inheritedTextStreamState = inject<Map<string, string> | undefined>('markstreamTextStreamState', undefined)
 const explicitFade = computed<boolean | undefined>(() => {
   const raw = attrs.fade
@@ -35,7 +39,7 @@ const streamStateKey = computed(() => {
     return ''
   return String(raw)
 })
-const { settledContent, segments, update, finish, settleFinished } = useStreamingTextFade(props.node.content)
+const { settledContent, segments, update, finish, finishAll, settleFinished } = useStreamingTextFade(props.node.content)
 // Selection-safe settled-text rendering. Browsers collapse a Selection
 // anchored inside a text node as soon as that node is mutated (nodeValue/
 // data) OR replaced (verified in Chromium). The settle path used to merge
@@ -49,6 +53,7 @@ const { settledContent, segments, update, finish, settleFinished } = useStreamin
 const settledTextEl = ref<HTMLElement | null>(null)
 const settledAppendsEl = ref<HTMLElement | null>(null)
 const streamedDeltaEls = ref<HTMLElement[]>([])
+const finalSuffix = ref('')
 let frozenSettledText = ''
 let settledTextNode: Text | null = null
 let pendingSelectedContent: string | null = null
@@ -67,6 +72,9 @@ function selectionTouches(element: Element) {
 }
 
 function coalesceSettledAppends(appendsEl: HTMLElement) {
+  // Keep final-drain chunks immutable so layout can retain the shaped prefix.
+  if (textFinal.value)
+    return
   if (appendsEl.childNodes.length <= SETTLED_APPENDS_COALESCE_THRESHOLD)
     return
   if (selectionTouches(appendsEl))
@@ -111,8 +119,13 @@ function syncSettledText() {
   }
 
   if (text.length > frozenSettledText.length && appendsEl) {
-    // Growth: never touch the frozen node — append a new sibling text node.
-    appendsEl.appendChild(document.createTextNode(text.slice(frozenSettledText.length)))
+    // Keep the initial text frozen. An unselected final tail can grow in place.
+    const delta = text.slice(frozenSettledText.length)
+    const tail = appendsEl.lastChild
+    if (textFinal.value && tail?.nodeType === 3 && !selectionTouches(appendsEl))
+      (tail as Text).appendData(delta)
+    else
+      appendsEl.appendChild(document.createTextNode(delta))
     frozenSettledText = text
     coalesceSettledAppends(appendsEl)
   }
@@ -145,20 +158,40 @@ function finishSegment(id: number) {
 
 function applyStreamingUpdate(normalized: string) {
   const key = streamStateKey.value
-  update(normalized, key ? inheritedTextStreamState?.get(key) : undefined, fadeEnabled.value)
+  update(normalized, key ? inheritedTextStreamState?.get(key) : undefined, fadeEnabled.value && !textFinal.value)
   if (key)
     inheritedTextStreamState?.set(key, normalized)
 }
 
 watch(
-  [() => props.node.content, streamStateKey, fadeEnabled],
+  [() => props.node.content, streamStateKey, fadeEnabled, () => segments.value.length > 0 && textFinal.value],
   ([next]) => {
     const normalized = String(next ?? '')
-    if (selectionIntersectsDelta()) {
-      pendingSelectedContent = normalized
-      watchSelectionRelease()
+    if (textFinal.value && scheduleFinalCleanup && segments.value.length
+      && normalized === settledContent.value + segments.value.map(segment => segment.content).join('')) {
+      const segment = segments.value.find(segment => !segment.finished)
+      if (segment) {
+        finishAll(true)
+        scheduleFinalCleanup(() => {
+          if (alive)
+            finishSegment(segment.id)
+        })
+      }
       return
     }
+    if (selectionIntersectsDelta()) {
+      const rendered = textFinal.value
+        ? settledContent.value + segments.value.map(segment => segment.content).join('')
+        : ''
+      if (!textFinal.value || normalized.startsWith(rendered)) {
+        pendingSelectedContent = normalized
+        // Keep selected nodes untouched, but reveal the final suffix immediately.
+        finalSuffix.value = textFinal.value ? normalized.slice(rendered.length) : ''
+        watchSelectionRelease()
+        return
+      }
+    }
+    finalSuffix.value = ''
     pendingSelectedContent = null
     settleAfterSelection = false
     applyStreamingUpdate(normalized)
@@ -178,6 +211,7 @@ function handleSelectionChange() {
   if (pendingSelectedContent != null) {
     const pending = pendingSelectedContent
     pendingSelectedContent = null
+    finalSuffix.value = ''
     settleAfterSelection = false
     applyStreamingUpdate(pending)
     settleFinished()
@@ -200,7 +234,10 @@ function stopWatchingSelectionRelease() {
   watchedSelectionDocument = undefined
 }
 
-onScopeDispose(stopWatchingSelectionRelease)
+onScopeDispose(() => {
+  alive = false
+  stopWatchingSelectionRelease()
+})
 </script>
 
 <template>
@@ -220,11 +257,11 @@ onScopeDispose(stopWatchingSelectionRelease)
       v-for="segment in segments"
       :key="segment.id"
       ref="streamedDeltaEls"
-      class="text-node-stream-delta"
+      :class="textFinal || segment.finished ? 'text-node-stream-final' : 'text-node-stream-delta'"
       @animationend="finishSegment(segment.id)"
     >
       {{ segment.content }}
-    </span>
+    </span>{{ finalSuffix }}
   </span>
 </template>
 
@@ -240,8 +277,13 @@ onScopeDispose(stopWatchingSelectionRelease)
   width: 100%;
 }
 .text-node-stream-delta {
-  animation: text-node-stream-update-fade var(--stream-update-fade-duration, var(--fade-duration, 200ms))
-    var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.2, 0, 0.4, 1))) both;
+  animation: text-node-stream-update-fade var(--stream-update-fade-duration, var(--fade-duration, 700ms))
+    var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.37, 0.55, 0.86, 0.88))) both;
+}
+
+.text-node-stream-final {
+  animation: none !important;
+  opacity: 1;
 }
 
 @keyframes text-node-stream-update-fade {

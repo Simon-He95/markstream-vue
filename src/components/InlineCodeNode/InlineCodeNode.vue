@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, useAttrs, watch } from 'vue'
+import { computed, inject, onScopeDispose, useAttrs, watch } from 'vue'
 import { useStreamingTextFade } from '../../composables/useStreamingTextFade'
 
 const props = defineProps<{
@@ -12,6 +12,12 @@ const props = defineProps<{
 
 const attrs = useAttrs()
 const inheritedFade = inject<{ value?: boolean } | undefined>('markstreamFade', undefined)
+const inheritedTextFinal = inject<{ value?: boolean } | undefined>('markstreamTextFinal', undefined)
+const scheduleFinalCleanup = inject<((work: () => void) => void) | undefined>('markstreamFinalCleanup', undefined)
+let alive = true
+onScopeDispose(() => {
+  alive = false
+})
 const inheritedTextStreamState = inject<Map<string, string> | undefined>('markstreamTextStreamState', undefined)
 const explicitFade = computed<boolean | undefined>(() => {
   const raw = attrs.fade
@@ -21,7 +27,7 @@ const explicitFade = computed<boolean | undefined>(() => {
     return false
   return undefined
 })
-const fadeEnabled = computed(() => {
+const configuredFade = computed(() => {
   if (typeof explicitFade.value === 'boolean')
     return explicitFade.value
   if (typeof inheritedFade?.value === 'boolean')
@@ -29,21 +35,33 @@ const fadeEnabled = computed(() => {
   return true
 })
 const codeContent = computed(() => String(props.node.code ?? ''))
-const canRenderStaticCode = computed(() => !fadeEnabled.value)
+const canRenderStaticCode = computed(() => !configuredFade.value)
 const streamStateKey = computed(() => {
   const raw = attrs['index-key'] ?? attrs.indexKey
   if (raw == null || raw === '')
     return ''
   return String(raw)
 })
-const { settledContent: settledCode, segments, update, finish } = useStreamingTextFade(props.node.code)
+const { settledContent: settledCode, segments, update, finish, finishAll } = useStreamingTextFade(props.node.code)
 
 watch(
-  [() => props.node.code, streamStateKey, fadeEnabled],
+  [() => props.node.code, streamStateKey, configuredFade, () => segments.value.length > 0 && inheritedTextFinal?.value === true],
   ([next]) => {
     const normalized = String(next ?? '')
+    if (inheritedTextFinal?.value === true && scheduleFinalCleanup && segments.value.length
+      && normalized === settledCode.value + segments.value.map(segment => segment.content).join('')) {
+      const segment = segments.value.find(segment => !segment.finished)
+      if (segment) {
+        finishAll(true)
+        scheduleFinalCleanup(() => {
+          if (alive)
+            finish(segment.id)
+        })
+      }
+      return
+    }
     const key = streamStateKey.value
-    update(normalized, key ? inheritedTextStreamState?.get(key) : undefined, fadeEnabled.value)
+    update(normalized, key ? inheritedTextStreamState?.get(key) : undefined, configuredFade.value && inheritedTextFinal?.value !== true)
     if (key)
       inheritedTextStreamState?.set(key, normalized)
   },
@@ -61,7 +79,7 @@ watch(
       <span
         v-for="segment in segments"
         :key="segment.id"
-        class="inline-code-stream-delta"
+        :class="segment.finished || inheritedTextFinal?.value === true ? 'inline-code-stream-final' : 'inline-code-stream-delta'"
         @animationend="finish(segment.id)"
       >
         {{ segment.content }}
@@ -88,8 +106,8 @@ watch(
 }
 
 .inline-code-stream-delta {
-  animation: inline-code-stream-update-fade var(--stream-update-fade-duration, var(--fade-duration, 200ms))
-    var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.2, 0, 0.4, 1))) both;
+  animation: inline-code-stream-update-fade var(--stream-update-fade-duration, var(--fade-duration, 700ms))
+    var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.37, 0.55, 0.86, 0.88))) both;
 }
 
 @keyframes inline-code-stream-update-fade {

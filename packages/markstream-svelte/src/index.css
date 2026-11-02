@@ -173,19 +173,8 @@ markstream-svelte {
   width: 100%;
 }
 
-.markstream-svelte .markstream-svelte-text__stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
-  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
-  animation-fill-mode: both;
-}
 
-.markstream-svelte .markstream-svelte-text__stream-delta--a {
-  animation-name: markstream-svelte-text-stream-update-fade-a;
-}
 
-.markstream-svelte .markstream-svelte-text__stream-delta--b {
-  animation-name: markstream-svelte-text-stream-update-fade-b;
-}
 
 .markstream-svelte h1,
 .markstream-svelte h2,
@@ -289,15 +278,7 @@ markstream-svelte {
   50% { opacity: var(--underline-opacity, 0.35); }
 }
 
-@keyframes markstream-svelte-text-stream-update-fade-a {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
-@keyframes markstream-svelte-text-stream-update-fade-b {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
 .markstream-svelte .typewriter-cursor {
   position: absolute;
@@ -332,9 +313,6 @@ markstream-svelte {
     opacity: var(--underline-rest-opacity, 0.18);
   }
 
-  .markstream-svelte .markstream-svelte-text__stream-delta {
-    animation: none !important;
-  }
 
   .markstream-svelte .typewriter-node,
   .markstream-svelte .fade-node {
@@ -2216,4 +2194,28 @@ body > div[id^="dmermaid-"] {
   max-height: 100%;
   width: auto;
   height: auto;
+}
+
+/* Streaming words share timing and identity across framework adapters. */
+:where(.markstream-svelte) .text-node-stream-delta {
+  animation: markstream-svelte-word-fade var(--stream-update-fade-duration, var(--fade-duration, 700ms)) var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.37, 0.55, 0.86, 0.88))) both;
+}
+:where(.markstream-svelte) .text-node-stream-final {
+  animation: none !important;
+  opacity: 1;
+}
+@keyframes markstream-svelte-word-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.markstream-svelte) .text-node-stream-delta { animation-duration: 0s !important; }
+}
+
+:where(.markstream-svelte)[data-stream-final] .fade-node,
+:where(.markstream-svelte)[data-stream-final] .fade-enter-active,
+:where(.markstream-svelte)[data-stream-final] .typewriter-enter-active {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1;
 }

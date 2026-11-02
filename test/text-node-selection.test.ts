@@ -146,7 +146,8 @@ describe('text node streaming selection', () => {
       await wrapper.setProps({ content: 'base12' })
       await flushAll()
 
-      await wrapper.get('.text-node-stream-delta').trigger('animationend')
+      // Extending an already settled word must not restart its fade.
+      expect(wrapper.find('.text-node-stream-delta').exists()).toBe(false)
       const appends = wrapper.find('.text-node > span:nth-child(2)').element
       const selectedNode = appends.firstChild as Text
       expect(selectText(selectedNode, 0, 1)).toBe('1')
@@ -175,7 +176,7 @@ describe('text node streaming selection', () => {
 
       const delta = wrapper.find('.text-node-stream-delta')
       const selectedNode = delta.element.firstChild as Text
-      const selectedBefore = selectText(selectedNode, 1, 4)
+      const selectedBefore = selectText(selectedNode, 0, 3)
       expect(selectedBefore).toBe('tai')
 
       await delta.trigger('animationend')

@@ -40,7 +40,7 @@ afterEach(() => {
 })
 function semanticHtml(host: HTMLElement) {
   const clone = host.cloneNode(true) as HTMLElement
-  for (const node of clone.querySelectorAll('.text-node'))
+  for (const node of clone.querySelectorAll('.text-node, .inline-code'))
     node.replaceChildren(document.createTextNode(node.textContent ?? ''))
   for (const node of clone.querySelectorAll('.text-node-stream-delta'))
     node.replaceWith(document.createTextNode(node.textContent ?? ''))

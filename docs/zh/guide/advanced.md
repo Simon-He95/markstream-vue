@@ -98,6 +98,34 @@ setCustomComponents('docs', { thinking: ThinkingNode })
 
 CSS 变量：`--typewriter-cursor-color` 用于打字光标颜色；`--fade-duration` 和 `--fade-ease` 用于首屏 enter 过渡；`--stream-update-fade-duration` 和 `--stream-update-fade-ease` 用于流式追加文本时那段短 fade。若不单独覆盖，流式追加的 fade 会默认沿用 `fade` 的时长和缓动。
 
+Vue 3、Vue 2、React、Octane、Svelte、Solid 和 Angular 的流式追加淡入使用 700ms、`cubic-bezier(0.37, 0.55, 0.86, 0.88)`、透明度 0 → 1，参数参考 2026-11-02 本机 Codex 客户端。配合自适应出字：
+
+```vue
+<MarkdownRender
+  :content="markdown"
+  :final="isFinished"
+  fade
+  smooth-streaming="auto"
+  :max-live-nodes="0"
+/>
+```
+
+文本按词淡入：英文使用字母/数字词边界，非 ASCII 文本使用 `Intl.Segmenter`，空格和标点附在前一个词上。同一个词继续增长时保留动画身份；新词独立淡入，结束后按顺序回收为静态文本，不再受 4 批次上限影响。单次追加超过 64 个分词时，将同一时刻出现的前缀合并，仅保留末词独立，避免大包创建大量同龄动画节点。
+
+出字节奏结合到达速率的平滑估计和积压追赶，默认最多每 50ms 提交一次。启用 fade 时，小包持续走出字队列，大包也不会直接跳过队列。Markdown 围栏、字素完整性仍由 markstream 控制；这并非 Codex 调度器的逐项复刻。`smoothStreamingOptions` 仍可调整速度范围和提交频率。
+
+收到当前文本 block 的 `text_end`（或等价结束事件）时，将该 block 对应的 `MarkdownRender` 的 `final` 设为 `true`。文字淡入与入场过渡立即停止，结束后的补齐不再播放 fade。多个 block 各自维护 `final`，互不影响。库不监听服务端事件，也不会把 Markdown 语法闭合自动当成传输结束。
+
+各框架的内置出字队列默认采用分帧收尾：不超过 1024 字符的小尾部直接提交；更大的积压按上一批的实际提交和布局耗时调整批量，通过 rAF 与后续任务交替推进。当前反馈目标为 12ms，每批通常为 256–1024 个字素，代码围栏开头保持原子性。淡入节点的回收也进入该队列；渲染完成态会等补齐及最终语义确认完成，不等同于刚收到传输结束信号。
+
+已完成内容的首次挂载、历史恢复和非追加替换保持原有行为，避免 SSR 水合闪空。该预算作用于内置 `content` 出字队列；`smooth-streaming="false"` 和直接传入 `nodes` 不经过这条队列。`smoothStreamingOptions: { flushOnFinish: false }` 保留普通 pacing 收尾，但仍立即停止 fade。
+
+12ms 是反馈目标，不是可抢占的硬上限。浏览器布局/GC、单个复杂 Markdown 单元或自定义解析回调仍可能超过预算。常规、最终形态可证明不变的段落/标题/列表/行内格式可直接复用解析结果；未闭合语法、HTML、数学和扩展等仍执行权威的 final 解析。外部 `useSmoothMarkdownStream` 的 `finish({ flush: true })` 仍是强制同步 flush，不自动获得 渲染器的帧预算；需要自行调度时可分次调用 `flush({ maxChars })`。
+
+时长和曲线仍可用 `--stream-update-fade-duration` / `--stream-update-fade-ease` 覆盖。系统启用减少动态效果时，淡入立即完成；`smooth-streaming="false"` 可单独关闭出字调度。
+
+这套分帧收尾用更多次提交换取较短的单次阻塞，积压很大时完整补齐会更慢；不保证总 CPU、更少重绘或零掉帧。所有框架共享调度策略，但性能数字必须按框架和实际内容分别测量。
+
 ## 国际化（i18n）
 
 默认 `getMarkdown` 使用英文 UI 文案（如代码块复制按钮）。你可以通过 `i18n` 选项自定义这些文本：

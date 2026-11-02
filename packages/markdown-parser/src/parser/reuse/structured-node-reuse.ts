@@ -58,6 +58,71 @@ const REUSABLE_TOP_LEVEL_SINGLE_TOKEN_TYPES = new Set([
   'math_block',
 ])
 
+const FINAL_INVARIANT_BLOCK_TOKENS = new Set([
+  'paragraph_open',
+  'paragraph_close',
+  'heading_open',
+  'heading_close',
+  'bullet_list_open',
+  'bullet_list_close',
+  'ordered_list_open',
+  'ordered_list_close',
+  'list_item_open',
+  'list_item_close',
+  'blockquote_open',
+  'blockquote_close',
+])
+
+export function reuseFinalizedStreamNodes(runtime: ParserRuntime, source: string, options: ParseContext) {
+  const previous = runtime.structuredStream
+  if (!previous || options.final !== true || options.isFragment
+    || options.reuseStableTopLevelNodes !== true
+    || options.preTransformTokens || options.postTransformTokens || options.postTransformNodes
+    || options.customHtmlTags?.length || options.includeSourceMap
+    || (runtime.markdownIt as unknown as Record<string, unknown>).__markstreamHasCustomParserExtensions
+    || runtime.safeMarkdown?.source !== source || runtime.safeMarkdown.safeMarkdown !== source
+    || previous.source !== source) {
+    return undefined
+  }
+
+  // Only reuse syntax whose final form is proven by the tokenizer. Literal
+  // recovery markers, HTML, math, tables and extensions need the full final pass.
+  for (const token of previous.tokens) {
+    if (FINAL_INVARIANT_BLOCK_TOKENS.has(token.type))
+      continue
+    if (token.type !== 'inline' || !Array.isArray(token.children))
+      return undefined
+    let reconstructed = ''
+    for (const child of token.children) {
+      if (child.type === 'text') {
+        if (typeof child.content !== 'string')
+          return undefined
+        if (/[\\`*_[\]$<>|]/.test(child.content) || /\(\s*$/.test(child.content))
+          return undefined
+        reconstructed += child.content
+      }
+      else if (child.type === 'softbreak') {
+        reconstructed += '\n'
+      }
+      else if (child.type === 'code_inline') {
+        if (!child.markup)
+          return undefined
+        reconstructed += child.markup + child.content + child.markup
+      }
+      else if (child.type === 'strong_open' || child.type === 'strong_close'
+        || child.type === 'em_open' || child.type === 'em_close') {
+        reconstructed += child.markup
+      }
+      else {
+        return undefined
+      }
+    }
+    if (reconstructed !== token.content)
+      return undefined
+  }
+  return previous.nodes
+}
+
 function hasOnlyReusableInlineTokens(tokens: MarkdownToken[], validateLink: ParseOptions['validateLink']): boolean {
   return tokens.every((token) => {
     if (!REUSABLE_INLINE_TOKEN_TYPES.has(token.type))

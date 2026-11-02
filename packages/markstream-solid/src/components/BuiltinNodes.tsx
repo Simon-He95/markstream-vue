@@ -13,6 +13,7 @@ import { useNodeLifecycle } from './lifecycle'
 import { MathNode } from './MathNode'
 import { RenderChildren, RichNode } from './RenderNode'
 import { getNodeList, getString, splitParagraphChildren } from './shared/node-helpers'
+import { StreamingTextNode } from './StreamingTextNode'
 import { useHeavyNodeVisibility } from './viewport'
 
 export function ParagraphNode(props: NodeComponentProps): JSX.Element {
@@ -61,7 +62,7 @@ export function ThematicBreakNode(): JSX.Element {
   return <hr class="hr-node" />
 }
 export function InlineCodeNode(props: NodeComponentProps): JSX.Element {
-  return <code class="inline-code">{props.node.code ?? props.node.content}</code>
+  return <StreamingTextNode {...props} inlineCode />
 }
 export function CheckboxNode(props: NodeComponentProps): JSX.Element {
   return (

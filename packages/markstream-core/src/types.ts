@@ -37,7 +37,7 @@ export interface SmoothMarkdownStreamController {
   subscribe: (listener: SmoothStreamNotify) => () => void
   enqueue: (chunk: string) => void
   finish: (options?: { flush?: boolean }) => void
-  flush: () => void
+  flush: (options?: { maxChars?: number }) => void
   reset: (initialMarkdown?: string, options?: { prefixKnown?: boolean }) => void
   pause: () => void
   resume: () => void

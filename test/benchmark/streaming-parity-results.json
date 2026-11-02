@@ -1,0 +1,1419 @@
+{
+  "generatedAt": "2026-11-02T09:05:29.499Z",
+  "revision": "498e0b2514bd2f0f4706fb3f225a8e04b046fc2e",
+  "sourceHashes": {
+    "packages/markdown-parser/src/parser/index.ts": "aaac1da8498ea1889fb2680ee3cae837efa1b7aa84e0b7976124120601e16ad7",
+    "packages/markdown-parser/src/parser/reuse/structured-node-reuse.ts": "df977c13383e0198a19105e9447a90d8e6da12d851455ee61143c2aedd5ba04a",
+    "packages/markstream-angular/src/components/InlineCodeNode/InlineCodeNode.component.ts": "ddf9cb4199cc4357a1efe67869db0c06a0351dd4aeb1dc0e6b3159452647c5cf",
+    "packages/markstream-angular/src/components/NodeRenderer/NodeRenderer.component.ts": "35fde3a9c9fa0b6d46c654030011774f622644c20e1d906354d48d9e80680702",
+    "packages/markstream-angular/src/components/TextNode/TextNode.component.ts": "cb96efa385a76036ea6209ce5e471e98756bca951953e8afb02e94e5df865579",
+    "packages/markstream-angular/src/components/shared/smooth-streaming-scope.ts": "0ae503dce802d3975f3e1779bac84e833ea6e51581ff868c84f1a1df33e106ae",
+    "packages/markstream-angular/src/index.css": "01b555dd0b570d45647faff358b2c167c09ebab2ff446b1a53528a89baa2ba7f",
+    "packages/markstream-angular/src/services/smooth-markdown-stream.service.ts": "7bc1bb16a8473cd680de0b714bf6090fad02f3e9ec9b34e2a399270e2e63eb58",
+    "packages/markstream-core/src/index.d.ts": "0e770837ce37e0b71cd3a0f7a562de0398b70ec9f5bcc553d4ffc4bcc0524a21",
+    "packages/markstream-core/src/index.ts": "96bb834b70bec42524220edc22d6ef096bcb3595ca932793f7f027d11da33429",
+    "packages/markstream-core/src/renderer-stream-bridge.ts": "bdb4c51ac289eeea0a5df381a7e3ac1acc6d688df3f6db134a64e15ba4d1c493",
+    "packages/markstream-core/src/smooth-stream-controller.ts": "cdda2ea932ef0e09d51e48154f3d3a043dfbf39a6ba4337338c28414d4014b8b",
+    "packages/markstream-core/src/streaming-text-dom.ts": "1f2a31a9eefd6471d840e5842cf34106df328a1afaa22715a9d555f5e8fb3e08",
+    "packages/markstream-core/src/streaming-text-fade.ts": "c7c98c7fa6268a655f25c9b64b5d013d833610e0bcb2c961b29d3183abcb9dc2",
+    "packages/markstream-core/src/types.d.ts": "79aff2030582c3a53010ba76c458604d084a9399844098db024c06af1b49c537",
+    "packages/markstream-core/src/types.ts": "c12e60b4572d193d73ccfb4af5a3561b986e4e3b9519504c003c179c749c4848",
+    "packages/markstream-octane/src/components/InlineCodeNode/InlineCodeNode.tsrx": "339d969d3fbb138e75b463474e58b3ba51f3e0869caff7cfdd73af56d3450a85",
+    "packages/markstream-octane/src/components/NodeRenderer.tsrx": "b0213386b2f91e9515af77579a96aa1c3db120ff0720da05c69cd79b8f7ef73f",
+    "packages/markstream-octane/src/components/TextNode/TextNode.tsrx": "810116b22346fae50d7b2be41646f4db6616660a7d51cfe71c9f4d2778ad0475",
+    "packages/markstream-octane/src/context/textFinal.ts": "467d001f974c541e815dde5c38022992b6e748bbc2e9aa54a001a2914d967285",
+    "packages/markstream-octane/src/hooks/useSmoothMarkdownStream.ts": "9a297d32b3792006ae3407213d91aa460b7e4f3668376be2775a5d5d37750c08",
+    "packages/markstream-octane/src/hooks/useStreamingText.ts": "fa19e53d9f7e259cb9d60545b41f8c0ba2d99cbc1def9c102fdf9da753029c38",
+    "packages/markstream-octane/src/index.css": "20ae91555159d78abf16ce1fda98b7889c07e25756498bdd2816355366346548",
+    "packages/markstream-react/src/components/InlineCodeNode/InlineCodeNode.tsx": "09599193e188ddef02adbc93ab2a81866cd744552322e0fe476505ab23b8f1ae",
+    "packages/markstream-react/src/components/NodeRenderer.tsx": "d9ecddd88109ff2faf2f3ef5325620652e507279d308d7255712b612771e7fc8",
+    "packages/markstream-react/src/components/TextNode/TextNode.tsx": "eb04fafb6f8d7d3c7d94f64769105d8ea1ddeaa5f30cb22578a405240bbc2bc5",
+    "packages/markstream-react/src/context/textFinal.ts": "c91b5b821b41fba812586ee895def5e431b0c2acaa0d8807fc27d74bbcb07b84",
+    "packages/markstream-react/src/hooks/useStreamingText.ts": "9cca3d563e1cc3b02020da5a056495d587b93d295f62288c64160635efc67f09",
+    "packages/markstream-react/src/index.css": "c399050530fa7c7a2f2907b57f669446923841f1061c08cf63bdf95ceab71b82",
+    "packages/markstream-solid/src/components/BuiltinNodes.tsx": "ae5ff937216f1e3efbcd378549712b48fb7fe7f6eb55c54dd5d47c1c82246cc1",
+    "packages/markstream-solid/src/components/NodeRenderer.tsx": "aacfb559c22bef877b3a97beb30a3a873744249b860e67687789dc74d7d8355a",
+    "packages/markstream-solid/src/components/StreamingTextNode.tsx": "d7d6701fb9b95bbf9395d2549b371e48a9a25adfc274e4f694eb7af05a2c47d5",
+    "packages/markstream-solid/src/components/textFinal.ts": "fc02108b016c4c8171b76feadf665345c887a95cf39faf4e8be3d21401947c9d",
+    "packages/markstream-solid/src/index.css": "20e45734c362b4e1c40a92a2b1a01b4ccdcacb40ec9951f7c892075583e9aef6",
+    "packages/markstream-svelte/src/components/InlineCodeNode.svelte": "b2399a857d337cd3fb011c584234430821cedae0dc058e096653fa2e2935bdce",
+    "packages/markstream-svelte/src/components/NodeRenderer.svelte": "edec0a13409037b2285359d79467f6e0fc277e7bc1eed568f106c9132e6f0846",
+    "packages/markstream-svelte/src/components/TextNode.svelte": "72cabad5e57010665ede27d568c5fe77a55daa1c4341b7df1a4778d0a55e9b3d",
+    "packages/markstream-svelte/src/composables/useSmoothMarkdownStream.svelte.ts": "3e5c9766824caf6ca8a918c5ac865df66d3e82bbc190519c5665edf918a4ee5f",
+    "packages/markstream-svelte/src/index.css": "9ae05ef79aafbf52108955a5868e9b83932a8390c3e47d2f5e43b452294d2786",
+    "packages/markstream-vue2/src/components/InlineCodeNode/InlineCodeNode.vue": "4f89870992747a341147f73445639dfafd4a80f9d275f0a598c877657faacad2",
+    "packages/markstream-vue2/src/components/MarkdownRenderCompat.vue": "fde132524573a86bafb655bb344a9af09e0cd6fbb6bc508991030b81376ad369",
+    "packages/markstream-vue2/src/components/NodeRenderer/LegacyNodesRenderer.vue": "bf75817269bb8a583a464bc9815d3d5a4847bb601fe5f56834e034f7e5dfefa9",
+    "packages/markstream-vue2/src/components/NodeRenderer/NodeRenderer.vue": "817d1c97c5da9b512a6dd32f4756574bd235c8eac8910d46dba0cd4ea962cb56",
+    "packages/markstream-vue2/src/components/TextNode/TextNode.vue": "0c646e634bdb843de6eae6e9ac4c9365bec34f107afb8f30d50cd68f41d0dcb3",
+    "packages/markstream-vue2/src/composables/useSmoothMarkdownStream.ts": "46f8304057011318fa5c9ac70ddd696f3bc621aab8dac01dbef47f3f5f177b1c",
+    "packages/markstream-vue2/src/index.css": "e852d60c5746a09f6d9f14a10acef350887c21e4c198b245d270a1ae355310b3",
+    "src/components/InlineCodeNode/InlineCodeNode.vue": "a3c917de72fb220866426857493b74f0731ffddf710227682eb8f95ca25601f6",
+    "src/components/NodeRenderer/NodeRenderer.vue": "26de02be95a30c0c6cdb23d9af8935286b04ca2bd9668ff1670b439755a2aa6c",
+    "src/components/NodeRenderer/NodeRendererContent.vue": "7374cd7d39dbf047ed97164f797fc0252225e0247d77867ff9fb4c3ffdce0dd8",
+    "src/components/NodeRenderer/composables/useMarkdownParsing.ts": "5128f635b9845b82a542af3ffe10de9f5ccb33773208817f95612c651495818f",
+    "src/components/NodeRenderer/composables/useSmoothStreamingBridge.ts": "e2313282a3ba8fa51d001fbd755272f0ce97bea841050712e3a2a9027671b2ff",
+    "src/components/TextNode/TextNode.vue": "8cbcaa9304d43e7a23999173ffffa9c179d3b45c8a5166b14ae024a750ce33a3",
+    "src/composables/useSmoothMarkdownStream.ts": "a77c5e01519374c262c06628afae19c39d57c2753e535bb2ed9406448d35d9fa",
+    "src/composables/useStreamingTextFade.ts": "8fee6f1a47b5f61294dadf8f42e6d4abc1fd2a4f1251ecc253f5dc4c3e803c5f",
+    "src/types/node-renderer-props.ts": "172f8f7d3ad05fb55f54e19e5823c7262f0ccc0a6429d839779b0181e65a10ac"
+  },
+  "browser": "156.0.8078.74",
+  "scope": "One production-browser smoke run per framework and scenario at 4x CPU throttling. Frame intervals are a responsiveness proxy, not GPU dropped-frame counts. Completion checks poll DOM text every 50ms. These inputs differ from the Vue-only trace benchmark; compare within each report.",
+  "results": [
+    {
+      "framework": "vue",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 14.5,
+      "completionMs": 14.5,
+      "maxFrame": 16.700000000000045,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 1,
+      "completionMs": 2480.4000000953674,
+      "maxFrame": 83.40000000000009,
+      "framesOver32": 46,
+      "longTasks": [
+        {
+          "start": 2336.4000000953674,
+          "duration": 52
+        },
+        {
+          "start": 2801.800000190735,
+          "duration": 53
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 10.599999904632568,
+      "completionMs": 1630.1999998092651,
+      "maxFrame": 33.40000000000009,
+      "framesOver32": 20,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue2",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 15.299999713897705,
+      "completionMs": 15.299999713897705,
+      "maxFrame": 33.27600000000001,
+      "framesOver32": 1,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue2",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 5.5,
+      "completionMs": 2840.9000000953674,
+      "maxFrame": 100,
+      "framesOver32": 51,
+      "longTasks": [
+        {
+          "start": 1271,
+          "duration": 50
+        },
+        {
+          "start": 1321.4000000953674,
+          "duration": 58
+        },
+        {
+          "start": 1490.9000000953674,
+          "duration": 61
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue2",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 26.09999990463257,
+      "completionMs": 3971.4000000953674,
+      "maxFrame": 66.70000000000073,
+      "framesOver32": 87,
+      "longTasks": [
+        {
+          "start": 2588,
+          "duration": 54
+        },
+        {
+          "start": 2648,
+          "duration": 52
+        },
+        {
+          "start": 3109,
+          "duration": 53
+        },
+        {
+          "start": 5221.300000190735,
+          "duration": 51
+        },
+        {
+          "start": 5657.800000190735,
+          "duration": 52
+        },
+        {
+          "start": 5718.5,
+          "duration": 52
+        },
+        {
+          "start": 5781.800000190735,
+          "duration": 51
+        },
+        {
+          "start": 5955.400000095367,
+          "duration": 50
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue26",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 11.099999904632568,
+      "completionMs": 11.099999904632568,
+      "maxFrame": 16.80000000000001,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue26",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 8,
+      "completionMs": 3292.7999997138977,
+      "maxFrame": 150,
+      "framesOver32": 57,
+      "longTasks": [
+        {
+          "start": 535.8000001907349,
+          "duration": 63
+        },
+        {
+          "start": 3192.5999999046326,
+          "duration": 73
+        },
+        {
+          "start": 3306.300000190735,
+          "duration": 99
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "vue26",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 6.099999904632568,
+      "completionMs": 8501.5,
+      "maxFrame": 216.70000000000073,
+      "framesOver32": 77,
+      "longTasks": [
+        {
+          "start": 5439.699999809265,
+          "duration": 69
+        },
+        {
+          "start": 5515.599999904633,
+          "duration": 71
+        },
+        {
+          "start": 5659.299999713898,
+          "duration": 81
+        },
+        {
+          "start": 5747.900000095367,
+          "duration": 68
+        },
+        {
+          "start": 5824.299999713898,
+          "duration": 55
+        },
+        {
+          "start": 5887.5,
+          "duration": 65
+        },
+        {
+          "start": 6280.400000095367,
+          "duration": 84
+        },
+        {
+          "start": 6370.799999713898,
+          "duration": 73
+        },
+        {
+          "start": 6452.699999809265,
+          "duration": 86
+        },
+        {
+          "start": 6545.900000095367,
+          "duration": 80
+        },
+        {
+          "start": 6633.400000095367,
+          "duration": 93
+        },
+        {
+          "start": 6733.5,
+          "duration": 83
+        },
+        {
+          "start": 6823,
+          "duration": 98
+        },
+        {
+          "start": 6927.5,
+          "duration": 104
+        },
+        {
+          "start": 7042.5,
+          "duration": 72
+        },
+        {
+          "start": 7123.799999713898,
+          "duration": 108
+        },
+        {
+          "start": 7233.900000095367,
+          "duration": 98
+        },
+        {
+          "start": 7338.900000095367,
+          "duration": 95
+        },
+        {
+          "start": 7443,
+          "duration": 110
+        },
+        {
+          "start": 7559.400000095367,
+          "duration": 97
+        },
+        {
+          "start": 7667.199999809265,
+          "duration": 95
+        },
+        {
+          "start": 7770,
+          "duration": 86
+        },
+        {
+          "start": 7868.699999809265,
+          "duration": 156
+        },
+        {
+          "start": 8034.699999809265,
+          "duration": 104
+        },
+        {
+          "start": 8154,
+          "duration": 103
+        },
+        {
+          "start": 8270.699999809265,
+          "duration": 99
+        },
+        {
+          "start": 8383.699999809265,
+          "duration": 96
+        },
+        {
+          "start": 8490.5,
+          "duration": 99
+        },
+        {
+          "start": 8596.599999904633,
+          "duration": 101
+        },
+        {
+          "start": 8704.599999904633,
+          "duration": 127
+        },
+        {
+          "start": 8840.299999713898,
+          "duration": 108
+        },
+        {
+          "start": 8956.400000095367,
+          "duration": 108
+        },
+        {
+          "start": 9072,
+          "duration": 109
+        },
+        {
+          "start": 9190.799999713898,
+          "duration": 114
+        },
+        {
+          "start": 9312.799999713898,
+          "duration": 135
+        },
+        {
+          "start": 9454.900000095367,
+          "duration": 102
+        },
+        {
+          "start": 9565,
+          "duration": 112
+        },
+        {
+          "start": 9685.599999904633,
+          "duration": 112
+        },
+        {
+          "start": 9804.799999713898,
+          "duration": 105
+        },
+        {
+          "start": 9918.699999809265,
+          "duration": 120
+        },
+        {
+          "start": 10047.900000095367,
+          "duration": 102
+        },
+        {
+          "start": 10158.599999904633,
+          "duration": 103
+        },
+        {
+          "start": 10270.699999809265,
+          "duration": 116
+        },
+        {
+          "start": 10394.699999809265,
+          "duration": 129
+        },
+        {
+          "start": 10533.5,
+          "duration": 121
+        },
+        {
+          "start": 10663.799999713898,
+          "duration": 113
+        },
+        {
+          "start": 10784.799999713898,
+          "duration": 116
+        },
+        {
+          "start": 10911.599999904633,
+          "duration": 129
+        },
+        {
+          "start": 11057.799999713898,
+          "duration": 178
+        },
+        {
+          "start": 11248,
+          "duration": 134
+        },
+        {
+          "start": 11395.199999809265,
+          "duration": 148
+        },
+        {
+          "start": 11556.199999809265,
+          "duration": 142
+        },
+        {
+          "start": 11707,
+          "duration": 156
+        },
+        {
+          "start": 11874.599999904633,
+          "duration": 157
+        },
+        {
+          "start": 12039.199999809265,
+          "duration": 144
+        },
+        {
+          "start": 12194,
+          "duration": 147
+        },
+        {
+          "start": 12350.199999809265,
+          "duration": 194
+        },
+        {
+          "start": 12553,
+          "duration": 184
+        },
+        {
+          "start": 12747.900000095367,
+          "duration": 162
+        },
+        {
+          "start": 12922.099999904633,
+          "duration": 137
+        },
+        {
+          "start": 13070.099999904633,
+          "duration": 145
+        },
+        {
+          "start": 13225.5,
+          "duration": 141
+        },
+        {
+          "start": 13376.099999904633,
+          "duration": 111
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "react",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 9.200000286102295,
+      "completionMs": 9.200000286102295,
+      "maxFrame": 16.80000000000001,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "react",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 2,
+      "completionMs": 2875.7000002861023,
+      "maxFrame": 166.70000000000005,
+      "framesOver32": 53,
+      "longTasks": [
+        {
+          "start": 1741.4000000953674,
+          "duration": 155
+        },
+        {
+          "start": 2617.699999809265,
+          "duration": 56
+        },
+        {
+          "start": 3205.5,
+          "duration": 54
+        },
+        {
+          "start": 3284.699999809265,
+          "duration": 88
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "react",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 40.90000009536743,
+      "completionMs": 839.3000001907349,
+      "maxFrame": 83.30000000000018,
+      "framesOver32": 5,
+      "longTasks": [
+        {
+          "start": 2299.699999809265,
+          "duration": 67
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "octane",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 11.400000095367432,
+      "completionMs": 11.400000095367432,
+      "maxFrame": 16.80000000000001,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "octane",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 2.700000286102295,
+      "completionMs": 2038.1000003814697,
+      "maxFrame": 100,
+      "framesOver32": 36,
+      "longTasks": [
+        {
+          "start": 689,
+          "duration": 81
+        },
+        {
+          "start": 1610.0999999046326,
+          "duration": 53
+        },
+        {
+          "start": 2167.4000000953674,
+          "duration": 53
+        },
+        {
+          "start": 2244.5,
+          "duration": 73
+        },
+        {
+          "start": 2345.5,
+          "duration": 54
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "octane",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 6.799999713897705,
+      "completionMs": 4004.199999809265,
+      "maxFrame": 116.60000000000036,
+      "framesOver32": 83,
+      "longTasks": [
+        {
+          "start": 2139,
+          "duration": 60
+        },
+        {
+          "start": 2421.699999809265,
+          "duration": 50
+        },
+        {
+          "start": 2847.8999996185303,
+          "duration": 66
+        },
+        {
+          "start": 2919.5999999046326,
+          "duration": 51
+        },
+        {
+          "start": 3631.7999997138977,
+          "duration": 57
+        },
+        {
+          "start": 3734.5,
+          "duration": 62
+        },
+        {
+          "start": 3977.5,
+          "duration": 72
+        },
+        {
+          "start": 4056.5,
+          "duration": 56
+        },
+        {
+          "start": 4391,
+          "duration": 77
+        },
+        {
+          "start": 4469.299999713898,
+          "duration": 98
+        },
+        {
+          "start": 4915.699999809265,
+          "duration": 52
+        },
+        {
+          "start": 4976.299999713898,
+          "duration": 99
+        },
+        {
+          "start": 5131.299999713898,
+          "duration": 51
+        },
+        {
+          "start": 5188.599999904633,
+          "duration": 62
+        },
+        {
+          "start": 5256.799999713898,
+          "duration": 74
+        },
+        {
+          "start": 5337.199999809265,
+          "duration": 58
+        },
+        {
+          "start": 5518.299999713898,
+          "duration": 57
+        },
+        {
+          "start": 5583.699999809265,
+          "duration": 58
+        },
+        {
+          "start": 5736.599999904633,
+          "duration": 138
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "svelte",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 4.600000381469727,
+      "completionMs": 4.700000286102295,
+      "maxFrame": 16.80000000000001,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "svelte",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 1.5999999046325684,
+      "completionMs": 450.09999990463257,
+      "maxFrame": 16.800000000000068,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "svelte",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 0.9000000953674316,
+      "completionMs": 4504.900000095367,
+      "maxFrame": 116.59999999999991,
+      "framesOver32": 81,
+      "longTasks": [
+        {
+          "start": 3220.5999999046326,
+          "duration": 89
+        },
+        {
+          "start": 3320.4000000953674,
+          "duration": 58
+        },
+        {
+          "start": 3388.800000190735,
+          "duration": 59
+        },
+        {
+          "start": 3456.5,
+          "duration": 62
+        },
+        {
+          "start": 3622,
+          "duration": 66
+        },
+        {
+          "start": 3696.2000002861023,
+          "duration": 61
+        },
+        {
+          "start": 3765.7000002861023,
+          "duration": 65
+        },
+        {
+          "start": 3893.7000002861023,
+          "duration": 99
+        },
+        {
+          "start": 4055.5999999046326,
+          "duration": 71
+        },
+        {
+          "start": 4188.099999904633,
+          "duration": 52
+        },
+        {
+          "start": 4299.700000286102,
+          "duration": 66
+        },
+        {
+          "start": 4376.300000190735,
+          "duration": 84
+        },
+        {
+          "start": 4470,
+          "duration": 68
+        },
+        {
+          "start": 4546.5,
+          "duration": 51
+        },
+        {
+          "start": 4608.700000286102,
+          "duration": 54
+        },
+        {
+          "start": 4669.900000095367,
+          "duration": 54
+        },
+        {
+          "start": 4735.599999904633,
+          "duration": 50
+        },
+        {
+          "start": 4794.700000286102,
+          "duration": 61
+        },
+        {
+          "start": 4863.599999904633,
+          "duration": 66
+        },
+        {
+          "start": 4938.599999904633,
+          "duration": 52
+        },
+        {
+          "start": 5535.800000190735,
+          "duration": 52
+        },
+        {
+          "start": 5597.800000190735,
+          "duration": 53
+        },
+        {
+          "start": 5715.099999904633,
+          "duration": 50
+        },
+        {
+          "start": 5775.200000286102,
+          "duration": 58
+        },
+        {
+          "start": 5843.5,
+          "duration": 59
+        },
+        {
+          "start": 5908.700000286102,
+          "duration": 68
+        },
+        {
+          "start": 5985.200000286102,
+          "duration": 81
+        },
+        {
+          "start": 6074.599999904633,
+          "duration": 61
+        },
+        {
+          "start": 6148.599999904633,
+          "duration": 56
+        },
+        {
+          "start": 6212.800000190735,
+          "duration": 57
+        },
+        {
+          "start": 6278.599999904633,
+          "duration": 56
+        },
+        {
+          "start": 6343,
+          "duration": 60
+        },
+        {
+          "start": 6412.300000190735,
+          "duration": 54
+        },
+        {
+          "start": 6480.300000190735,
+          "duration": 62
+        },
+        {
+          "start": 6550.700000286102,
+          "duration": 57
+        },
+        {
+          "start": 6621.5,
+          "duration": 79
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "solid",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 11.299999713897705,
+      "completionMs": 11.299999713897705,
+      "maxFrame": 16.80000000000001,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "solid",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 2.5999999046325684,
+      "completionMs": 2295.9000000953674,
+      "maxFrame": 216.60000000000002,
+      "framesOver32": 30,
+      "longTasks": [
+        {
+          "start": 606.1999998092651,
+          "duration": 222
+        },
+        {
+          "start": 1075.5,
+          "duration": 73
+        },
+        {
+          "start": 1154.4000000953674,
+          "duration": 59
+        },
+        {
+          "start": 1381.5,
+          "duration": 64
+        },
+        {
+          "start": 1450.0999999046326,
+          "duration": 61
+        },
+        {
+          "start": 1518.4000000953674,
+          "duration": 75
+        },
+        {
+          "start": 1601.5,
+          "duration": 63
+        },
+        {
+          "start": 1672.5,
+          "duration": 71
+        },
+        {
+          "start": 1799.6999998092651,
+          "duration": 91
+        },
+        {
+          "start": 1893.4000000953674,
+          "duration": 71
+        },
+        {
+          "start": 2335.5,
+          "duration": 59
+        },
+        {
+          "start": 2396.9000000953674,
+          "duration": 100
+        },
+        {
+          "start": 2503.9000000953674,
+          "duration": 80
+        },
+        {
+          "start": 2590.4000000953674,
+          "duration": 62
+        },
+        {
+          "start": 2660.7999997138977,
+          "duration": 64
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "solid",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 14.400000095367432,
+      "completionMs": 2598.800000190735,
+      "maxFrame": 50.09999999999991,
+      "framesOver32": 57,
+      "longTasks": [
+        {
+          "start": 2370.5,
+          "duration": 51
+        }
+      ],
+      "activeFade": 0
+    },
+    {
+      "framework": "angular",
+      "scenario": "1000",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 1006,
+      "immediate": true,
+      "complete": true,
+      "initialCommitMs": 9.5,
+      "completionMs": 9.5,
+      "maxFrame": 16.700000000000045,
+      "framesOver32": 0,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "angular",
+      "scenario": "plain-20k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 20006,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 3.0999999046325684,
+      "completionMs": 568.0999999046326,
+      "maxFrame": 33.40000000000009,
+      "framesOver32": 5,
+      "longTasks": [],
+      "activeFade": 0
+    },
+    {
+      "framework": "angular",
+      "scenario": "bursts-24k",
+      "cpuRate": 4,
+      "fade": {
+        "duration": "0.7s",
+        "easing": "cubic-bezier(0.37, 0.55, 0.86, 0.88)",
+        "words": [
+          "one ",
+          "tw"
+        ],
+        "stable": true,
+        "activeAfterFinal": 0
+      },
+      "chars": 25326,
+      "immediate": false,
+      "complete": true,
+      "initialCommitMs": 26.200000286102295,
+      "completionMs": 5287.900000095367,
+      "maxFrame": 116.69999999999982,
+      "framesOver32": 86,
+      "longTasks": [
+        {
+          "start": 3670.6000003814697,
+          "duration": 56
+        },
+        {
+          "start": 4075.300000190735,
+          "duration": 51
+        },
+        {
+          "start": 4301.900000095367,
+          "duration": 52
+        },
+        {
+          "start": 4375.900000095367,
+          "duration": 58
+        },
+        {
+          "start": 4448.400000095367,
+          "duration": 55
+        },
+        {
+          "start": 4659.400000095367,
+          "duration": 54
+        },
+        {
+          "start": 4734,
+          "duration": 91
+        },
+        {
+          "start": 4956.700000286102,
+          "duration": 98
+        },
+        {
+          "start": 5624.900000095367,
+          "duration": 60
+        },
+        {
+          "start": 5968.60000038147,
+          "duration": 69
+        },
+        {
+          "start": 6065.300000190735,
+          "duration": 57
+        },
+        {
+          "start": 6145.400000095367,
+          "duration": 79
+        },
+        {
+          "start": 6243,
+          "duration": 71
+        },
+        {
+          "start": 6343,
+          "duration": 89
+        },
+        {
+          "start": 6456.900000095367,
+          "duration": 76
+        },
+        {
+          "start": 6553.10000038147,
+          "duration": 60
+        },
+        {
+          "start": 6630.60000038147,
+          "duration": 53
+        },
+        {
+          "start": 6705.10000038147,
+          "duration": 67
+        },
+        {
+          "start": 6791.700000286102,
+          "duration": 100
+        },
+        {
+          "start": 6917.800000190735,
+          "duration": 54
+        },
+        {
+          "start": 6991.5,
+          "duration": 50
+        },
+        {
+          "start": 7061.5,
+          "duration": 50
+        },
+        {
+          "start": 7194.5,
+          "duration": 52
+        },
+        {
+          "start": 7264,
+          "duration": 51
+        },
+        {
+          "start": 7336.400000095367,
+          "duration": 56
+        },
+        {
+          "start": 7413.200000286102,
+          "duration": 67
+        },
+        {
+          "start": 7504.60000038147,
+          "duration": 91
+        },
+        {
+          "start": 7617.700000286102,
+          "duration": 63
+        },
+        {
+          "start": 7702.300000190735,
+          "duration": 65
+        },
+        {
+          "start": 7795.200000286102,
+          "duration": 69
+        },
+        {
+          "start": 7886,
+          "duration": 74
+        }
+      ],
+      "activeFade": 0
+    }
+  ],
+  "errors": []
+}

@@ -97,6 +97,32 @@ Example:
 
 CSS variables: `--typewriter-cursor-color` tunes the cursor color; `--fade-duration` and `--fade-ease` tune the initial enter transition; `--stream-update-fade-duration` and `--stream-update-fade-ease` tune the short replayed fade used for newly appended streamed text. When the stream-specific variables are not set, the appended-text fade falls back to the same duration and easing as `fade`.
 
+Vue 3, Vue 2, React, Octane, Svelte, Solid, and Angular share a 700ms appended-text fade with `cubic-bezier(0.37, 0.55, 0.86, 0.88)` and opacity 0 → 1, based on the local Codex client inspected on 2026-11-02. Combine it with adaptive delivery:
+
+```vue
+<MarkdownRender
+  :content="markdown"
+  :final="isFinished"
+  fade
+  smooth-streaming="auto"
+  :max-live-nodes="0"
+/>
+```
+
+Text fades by word: ASCII uses letter/digit boundaries; other text uses `Intl.Segmenter`. Whitespace and punctuation attach to the preceding word. A growing word keeps its animation identity, while new words start independently. Completed prefixes become static text, replacing the four-batch cap. When one append contains more than 64 words, its simultaneously created prefix is grouped together and the last word stays separate, avoiding excessive animation nodes for large chunks.
+
+Delivery combines a smoothed arrival-rate estimate with backlog catch-up, committing at most once per 50ms by default. With fade enabled, small appends stay paced and large chunks also stay in the queue. Markdown fences and grapheme integrity remain controlled by markstream; this is not an exact copy of Codex's scheduler. `smoothStreamingOptions` still controls speed limits and commit frequency.
+
+When a text block receives `text_end` (or its equivalent), set that block's `MarkdownRender` `final` prop to `true`. Text fades and enter transitions stop immediately, and subsequent catch-up renders without fade. Keep `final` separate for each block. The library does not subscribe to transport events or infer transport completion from closed Markdown syntax.
+
+The built-in queues in all seven framework packages use frame-budgeted completion by default. A pending tail of at most 1024 characters is committed immediately; larger backlogs adapt their batch size to the previous commit and layout cost, alternating animation frames and subsequent tasks. The current feedback target is 12ms, with batches normally between 256 and 1024 graphemes and atomic opening fence headers. Fade-node cleanup uses the same queue. Render completion waits for the remaining content and final semantic validation, rather than merely reflecting transport completion.
+
+Initially completed content, history restoration, and non-append replacements keep their existing behavior to protect hydration. This budget applies to the built-in `content` queue; `smooth-streaming="false"` and caller-supplied `nodes` bypass it. Explicit `smoothStreamingOptions: { flushOnFinish: false }` retains normal paced draining, while still stopping fade immediately.
+
+Budgeted completion trades a shorter blocking task for more commits and a potentially longer time until every character is visible. It does not promise lower total CPU, fewer total paints, or zero dropped frames. The 12ms target is not a preemptive deadline. Browser layout/GC, one complex Markdown unit, or a custom parser callback can exceed it. Proven final-invariant paragraphs, headings, lists, and inline formatting can reuse parsed nodes; unfinished syntax, HTML, math, and extensions still receive an authoritative final parse. An external `useSmoothMarkdownStream` calling `finish({ flush: true })` still performs a forced synchronous flush. It does not acquire the renderer's budget automatically; manually scheduled consumers can use `flush({ maxChars })` to advance in bounded steps.
+
+Override timing with `--stream-update-fade-duration` / `--stream-update-fade-ease`. Reduced-motion preferences complete the fade immediately; `smooth-streaming="false"` independently disables delivery pacing.
+
 ## Internationalization (i18n)
 
 By default, `getMarkdown` uses English text for UI elements (e.g., "Copy" button in code blocks). You can customize these texts by providing an `i18n` option:

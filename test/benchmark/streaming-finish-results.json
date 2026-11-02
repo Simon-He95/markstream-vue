@@ -1,0 +1,3238 @@
+{
+  "baselineRef": "4556e5d6b1ef9bb4476bf983123ac25a3b01b2a9",
+  "repeats": 3,
+  "browser": "156.0.8078.74",
+  "generatedAt": "2026-11-02T03:27:31.225Z",
+  "scope": "Headless Chrome, 1100x900, production builds, alternating variants, no CPU throttling. All variants use smoothStreaming=true and parseCoalesceMs=0. Off is fade=false and includes its existing pacing/DOM optimizations. Drain is current source with only final flush, final fade settlement and final enter-transition suppression disabled at build time. Timings include trace and identical RAF/DOM sampling overhead. Paint is renderer main-thread paint recording; RasterTask is renderer raster CPU, not GPU time. Durations overlap and must not be summed. Missing CompositeLayers/RasterTask events do not imply zero GPU cost.",
+  "scenarios": [
+    {
+      "id": "dense",
+      "seed": "开始：",
+      "chunks": [
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。",
+        "中文流式",
+        "测试 m",
+        "ixed",
+        " wor",
+        "ds a",
+        "ppea",
+        "r sm",
+        "ooth",
+        "ly，继",
+        "续输出。"
+      ],
+      "intervalMs": 16
+    },
+    {
+      "id": "burst",
+      "seed": "开始：",
+      "chunks": [
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。",
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。",
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。",
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。",
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。",
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。"
+      ],
+      "intervalMs": 200
+    },
+    {
+      "id": "large-end",
+      "seed": "开始：",
+      "chunks": [
+        "中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。中文流式测试 mixed words appear smoothly，继续输出。"
+      ],
+      "intervalMs": 0
+    }
+  ],
+  "summaries": [
+    {
+      "scenario": "dense",
+      "variant": "legacy",
+      "taskMs": 207.09799999999998,
+      "scriptMs": 7.533,
+      "layoutMs": 22.06,
+      "styleMs": 9.267,
+      "finishDelayMs": 206.5,
+      "finalCommitMs": 1.200000286102295,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000068,
+      "peakDeltas": 4,
+      "longTasks": 0,
+      "taskRangeMs": [
+        185.471,
+        210.59399999999997
+      ],
+      "paintMs": 10.491,
+      "paintCount": 196,
+      "afterFinalPaintMs": 0.496,
+      "afterFinalPaintCount": 8,
+      "rasterMs": 6.855
+    },
+    {
+      "scenario": "dense",
+      "variant": "drain",
+      "taskMs": 296.51800000000003,
+      "scriptMs": 40.355999999999995,
+      "layoutMs": 32.01,
+      "styleMs": 25.606,
+      "finishDelayMs": 2198.2000002861023,
+      "finalCommitMs": 0.3000001907348633,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "peakDeltas": 37,
+      "longTasks": 0,
+      "taskRangeMs": [
+        291.14099999999996,
+        319.87399999999997
+      ],
+      "paintMs": 15.644,
+      "paintCount": 184,
+      "afterFinalPaintMs": 8.79,
+      "afterFinalPaintCount": 104,
+      "rasterMs": 14.487
+    },
+    {
+      "scenario": "dense",
+      "variant": "finish",
+      "taskMs": 156.15500000000003,
+      "scriptMs": 22.707999999999995,
+      "layoutMs": 12.247,
+      "styleMs": 12.366999999999999,
+      "finishDelayMs": 2.8000001907348633,
+      "finalCommitMs": 2.0999999046325684,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "peakDeltas": 37,
+      "longTasks": 0,
+      "taskRangeMs": [
+        155.37699999999998,
+        159.495
+      ],
+      "paintMs": 7.239,
+      "paintCount": 88,
+      "afterFinalPaintMs": 0.11,
+      "afterFinalPaintCount": 2,
+      "rasterMs": 7.248
+    },
+    {
+      "scenario": "dense",
+      "variant": "off",
+      "taskMs": 146.924,
+      "scriptMs": 5.403999999999999,
+      "layoutMs": 15.059,
+      "styleMs": 1.9929999999999999,
+      "finishDelayMs": 1.5999999046325684,
+      "finalCommitMs": 1,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000068,
+      "peakDeltas": 0,
+      "longTasks": 0,
+      "taskRangeMs": [
+        138.63,
+        197.59799999999998
+      ],
+      "paintMs": 6.997,
+      "paintCount": 186,
+      "afterFinalPaintMs": 0.09,
+      "afterFinalPaintCount": 2,
+      "rasterMs": 4.089
+    },
+    {
+      "scenario": "burst",
+      "variant": "legacy",
+      "taskMs": 228.995,
+      "scriptMs": 45.457,
+      "layoutMs": 24.235,
+      "styleMs": 19.267,
+      "finishDelayMs": 2442.800000190735,
+      "finalCommitMs": 0.5,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "peakDeltas": 4,
+      "longTasks": 0,
+      "taskRangeMs": [
+        216.14199999999997,
+        301.74
+      ],
+      "paintMs": 9.802,
+      "paintCount": 164,
+      "afterFinalPaintMs": 7.3,
+      "afterFinalPaintCount": 116,
+      "rasterMs": 6.079
+    },
+    {
+      "scenario": "burst",
+      "variant": "drain",
+      "taskMs": 319.71299999999997,
+      "scriptMs": 44.956999999999994,
+      "layoutMs": 40.158,
+      "styleMs": 29.656000000000002,
+      "finishDelayMs": 2820.0999999046326,
+      "finalCommitMs": 0.39999961853027344,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000182,
+      "peakDeltas": 50,
+      "longTasks": 0,
+      "taskRangeMs": [
+        307.77700000000004,
+        337.716
+      ],
+      "paintMs": 18.623,
+      "paintCount": 196,
+      "afterFinalPaintMs": 15.213,
+      "afterFinalPaintCount": 150,
+      "rasterMs": 20.236
+    },
+    {
+      "scenario": "burst",
+      "variant": "finish",
+      "taskMs": 82.15700000000001,
+      "scriptMs": 15.716000000000001,
+      "layoutMs": 4.538,
+      "styleMs": 6.826,
+      "finishDelayMs": 3.5999999046325684,
+      "finalCommitMs": 2.9000000953674316,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "peakDeltas": 38,
+      "longTasks": 0,
+      "taskRangeMs": [
+        77.678,
+        87.57999999999998
+      ],
+      "paintMs": 3.119,
+      "paintCount": 44,
+      "afterFinalPaintMs": 0.106,
+      "afterFinalPaintCount": 2,
+      "rasterMs": 3.331
+    },
+    {
+      "scenario": "burst",
+      "variant": "off",
+      "taskMs": 60.869,
+      "scriptMs": 19.191,
+      "layoutMs": 3.143,
+      "styleMs": 0.4550000000000001,
+      "finishDelayMs": 2.1000003814697266,
+      "finalCommitMs": 1.5,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.799999999999955,
+      "peakDeltas": 0,
+      "longTasks": 0,
+      "taskRangeMs": [
+        57.306,
+        64.98700000000001
+      ],
+      "paintMs": 1.432,
+      "paintCount": 38,
+      "afterFinalPaintMs": 0.105,
+      "afterFinalPaintCount": 2,
+      "rasterMs": 0.834
+    },
+    {
+      "scenario": "large-end",
+      "variant": "legacy",
+      "taskMs": 65.18100000000001,
+      "scriptMs": 14.571000000000002,
+      "layoutMs": 4.725,
+      "styleMs": 3.4270000000000005,
+      "finishDelayMs": 921.0999999046326,
+      "finalCommitMs": 0.5999999046325684,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.799999999999997,
+      "peakDeltas": 3,
+      "longTasks": 0,
+      "taskRangeMs": [
+        61.605,
+        65.73
+      ],
+      "paintMs": 2.14,
+      "paintCount": 34,
+      "afterFinalPaintMs": 2.14,
+      "afterFinalPaintCount": 34,
+      "rasterMs": 1.39
+    },
+    {
+      "scenario": "large-end",
+      "variant": "drain",
+      "taskMs": 265.55,
+      "scriptMs": 19.812,
+      "layoutMs": 70.43299999999999,
+      "styleMs": 23.528,
+      "finishDelayMs": 1277.8000001907349,
+      "finalCommitMs": 0.6000003814697266,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "peakDeltas": 200,
+      "longTasks": 0,
+      "taskRangeMs": [
+        255.53199999999998,
+        272.758
+      ],
+      "paintMs": 8.924,
+      "paintCount": 42,
+      "afterFinalPaintMs": 8.924,
+      "afterFinalPaintCount": 42,
+      "rasterMs": 13.492
+    },
+    {
+      "scenario": "large-end",
+      "variant": "finish",
+      "taskMs": 8.77200000000001,
+      "scriptMs": 0.4600000000000021,
+      "layoutMs": 0.269,
+      "styleMs": 0.027000000000000007,
+      "finishDelayMs": 3.5,
+      "finalCommitMs": 2.700000286102295,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "peakDeltas": 0,
+      "longTasks": 0,
+      "taskRangeMs": [
+        8.364999999999997,
+        8.812000000000006
+      ],
+      "paintMs": 0.127,
+      "paintCount": 2,
+      "afterFinalPaintMs": 0.127,
+      "afterFinalPaintCount": 2,
+      "rasterMs": 0.112
+    },
+    {
+      "scenario": "large-end",
+      "variant": "off",
+      "taskMs": 8.777,
+      "scriptMs": 0.42400000000000077,
+      "layoutMs": 0.25700000000000006,
+      "styleMs": 0.019999999999999945,
+      "finishDelayMs": 3.0999999046325684,
+      "finalCommitMs": 2.5999999046325684,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "peakDeltas": 0,
+      "longTasks": 0,
+      "taskRangeMs": [
+        8.206999999999999,
+        8.786000000000001
+      ],
+      "paintMs": 0.109,
+      "paintCount": 2,
+      "afterFinalPaintMs": 0.109,
+      "afterFinalPaintCount": 2,
+      "rasterMs": 0.121
+    }
+  ],
+  "runs": [
+    {
+      "scenario": "dense",
+      "variant": "legacy",
+      "repeat": 0,
+      "deliveryMs": 1585.4000000953674,
+      "finalCommitMs": 1.1999998092651367,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 4,
+      "finishDelayMs": 206.5,
+      "elapsedMs": 1900.9000000953674,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 33.400000000000006,
+      "framesOver25Ms": 1,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 210.59399999999997,
+      "scriptMs": 7.533,
+      "layoutMs": 21.988999999999997,
+      "styleMs": 9.868,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 196,
+            "ms": 10.491
+          },
+          "afterFinal": {
+            "count": 8,
+            "ms": 0.496
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 130,
+            "ms": 21.032
+          },
+          "afterFinal": {
+            "count": 6,
+            "ms": 1.177
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 142,
+            "ms": 9.898
+          },
+          "afterFinal": {
+            "count": 18,
+            "ms": 0.673
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 393,
+            "ms": 14.089
+          },
+          "afterFinal": {
+            "count": 10,
+            "ms": 0.303
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "drain",
+      "repeat": 0,
+      "deliveryMs": 1584,
+      "finalCommitMs": 0.7000002861022949,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 33,
+      "finishDelayMs": 2198.2000002861023,
+      "elapsedMs": 3896.300000190735,
+      "frameP95Ms": 16.799999999999727,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 37,
+      "peakPerNode": 37,
+      "peakElements": 44,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 319.87399999999997,
+      "scriptMs": 41.946999999999996,
+      "layoutMs": 34.041000000000004,
+      "styleMs": 26.544,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 184,
+            "ms": 15.644
+          },
+          "afterFinal": {
+            "count": 104,
+            "ms": 8.79
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 182,
+            "ms": 32.889
+          },
+          "afterFinal": {
+            "count": 110,
+            "ms": 19.569
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 404,
+            "ms": 26.657
+          },
+          "afterFinal": {
+            "count": 241,
+            "ms": 13.743
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2130,
+            "ms": 14.57
+          },
+          "afterFinal": {
+            "count": 1035,
+            "ms": 7.073
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "finish",
+      "repeat": 0,
+      "deliveryMs": 1586,
+      "finalCommitMs": 2.299999713897705,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 2.8999996185302734,
+      "elapsedMs": 1705.6999998092651,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 37,
+      "peakPerNode": 37,
+      "peakElements": 44,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 159.495,
+      "scriptMs": 23.63,
+      "layoutMs": 12.575000000000001,
+      "styleMs": 12.366999999999999,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 88,
+            "ms": 7.239
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.093
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 73,
+            "ms": 12.084
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.207
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 164,
+            "ms": 12.396
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.024
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 1161,
+            "ms": 7.248
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.08
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "off",
+      "repeat": 0,
+      "deliveryMs": 1584.9000000953674,
+      "finalCommitMs": 1,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 1.5999999046325684,
+      "elapsedMs": 1696.4000000953674,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000068,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 138.63,
+      "scriptMs": 5.146000000000002,
+      "layoutMs": 15.059,
+      "styleMs": 1.9929999999999999,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 188,
+            "ms": 6.997
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.09
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 94,
+            "ms": 14.311
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.194
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 94,
+            "ms": 2.071
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.025
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 94,
+            "ms": 3.89
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.048
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "off",
+      "repeat": 1,
+      "deliveryMs": 1584.8999996185303,
+      "finalCommitMs": 1.1000003814697266,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 1.700000286102295,
+      "elapsedMs": 1698,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.80000000000001,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 146.924,
+      "scriptMs": 5.403999999999999,
+      "layoutMs": 15.045,
+      "styleMs": 1.9879999999999998,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 182,
+            "ms": 6.958
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.098
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 91,
+            "ms": 14.271
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.187
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 91,
+            "ms": 2.059
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.034
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 91,
+            "ms": 4.089
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.059
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "finish",
+      "repeat": 1,
+      "deliveryMs": 1584.5,
+      "finalCommitMs": 1.8999996185302734,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 2.5,
+      "elapsedMs": 1702.2999997138977,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 37,
+      "peakPerNode": 37,
+      "peakElements": 44,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 156.15500000000003,
+      "scriptMs": 22.556,
+      "layoutMs": 12.247,
+      "styleMs": 12.221,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 90,
+            "ms": 7.593
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.115
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 74,
+            "ms": 11.826
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.209
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 165,
+            "ms": 12.266
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.022
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 1193,
+            "ms": 7.392
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.073
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "drain",
+      "repeat": 1,
+      "deliveryMs": 1583.3999996185303,
+      "finalCommitMs": 0.3000001907348633,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 32,
+      "finishDelayMs": 2199.5,
+      "elapsedMs": 3896.199999809265,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 38,
+      "peakPerNode": 38,
+      "peakElements": 45,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 296.51800000000003,
+      "scriptMs": 40.156000000000006,
+      "layoutMs": 32.01,
+      "styleMs": 25.606,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 184,
+            "ms": 15.943
+          },
+          "afterFinal": {
+            "count": 104,
+            "ms": 9.109
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 181,
+            "ms": 30.909
+          },
+          "afterFinal": {
+            "count": 108,
+            "ms": 19.453
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 402,
+            "ms": 25.677
+          },
+          "afterFinal": {
+            "count": 238,
+            "ms": 13.534
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2241,
+            "ms": 14.487
+          },
+          "afterFinal": {
+            "count": 1153,
+            "ms": 7.626
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "legacy",
+      "repeat": 1,
+      "deliveryMs": 1584.9000000953674,
+      "finalCommitMs": 2.0999999046325684,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 3,
+      "finishDelayMs": 206.90000009536743,
+      "elapsedMs": 1908.8000001907349,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000068,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 207.09799999999998,
+      "scriptMs": 7.8580000000000005,
+      "layoutMs": 23.899,
+      "styleMs": 9.267,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 194,
+            "ms": 10.769
+          },
+          "afterFinal": {
+            "count": 8,
+            "ms": 0.425
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 130,
+            "ms": 22.902
+          },
+          "afterFinal": {
+            "count": 5,
+            "ms": 1.207
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 142,
+            "ms": 9.316
+          },
+          "afterFinal": {
+            "count": 16,
+            "ms": 0.569
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 396,
+            "ms": 6.326
+          },
+          "afterFinal": {
+            "count": 10,
+            "ms": 0.278
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "legacy",
+      "repeat": 2,
+      "deliveryMs": 1584.7999997138977,
+      "finalCommitMs": 1.200000286102295,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 3,
+      "finishDelayMs": 205,
+      "elapsedMs": 1907.3999996185303,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.800000000000068,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 185.471,
+      "scriptMs": 7.161999999999998,
+      "layoutMs": 22.06,
+      "styleMs": 8.298,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 196,
+            "ms": 10.027
+          },
+          "afterFinal": {
+            "count": 8,
+            "ms": 0.501
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 130,
+            "ms": 21.105
+          },
+          "afterFinal": {
+            "count": 5,
+            "ms": 0.902
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 141,
+            "ms": 8.37
+          },
+          "afterFinal": {
+            "count": 16,
+            "ms": 0.555
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 401,
+            "ms": 6.855
+          },
+          "afterFinal": {
+            "count": 10,
+            "ms": 0.248
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "drain",
+      "repeat": 2,
+      "deliveryMs": 1584.8000001907349,
+      "finalCommitMs": 0.3000001907348633,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 33,
+      "finishDelayMs": 2194.4000000953674,
+      "elapsedMs": 3882.4000000953674,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 37,
+      "peakPerNode": 37,
+      "peakElements": 44,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 291.14099999999996,
+      "scriptMs": 40.355999999999995,
+      "layoutMs": 30.639,
+      "styleMs": 25.217,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 180,
+            "ms": 14.898
+          },
+          "afterFinal": {
+            "count": 96,
+            "ms": 7.891
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 181,
+            "ms": 29.602
+          },
+          "afterFinal": {
+            "count": 108,
+            "ms": 17.705
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 402,
+            "ms": 25.259
+          },
+          "afterFinal": {
+            "count": 238,
+            "ms": 12.616
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2147,
+            "ms": 13.793
+          },
+          "afterFinal": {
+            "count": 999,
+            "ms": 6.724
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "finish",
+      "repeat": 2,
+      "deliveryMs": 1584.4000000953674,
+      "finalCommitMs": 2.0999999046325684,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 2.8000001907348633,
+      "elapsedMs": 1693.5,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.799999999999983,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 37,
+      "peakPerNode": 37,
+      "peakElements": 44,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 155.37699999999998,
+      "scriptMs": 22.707999999999995,
+      "layoutMs": 12.071,
+      "styleMs": 12.554,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 70,
+            "ms": 5.737
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.11
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 72,
+            "ms": 11.635
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.214
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 163,
+            "ms": 12.579
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.021
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 896,
+            "ms": 5.621
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.082
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "dense",
+      "variant": "off",
+      "repeat": 2,
+      "deliveryMs": 1585.5999999046326,
+      "finalCommitMs": 0.9000000953674316,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 1.4000000953674316,
+      "elapsedMs": 1697,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 403,
+      "complete": true,
+      "taskMs": 197.59799999999998,
+      "scriptMs": 6.477,
+      "layoutMs": 23.305,
+      "styleMs": 2.749,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 186,
+            "ms": 10.782
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.087
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 93,
+            "ms": 22.3
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.186
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 93,
+            "ms": 2.833
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.021
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 93,
+            "ms": 6.152
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.055
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "legacy",
+      "repeat": 0,
+      "deliveryMs": 1000.0999999046326,
+      "finalCommitMs": 0.5,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 2,
+      "finishDelayMs": 2461.2999997138977,
+      "elapsedMs": 3578.699999809265,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 301.74,
+      "scriptMs": 62.777,
+      "layoutMs": 35.563,
+      "styleMs": 22.449,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 164,
+            "ms": 14.756
+          },
+          "afterFinal": {
+            "count": 120,
+            "ms": 12.039
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 110,
+            "ms": 34.4
+          },
+          "afterFinal": {
+            "count": 82,
+            "ms": 28.992
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 309,
+            "ms": 22.59
+          },
+          "afterFinal": {
+            "count": 227,
+            "ms": 17
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 295,
+            "ms": 7.179
+          },
+          "afterFinal": {
+            "count": 222,
+            "ms": 5.873
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "drain",
+      "repeat": 0,
+      "deliveryMs": 999.7000002861023,
+      "finalCommitMs": 0.2999997138977051,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 39,
+      "finishDelayMs": 2820.0999999046326,
+      "elapsedMs": 3931.5,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 51,
+      "peakPerNode": 51,
+      "peakElements": 58,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 319.71299999999997,
+      "scriptMs": 44.956999999999994,
+      "layoutMs": 40.158,
+      "styleMs": 29.656000000000002,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 188,
+            "ms": 18.623
+          },
+          "afterFinal": {
+            "count": 146,
+            "ms": 15.213
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 209,
+            "ms": 38.981
+          },
+          "afterFinal": {
+            "count": 182,
+            "ms": 34.432
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 434,
+            "ms": 29.75
+          },
+          "afterFinal": {
+            "count": 351,
+            "ms": 21.735
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2717,
+            "ms": 17.744
+          },
+          "afterFinal": {
+            "count": 2299,
+            "ms": 15
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "finish",
+      "repeat": 0,
+      "deliveryMs": 1001.3999996185303,
+      "finalCommitMs": 2.5,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.1000003814697266,
+      "elapsedMs": 1113.7999997138977,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 38,
+      "peakPerNode": 38,
+      "peakElements": 45,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 82.15700000000001,
+      "scriptMs": 15.424,
+      "layoutMs": 4.16,
+      "styleMs": 6.398,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 42,
+            "ms": 2.785
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.106
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 27,
+            "ms": 3.959
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.186
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 83,
+            "ms": 6.417
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.02
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 410,
+            "ms": 2.623
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.075
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "off",
+      "repeat": 0,
+      "deliveryMs": 1001.6999998092651,
+      "finalCommitMs": 3.6000003814697266,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 5.100000381469727,
+      "elapsedMs": 1124.5999999046326,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.799999999999955,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 57.306,
+      "scriptMs": 15.896,
+      "layoutMs": 3.085,
+      "styleMs": 0.42100000000000015,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 38,
+            "ms": 1.336
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.206
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 19,
+            "ms": 2.933
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.469
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 19,
+            "ms": 0.432
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.043
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 19,
+            "ms": 0.798
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.058
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "off",
+      "repeat": 1,
+      "deliveryMs": 999.6999998092651,
+      "finalCommitMs": 1.5,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 2.1000003814697266,
+      "elapsedMs": 1113.0999999046326,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.799999999999955,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 60.869,
+      "scriptMs": 19.191,
+      "layoutMs": 3.143,
+      "styleMs": 0.4550000000000001,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 38,
+            "ms": 1.432
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.1
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 19,
+            "ms": 2.975
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.191
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 19,
+            "ms": 0.463
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.02
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 19,
+            "ms": 0.834
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.055
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "finish",
+      "repeat": 1,
+      "deliveryMs": 999.9000000953674,
+      "finalCommitMs": 3,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.5999999046325684,
+      "elapsedMs": 1110.2000002861023,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 38,
+      "peakPerNode": 38,
+      "peakElements": 45,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 77.678,
+      "scriptMs": 15.716000000000001,
+      "layoutMs": 4.8759999999999994,
+      "styleMs": 6.826,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 48,
+            "ms": 3.385
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.092
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 29,
+            "ms": 4.681
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.549
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 85,
+            "ms": 6.823
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.046
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 516,
+            "ms": 3.331
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.072
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "drain",
+      "repeat": 1,
+      "deliveryMs": 1000.8000001907349,
+      "finalCommitMs": 0.39999961853027344,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 38,
+      "finishDelayMs": 2864.8999996185303,
+      "elapsedMs": 3975,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 50,
+      "peakPerNode": 50,
+      "peakElements": 57,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 337.716,
+      "scriptMs": 46.397,
+      "layoutMs": 45.56100000000001,
+      "styleMs": 30.979,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 206,
+            "ms": 21.094
+          },
+          "afterFinal": {
+            "count": 162,
+            "ms": 18.138
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 210,
+            "ms": 44.254
+          },
+          "afterFinal": {
+            "count": 182,
+            "ms": 40.061
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 438,
+            "ms": 31.013
+          },
+          "afterFinal": {
+            "count": 354,
+            "ms": 24.371
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2860,
+            "ms": 20.236
+          },
+          "afterFinal": {
+            "count": 2387,
+            "ms": 17.321
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "legacy",
+      "repeat": 1,
+      "deliveryMs": 1000.1999998092651,
+      "finalCommitMs": 0.5,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 2,
+      "finishDelayMs": 2400.300000190735,
+      "elapsedMs": 3508.2999997138977,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 228.995,
+      "scriptMs": 45.457,
+      "layoutMs": 24.235,
+      "styleMs": 19.267,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 146,
+            "ms": 9.802
+          },
+          "afterFinal": {
+            "count": 102,
+            "ms": 7.3
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 109,
+            "ms": 23.364
+          },
+          "afterFinal": {
+            "count": 79,
+            "ms": 18.259
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 307,
+            "ms": 19.444
+          },
+          "afterFinal": {
+            "count": 223,
+            "ms": 14.069
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 259,
+            "ms": 6.079
+          },
+          "afterFinal": {
+            "count": 183,
+            "ms": 4.293
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "legacy",
+      "repeat": 2,
+      "deliveryMs": 1001.0999999046326,
+      "finalCommitMs": 0.40000009536743164,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 3,
+      "finishDelayMs": 2442.800000190735,
+      "elapsedMs": 3553.5,
+      "frameP95Ms": 16.700000000000273,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 4,
+      "peakPerNode": 4,
+      "peakElements": 11,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 216.14199999999997,
+      "scriptMs": 42.698,
+      "layoutMs": 22.332,
+      "styleMs": 16.212999999999997,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 164,
+            "ms": 9.188
+          },
+          "afterFinal": {
+            "count": 116,
+            "ms": 7.25
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 111,
+            "ms": 21.488
+          },
+          "afterFinal": {
+            "count": 83,
+            "ms": 16.543
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 310,
+            "ms": 16.311
+          },
+          "afterFinal": {
+            "count": 228,
+            "ms": 11.727
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 305,
+            "ms": 5.983
+          },
+          "afterFinal": {
+            "count": 219,
+            "ms": 4.603
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "drain",
+      "repeat": 2,
+      "deliveryMs": 1000.5,
+      "finalCommitMs": 0.40000009536743164,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 37,
+      "finishDelayMs": 2762.800000190735,
+      "elapsedMs": 3880.4000000953674,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 50,
+      "peakPerNode": 50,
+      "peakElements": 57,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 307.77700000000004,
+      "scriptMs": 42.297000000000004,
+      "layoutMs": 38.5,
+      "styleMs": 29.171,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 196,
+            "ms": 18.348
+          },
+          "afterFinal": {
+            "count": 150,
+            "ms": 15.019
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 205,
+            "ms": 37.374
+          },
+          "afterFinal": {
+            "count": 178,
+            "ms": 31.406
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 425,
+            "ms": 29.256
+          },
+          "afterFinal": {
+            "count": 342,
+            "ms": 20.585
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2794,
+            "ms": 20.725
+          },
+          "afterFinal": {
+            "count": 2274,
+            "ms": 16.232
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "finish",
+      "repeat": 2,
+      "deliveryMs": 1000.4000000953674,
+      "finalCommitMs": 2.9000000953674316,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.5999999046325684,
+      "elapsedMs": 1118.9000000953674,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.800000000000068,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 38,
+      "peakPerNode": 38,
+      "peakElements": 45,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 87.57999999999998,
+      "scriptMs": 19.142000000000003,
+      "layoutMs": 4.538,
+      "styleMs": 7.505,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 44,
+            "ms": 3.119
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.112
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 27,
+            "ms": 4.338
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.222
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 83,
+            "ms": 7.651
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.025
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 429,
+            "ms": 5.143
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.084
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "burst",
+      "variant": "off",
+      "repeat": 2,
+      "deliveryMs": 1001.5999999046326,
+      "finalCommitMs": 1.4000000953674316,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 2.1000003814697266,
+      "elapsedMs": 1109,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000068,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 483,
+      "complete": true,
+      "taskMs": 64.98700000000001,
+      "scriptMs": 20.39,
+      "layoutMs": 3.6950000000000003,
+      "styleMs": 0.509,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 38,
+            "ms": 2.281
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.105
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 19,
+            "ms": 3.456
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.211
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 19,
+            "ms": 0.516
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.025
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 19,
+            "ms": 0.906
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.057
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "legacy",
+      "repeat": 0,
+      "deliveryMs": 0.8000001907348633,
+      "finalCommitMs": 0.7999997138977051,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 922.2999997138977,
+      "elapsedMs": 1035.7000002861023,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 3,
+      "peakPerNode": 3,
+      "peakElements": 10,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 65.18100000000001,
+      "scriptMs": 15.048,
+      "layoutMs": 4.725,
+      "styleMs": 3.117,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 34,
+            "ms": 2.14
+          },
+          "afterFinal": {
+            "count": 34,
+            "ms": 2.14
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 20,
+            "ms": 4.574
+          },
+          "afterFinal": {
+            "count": 20,
+            "ms": 4.574
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 68,
+            "ms": 3.138
+          },
+          "afterFinal": {
+            "count": 68,
+            "ms": 3.138
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 50,
+            "ms": 1.39
+          },
+          "afterFinal": {
+            "count": 50,
+            "ms": 1.39
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "drain",
+      "repeat": 0,
+      "deliveryMs": 0.7999997138977051,
+      "finalCommitMs": 0.5,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 1277.8000001907349,
+      "elapsedMs": 1383.3999996185303,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.80000000000001,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 200,
+      "peakPerNode": 200,
+      "peakElements": 207,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 255.53199999999998,
+      "scriptMs": 19.108000000000004,
+      "layoutMs": 72.482,
+      "styleMs": 23.528,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 40,
+            "ms": 8.272
+          },
+          "afterFinal": {
+            "count": 40,
+            "ms": 8.272
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 259,
+            "ms": 71.567
+          },
+          "afterFinal": {
+            "count": 259,
+            "ms": 71.567
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 331,
+            "ms": 23.579
+          },
+          "afterFinal": {
+            "count": 331,
+            "ms": 23.579
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2025,
+            "ms": 13.492
+          },
+          "afterFinal": {
+            "count": 2025,
+            "ms": 13.492
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "finish",
+      "repeat": 0,
+      "deliveryMs": 0.6999998092651367,
+      "finalCommitMs": 2.9000000953674316,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.6000003814697266,
+      "elapsedMs": 110.19999980926514,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 7,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 8.364999999999997,
+      "scriptMs": 0.3809999999999994,
+      "layoutMs": 0.267,
+      "styleMs": 0.02399999999999993,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 2,
+            "ms": 0.121
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.121
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 1,
+            "ms": 0.26
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.26
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 1,
+            "ms": 0.026
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.026
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2,
+            "ms": 0.1
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.1
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "off",
+      "repeat": 0,
+      "deliveryMs": 0.9000000953674316,
+      "finalCommitMs": 2.5999999046325684,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.0999999046325684,
+      "elapsedMs": 107.2000002861023,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 8.786000000000001,
+      "scriptMs": 0.4420000000000014,
+      "layoutMs": 0.25700000000000006,
+      "styleMs": 0.020000000000000052,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 2,
+            "ms": 0.107
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.107
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 1,
+            "ms": 0.249
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.249
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 1,
+            "ms": 0.022
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.022
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2,
+            "ms": 0.105
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.105
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "off",
+      "repeat": 1,
+      "deliveryMs": 0.8000001907348633,
+      "finalCommitMs": 2.299999713897705,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3,
+      "elapsedMs": 106.5,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 8.206999999999999,
+      "scriptMs": 0.3769999999999989,
+      "layoutMs": 0.24999999999999994,
+      "styleMs": 0.019999999999999945,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 2,
+            "ms": 0.109
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.109
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 1,
+            "ms": 0.242
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.242
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 1,
+            "ms": 0.021
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.021
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2,
+            "ms": 0.121
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.121
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "finish",
+      "repeat": 1,
+      "deliveryMs": 0.7999997138977051,
+      "finalCommitMs": 2.700000286102295,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.5,
+      "elapsedMs": 107.2999997138977,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 7,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 8.812000000000006,
+      "scriptMs": 0.4600000000000021,
+      "layoutMs": 0.296,
+      "styleMs": 0.034000000000000065,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 2,
+            "ms": 0.127
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.127
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 1,
+            "ms": 0.288
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.288
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 1,
+            "ms": 0.037
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.037
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2,
+            "ms": 0.113
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.113
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "drain",
+      "repeat": 1,
+      "deliveryMs": 0.6999998092651367,
+      "finalCommitMs": 0.7000002861022949,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 1270.2000002861023,
+      "elapsedMs": 1377,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.799999999999955,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 200,
+      "peakPerNode": 200,
+      "peakElements": 207,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 265.55,
+      "scriptMs": 20.006000000000004,
+      "layoutMs": 70.43299999999999,
+      "styleMs": 23.157999999999998,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 42,
+            "ms": 8.924
+          },
+          "afterFinal": {
+            "count": 42,
+            "ms": 8.924
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 260,
+            "ms": 69.477
+          },
+          "afterFinal": {
+            "count": 260,
+            "ms": 69.477
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 331,
+            "ms": 23.212
+          },
+          "afterFinal": {
+            "count": 331,
+            "ms": 23.212
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2226,
+            "ms": 13.28
+          },
+          "afterFinal": {
+            "count": 2226,
+            "ms": 13.28
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "legacy",
+      "repeat": 1,
+      "deliveryMs": 0.9000000953674316,
+      "finalCommitMs": 0.5999999046325684,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 921.0999999046326,
+      "elapsedMs": 1037.6999998092651,
+      "frameP95Ms": 16.799999999999955,
+      "frameMaxMs": 16.799999999999997,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 3,
+      "peakPerNode": 3,
+      "peakElements": 10,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 61.605,
+      "scriptMs": 14.451,
+      "layoutMs": 5.113,
+      "styleMs": 3.4800000000000004,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 36,
+            "ms": 2.287
+          },
+          "afterFinal": {
+            "count": 36,
+            "ms": 2.287
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 23,
+            "ms": 4.954
+          },
+          "afterFinal": {
+            "count": 23,
+            "ms": 4.954
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 70,
+            "ms": 3.501
+          },
+          "afterFinal": {
+            "count": 70,
+            "ms": 3.501
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 63,
+            "ms": 1.505
+          },
+          "afterFinal": {
+            "count": 63,
+            "ms": 1.505
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "legacy",
+      "repeat": 2,
+      "deliveryMs": 0.7000002861022949,
+      "finalCommitMs": 0.5999999046325684,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 918,
+      "elapsedMs": 1025.2000002861023,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.799999999999955,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 3,
+      "peakPerNode": 3,
+      "peakElements": 10,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 65.73,
+      "scriptMs": 14.571000000000002,
+      "layoutMs": 4.597,
+      "styleMs": 3.4270000000000005,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 30,
+            "ms": 1.793
+          },
+          "afterFinal": {
+            "count": 30,
+            "ms": 1.793
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 22,
+            "ms": 4.462
+          },
+          "afterFinal": {
+            "count": 22,
+            "ms": 4.462
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 71,
+            "ms": 3.43
+          },
+          "afterFinal": {
+            "count": 71,
+            "ms": 3.43
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 49,
+            "ms": 1.33
+          },
+          "afterFinal": {
+            "count": 49,
+            "ms": 1.33
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "drain",
+      "repeat": 2,
+      "deliveryMs": 0.7999997138977051,
+      "finalCommitMs": 0.6000003814697266,
+      "settledAtFinalCommit": false,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 1330,
+      "elapsedMs": 1441.2999997138977,
+      "frameP95Ms": 16.700000000000045,
+      "frameMaxMs": 16.800000000000182,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 200,
+      "peakPerNode": 200,
+      "peakElements": 207,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 272.758,
+      "scriptMs": 19.812,
+      "layoutMs": 69.178,
+      "styleMs": 24.115000000000002,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 48,
+            "ms": 10.305
+          },
+          "afterFinal": {
+            "count": 48,
+            "ms": 10.305
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 261,
+            "ms": 68.258
+          },
+          "afterFinal": {
+            "count": 261,
+            "ms": 68.258
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 336,
+            "ms": 24.184
+          },
+          "afterFinal": {
+            "count": 336,
+            "ms": 24.184
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2431,
+            "ms": 17.129
+          },
+          "afterFinal": {
+            "count": 2431,
+            "ms": 17.129
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "finish",
+      "repeat": 2,
+      "deliveryMs": 0.8999996185302734,
+      "finalCommitMs": 2.6000003814697266,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.200000286102295,
+      "elapsedMs": 121.69999980926514,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 7,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 8.77200000000001,
+      "scriptMs": 0.47100000000000264,
+      "layoutMs": 0.269,
+      "styleMs": 0.027000000000000007,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 2,
+            "ms": 0.127
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.127
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 1,
+            "ms": 0.261
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.261
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 1,
+            "ms": 0.029
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.029
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2,
+            "ms": 0.112
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.112
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    },
+    {
+      "scenario": "large-end",
+      "variant": "off",
+      "repeat": 2,
+      "deliveryMs": 0.9000000953674316,
+      "finalCommitMs": 2.6999998092651367,
+      "settledAtFinalCommit": true,
+      "deltasAtFinalCommit": 0,
+      "finishDelayMs": 3.3999996185302734,
+      "elapsedMs": 105.09999990463257,
+      "frameP95Ms": 16.700000000000017,
+      "frameMaxMs": 16.700000000000017,
+      "framesOver25Ms": 0,
+      "longTasks": 0,
+      "longTaskMs": 0,
+      "peakDeltas": 0,
+      "peakPerNode": 0,
+      "peakElements": 5,
+      "remainingDeltas": 0,
+      "textLength": 803,
+      "complete": true,
+      "taskMs": 8.777,
+      "scriptMs": 0.42400000000000077,
+      "layoutMs": 0.258,
+      "styleMs": 0.01899999999999992,
+      "trace": {
+        "Paint": {
+          "total": {
+            "count": 2,
+            "ms": 0.131
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.131
+          }
+        },
+        "Layout": {
+          "total": {
+            "count": 1,
+            "ms": 0.25
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.25
+          }
+        },
+        "UpdateLayoutTree": {
+          "total": {
+            "count": 1,
+            "ms": 0.021
+          },
+          "afterFinal": {
+            "count": 1,
+            "ms": 0.021
+          }
+        },
+        "RasterTask": {
+          "total": {
+            "count": 2,
+            "ms": 0.141
+          },
+          "afterFinal": {
+            "count": 2,
+            "ms": 0.141
+          }
+        },
+        "CompositeLayers": {
+          "total": {
+            "count": 0,
+            "ms": 0
+          },
+          "afterFinal": {
+            "count": 0,
+            "ms": 0
+          }
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "seed": "",
+      "activeAnimationsAfterFinal": [],
+      "translucentAfterFinal": 0
+    },
+    {
+      "seed": "base ",
+      "activeAnimationsAfterFinal": [],
+      "translucentAfterFinal": 0
+    }
+  ],
+  "errors": []
+}

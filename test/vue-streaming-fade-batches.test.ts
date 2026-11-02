@@ -1,13 +1,32 @@
 import { mount } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { nextTick } from 'vue'
 import InlineCodeNode from '../src/components/InlineCodeNode'
 import TextNode from '../src/components/TextNode'
 
 describe.each([
   ['text', TextNode, 'content', '.text-node-stream-delta'],
   ['inline_code', InlineCodeNode, 'code', '.inline-code-stream-delta'],
-] as const)('%s bounded streaming fade', (type, component, field, selector) => {
+] as const)('%s streaming word fade', (type, component, field, selector) => {
+  let frameId = 0
+  const frames = new Map<number, FrameRequestCallback>()
+  beforeEach(() => {
+    frames.clear()
+    vi.spyOn(globalThis, 'requestAnimationFrame').mockImplementation((callback) => {
+      frames.set(++frameId, callback)
+      return frameId
+    })
+    vi.spyOn(globalThis, 'cancelAnimationFrame').mockImplementation((id) => {
+      frames.delete(id)
+    })
+  })
   afterEach(() => vi.restoreAllMocks())
+  async function flushFrame() {
+    const callbacks = [...frames.values()]
+    frames.clear()
+    callbacks.forEach(callback => callback(performance.now()))
+    await nextTick()
+  }
 
   function mountNode(content = 'base', persisted?: string) {
     return mount(component, {
@@ -17,7 +36,7 @@ describe.each([
     })
   }
 
-  it('preserves existing batches and coalesces dense appends without restarting them', async () => {
+  it('preserves a growing word and starts the next word without restarting it', async () => {
     let now = 0
     vi.spyOn(performance, 'now').mockImplementation(() => now)
     const wrapper = mountNode()
@@ -30,13 +49,15 @@ describe.each([
       expect(wrapper.findAll(selector)).toHaveLength(1)
       expect(wrapper.get(selector).element).toBe(first)
       now = 50
-      await append('baseABC')
+      await append('baseAB C')
       expect(wrapper.findAll(selector).map(node => node.text())).toEqual(['AB', 'C'])
       expect(wrapper.findAll(selector)[0].element).toBe(first)
       await wrapper.findAll(selector)[0].trigger('animationend')
+      await flushFrame()
       expect(wrapper.findAll(selector).map(node => node.text())).toEqual(['C'])
-      expect(wrapper.text()).toBe('baseABC')
+      expect(wrapper.text()).toBe('baseAB C')
       await wrapper.get(selector).trigger('animationend')
+      await flushFrame()
       expect(wrapper.find(selector).exists()).toBe(false)
     }
     finally {
@@ -44,25 +65,48 @@ describe.each([
     }
   })
 
-  it('bounds outstanding batches even when animations do not finish, and settles in text order', async () => {
+  it('keeps new words independent beyond four active animations and settles in order', async () => {
     let now = 0
     vi.spyOn(performance, 'now').mockImplementation(() => now)
     const wrapper = mountNode()
     try {
       for (let index = 1; index <= 100; index++) {
         now += 50
-        const content = `base${'x'.repeat(index)}`
+        const content = `base ${'word '.repeat(index)}`
         await wrapper.setProps({ node: { type, [field]: content, raw: content } } as any)
-        expect(wrapper.findAll(selector).length).toBeLessThanOrEqual(4)
-        expect(wrapper.text()).toBe(content)
+        expect(wrapper.findAll(selector)).toHaveLength(index)
+        expect(wrapper.element.textContent).toBe(content)
       }
       const batches = wrapper.findAll(selector)
-      await batches[3].trigger('animationend')
-      expect(wrapper.findAll(selector)).toHaveLength(4)
-      for (const batch of batches.slice(0, 3))
+      await batches[99].trigger('animationend')
+      expect(wrapper.findAll(selector)).toHaveLength(100)
+      for (const batch of batches.slice(0, 99))
         await batch.trigger('animationend')
+      expect(frames.size).toBe(1)
+      expect(wrapper.findAll(selector)).toHaveLength(100)
+      await flushFrame()
       expect(wrapper.find(selector).exists()).toBe(false)
-      expect(wrapper.text()).toBe(`base${'x'.repeat(100)}`)
+      expect(wrapper.element.textContent).toBe(`base ${'word '.repeat(100)}`)
+    }
+    finally {
+      wrapper.unmount()
+    }
+  })
+
+  it('settles hidden-tab updates and resumes word fades when visible', async () => {
+    const visibility = vi.spyOn(document, 'visibilityState', 'get')
+    visibility.mockReturnValue('visible')
+    const wrapper = mountNode('base ')
+    const append = (content: string) => wrapper.setProps({ node: { type, [field]: content, raw: content } } as any)
+    try {
+      await append('base first ')
+      expect(wrapper.findAll(selector)).toHaveLength(1)
+      visibility.mockReturnValue('hidden')
+      await append(`base first ${'background '.repeat(1000)}`)
+      expect(wrapper.findAll(selector)).toHaveLength(0)
+      visibility.mockReturnValue('visible')
+      await append(`base first ${'background '.repeat(1000)}visible`)
+      expect(wrapper.findAll(selector).map(node => node.text())).toEqual(['visible'])
     }
     finally {
       wrapper.unmount()

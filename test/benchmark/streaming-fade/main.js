@@ -8,6 +8,8 @@ import './style.css'
 const params = new URLSearchParams(location.search)
 const content = ref('')
 const final = ref(false)
+const smooth = ref(params.get('smooth') === 'true')
+const renderer = ref(null)
 const fade = ref(params.get('fade') !== 'false')
 const probe = params.get('probe')
 const host = document.getElementById('app')
@@ -18,10 +20,12 @@ createApp({
   setup: () => () => probe
     ? h(probe === 'code' ? InlineCodeNode : TextNode, { node: { type: probe === 'code' ? 'inline_code' : 'text', content: content.value, code: content.value, raw: content.value }, fade: fade.value })
     : h(MarkdownRender, {
+        ref: renderer,
         content: content.value,
         final: final.value,
         fade: fade.value,
-        smoothStreaming: false,
+        debugPerformance: params.has('debug'),
+        smoothStreaming: smooth.value,
         batchRendering: false,
         viewportPriority: false,
         deferNodesUntilVisible: false,
@@ -34,12 +38,24 @@ window.setContent = async (value) => {
   content.value = value
   await nextTick()
 }
+window.setPacing = async (enabled) => {
+  smooth.value = enabled
+  await nextTick()
+}
+window.finishStream = async () => {
+  final.value = true
+  await nextTick()
+}
+window.isSettled = () => (probe || renderer.value?.getVirtualMetrics().final) && !host.querySelector(deltaSelector)
 window.reset = async (seed = '', enabled = true) => {
+  const paced = smooth.value
+  smooth.value = false
   fade.value = false
   final.value = false
   await window.setContent(seed)
   await frame()
   fade.value = enabled
+  smooth.value = paced
   await nextTick()
 }
 window.runStream = async ({ seed, chunks, intervalMs, enabled = true, visual = false, prepared = false }) => {
@@ -58,6 +74,14 @@ window.runStream = async ({ seed, chunks, intervalMs, enabled = true, visual = f
     if (previousFrame != null)
       frames.push(now - previousFrame)
     previousFrame = now
+    peakDeltas = Math.max(peakDeltas, host.querySelectorAll(deltaSelector).length)
+    peakElements = Math.max(peakElements, host.querySelectorAll('*').length)
+    const counts = new Map()
+    for (const delta of host.querySelectorAll(deltaSelector)) {
+      const count = (counts.get(delta.parentElement) || 0) + 1
+      counts.set(delta.parentElement, count)
+      peakPerNode = Math.max(peakPerNode, count)
+    }
     frameId = requestAnimationFrame(sample)
   }
   frameId = requestAnimationFrame(sample)
@@ -68,27 +92,31 @@ window.runStream = async ({ seed, chunks, intervalMs, enabled = true, visual = f
       await wait(delay)
     content.value += chunks[index]
     await nextTick()
-    peakDeltas = Math.max(peakDeltas, host.querySelectorAll(deltaSelector).length)
-    peakElements = Math.max(peakElements, host.querySelectorAll('*').length)
-    const counts = new Map()
-    for (const delta of host.querySelectorAll(deltaSelector)) {
-      const count = (counts.get(delta.parentElement) || 0) + 1
-      counts.set(delta.parentElement, count)
-      peakPerNode = Math.max(peakPerNode, count)
-    }
     if (visual)
       window.scrollTo(0, document.body.scrollHeight)
   }
   const deliveryMs = performance.now() - started
-  final.value = true
-  await nextTick()
-  await wait(400)
+  const finishStarted = performance.now()
+  performance.mark('stream-final')
+  await window.finishStream()
+  const finalCommitMs = performance.now() - finishStarted
+  const settledAtFinalCommit = Boolean(window.isSettled())
+  const deltasAtFinalCommit = host.querySelectorAll(deltaSelector).length
+  while (!window.isSettled())
+    await wait(50)
+  const finishDelayMs = performance.now() - finishStarted
+  performance.mark('stream-settled')
+  await wait(100)
   await frame()
   cancelAnimationFrame(frameId)
   observer.disconnect()
   const sorted = frames.toSorted((a, b) => a - b)
   return {
     deliveryMs,
+    finalCommitMs,
+    settledAtFinalCommit,
+    deltasAtFinalCommit,
+    finishDelayMs,
     elapsedMs: performance.now() - started,
     frameP95Ms: sorted[Math.floor(sorted.length * 0.95)] || 0,
     frameMaxMs: Math.max(0, ...frames),

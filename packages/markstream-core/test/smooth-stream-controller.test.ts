@@ -868,3 +868,29 @@ describe('smoothMarkdownStreamController', () => {
     })
   })
 })
+
+describe('bounded final flush', () => {
+  it('advances a paused completed stream without splitting graphemes or opening fence headers', () => {
+    const controller = createSmoothMarkdownStream()
+    const source = '👩‍💻e\u0301\n```typescript\nconst x = 1\n```'
+    controller.pause()
+    controller.enqueue(source)
+    controller.finish({ flush: false })
+    controller.flush({ maxChars: 1 })
+    expect(controller.getSnapshot().visible).toBe('👩‍💻')
+    expect(controller.getSnapshot().final).toBe(false)
+    controller.flush({ maxChars: 1 })
+    expect(controller.getSnapshot().visible).toBe('👩‍💻e\u0301')
+    let commits = 0
+    while (!controller.getSnapshot().caughtUp && commits++ < 100) {
+      controller.flush({ maxChars: 1 })
+      const visible = controller.getSnapshot().visible
+      if (visible.includes('```'))
+        expect(visible).toContain('```typescript\n')
+    }
+    expect(controller.getSnapshot().visible).toBe(source)
+    expect(controller.getSnapshot().final).toBe(true)
+    expect(controller.getSnapshot().paused).toBe(true)
+    controller.destroy()
+  })
+})

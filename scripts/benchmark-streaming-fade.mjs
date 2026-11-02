@@ -62,7 +62,7 @@ try {
       await page.waitForFunction(() => window.ready)
       const samples = await page.evaluate(async () => {
         const samples = []
-        for (const age of [0, 50, 100, 200, 400]) {
+        for (const age of [0, 50, 100, 200, 400, 700]) {
           await window.reset('初始')
           await window.setContent('初始甲')
           const delta = document.querySelector('[class$="stream-delta"], .text-node-stream-delta, .inline-code-stream-delta')
@@ -81,8 +81,8 @@ try {
       if (variant === 'after') {
         for (const sample of samples) {
           assert.equal(sample.sameAnimation, true)
-          assert.equal(sample.durationMs, 200)
-          assert.equal(sample.easing, 'cubic-bezier(0.2, 0, 0.4, 1)')
+          assert.equal(sample.durationMs, 700)
+          assert.equal(sample.easing, 'cubic-bezier(0.37, 0.55, 0.86, 0.88)')
           if (sample.ageMs === 0)
             assert.equal(sample.before, 0)
           assert.ok(Math.abs(sample.before - sample.after) < 0.001)
@@ -107,16 +107,16 @@ try {
     const text = delta.firstChild
     const selection = window.getSelection()
     const range = document.createRange()
-    range.setStart(text, 1)
-    range.setEnd(text, 4)
+    range.setStart(text, 0)
+    range.setEnd(text, 3)
     selection.removeAllRanges()
     selection.addRange(range)
     await window.setContent('base tail more')
-    await new Promise(resolve => setTimeout(resolve, 250))
+    await new Promise(resolve => setTimeout(resolve, 800))
     const preserved = selection.toString() === 'tai' && text.isConnected
     selection.removeAllRanges()
     document.dispatchEvent(new Event('selectionchange'))
-    await new Promise(resolve => setTimeout(resolve, 250))
+    await new Promise(resolve => setTimeout(resolve, 800))
     return { preserved, text: document.getElementById('app').textContent, deltas: document.querySelectorAll('.text-node-stream-delta').length }
   })
   assert.deepEqual(selectionResult, { preserved: true, text: 'base tail more', deltas: 0 })
@@ -153,7 +153,7 @@ try {
         assert.equal(result.complete, true)
         assert.equal(result.remainingDeltas, 0)
         if (variant === 'after')
-          assert.ok(result.peakPerNode <= 4)
+          assert.ok(result.peakPerNode < 512)
         results.push({
           scenario: scenario.id,
           variant,
@@ -186,10 +186,10 @@ const summaries = scenarios.flatMap(scenario => ['before', 'after', 'off'].map((
   const rows = results.filter(row => row.scenario === scenario.id && row.variant === variant)
   return { scenario: scenario.id, variant, ...Object.fromEntries(['taskMs', 'scriptMs', 'layoutMs', 'styleMs', 'frameP95Ms', 'frameMaxMs', 'framesOver25Ms', 'peakDeltas', 'peakPerNode', 'peakElements', 'heapAfterGcKB', 'heapGrowthAfterGcKB', 'longTasks', 'deliveryMs'].map(key => [key, median(rows.map(row => row[key]))])) }
 }))
-const report = { baselineRef, repeats, generatedAt: new Date().toISOString(), browser: `${browserVersion}, ${process.platform}/${process.arch}, headless, production builds, 1100×800, no CPU throttling`, fade: { durationMs: 200, initialOpacity: 0, easing: 'cubic-bezier(0.2, 0, 0.4, 1)', batchWindowMs: 50, maxBatches: 4 }, scope: 'Only TextNode and InlineCodeNode differ; raw stream, smoothStreaming=false. CDP TaskDuration includes browser work and identical fixture instrumentation, not GPU time. Heap values are post-GC retained JS heap, not peak memory.', scenarios, summaries, results, visualSamples, checks }
+const report = { baselineRef, repeats, generatedAt: new Date().toISOString(), browser: `${browserVersion}, ${process.platform}/${process.arch}, headless, production builds, 1100×800, no CPU throttling`, fade: { durationMs: 700, initialOpacity: 0, easing: 'cubic-bezier(0.37, 0.55, 0.86, 0.88)', segmentation: 'word', maxWordsPerUpdate: 64 }, scope: 'TextNode and InlineCodeNode use word-based fades; raw stream, smoothStreaming=false. CDP TaskDuration includes browser work and identical fixture instrumentation, not GPU time. Heap values are post-GC retained JS heap, not peak memory.', scenarios, summaries, results, visualSamples, checks }
 writeFileSync(path.join(output, 'results.json'), JSON.stringify(report, null, 2))
 const table = summaries.map(row => `| ${row.scenario} | ${row.variant} | ${row.taskMs.toFixed(1)} | ${row.scriptMs.toFixed(1)} | ${row.layoutMs.toFixed(1)} | ${row.styleMs.toFixed(1)} | ${row.frameP95Ms.toFixed(1)} | ${row.peakDeltas} | ${row.heapAfterGcKB.toFixed(0)} |`).join('\n')
-writeFileSync(path.join(output, 'results.md'), `# Streaming fade comparison\n\nBaseline: ${baselineRef}. ${repeats} alternating repetitions; median. ${report.browser}.\n\n${report.scope}\n\n| Scenario | Variant | Main thread ms | Script ms | Layout ms | Style ms | Frame p95 ms | Peak fade spans | Retained JS KB |\n|---|---|---:|---:|---:|---:|---:|---:|---:|\n${table}\n\nFunctional checks: bounded per-node batches, natural fade completion, reduced motion, exact input delivery, and no browser errors.\n`)
+writeFileSync(path.join(output, 'results.md'), `# Streaming fade comparison\n\nBaseline: ${baselineRef}. ${repeats} alternating repetitions; median. ${report.browser}.\n\n${report.scope}\n\n| Scenario | Variant | Main thread ms | Script ms | Layout ms | Style ms | Frame p95 ms | Peak fade spans | Retained JS KB |\n|---|---|---:|---:|---:|---:|---:|---:|---:|\n${table}\n\nFunctional checks: active word reclamation, natural fade completion, reduced motion, exact input delivery, and no browser errors.\n`)
 const tableHtml = summaries.map(row => `<tr><td>${row.scenario}</td><td>${row.variant}</td><td>${row.taskMs.toFixed(1)}</td><td>${row.frameP95Ms.toFixed(1)}</td><td>${row.peakDeltas}</td><td>${row.heapAfterGcKB.toFixed(0)}</td></tr>`).join('')
-writeFileSync(path.join(output, 'index.html'), `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fade · Before / After</title><style>body{margin:32px;background:#f2f3ef;color:#202723;font:16px/1.6 system-ui}h1{font-size:30px;margin-bottom:6px}p{max-width:1000px}button,select{font:inherit;padding:8px 14px;margin-right:12px;border:1px solid #c2c8be;background:white;border-radius:6px}button{cursor:pointer;background:#234f37;color:white}main{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}article{background:white;border:1px solid #d5dbd2;border-radius:8px;overflow:hidden}h2{font-size:16px;padding:12px 24px;margin:0;border-bottom:1px solid #e1e6df}iframe{border:0;width:100%;height:410px}table{border-collapse:collapse;background:white;width:100%;max-width:1100px;font-variant-numeric:tabular-nums}td,th{text-align:left;padding:8px 16px;border-bottom:1px solid #e1e6df}.note{font-size:13px;color:#566154}</style><h1>流式 Fade · 前后对照</h1><p>旧版：280ms 从透明开始，更新时提前结束上一批。新版：200ms 从透明开始，cubic-bezier(0.2, 0, 0.4, 1)，50ms 内合批，每个文字节点最多 4 批，旧动画自然结束。</p><select id="scenario">${scenarios.map(s => `<option value="${s.id}">${s.label}</option>`).join('')}</select><button id="play">同步播放</button><span id="status">选择场景，比较同一份输入</span><main><article><h2>Before · 当前旧版</h2><iframe id="before" src="/before/"></iframe></article><article><h2>After · 有界批次淡入</h2><iframe id="after" src="/after/"></iframe></article></main><h2>Performance · 独立运行 ${repeats} 次的中位数</h2><p class="note">生产构建 / Headless Chrome / 1100 × 800 / 无 CPU 降速。主线程时间为整段测试的 CDP TaskDuration；不是每帧时间，不包含 GPU。关闭 smoothStreaming 以隔离 fade。off 为新版关闭 fade。下方性能来自独立运行，不是双栏同时播放。</p><table><thead><tr><th>场景</th><th>版本</th><th>主线程 ms</th><th>帧间隔 p95 ms</th><th>峰值动画 span</th><th>GC 后 JS KB</th></tr></thead><tbody>${tableHtml}</tbody></table><p class="note">完整原始数据：<a href="results.json">results.json</a> · <a href="results.md">Markdown 报告</a></p><script>const scenarios=${JSON.stringify(scenarios)};let done=0;document.querySelector('#play').onclick=()=>{done=0;document.querySelector('#play').disabled=true;document.querySelector('#status').textContent='播放中…';const scenario=scenarios.find(s=>s.id===document.querySelector('#scenario').value);for(const id of ['before','after'])document.getElementById(id).contentWindow.postMessage({type:'play-fade',scenario},location.origin)};addEventListener('message',e=>{if(e.origin===location.origin&&e.data?.type==='fade-done'&&++done===2){document.querySelector('#play').disabled=false;document.querySelector('#status').textContent='完成，可切换场景重播'}})</script></html>`)
+writeFileSync(path.join(output, 'index.html'), `<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fade · Before / After</title><style>body{margin:32px;background:#f2f3ef;color:#202723;font:16px/1.6 system-ui}h1{font-size:30px;margin-bottom:6px}p{max-width:1000px}button,select{font:inherit;padding:8px 14px;margin-right:12px;border:1px solid #c2c8be;background:white;border-radius:6px}button{cursor:pointer;background:#234f37;color:white}main{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}article{background:white;border:1px solid #d5dbd2;border-radius:8px;overflow:hidden}h2{font-size:16px;padding:12px 24px;margin:0;border-bottom:1px solid #e1e6df}iframe{border:0;width:100%;height:410px}table{border-collapse:collapse;background:white;width:100%;max-width:1100px;font-variant-numeric:tabular-nums}td,th{text-align:left;padding:8px 16px;border-bottom:1px solid #e1e6df}.note{font-size:13px;color:#566154}</style><h1>流式 Fade · 前后对照</h1><p>旧版：280ms 从透明开始，更新时提前结束上一批。新版：700ms 从透明开始，cubic-bezier(0.37, 0.55, 0.86, 0.88)，按词独立淡入，完成后回收，旧动画自然结束。</p><select id="scenario">${scenarios.map(s => `<option value="${s.id}">${s.label}</option>`).join('')}</select><button id="play">同步播放</button><span id="status">选择场景，比较同一份输入</span><main><article><h2>Before · 当前旧版</h2><iframe id="before" src="/before/"></iframe></article><article><h2>After · 按词淡入</h2><iframe id="after" src="/after/"></iframe></article></main><h2>Performance · 独立运行 ${repeats} 次的中位数</h2><p class="note">生产构建 / Headless Chrome / 1100 × 800 / 无 CPU 降速。主线程时间为整段测试的 CDP TaskDuration；不是每帧时间，不包含 GPU。关闭 smoothStreaming 以隔离 fade。off 为新版关闭 fade。下方性能来自独立运行，不是双栏同时播放。</p><table><thead><tr><th>场景</th><th>版本</th><th>主线程 ms</th><th>帧间隔 p95 ms</th><th>峰值动画 span</th><th>GC 后 JS KB</th></tr></thead><tbody>${tableHtml}</tbody></table><p class="note">完整原始数据：<a href="results.json">results.json</a> · <a href="results.md">Markdown 报告</a></p><script>const scenarios=${JSON.stringify(scenarios)};let done=0;document.querySelector('#play').onclick=()=>{done=0;document.querySelector('#play').disabled=true;document.querySelector('#status').textContent='播放中…';const scenario=scenarios.find(s=>s.id===document.querySelector('#scenario').value);for(const id of ['before','after'])document.getElementById(id).contentWindow.postMessage({type:'play-fade',scenario},location.origin)};addEventListener('message',e=>{if(e.origin===location.origin&&e.data?.type==='fade-done'&&++done===2){document.querySelector('#play').disabled=false;document.querySelector('#status').textContent='完成，可切换场景重播'}})</script></html>`)
 console.log(`Report: ${path.join(output, 'index.html')}`)

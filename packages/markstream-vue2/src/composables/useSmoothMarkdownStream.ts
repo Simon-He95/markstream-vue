@@ -14,8 +14,8 @@ export interface SmoothMarkdownStreamControllerVue2 {
   pendingChars: ComputedRef<number>
   enqueue: (chunk: string) => void
   finish: (options?: { flush?: boolean }) => void
-  flush: () => void
-  reset: (initialMarkdown?: string) => void
+  flush: (options?: { maxChars?: number }) => void
+  reset: (initialMarkdown?: string, options?: { prefixKnown?: boolean }) => void
   pause: () => void
   resume: () => void
 }
@@ -57,8 +57,8 @@ export function useSmoothMarkdownStream(options: SmoothMarkdownStreamOptions = {
     pendingChars,
     enqueue: chunk => controller.enqueue(chunk),
     finish: options => controller.finish(options),
-    flush: () => controller.flush(),
-    reset: initialMarkdown => controller.reset(initialMarkdown),
+    flush: options => controller.flush(options),
+    reset: (initialMarkdown, options) => controller.reset(initialMarkdown, options),
     pause: () => controller.pause(),
     resume: () => controller.resume(),
   }

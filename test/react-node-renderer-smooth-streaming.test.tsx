@@ -371,7 +371,7 @@ describe('react node renderer smooth streaming', () => {
     vi.useRealTimers()
   })
 
-  it('gates final to caughtUp when smooth streaming is enabled', async () => {
+  it('flushes a small tail immediately before parsing final', async () => {
     vi.useFakeTimers()
     ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
     const parseSpy = vi.spyOn(parser, 'parseMarkdownToStructure')
@@ -408,7 +408,7 @@ describe('react node renderer smooth streaming', () => {
     const callsBeforeCatchup = parseSpy.mock.calls
       .map(call => call[2] as { final?: boolean } | undefined)
       .filter(options => options && typeof options.final === 'boolean')
-    expect(callsBeforeCatchup.some(options => options?.final === true)).toBe(false)
+    expect(callsBeforeCatchup.some(options => options?.final === true)).toBe(true)
 
     await act(async () => {
       await vi.runAllTimersAsync()

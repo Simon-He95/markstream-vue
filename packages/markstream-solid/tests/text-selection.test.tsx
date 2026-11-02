@@ -44,7 +44,7 @@ it('defers updates to a selected fade segment until selection release', () => {
   document.getSelection()!.addRange(range)
   segment.dispatchEvent(new Event('animationend', { bubbles: true }))
   update('Hello world and more')
-  expect(document.getSelection()!.toString()).toBe(' world')
+  expect(document.getSelection()!.toString()).toBe('world')
   expect(host.textContent).toBe('Hello world')
   document.getSelection()!.removeAllRanges()
   document.dispatchEvent(new Event('selectionchange'))

@@ -141,19 +141,8 @@
   width: 100%;
 }
 
-:where(.markstream-react) .text-node-stream-delta {
-  animation-duration: var(--stream-update-fade-duration, var(--fade-duration, var(--typewriter-fade-duration, 280ms)));
-  animation-timing-function: var(--stream-update-fade-ease, var(--fade-ease, var(--typewriter-fade-ease, cubic-bezier(0.33, 0, 0.67, 1))));
-  animation-fill-mode: both;
-}
 
-:where(.markstream-react) .text-node-stream-delta--a {
-  animation-name: markstream-react-text-node-stream-update-fade-a;
-}
 
-:where(.markstream-react) .text-node-stream-delta--b {
-  animation-name: markstream-react-text-node-stream-update-fade-b;
-}
 
 :where(.markstream-react) .paragraph-node {
   margin: 1.25em 0;
@@ -261,15 +250,7 @@
   50% { opacity: var(--underline-opacity, 0.35); }
 }
 
-@keyframes markstream-react-text-node-stream-update-fade-a {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
-@keyframes markstream-react-text-node-stream-update-fade-b {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   :where(.markstream-react) .link-loading-indicator {
@@ -277,9 +258,6 @@
     opacity: var(--underline-rest-opacity, 0.18);
   }
 
-  :where(.markstream-react) .text-node-stream-delta {
-    animation: none !important;
-  }
 
   :where(.markstream-react) .fade-node,
 :where(.markstream-react) .typewriter-node {
@@ -2094,4 +2072,28 @@ body > div[id^="dmermaid-"] {
   width: 100%;
   visibility: hidden;
   pointer-events: none;
+}
+
+/* Streaming words share timing and identity across framework adapters. */
+:where(.markstream-react) .text-node-stream-delta {
+  animation: markstream-react-word-fade var(--stream-update-fade-duration, var(--fade-duration, 700ms)) var(--stream-update-fade-ease, var(--fade-ease, cubic-bezier(0.37, 0.55, 0.86, 0.88))) both;
+}
+:where(.markstream-react) .text-node-stream-final {
+  animation: none !important;
+  opacity: 1;
+}
+@keyframes markstream-react-word-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.markstream-react) .text-node-stream-delta { animation-duration: 0s !important; }
+}
+
+:where(.markstream-react)[data-stream-final] .fade-node,
+:where(.markstream-react)[data-stream-final] .fade-enter-active,
+:where(.markstream-react)[data-stream-final] .typewriter-enter-active {
+  animation: none !important;
+  transition: none !important;
+  opacity: 1;
 }

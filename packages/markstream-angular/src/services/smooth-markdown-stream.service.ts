@@ -52,6 +52,8 @@ export class SmoothMarkdownStreamService implements OnDestroy {
     }
   }
 
+  getSnapshot = () => this.snapshot
+
   get source(): string { return this.snapshot.source }
   get visible(): string { return this.snapshot.visible }
   get done(): boolean { return this.snapshot.done }
@@ -61,8 +63,8 @@ export class SmoothMarkdownStreamService implements OnDestroy {
 
   enqueue(chunk: string): void { this.controller?.enqueue(chunk) }
   finish(options?: { flush?: boolean }): void { this.controller?.finish(options) }
-  flush(): void { this.controller?.flush() }
-  reset(initialMarkdown?: string): void { this.controller?.reset(initialMarkdown) }
+  flush(options?: { maxChars?: number }): void { this.controller?.flush(options) }
+  reset(initialMarkdown?: string, options?: { prefixKnown?: boolean }): void { this.controller?.reset(initialMarkdown, options) }
   pause(): void { this.controller?.pause() }
   resume(): void { this.controller?.resume() }
 

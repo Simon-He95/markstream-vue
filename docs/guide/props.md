@@ -46,7 +46,7 @@ Experimental/internal props: `indexKey`, `renderAsFragment`, `debugPerformance`,
 | `typewriter` | `boolean \| 'simple' \| 'precise'` | `false` | Shows the blinking typewriter cursor while streamed content grows. `true` / `'precise'` uses Range-based precise positioning; `'simple'` uses a lightweight CSS cursor. |
 | `smooth-streaming` | `boolean \| 'auto'` | `'auto'` | Enables built-in pacing for streaming `content` updates. `'auto'` enables when `typewriter` is `true`, `'simple'`, `'precise'`, or `max-live-nodes<=0`. Set `true` to force-enable, `false` to render with raw chunk cadence. |
 | `smooth-streaming-options` | `SmoothMarkdownStreamOptions` | – | Options for built-in stream pacing (`minCharsPerSecond`, `maxCharsPerSecond`, `targetLatencyMs`, `catchUpLatencyMs`, `catchUpThreshold`, `maxCommitFps`, `startDelayMs`, `maxCharsPerCommit`, `flushOnFinish`). Read when the renderer is created; recreate the renderer with a different `key` if you need to change them dynamically. |
-| `parse-coalesce-ms` | `number` | `80` | Performance tuning knob for the minimum interval between parse commits while built-in smooth streaming coalesces character-only updates. It does not throttle raw `content` prop updates when `smooth-streaming=false` and has no effect in `nodes` mode. Set `0` to parse every smooth-stream commit. Default scheduling may be optimized in future releases. |
+| `parse-coalesce-ms` | `number` | `0` with fade, otherwise `80` | Performance tuning knob for the minimum interval between parse commits while built-in smooth streaming coalesces character-only updates. It does not throttle raw `content` prop updates when `smooth-streaming=false` and has no effect in `nodes` mode. Set `0` to parse every smooth-stream commit. Default scheduling may be optimized in future releases. |
 | `fade` | `boolean` | `true` | Enables non-code-node enter fade and appended-text fade. Disable if you need zero animation for SSR snapshots. |
 | `node-virtual` | `boolean \| 'auto'` | `'auto'` | Controls node-level virtualization inside this Markdown document only. It does not virtualize a chat or timeline list. |
 | `viewport-priority` | `boolean` | `true` | Defers built-in heavy nodes until they approach the viewport. Set `false` to render them immediately. Heavy node components imported and mounted on their own also render immediately. |
@@ -137,6 +137,8 @@ Use `smooth-streaming-options` to fine-tune pacing behaviour:
   }"
 />
 ```
+
+The built-in renderers across Vue 3, Vue 2, React, Octane, Svelte, Solid, and Angular default `flushOnFinish` to `true`: `final=true` stops fades immediately, commits small tails directly, and drains large backlogs over budgeted frames. Set it to `false` to keep normal paced draining. The standalone `useSmoothMarkdownStream` retains its own defaults: `finish({ flush: true })` forces synchronous completion, while `flush({ maxChars })` supports caller-scheduled steps.
 
 Available keys: `minCharsPerSecond`, `maxCharsPerSecond`, `targetLatencyMs`, `catchUpLatencyMs`, `catchUpThreshold`, `maxCommitFps`, `startDelayMs`, `maxCharsPerCommit`, `flushOnFinish`. These are read once when the renderer is created; change the component `key` to apply new options dynamically. Use `parse-coalesce-ms` only when built-in smooth streaming is enabled and you need to tune parser coalescing for a measured performance case.
 

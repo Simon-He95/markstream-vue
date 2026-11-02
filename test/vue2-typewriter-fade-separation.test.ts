@@ -166,10 +166,7 @@ describe('vue2 typewriter/fade separation', () => {
     wrapper.unmount()
   })
 
-  it('smoothStreaming=true + final=true before caughtUp keeps cursor visible', async () => {
-    // When smooth streaming is enabled and final=true is set before the
-    // visible stream has caught up, the cursor should remain visible
-    // because effectiveFinal stays false until caughtUp.
+  it('restores completed content immediately even when smooth streaming is enabled', async () => {
     const wrapper = mount(NodeRenderer as any, {
       props: {
         content: 'Streaming content that is being paced out',
@@ -184,10 +181,8 @@ describe('vue2 typewriter/fade separation', () => {
 
     await flushVue()
 
-    // The cursor should still be visible because smooth streaming
-    // hasn't caught up yet — effectiveFinal should be false.
-    const cursor = wrapper.find('.typewriter-cursor')
-    expect(cursor.exists()).toBe(true)
+    expect(wrapper.find('.typewriter-cursor').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Streaming content that is being paced out')
 
     wrapper.unmount()
   })

@@ -246,11 +246,8 @@ const renderedItems = computed(() => {
     return {
       index,
       indexKey: `${indexPrefix.value}-${index}`,
-      // Keep code blocks mounted during streaming so Shiki/stream-diffs renderers can
-      // preserve their last successful DOM instead of flashing back to <pre>.
-      renderKey: type === 'code_block'
-        ? `${indexPrefix.value}-${index}-${type}`
-        : `${indexPrefix.value}-${index}-${type}-${String((rawNode as any)?.raw || '').length}`,
+      // Streaming updates must preserve word animations and selected text nodes.
+      renderKey: `${indexPrefix.value}-${index}-${type}`,
       node,
       isCodeBlock: node?.type === 'code_block',
       component,

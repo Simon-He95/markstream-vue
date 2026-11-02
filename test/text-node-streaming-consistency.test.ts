@@ -141,6 +141,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
       strongDelta = wrapper.find('.strong-node .text-node-stream-delta')
       expect(strongDelta.text()).toBe('）')
       await strongDelta.trigger('animationend')
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      await flushAll()
       expect(wrapper.find('.strong-node .text-node-stream-delta').exists()).toBe(false)
       expect(wrapper.get('.strong-node').text()).toBe('记忆化递归（动态规划）')
 
@@ -287,6 +289,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
       await flushAll()
       expect(wrapper.find('.text-node-stream-delta').exists()).toBe(true)
       await wrapper.get('.text-node-stream-delta').trigger('animationend')
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      await flushAll()
 
       expect(wrapper.find('.text-node-stream-delta').exists()).toBe(false)
       expect(wrapper.text()).toBe('HelloWorld')
@@ -338,6 +342,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
       await flushAll()
       expect(wrapper.find('.inline-code-stream-delta').exists()).toBe(true)
       await wrapper.get('.inline-code-stream-delta').trigger('animationend')
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      await flushAll()
 
       expect(wrapper.find('.inline-code-stream-delta').exists()).toBe(false)
       expect(wrapper.text()).toBe('foobar')
@@ -426,6 +432,8 @@ $$ where $\epsilon$ denotes the target accuracy, $n$ is the number of nodes, and
       await flushAll()
       expect(wrapper.get('.text-node-stream-delta').text()).toBe('World')
       await wrapper.get('.text-node-stream-delta').trigger('animationend')
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+      await flushAll()
       expect(wrapper.find('.text-node-stream-delta').exists()).toBe(false)
       expect(wrapper.text()).toBe('HelloWorld')
     }

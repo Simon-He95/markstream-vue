@@ -36,7 +36,7 @@ keywords:
 | `typewriter` | `boolean \| 'simple' \| 'precise'` | `false` | 流式内容增长时显示闪烁打字光标。`true` / `'precise'` 使用基于 Range 的精确定位；`'simple'` 使用轻量 CSS 光标。 |
 | `smooth-streaming` | `boolean \| 'auto'` | `'auto'` | 为流式 `content` 更新启用内置 pacing。`'auto'` 会在 `typewriter` 为 `true`、`'simple'`、`'precise'` 或 `max-live-nodes<=0` 时启用。设 `true` 强制启用，`false` 按原始 chunk 节奏渲染。 |
 | `smooth-streaming-options` | `SmoothMarkdownStreamOptions` | – | 内置流式 pacing 的选项（`minCharsPerSecond`、`maxCharsPerSecond`、`targetLatencyMs`、`catchUpLatencyMs`、`catchUpThreshold`、`maxCommitFps`、`startDelayMs`、`maxCharsPerCommit`、`flushOnFinish`）。在渲染器创建时读取；如需动态修改，请更换组件 `key` 重新创建渲染器。 |
-| `parse-coalesce-ms` | `number` | `80` | 高级性能调参项：内置 smooth streaming 合并字符级更新时的最小解析间隔。`smooth-streaming=false` 时不会节流原始 `content` prop 的更新，也不影响 `nodes` 模式。设为 `0` 可让每次 smooth-stream commit 都触发解析。默认调度语义后续可能继续优化。 |
+| `parse-coalesce-ms` | `number` | 开启 fade 时为 `0`，否则 `80` | 高级性能调参项：内置 smooth streaming 合并字符级更新时的最小解析间隔。`smooth-streaming=false` 时不会节流原始 `content` prop 的更新，也不影响 `nodes` 模式。设为 `0` 可让每次 smooth-stream commit 都触发解析。默认调度语义后续可能继续优化。 |
 | `fade` | `boolean` | `true` | 控制非代码节点进入淡入和流式追加文本淡入。生成静态截图或 SSR 输出时可关闭。 |
 | `node-virtual` | `boolean \| 'auto'` | `'auto'` | 只控制当前 Markdown 文档内部的 node-level virtualization，不负责聊天或 timeline 列表虚拟滚动。 |
 | `viewport-priority` | `boolean` | `true` | 将内置重节点延迟到接近可视区域时再渲染。设为 `false` 会立即渲染；单独导入并挂载重节点组件时也默认立即渲染。 |
@@ -127,6 +127,8 @@ Vue 3 的追加淡入在 50 ms 窗口内合批，每个文字节点最多保留�
   }"
 />
 ```
+
+Vue 组件的 `flushOnFinish` 默认是 `true`：`final=true` 时立即停止淡入，小尾部直接提交，大积压按渲染预算分帧补齐。设为 `false` 可保留普通 pacing。独立的 `useSmoothMarkdownStream` 保留自身默认值；`finish({ flush: true })` 是强制同步完成，`flush({ maxChars })` 可供调用方分次调度。
 
 可用字段：`minCharsPerSecond`、`maxCharsPerSecond`、`targetLatencyMs`、`catchUpLatencyMs`、`catchUpThreshold`、`maxCommitFps`、`startDelayMs`、`maxCharsPerCommit`、`flushOnFinish`。这些选项在渲染器创建时一次性读取；如需动态切换，请更改组件 `key`。只有在启用内置 smooth streaming 且有明确性能测量需求时，再使用 `parse-coalesce-ms` 单独调整解析合并间隔。
 

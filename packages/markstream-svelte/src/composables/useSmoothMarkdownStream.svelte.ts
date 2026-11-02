@@ -5,6 +5,7 @@ import { onDestroy } from 'svelte'
 export type { SmoothMarkdownStreamOptions }
 
 export interface SmoothMarkdownStreamControllerSvelte {
+  getSnapshot: ReturnType<typeof createSmoothMarkdownStream>['getSnapshot']
   source: string
   visible: string
   done: boolean
@@ -13,8 +14,8 @@ export interface SmoothMarkdownStreamControllerSvelte {
   pendingChars: number
   enqueue: (chunk: string) => void
   finish: (options?: { flush?: boolean }) => void
-  flush: () => void
-  reset: (initialMarkdown?: string) => void
+  flush: (options?: { maxChars?: number }) => void
+  reset: (initialMarkdown?: string, options?: { prefixKnown?: boolean }) => void
   pause: () => void
   resume: () => void
 }
@@ -47,6 +48,7 @@ export function useSmoothMarkdownStream(optionsOrGetter: SmoothMarkdownStreamOpt
   })
 
   return {
+    getSnapshot: controller.getSnapshot,
     get source() { return source },
     get visible() { return visible },
     get done() { return done },
@@ -55,8 +57,8 @@ export function useSmoothMarkdownStream(optionsOrGetter: SmoothMarkdownStreamOpt
     get pendingChars() { return pendingChars },
     enqueue: chunk => controller.enqueue(chunk),
     finish: opts => controller.finish(opts),
-    flush: () => controller.flush(),
-    reset: initialMarkdown => controller.reset(initialMarkdown),
+    flush: options => controller.flush(options),
+    reset: (initialMarkdown, options) => controller.reset(initialMarkdown, options),
     pause: () => controller.pause(),
     resume: () => controller.resume(),
   }

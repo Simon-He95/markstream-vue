@@ -21,6 +21,7 @@ import {
   Output,
   ViewChild,
 } from '@angular/core'
+import { createRendererStreamBridge, createStreamingTextScope, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
 import { getCustomNodeComponents, subscribeCustomComponents } from '../../customComponents'
 import { disposeRenderedHtmlEnhancements, enhanceRenderedHtml } from '../../enhanceRenderedHtml'
 import { SmoothMarkdownStreamService } from '../../services/smooth-markdown-stream.service'
@@ -71,6 +72,7 @@ const SCROLL_PARENT_OVERFLOW_RE = /auto|scroll|overlay/i
   template: `
     <div
       #root
+      [attr.data-stream-final]="requestedFinal === true ? '' : null"
       class="markstream-angular markdown-renderer"
       [class.dark]="isDark"
       [class.virtualized]="virtualizationEnabled"
@@ -131,10 +133,16 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   private readonly cdr = inject(ChangeDetectorRef)
   private readonly hostRef = inject(ElementRef<HTMLElement>)
   private readonly smoothStream = new SmoothMarkdownStreamService()
+  private finalReady = false
+  private streamBridge?: ReturnType<typeof createRendererStreamBridge>
+
   private readonly parentSmoothStreamingScope = inject(
     MARKSTREAM_SMOOTH_STREAMING_SCOPE,
     { optional: true, skipSelf: true },
   )
+
+  private readonly ownTextScope = createStreamingTextScope(work => this.streamBridge!.scheduleCleanup(work), this.parentSmoothStreamingScope?.textScope)
+  get textScope() { return this.ownTextScope }
 
   @ViewChild('root') private rootRef?: ElementRef<HTMLElement>
   @ViewChild('typewriterCursor') private typewriterCursorRef?: ElementRef<HTMLSpanElement>
@@ -281,7 +289,7 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
 
   get effectiveFinal(): boolean | undefined {
     if (this.smoothStreamingEnabled && this.requestedFinal != null)
-      return Boolean(this.requestedFinal && this.smoothSourceSynced && this.smoothStream.caughtUp)
+      return Boolean(this.requestedFinal && this.finalReady && this.smoothSourceSynced && this.smoothStream.caughtUp)
     return this.requestedFinal
   }
 
@@ -377,7 +385,7 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
   }
 
   ngOnInit() {
-    this.smoothStream.init(this.smoothStreamingOptions)
+    this.smoothStream.init({ ...RENDERER_STREAM_DEFAULTS, ...this.smoothStreamingOptions, burstInitialContent: this.fade === false && !this.typewriter })
 
     this.unsubscribeSmoothStream = this.smoothStream.subscribe(() => {
       if (this.isSyncingSmoothStream)
@@ -426,6 +434,7 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
     this.unsubscribeCustomComponents?.()
     this.unsubscribeCustomComponents = undefined
     this.disconnectObserver()
+    this.streamBridge?.dispose()
     this.smoothStream.ngOnDestroy()
     if (this.enhancementTimer != null && typeof window !== 'undefined') {
       window.clearTimeout(this.enhancementTimer)
@@ -456,47 +465,39 @@ export class NodeRendererComponent implements NodeRendererProps, OnChanges, OnIn
 
   private ensureSmoothStreamInitialized(): void {
     if (this.smoothStream)
-      this.smoothStream.init(this.smoothStreamingOptions)
+      this.smoothStream.init({ ...RENDERER_STREAM_DEFAULTS, ...this.smoothStreamingOptions, burstInitialContent: this.fade === false && !this.typewriter })
   }
 
   private syncSmoothStream() {
     if (!this.smoothStream)
       return
 
+    this.ownTextScope.setFinal(this.requestedFinal === true)
     this.isSyncingSmoothStream = true
 
     try {
-      const nextContent = this.content ?? ''
-
-      if (this.hasNodes) {
-        this.smoothStream.reset('')
-        return
-      }
-
-      if (!this.smoothStreamingEnabled) {
-        this.smoothStream.reset(nextContent)
-        if (this.requestedFinal)
-          this.smoothStream.finish({ flush: true })
-        return
-      }
-
-      const source = this.smoothStream.source
-
-      if (!nextContent) {
-        this.smoothStream.reset('')
-      }
-      else if (nextContent === source) {
-        // no-op
-      }
-      else if (nextContent.startsWith(source)) {
-        this.smoothStream.enqueue(nextContent.slice(source.length))
-      }
-      else {
-        this.smoothStream.reset(nextContent)
-      }
-
-      if (this.requestedFinal)
-        this.smoothStream.finish()
+      this.streamBridge ??= createRendererStreamBridge({
+        getSnapshot: this.smoothStream.getSnapshot,
+        enqueue: chunk => this.smoothStream.enqueue(chunk),
+        finish: options => this.smoothStream.finish(options),
+        flush: options => this.smoothStream.flush(options),
+        reset: (content, options) => this.smoothStream.reset(content, options),
+        pause: () => this.smoothStream.pause(),
+        resume: () => this.smoothStream.resume(),
+      }, {
+        flushOnFinish: this.smoothStreamingOptions?.flushOnFinish,
+        commit: (work) => {
+          work()
+          this.cdr.detectChanges()
+        },
+        measure: () => { void this.rootRef?.nativeElement.offsetHeight },
+        onReady: (value) => {
+          this.finalReady = value
+          if (!this.isSyncingSmoothStream)
+            this.rebuild()
+        },
+      })
+      this.streamBridge.update(this.content ?? '', this.hasNodes, this.smoothStreamingEnabled, this.requestedFinal, this.fade !== false)
     }
     finally {
       this.isSyncingSmoothStream = false

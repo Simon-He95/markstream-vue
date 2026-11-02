@@ -1,152 +1,57 @@
-import type { OnChanges } from '@angular/core'
+import type { AfterViewInit, ElementRef, OnChanges, OnDestroy } from '@angular/core'
 import type { AngularRenderableNode, AngularRenderContext } from '../shared/node-helpers'
-import { CommonModule } from '@angular/common'
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core'
+import type { SmoothStreamingScope } from '../shared/smooth-streaming-scope'
+import { ChangeDetectionStrategy, Component, Inject, Input, Optional, ViewChild } from '@angular/core'
+import { createStreamingTextDom, createStreamingTextScope } from 'markstream-core'
 import { getString } from '../shared/node-helpers'
-
-interface StreamSegment {
-  id: number
-  content: string
-  fading: boolean
-}
-
-function settleAndMergeSegments(segments: StreamSegment[], segmentId: number) {
-  return segments.reduce<StreamSegment[]>((result, segment) => {
-    const nextSegment = segment.id === segmentId
-      ? { ...segment, fading: false }
-      : segment
-    const previousSegment = result[result.length - 1]
-    if (previousSegment && !previousSegment.fading && !nextSegment.fading) {
-      result[result.length - 1] = {
-        ...previousSegment,
-        content: previousSegment.content + nextSegment.content,
-      }
-    }
-    else {
-      result.push(nextSegment)
-    }
-    return result
-  }, [])
-}
+import { MARKSTREAM_SMOOTH_STREAMING_SCOPE } from '../shared/smooth-streaming-scope'
 
 @Component({
   selector: 'markstream-angular-inline-code-node',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <code>
-      <span
-        *ngFor="let segment of segments; trackBy: trackSegment"
-        [class]="segment.fading ? 'markstream-angular-text__stream-delta ' + streamedDeltaClass(segment) : ''"
-        (animationend)="segment.fading && settleSegment(segment.id)"
-      >{{ segment.content }}</span>
-    </code>
-  `,
+  template: `<code #host><span>{{ initial }}</span></code>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InlineCodeNodeComponent implements OnChanges {
+export class InlineCodeNodeComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input({ required: true }) node!: AngularRenderableNode
   @Input() context?: AngularRenderContext
   @Input() indexKey?: string
   @Input() typewriter?: boolean
   @Input() fade?: boolean
+  @ViewChild('host') host?: ElementRef<HTMLElement>
+  initial = ''
+  private initialized = false
+  private binding?: ReturnType<typeof createStreamingTextDom>
+  private readonly localScope = createStreamingTextScope(work => work())
 
-  segments: StreamSegment[] = []
-  private renderedCode = ''
-  private nextSegmentId = 0
+  constructor(@Optional() @Inject(MARKSTREAM_SMOOTH_STREAMING_SCOPE) private readonly scope?: SmoothStreamingScope) {}
 
   ngOnChanges() {
-    const nextCode = getString((this.node as any)?.code)
-    const streamStateKey = getString(this.indexKey).trim()
-    const textStreamState = this.context?.textStreamState
-    const previousPersisted = streamStateKey
-      ? textStreamState?.get(streamStateKey)
-      : undefined
-    const previousCode = previousPersisted ?? this.renderedCode
-    const resumeFromPersistedCode = previousPersisted !== undefined
-      && previousPersisted !== this.renderedCode
-
-    if (!this.fadeEnabled) {
-      this.setFullCode(nextCode)
+    if (!this.initialized) {
+      this.initial = getString(this.node.code)
+      this.initialized = true
     }
-    else if (nextCode !== previousCode) {
-      if (previousCode && nextCode.startsWith(previousCode)) {
-        const appendedCode = nextCode.slice(previousCode.length)
-        const lastSegment = this.segments[this.segments.length - 1]
-        if (resumeFromPersistedCode) {
-          this.segments = [
-            { id: this.nextSegmentId++, content: previousCode, fading: false },
-            { id: this.nextSegmentId++, content: appendedCode, fading: true },
-          ]
-        }
-        else if (lastSegment?.fading) {
-          this.segments = [
-            ...this.segments.slice(0, -1),
-            { ...lastSegment, content: lastSegment.content + appendedCode },
-          ]
-        }
-        else {
-          this.segments = [
-            ...this.segments,
-            { id: this.nextSegmentId++, content: appendedCode, fading: true },
-          ]
-        }
-      }
-      else {
-        this.setFullCode(nextCode)
-      }
-    }
-
-    this.renderedCode = nextCode
-    if (streamStateKey)
-      textStreamState?.set(streamStateKey, nextCode)
+    this.update()
   }
 
-  get settledCode() {
-    return this.segments.filter(segment => !segment.fading).map(segment => segment.content).join('')
-  }
-
-  get streamedDelta() {
-    return this.segments.filter(segment => segment.fading).map(segment => segment.content).join('')
-  }
-
-  streamedDeltaClass(segment: StreamSegment) {
-    return segment.id % 2 === 0
-      ? 'markstream-angular-text__stream-delta--a'
-      : 'markstream-angular-text__stream-delta--b'
-  }
-
-  get fadeEnabled() {
-    if (typeof this.fade === 'boolean')
-      return this.fade
-    if (typeof this.context?.fade === 'boolean')
-      return this.context.fade
-    return true
-  }
-
-  get typewriterEnabled() {
-    if (typeof this.typewriter === 'boolean')
-      return this.typewriter
-    if (typeof this.context?.typewriter === 'boolean')
-      return this.context.typewriter
-    return false
-  }
-
-  trackSegment(_index: number, segment: StreamSegment) {
-    return segment.id
-  }
-
-  settleSegment(segmentId: number) {
-    if (!this.segments.some(segment => segment.id === segmentId && segment.fading))
+  ngAfterViewInit() {
+    if (typeof window === 'undefined')
       return
-    this.segments = settleAndMergeSegments(this.segments, segmentId)
+    this.binding = createStreamingTextDom(this.host!.nativeElement, this.initial, this.scope?.textScope ?? this.localScope)
+    this.update()
   }
 
-  private setFullCode(content: string) {
-    if (this.segments.length === 1 && !this.segments[0]?.fading && this.segments[0].content === content)
-      return
-    this.segments = content
-      ? [{ id: this.nextSegmentId++, content, fading: false }]
-      : []
+  ngOnDestroy() {
+    this.binding?.dispose()
+  }
+
+  private update() {
+    if (!this.scope?.textScope)
+      this.localScope.setFinal(this.context?.final === true)
+    const content = getString(this.node.code)
+    const key = this.indexKey ?? ''
+    this.binding?.update(content, this.fade ?? this.context?.fade ?? true, key ? this.context?.textStreamState?.get(key) : undefined)
+    if (key)
+      this.context?.textStreamState?.set(key, content)
   }
 }

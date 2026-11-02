@@ -6,14 +6,14 @@ import { removeCustomComponents, setCustomComponents } from '../src/utils/nodeCo
 import { flushAll } from './setup/flush-all'
 
 describe('playground Vue thinking node', () => {
-  it('renders thinking content through nested NodeRenderer so streamed text can fade', async () => {
+  it('fades open thinking content and settles it when the block closes', async () => {
     const customId = 'playground-vue-thinking-fade'
     setCustomComponents(customId, { thinking: ThinkingNode })
 
     const wrapper = mount(NodeRenderer, {
       props: {
         batchRendering: false,
-        content: '<thinking>alpha</thinking>',
+        content: '<thinking>alpha',
         customHtmlTags: ['thinking'],
         customId,
         deferNodesUntilVisible: false,
@@ -28,7 +28,7 @@ describe('playground Vue thinking node', () => {
       await flushAll()
 
       await wrapper.setProps({
-        content: '<thinking>alpha beta</thinking>',
+        content: '<thinking>alpha beta',
       })
       await flushAll()
 
@@ -36,6 +36,11 @@ describe('playground Vue thinking node', () => {
       const delta = wrapper.get('.thinking-node .text-node-stream-delta')
 
       expect(delta.text()).toBe('beta')
+      expect(thinkingNode.text()).toContain('alpha beta')
+
+      await wrapper.setProps({ content: '<thinking>alpha beta</thinking>' })
+      await flushAll()
+      expect(wrapper.find('.thinking-node .text-node-stream-delta').exists()).toBe(false)
       expect(thinkingNode.text()).toContain('alpha beta')
     }
     finally {

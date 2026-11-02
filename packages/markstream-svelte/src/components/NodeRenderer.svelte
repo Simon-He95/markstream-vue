@@ -5,7 +5,9 @@
     SvelteRenderableNode,
     SvelteRenderContext,
   } from './shared/node-helpers'
-  import { getContext, onDestroy, onMount, setContext, tick } from 'svelte'
+  import { createRendererStreamBridge, createStreamingTextScope, RENDERER_STREAM_DEFAULTS } from 'markstream-core'
+  import type { StreamingTextScope } from 'markstream-core'
+  import { untrack, getContext, onDestroy, onMount, setContext, tick } from 'svelte'
   import { getCustomNodeComponents, subscribeCustomComponents } from '../customComponents'
   import { disposeRenderedHtmlEnhancements, enhanceRenderedHtml } from '../enhanceRenderedHtml'
   import NodeOutlet from './NodeOutlet.svelte'
@@ -85,7 +87,18 @@
   const textStreamState = new Map<string, string>()
 
   let hasMounted = $state(false)
-  const smoothStream = useSmoothMarkdownStream(() => smoothStreamingOptions)
+  const smoothStream = useSmoothMarkdownStream(() => ({ ...RENDERER_STREAM_DEFAULTS, ...smoothStreamingOptions, burstInitialContent: fade === false && !typewriter }))
+  let finalReady = $state(false)
+  const streamBridge = createRendererStreamBridge(smoothStream, {
+    flushOnFinish: untrack(() => smoothStreamingOptions?.flushOnFinish),
+    commit: async (work) => {
+      work()
+      await tick()
+    },
+    measure: () => { void rootEl?.offsetHeight },
+    onReady: value => { finalReady = value },
+  })
+  onDestroy(streamBridge.dispose)
   const hasMountedForSmoothStreaming = $derived(smoothStreaming === true || hasMounted)
   const hasNodes = $derived(Array.isArray(nodes))
   const parentSmoothStreaming = getContext<SmoothStreamingContextValue | undefined>(
@@ -115,9 +128,13 @@
     const base = parseOptions ?? {}
     return final ?? (base as any).final
   })
+  const inheritedTextScope = getContext<StreamingTextScope | undefined>('markstreamTextFinal')
+  const ownTextScope = createStreamingTextScope(streamBridge.scheduleCleanup, inheritedTextScope)
+  setContext('markstreamTextFinal', ownTextScope)
+  $effect.pre(() => { ownTextScope.setFinal(requestedFinal === true) })
   const effectiveFinal = $derived.by(() => {
     if (smoothStreamingEnabled && requestedFinal != null)
-      return Boolean(requestedFinal && smoothSourceSynced && smoothStream.caughtUp)
+      return Boolean(requestedFinal && finalReady && smoothSourceSynced && smoothStream.caughtUp)
     return requestedFinal
   })
 
@@ -127,31 +144,11 @@
 
   $effect(() => {
     const nextContent = content ?? ''
-    if (hasNodes) {
-      smoothStream.reset('')
-      return
-    }
-    if (!smoothStreamingEnabled) {
-      smoothStream.reset(nextContent)
-      if (requestedFinal)
-        smoothStream.finish({ flush: true })
-      return
-    }
-    const source = smoothStream.source
-    if (!nextContent) {
-      smoothStream.reset('')
-    }
-    else if (nextContent === source) {
-      // no-op
-    }
-    else if (nextContent.startsWith(source)) {
-      smoothStream.enqueue(nextContent.slice(source.length))
-    }
-    else {
-      smoothStream.reset(nextContent)
-    }
-    if (requestedFinal)
-      smoothStream.finish()
+    const suppliedNodes = hasNodes
+    const pacing = smoothStreamingEnabled
+    const done = requestedFinal
+    const animated = fade !== false
+    untrack(() => streamBridge.update(nextContent, suppliedNodes, pacing, done, animated))
   })
 
   let rendererProps = $derived({
@@ -599,6 +596,7 @@
 <!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <div
   bind:this={rootEl}
+  data-stream-final={requestedFinal === true ? '' : undefined}
   class="markstream-svelte markdown-renderer {className}"
   class:dark={isDark}
   data-custom-id={customId}

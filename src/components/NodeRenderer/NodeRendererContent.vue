@@ -2,7 +2,7 @@
 import type { ParsedNode } from 'stream-markdown-parser'
 import type { Component } from 'vue'
 import type { NodeRendererProps } from '../../types/node-renderer-props'
-import { createCommentVNode, defineComponent, h, Transition } from 'vue'
+import { createCommentVNode, defineComponent, h, inject, Transition, watch } from 'vue'
 import NodeRenderer from './NodeRenderer.vue'
 
 interface RenderedContentItem {
@@ -21,20 +21,26 @@ interface ContentProps {
   // Replacing a caller-owned array can mutate raw custom-node data.
   sourceNodes?: NodeRendererProps['nodes']
   fade?: boolean
-  final?: boolean
   nestedRendererProps?: Partial<NodeRendererProps>
 }
 
 export default defineComponent<ContentProps>({
   name: 'NodeRendererContent',
-  props: ['item', 'sourceNodes', 'fade', 'final', 'nestedRendererProps'],
+  props: ['item', 'sourceNodes', 'fade', 'nestedRendererProps'],
   setup(props) {
+    const inheritedFinal = inject<{ value?: boolean } | undefined>('markstreamTextFinal', undefined)
+    let final = inheritedFinal?.value === true
+    // Completion cancels existing enters at the renderer root. Updating this
+    // latch must not re-render every settled block through Transition.
+    watch(() => inheritedFinal?.value, (value) => {
+      final = value === true
+    }, { flush: 'sync' })
     // Stable item props skip settled transitions. Runtime slots preserve the
     // original v-for's dynamic-slot updates for custom components and raw ASTs.
     return () => h(Transition, {
       name: 'fade',
-      css: props.fade !== false,
-      appear: props.fade !== false && props.final !== true,
+      css: props.fade !== false && !final,
+      appear: props.fade !== false && !final,
     }, {
       default: () => {
         const item = props.item

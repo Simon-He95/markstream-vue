@@ -368,7 +368,7 @@ function resolveParseCoalesceMs(props: Readonly<NodeRendererProps>) {
   const value = props.parseCoalesceMs
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
     ? value
-    : DEFAULT_PARSE_COALESCE_MS
+    : props.fade === true ? 0 : DEFAULT_PARSE_COALESCE_MS
 }
 
 function hashString(value: string) {
@@ -1254,7 +1254,7 @@ export function useMarkdownParsing(
 
   const effectiveCustomHtmlTagsSet = computed(() => {
     return new Set(
-      (mergedParseOptions.value.customHtmlTags ?? [])
+      effectiveCustomHtmlTags.value
         .map(tag => String(tag).trim().toLowerCase())
         .filter(Boolean),
     )
@@ -1325,6 +1325,7 @@ export function useMarkdownParsing(
     if (
       previousParserCacheSemanticKey
       && currentParserCacheSemanticKey !== previousParserCacheSemanticKey
+      && currentNodeReuseSemanticKey !== previousNodeReuseSemanticKey
     ) {
       resetStreamParseCache(md)
     }
@@ -1511,7 +1512,13 @@ export function useMarkdownParsing(
     previousExternalNodeMutationBoundary = hasExternalNodeMutationBoundary
     previousCustomComponentsReuseKey = customComponentsReuseKey
     previousParsedNodes = parsed
-    commitParsedNodesDirtyStartIndex(stabilizeMetrics?.dirtyStartIndex ?? 0)
+    let dirtyStartIndex = stabilizeMetrics?.dirtyStartIndex ?? 0
+    if (dirtyStartIndex > 0 && parsed[parsed.length - 1]?.type === 'footnote') {
+      // Footnotes are emitted after the body, so even an unchanged definition
+      // can move when more body text arrives. Keep that suffix mutable.
+      dirtyStartIndex = Math.min(dirtyStartIndex, parsed.findIndex(node => node.type === 'footnote'))
+    }
+    commitParsedNodesDirtyStartIndex(dirtyStartIndex)
 
     if (collectPerformanceMetrics) {
       const streamStats = readStreamStats(md)

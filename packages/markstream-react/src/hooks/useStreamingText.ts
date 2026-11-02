@@ -20,6 +20,8 @@ export function useStreamingText(content: string, fade: boolean, final: boolean 
       localScope.setFinal(final === true)
     if (active)
       binding.current?.update(content, fade, persisted)
+    else
+      binding.current = null
   }, [content, fade, final, persisted, active, scope, localScope])
   return { host, initial }
 }

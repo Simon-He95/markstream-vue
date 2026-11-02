@@ -39,7 +39,7 @@ const streamStateKey = computed(() => {
     return ''
   return String(raw)
 })
-const { settledContent, segments, update, finish, finishAll, settleFinished } = useStreamingTextFade(props.node.content)
+const { settledContent, segments, update, finish, queueFinish, finishAll, settleFinished } = useStreamingTextFade(props.node.content)
 // Selection-safe settled-text rendering. Browsers collapse a Selection
 // anchored inside a text node as soon as that node is mutated (nodeValue/
 // data) OR replaced (verified in Chromium). The settle path used to merge
@@ -147,13 +147,17 @@ function selectionIntersectsDelta() {
   return false
 }
 
-function finishSegment(id: number) {
+function deferSelectedFinish() {
   const selected = selectionIntersectsDelta()
-  finish(id, selected)
   if (selected) {
     settleAfterSelection = true
     watchSelectionRelease()
   }
+  return selected
+}
+
+function finishSegment(id: number) {
+  finish(id, deferSelectedFinish())
 }
 
 function applyStreamingUpdate(normalized: string) {
@@ -258,7 +262,7 @@ onScopeDispose(() => {
       :key="segment.id"
       ref="streamedDeltaEls"
       :class="textFinal || segment.finished ? 'text-node-stream-final' : 'text-node-stream-delta'"
-      @animationend="finishSegment(segment.id)"
+      @animationend="queueFinish(segment.id, deferSelectedFinish)"
     >
       {{ segment.content }}
     </span>{{ finalSuffix }}

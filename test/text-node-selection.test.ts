@@ -28,6 +28,11 @@ describe('text node streaming selection', () => {
     })
   }
 
+  async function flushAnimationCleanup() {
+    await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
+    await flushAll()
+  }
+
   function selectText(node: Text, start: number, end: number) {
     const sel = document.getSelection()
     const range = document.createRange()
@@ -68,6 +73,7 @@ describe('text node streaming selection', () => {
       await flushAll()
       for (const delta of wrapper.findAll('.text-node-stream-delta'))
         await delta.trigger('animationend')
+      await flushAnimationCleanup()
       const textNodeFinal = wrapper.find('.text-node > span:first-child').element.firstChild as Text | null
       expect(textNodeFinal, 'settled text node identity preserved across settle').toBe(textNodeBefore)
       expect(textNodeBefore.textContent).toBe(first)
@@ -127,6 +133,7 @@ describe('text node streaming selection', () => {
           await delta.trigger('animationend')
       }
 
+      await flushAnimationCleanup()
       const appends = wrapper.find('.text-node > span:nth-child(2)').element
       expect(appends.childNodes.length).toBeLessThanOrEqual(4)
       expect(wrapper.find('.text-node').element.textContent).toBe('basexxxxxxxxxxxx')
@@ -143,6 +150,7 @@ describe('text node streaming selection', () => {
       await wrapper.setProps({ content: 'base1' })
       await flushAll()
       await wrapper.get('.text-node-stream-delta').trigger('animationend')
+      await flushAnimationCleanup()
       await wrapper.setProps({ content: 'base12' })
       await flushAll()
 
@@ -180,6 +188,7 @@ describe('text node streaming selection', () => {
       expect(selectedBefore).toBe('tai')
 
       await delta.trigger('animationend')
+      await flushAnimationCleanup()
       expect(selectedNode.isConnected).toBe(true)
       await wrapper.setProps({ content: 'base tail more' })
       await flushAll()

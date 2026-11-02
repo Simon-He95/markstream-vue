@@ -42,7 +42,7 @@ const streamStateKey = computed(() => {
     return ''
   return String(raw)
 })
-const { settledContent: settledCode, segments, update, finish, finishAll } = useStreamingTextFade(props.node.code)
+const { settledContent: settledCode, segments, update, finish, queueFinish, finishAll } = useStreamingTextFade(props.node.code)
 
 watch(
   [() => props.node.code, streamStateKey, configuredFade, () => segments.value.length > 0 && inheritedTextFinal?.value === true],
@@ -80,7 +80,7 @@ watch(
         v-for="segment in segments"
         :key="segment.id"
         :class="segment.finished || inheritedTextFinal?.value === true ? 'inline-code-stream-final' : 'inline-code-stream-delta'"
-        @animationend="finish(segment.id)"
+        @animationend="queueFinish(segment.id)"
       >
         {{ segment.content }}
       </span>

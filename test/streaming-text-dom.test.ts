@@ -54,6 +54,22 @@ describe('shared streaming text DOM', () => {
     expect(host.textContent).toBe('Hello world, final tail')
     expect(host.querySelector('.text-node-stream-final')).toBeNull()
   })
+  it('preserves the framework-owned initial span across replacement and further appends', () => {
+    const host = document.createElement('span')
+    host.innerHTML = '<span>before</span>'
+    document.body.appendChild(host)
+    const initial = host.firstChild
+    const binding = createStreamingTextDom(host, 'before')
+    dispose.push(binding.dispose)
+    binding.update('replacement', true)
+    expect(host.firstChild).toBe(initial)
+    binding.update('replacement tail', true)
+    host.querySelector('.text-node-stream-delta')!.dispatchEvent(new Event('animationend'))
+    expect(host.firstChild).toBe(initial)
+    expect(initial?.textContent).toBe('replacement')
+    expect(host.textContent).toBe('replacement tail')
+  })
+
   it('finishes one nested block independently and inherits parent completion', () => {
     const cleanups: Array<() => void> = []
     const parent = createStreamingTextScope(work => cleanups.push(work))

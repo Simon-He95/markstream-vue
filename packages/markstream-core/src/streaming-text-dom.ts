@@ -42,6 +42,7 @@ export function createStreamingTextDom(host: HTMLElement, initial: string, scope
   const document = host.ownerDocument
   const controller = createStreamingTextFade(initial)
   const deltas = new Map<number, HTMLSpanElement>()
+  let initialNode = host.firstChild
   let settled = initial
   let tail: Text | undefined
   let suffix: Text | undefined
@@ -84,7 +85,15 @@ export function createStreamingTextDom(host: HTMLElement, initial: string, scope
   function publish() {
     const state = controller.getSnapshot()
     if (!state.settledContent.startsWith(settled)) {
-      host.textContent = state.settledContent
+      if (!initialNode) {
+        initialNode = document.createTextNode('')
+        host.insertBefore(initialNode, host.firstChild)
+      }
+      initialNode.textContent = state.settledContent
+      for (const child of Array.from(host.childNodes)) {
+        if (child !== initialNode)
+          child.remove()
+      }
       deltas.clear()
       tail = undefined
     }

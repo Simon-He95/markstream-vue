@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   id-token: write
+  packages: write
 
 concurrency:
   group: release-stable
@@ -266,3 +267,45 @@ jobs:
           name: ${{ steps.meta.outputs.name }}
           prerelease: ${{ steps.meta.outputs.prerelease }}
           generate_release_notes: true
+
+      # GitHub Packages only accepts scoped npm names, so mirror the public
+      # `markstream-vue` package as `@simon-he95/markstream-vue`. The name is
+      # rewritten only inside this ephemeral job; npmjs publishing above is
+      # unchanged. Remove `continue-on-error` if the mirror should gate releases.
+      - name: Publish scoped mirror to GitHub Packages
+        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
+        continue-on-error: true
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ steps.meta.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PKG_NAME="@simon-he95/markstream-vue"
+          BACKUP="${RUNNER_TEMP}/markstream-package.json"
+          cp package.json "${BACKUP}"
+          trap 'cp "${BACKUP}" package.json' EXIT
+
+          npm config set //npm.pkg.github.com/:_authToken "${NODE_AUTH_TOKEN}"
+          npm config set @simon-he95:registry https://npm.pkg.github.com
+
+          if npm view "${PKG_NAME}@${PACKAGE_VERSION}" version >/dev/null 2>&1; then
+            echo "${PKG_NAME}@${PACKAGE_VERSION} is already published; skipping."
+            exit 0
+          fi
+
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs"
+            const pkg = JSON.parse(readFileSync("package.json", "utf8"))
+            pkg.name = "@simon-he95/markstream-vue"
+            writeFileSync("package.json", `${JSON.stringify(pkg, null, 2)}\n`)
+          '
+
+          DIST_TAG="$(node scripts/resolve-dist-tag.mjs markstream-vue "${PACKAGE_VERSION}")"
+          pnpm pack --pack-destination "${RUNNER_TEMP}"
+          TARBALL="$(ls -t "${RUNNER_TEMP}"/simon-he95-markstream-vue-*.tgz | head -n 1)"
+          npm publish "${TARBALL}" \
+            --registry=https://npm.pkg.github.com \
+            --access public \
+            --tag "${DIST_TAG}"

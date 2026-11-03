@@ -70,6 +70,7 @@ keywords:
 | Vue 2 (`markstream-vue2`) | [Vue 2 快速开始](/zh/guide/vue2-quick-start) | 你还在 Vue 2.6 / 2.7 环境 | [在线演示](https://markstream-vue2.pages.dev/) |
 | React (`markstream-react`) | [React 流式 Markdown 渲染器](/zh/frameworks/react) | 你是 React 用户，或正从 `react-markdown` 迁移 | [在线演示](https://markstream-react.pages.dev/) |
 | Next.js | [Next.js 流式 Markdown 渲染器](/zh/frameworks/next) | 你需要 App Router、Pages Router、SSR-first 或 server-only 渲染说明 | [在线演示](https://markstream-react.pages.dev/) |
+| Octane (`markstream-octane`) | [Octane 包使用指南](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane) | 你使用 Octane 客户端或服务端 runtime，并已配置 compiler/Vite | [在线演示](https://markstream-octane.pages.dev/) |
 | Angular (`markstream-angular`) | [Angular 流式 Markdown 渲染器](/zh/frameworks/angular) | 你使用 standalone Angular 组件 | [在线演示](https://markstream-angular.pages.dev/) |
 | Svelte (`markstream-svelte`) | [Svelte 流式 Markdown 渲染器](/zh/frameworks/svelte) | 你使用 Svelte 5，并希望复用一致的渲染 API 和 worker 路径 | [在线演示](https://markstream-svelte.pages.dev/) |
 

@@ -79,7 +79,7 @@ Start with the [framework overview](https://markstream.simonhe.me/frameworks) if
 | --- | --- | --- | --- |
 | `markstream-vue` | Vue 3 / Nuxt / VitePress | `pnpm add markstream-vue` | [Framework overview](https://markstream.simonhe.me/frameworks) · [Vue landing](https://markstream.simonhe.me/frameworks/vue) · [Nuxt landing](https://markstream.simonhe.me/frameworks/nuxt) |
 | `markstream-react` | React / Next.js / Remix | `pnpm add markstream-react` | [React landing](https://markstream.simonhe.me/frameworks/react) · [Next.js landing](https://markstream.simonhe.me/frameworks/next) |
-| `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [Package guide](./packages/markstream-octane/README.md) · [Local playground](./playground-octane) |
+| `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [Package guide](./packages/markstream-octane/README.md) · [Online playground](https://markstream-octane.pages.dev/) · [Local playground](./playground-octane) |
 | `markstream-solid` | SolidJS 1.9 / SolidStart | `pnpm add markstream-solid solid-js@^1.9` | [Solid guide](https://markstream.simonhe.me/guide/solid) · [Components and API](https://markstream.simonhe.me/guide/solid-api) |
 | `markstream-svelte` | Svelte 5 | `pnpm add markstream-svelte svelte@^5` | [Svelte landing](https://markstream.simonhe.me/frameworks/svelte) · [Quick start](https://markstream.simonhe.me/guide/svelte) |
 | `markstream-angular` | Angular standalone | `pnpm add markstream-angular` | [Angular landing](https://markstream.simonhe.me/frameworks/angular) · [Quick start](https://markstream.simonhe.me/guide/angular-quick-start) |
@@ -162,7 +162,7 @@ For the full release contract and Go / No-Go checklist, see [1.0 Release Readine
 | --- | --- |
 | Vue 3 | https://markstream-vue.simonhe.me/ |
 | React | https://markstream-react.pages.dev/ |
-| Octane | `pnpm play:octane` |
+| Octane | https://markstream-octane.pages.dev/ · [Playground guide](./playground-octane) |
 | SolidJS | https://markstream-solid.pages.dev/ · [Playground guide](./playground-solid) |
 | Svelte | https://markstream-svelte.pages.dev/ |
 | Angular | https://markstream-angular.pages.dev/ |

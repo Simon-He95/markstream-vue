@@ -21,6 +21,7 @@ Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Ang
 | --- | --- | --- | --- | --- | --- |
 | Vue 3 / Nuxt / VitePress | `markstream-vue` | stable | `pnpm add markstream-vue` | [Vue](/frameworks/vue) / [Nuxt](/frameworks/nuxt) | Most mature renderer |
 | React / Next.js / Remix | `markstream-react` | beta | `pnpm add markstream-react` | [React](/frameworks/react) / [Next.js](/frameworks/next) | SSR entries for Next.js |
+| Octane | `markstream-octane` | beta | `pnpm add markstream-octane octane` | [Package guide](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane) | Native Octane client/server renderer · [Live playground](https://markstream-octane.pages.dev/) |
 | SolidJS 1.9 | `markstream-solid` | new native renderer | `pnpm add markstream-solid solid-js@^1.9` | [SolidJS](/frameworks/solid) | SSR, hydration, workers and virtual history |
 | Svelte 5 | `markstream-svelte` | beta | `pnpm add markstream-svelte svelte@^5` | [Svelte](/frameworks/svelte) | Svelte 5 only |
 | Angular standalone | `markstream-angular` | alpha | `pnpm add markstream-angular` | [Angular](/frameworks/angular) | Angular 20+ standalone |
@@ -33,6 +34,7 @@ Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Ang
 | --- | --- | --- |
 | Vue AI chat | `markstream-vue` | Most mature renderer and the deepest Vue/Nuxt docs |
 | React AI chat | `markstream-react` | React renderer for streaming chat; compare it with Streamdown for direct streaming alternatives |
+| Octane AI chat | `markstream-octane` | Native Octane client/server renderer with its own compiler and Vite setup |
 | Next.js SSR-first Markdown | `markstream-react/next` | Server HTML first, then client enhancement |
 | SolidJS AI chat | `markstream-solid` | Native Solid signals/context, SSR and virtual history |
 | Svelte 5 AI chat | `markstream-svelte` | Svelte 5 renderer with the shared Markstream parser behavior |
@@ -49,6 +51,7 @@ Streaming Markdown renderers for AI apps across Vue, React, SolidJS, Svelte, Ang
 | `markstream-vue` | stable | Main renderer, most documented path |
 | `stream-markdown-parser` | stable | Parser-only package shared by renderers |
 | `markstream-react` | beta | React and Next.js entries are documented separately |
+| `markstream-octane` | beta | Octane 0.1.x client/server runtime; requires its compiler/Vite setup |
 | `markstream-solid` | new native renderer | SolidJS 1.9 with SSR, hydration, workers and virtual history |
 | `markstream-svelte` | beta / experimental | Svelte 5 only |
 | `markstream-angular` | alpha | Angular standalone component |

@@ -1,6 +1,6 @@
 ---
 title: Playground
-description: Explore local and online markstream-vue playgrounds to reproduce rendering issues, compare frameworks, and verify fixes quickly.
+description: Explore local and online Markstream playgrounds to reproduce rendering issues, compare frameworks, and verify fixes quickly.
 keywords:
   - markstream playground
   - reproduce rendering issues
@@ -16,6 +16,7 @@ This repository includes a playable demo under `/playground` that helps you test
 
 - Vue 3: https://markstream-vue.simonhe.me/
 - React: https://markstream-react.pages.dev/
+- Octane: https://markstream-octane.pages.dev/
 - Solid: https://markstream-solid.pages.dev/
 - React migration demo: https://markstream-react.pages.dev/migration-demo
 - Nuxt: https://markstream-nuxt.pages.dev/
@@ -60,6 +61,21 @@ const md = '# Quick playground test\n\nThis is a demo.'
   <MarkdownRender :content="md" />
 </template>
 ```
+
+## Octane playground {#octane-playground}
+
+Try the [online Octane playground](https://markstream-octane.pages.dev/). The source is in `playground-octane`. Run it locally from the repository root:
+
+```bash
+pnpm install
+pnpm play:octane
+# http://localhost:4176
+```
+
+The Octane playground mirrors the React playground: streaming conversation controls, themes, a custom `thinking` node, workers, and the `/test` regression lab, rendered through `octane` and `markstream-octane`.
+
+- [Octane package guide](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane)
+- [playground-octane source](https://github.com/Simon-He95/markstream-vue/tree/main/playground-octane)
 
 ## Solid playground {#solid-playground}
 

@@ -70,6 +70,7 @@ All framework packages share the same core rendering model, but the entry pages 
 | Vue 2 (`markstream-vue2`) | [Vue 2 Quick Start](/guide/vue2-quick-start) | You are on Vue 2.6 / 2.7 and need the compatible package | [Live demo](https://markstream-vue2.pages.dev/) |
 | React (`markstream-react`) | [React streaming Markdown renderer](/frameworks/react) | You are adopting React directly or migrating from `react-markdown` | [Live demo](https://markstream-react.pages.dev/) |
 | Next.js | [Next.js streaming Markdown renderer](/frameworks/next) | You need App Router, Pages Router, SSR-first, or server-only rendering notes | [Live demo](https://markstream-react.pages.dev/) |
+| Octane (`markstream-octane`) | [Octane package guide](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane) | You are using the Octane client or server runtime with its compiler/Vite setup | [Live demo](https://markstream-octane.pages.dev/) |
 | Angular (`markstream-angular`) | [Angular streaming Markdown renderer](/frameworks/angular) | You are using standalone Angular components | [Live demo](https://markstream-angular.pages.dev/) |
 | Svelte (`markstream-svelte`) | [Svelte streaming Markdown renderer](/frameworks/svelte) | You are using Svelte 5 and need the same renderer API and worker paths | [Live demo](https://markstream-svelte.pages.dev/) |
 

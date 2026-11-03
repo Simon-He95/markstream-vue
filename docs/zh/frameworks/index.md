@@ -22,6 +22,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | --- | --- | --- | --- | --- |
 | Vue 3 / Nuxt / VitePress | `markstream-vue` | stable | `pnpm add markstream-vue` | [Vue](/zh/frameworks/vue) / [Nuxt](/zh/frameworks/nuxt) |
 | React / Next.js / Remix | `markstream-react` | beta | `pnpm add markstream-react` | [React](/zh/frameworks/react) / [Next.js](/zh/frameworks/next) |
+| Octane | `markstream-octane` | beta | `pnpm add markstream-octane octane` | [包使用指南](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane) | 原生 Octane 客户端/服务端渲染器 · [在线 playground](https://markstream-octane.pages.dev/) |
 | SolidJS 1.9 | `markstream-solid` | 新增原生渲染器 | `pnpm add markstream-solid solid-js@^1.9` | [SolidJS](/zh/frameworks/solid) |
 | Svelte 5 | `markstream-svelte` | beta | `pnpm add markstream-svelte svelte@^5` | [Svelte](/zh/frameworks/svelte) |
 | Angular standalone | `markstream-angular` | alpha | `pnpm add markstream-angular` | [Angular](/zh/frameworks/angular) |
@@ -34,6 +35,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | --- | --- | --- |
 | Vue AI 聊天 | `markstream-vue` | 最成熟的渲染器，Vue/Nuxt 文档最完整 |
 | React AI 聊天 | `markstream-react` | 面向 React 流式渲染；直接竞品对比优先看 Streamdown |
+| Octane AI 聊天 | `markstream-octane` | 原生 Octane 客户端/服务端渲染器，需要对应 compiler 与 Vite 配置 |
 | Next.js SSR-first Markdown | `markstream-react/next` | 先输出服务端 HTML，再做客户端增强 |
 | SolidJS AI 聊天 | `markstream-solid` | 原生 Solid signal / context、SSR 与虚拟历史 |
 | Svelte 5 AI 聊天 | `markstream-svelte` | Svelte 5 渲染器，复用 Markstream parser 行为 |
@@ -50,6 +52,7 @@ Markstream 是一组面向 AI 应用的流式 Markdown 渲染器，覆盖 Vue、
 | `markstream-vue` | stable | 主线渲染器，文档最完整 |
 | `stream-markdown-parser` | stable | renderer 共享的 parser-only 包 |
 | `markstream-react` | beta | React 与 Next.js 入口分开说明 |
+| `markstream-octane` | beta | Octane 0.1.x 客户端/服务端 runtime；需要对应 compiler/Vite 配置 |
 | `markstream-solid` | 新增原生渲染器 | SolidJS 1.9，支持 SSR、hydration、workers 和虚拟历史 |
 | `markstream-svelte` | beta / experimental | 仅支持 Svelte 5 |
 | `markstream-angular` | alpha | Angular standalone component |

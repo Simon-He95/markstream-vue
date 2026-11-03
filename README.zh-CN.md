@@ -41,7 +41,7 @@ Vue 包：
 | --- | --- | --- | --- |
 | `markstream-vue` | Vue 3 / Nuxt / VitePress | `pnpm add markstream-vue` | [框架总览](https://markstream.simonhe.me/zh/frameworks) · [Vue 指南](https://markstream.simonhe.me/zh/frameworks/vue) · [Nuxt 指南](https://markstream.simonhe.me/zh/frameworks/nuxt) |
 | `markstream-react` | React / Next.js / Remix | `pnpm add markstream-react` | [React 指南](https://markstream.simonhe.me/zh/frameworks/react) · [Next.js 指南](https://markstream.simonhe.me/zh/frameworks/next) |
-| `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [包使用指南](./packages/markstream-octane/README.md) · [本地 Playground](./playground-octane) |
+| `markstream-octane` | Octane | `pnpm add markstream-octane octane` | [包使用指南](./packages/markstream-octane/README.md) · [在线 Playground](https://markstream-octane.pages.dev/) · [本地 Playground](./playground-octane) |
 | `markstream-solid` | SolidJS 1.9 / SolidStart | `pnpm add markstream-solid solid-js@^1.9` | [Solid 指南](https://markstream.simonhe.me/zh/guide/solid) · [组件与 API](https://markstream.simonhe.me/zh/guide/solid-api) |
 | `markstream-svelte` | Svelte 5 | `pnpm add markstream-svelte svelte@^5` | [Svelte 指南](https://markstream.simonhe.me/zh/frameworks/svelte) |
 | `markstream-angular` | Angular standalone | `pnpm add markstream-angular` | [Angular 指南](https://markstream.simonhe.me/zh/frameworks/angular) |
@@ -120,7 +120,7 @@ Vue 包：
 | --- | --- |
 | Vue 3 | https://markstream-vue.simonhe.me/ |
 | React | https://markstream-react.pages.dev/ |
-| Octane | `pnpm play:octane` |
+| Octane | https://markstream-octane.pages.dev/ · [Playground 指南](./playground-octane) |
 | SolidJS | https://markstream-solid.pages.dev/ · [Playground 指南](./playground-solid) |
 | Svelte | https://markstream-svelte.pages.dev/ |
 | Angular | https://markstream-angular.pages.dev/ |

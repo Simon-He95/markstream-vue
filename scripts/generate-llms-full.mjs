@@ -89,7 +89,7 @@ const packageEntries = [
     maturityEn: 'beta',
     maturityZh: 'beta',
     docsPath: 'https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane',
-    playground: '',
+    playground: 'https://markstream-octane.pages.dev/',
     capabilitiesEn: [
       'content input path',
       'nodes input path',
@@ -326,6 +326,7 @@ const integrationRoutingEntries = [
   ['use SolidJS streaming Markdown, workers and SSR', '/guide/solid'],
   ['look up SolidJS component props, callbacks and every runtime API', '/guide/solid-api'],
   ['run playground-solid locally', '/guide/playground#solid-playground'],
+  ['run playground-octane locally', '/guide/playground#octane-playground'],
   ['fix CSS, SSR, or missing peer issues', '/guide/troubleshooting-path'],
 ]
 // Routes for the component gallery so assistants can deep-link every

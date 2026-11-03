@@ -40,6 +40,7 @@ Markstream is a family of streaming Markdown renderers for AI applications. This
 - Description: Octane streaming Markdown renderer for AI chat, LLM token streams, SSE/WebSocket output, incomplete Markdown, long documents, Mermaid, KaTeX, stream-diffs powered code blocks, and custom Octane components.
 - Homepage: https://markstream.simonhe.me
 - Docs URL: https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane
+- Playground URL: https://markstream-octane.pages.dev/
 - Peer dependencies: @antv/infographic, @terrastruct/d2, katex, mermaid, octane, stream-diffs
 - Keywords: octane, markdown, markdown-renderer, streaming-markdown-renderer, octane-markdown, streamdown-alternative, streaming-markdown, ai-markdown-renderer, ai-chat, llm, llm-markdown, llm-streaming, sse, sse-markdown, websocket, websocket-markdown, mermaid, streaming-mermaid, katex, streaming-katex, stream-diffs, streaming-code-blocks, large-documents, safe-html, markstream-octane, markstream
 - Key capabilities: content input path; nodes input path; safe HTML policy; progressive Mermaid; KaTeX math; stream-diffs code blocks; custom Octane components; client and server builds; worker subpaths; mobile px CSS and Tailwind CSS exports

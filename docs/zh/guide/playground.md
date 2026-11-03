@@ -1,6 +1,6 @@
 ---
 title: Playground 示例
-description: 使用本地和在线 playground 快速复现 markstream-vue 渲染问题、对比框架接入，并验证修复结果。
+description: 使用本地和在线 Markstream playground 快速复现渲染问题、对比框架接入，并验证修复结果。
 keywords:
   - Playground
   - 示例演示
@@ -15,6 +15,7 @@ keywords:
 
 - Vue 3: https://markstream-vue.simonhe.me/
 - React: https://markstream-react.pages.dev/
+- Octane: https://markstream-octane.pages.dev/
 - Solid: https://markstream-solid.pages.dev/
 - React migration demo: https://markstream-react.pages.dev/migration-demo
 - Nuxt: https://markstream-nuxt.pages.dev/
@@ -40,6 +41,21 @@ pnpm play
 可直接打开的示例页面：
 
 - `https://markstream-react.pages.dev/migration-demo`：面向 `react-markdown` 用户的 before / after 迁移演示
+
+## Octane playground {#octane-playground}
+
+打开 [线上 Octane playground](https://markstream-octane.pages.dev/)。源码位于 `playground-octane`，也可以在仓库根目录运行：
+
+```bash
+pnpm install
+pnpm play:octane
+# http://localhost:4176
+```
+
+Octane playground 与 React playground 对齐：包含流式对话控制、主题、自定义 `thinking` 节点、workers 和 `/test` 回归实验室，并通过 `octane` 与 `markstream-octane` 渲染。
+
+- [Octane 包使用指南](https://github.com/Simon-He95/markstream-vue/tree/main/packages/markstream-octane)
+- [playground-octane source](https://github.com/Simon-He95/markstream-vue/tree/main/playground-octane)
 
 ## Solid playground {#solid-playground}
 

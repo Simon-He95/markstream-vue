@@ -4,6 +4,8 @@ Native Octane streaming Markdown renderer for AI chat, SSE/WebSocket output, inc
 
 `markstream-octane` is compiled with the Octane compiler and runs on the Octane client and server runtimes. It does not require a React root or React compatibility layer. The published package contains precompiled JavaScript, declarations, styles, and workers, so consumers do not need to compile TSRX from `node_modules`.
 
+Try the [hosted Octane playground](https://markstream-octane.pages.dev/) or run `pnpm play:octane` from the repository root.
+
 The coordinated 2.0 family beta will use `markstream-octane@next`. Before installing, verify that `npm view markstream-octane@next version` reports `0.1.0-beta.1`. It removes the Monaco and Shiki code-block APIs in favor of `stream-diffs`; read the [coordinated 2.0 family migration guide](https://markstream.simonhe.me/guide/migration-2-0) before upgrading.
 
 ```bash

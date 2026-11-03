@@ -52,6 +52,7 @@ const markdownParserSrcDir = path.dirname(markdownParserSrc)
 const playgroundItems = [
   { text: 'Vue 3', link: 'https://markstream-vue.simonhe.me/' },
   { text: 'React', link: 'https://markstream-react.pages.dev/' },
+  { text: 'Octane', link: 'https://markstream-octane.pages.dev/' },
   { text: 'Solid', link: 'https://markstream-solid.pages.dev/' },
   { text: 'Svelte', link: 'https://markstream-svelte.pages.dev/' },
   { text: 'Nuxt', link: 'https://markstream-nuxt.pages.dev/' },

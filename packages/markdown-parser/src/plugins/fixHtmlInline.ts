@@ -14,8 +14,6 @@ const BASE_COMMON_HTML_TAGS = STANDARD_HTML_TAGS
 const BLOCK_LEVEL_HTML_TAGS = new Set<string>(STANDARD_BLOCK_HTML_TAGS)
 BLOCK_LEVEL_HTML_TAGS.delete('details')
 
-const OPEN_TAG_RE = /<([A-Z][\w-]*)(?=[\s/>]|$)/gi
-const CLOSE_TAG_RE = /<\/\s*([A-Z][\w-]*)(?=[\s/>]|$)/gi
 const TAG_NAME_AT_START_RE = /^<\s*(?:\/\s*)?([A-Z][\w-]*)/i
 const STRICT_OPEN_TAG_NAME_AT_START_RE = /^<\s*([A-Z][\w:-]*)(?=[\s/>]|$)/i
 
@@ -337,9 +335,16 @@ function buildCommonHtmlTagSet(extraTags?: readonly string[]) {
   return set
 }
 
-function isCommonHtmlTagOrPrefix(tag: string, tagSet: Set<string>) {
-  if (tagSet.has(tag))
-    return true
+const HTML_TAG_NAME_RE = /^([A-Z][\w-]*)/i
+
+interface ScannedHtmlTag {
+  index: number
+  tag: string
+  closing: boolean
+  closeIndex: number
+}
+
+function isKnownHtmlTagPrefix(tag: string, tagSet: Set<string>) {
   for (const common of tagSet) {
     if (common.startsWith(tag))
       return true
@@ -347,41 +352,83 @@ function isCommonHtmlTagOrPrefix(tag: string, tagSet: Set<string>) {
   return false
 }
 
+function skipHtmlWhitespace(content: string, index: number) {
+  let cursor = index
+  while (cursor < content.length && /[\t\n\f\r ]/.test(content[cursor] ?? ''))
+    cursor++
+  return cursor
+}
+
+/**
+ * A `<` starts an HTML tag only when a known tag name is followed by `>`,
+ * `/`, or whitespace plus an attribute name. `a<b && c>d` and `a </ b` stay
+ * comparisons: `&` is not an attribute, and the name is not glued to `<`.
+ */
+function scanHtmlTag(content: string, start: number, tagSet: Set<string>): ScannedHtmlTag | null {
+  if (content[start] !== '<')
+    return null
+
+  let cursor = start + 1
+  let closing = false
+  if (content[cursor] === '/') {
+    closing = true
+    cursor++
+    if (content[cursor] !== undefined && /[\t\n\f\r ]/.test(content[cursor]))
+      return null
+  }
+
+  const nameMatch = content.slice(cursor).match(HTML_TAG_NAME_RE)
+  const rawName = nameMatch?.[1] ?? ''
+  const tag = rawName.toLowerCase()
+  if (!tag)
+    return null
+
+  const afterName = cursor + rawName.length
+  const next = content[afterName]
+  const nameIsKnown = tagSet.has(tag)
+  if (!nameIsKnown) {
+    // Keep a typed prefix such as "<fo" hidden until it becomes "<font".
+    if (next !== undefined || !isKnownHtmlTagPrefix(tag, tagSet))
+      return null
+    return { index: start, tag, closing, closeIndex: -1 }
+  }
+
+  if (next === undefined)
+    return { index: start, tag, closing, closeIndex: -1 }
+
+  if (next !== '>' && next !== '/' && !/[\t\n\f\r ]/.test(next))
+    return null
+
+  if (/[\t\n\f\r ]/.test(next)) {
+    const attrAt = skipHtmlWhitespace(content, afterName)
+    const attrChar = content[attrAt]
+    if (attrChar === undefined)
+      return { index: start, tag, closing, closeIndex: -1 }
+    if (attrChar !== '>' && attrChar !== '/' && !/[A-Z_:]/i.test(attrChar))
+      return null
+  }
+
+  return {
+    index: start,
+    tag,
+    closing,
+    closeIndex: findTagCloseIndexOutsideQuotes(content, start),
+  }
+}
+
 function findFirstIncompleteTag(content: string, tagSet: Set<string>) {
   let first:
     | { index: number, tag: string, closing: boolean }
     | null = null
 
-  for (const m of content.matchAll(OPEN_TAG_RE)) {
-    const idx = m.index ?? -1
-    if (idx < 0)
+  for (let index = 0; index < content.length; index++) {
+    if (content[index] !== '<')
       continue
-    const tag = (m[1] ?? '').toLowerCase()
-    // For opening tags we also accept prefixes of known HTML tags
-    // (e.g., '<fo' while typing '<font ...>').
-    if (!isCommonHtmlTagOrPrefix(tag, tagSet))
+    const candidate = scanHtmlTag(content, index, tagSet)
+    if (!candidate || candidate.closeIndex !== -1)
       continue
-    const rest = content.slice(idx)
-    if (findTagCloseIndexOutsideQuotes(rest) !== -1)
-      continue
-    if (!first || idx < first.index)
-      first = { index: idx, tag, closing: false }
-  }
-
-  for (const m of content.matchAll(CLOSE_TAG_RE)) {
-    const idx = m.index ?? -1
-    if (idx < 0)
-      continue
-    const tag = (m[1] ?? '').toLowerCase()
-    // For closing tags we also accept prefixes of known HTML tags
-    // (e.g., '</sp' while typing '</span>').
-    if (!isCommonHtmlTagOrPrefix(tag, tagSet))
-      continue
-    const rest = content.slice(idx)
-    if (findTagCloseIndexOutsideQuotes(rest) !== -1)
-      continue
-    if (!first || idx < first.index)
-      first = { index: idx, tag, closing: true }
+    first = { index: candidate.index, tag: candidate.tag, closing: candidate.closing }
+    break
   }
 
   // Also swallow bare "<" or "</" at the end while typing.
@@ -442,23 +489,15 @@ function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<s
         break
       }
       pushTextPart(chunk.slice(cursor, lt), baseToken)
-      const sub = chunk.slice(lt)
-      const tagMatch = sub.match(TAG_NAME_AT_START_RE)
-      if (!tagMatch) {
-        pushTextPart('<', baseToken)
-        cursor = lt + 1
-        continue
-      }
-      const closeIdx = findTagCloseIndexOutsideQuotes(sub)
-      if (closeIdx === -1) {
+      const scanned = scanHtmlTag(chunk, lt, tagSet)
+      if (!scanned || scanned.closeIndex === -1) {
         pushTextPart('<', baseToken)
         cursor = lt + 1
         continue
       }
 
-      const tagText = sub.slice(0, closeIdx + 1)
-      const tagName = (tagMatch[1] ?? '').toLowerCase()
-      if (tagSet.has(tagName)) {
+      const tagText = chunk.slice(lt, scanned.closeIndex + 1)
+      if (tagSet.has(scanned.tag)) {
         out.push({
           type: 'html_inline',
           tag: '',

@@ -169,36 +169,38 @@ describe('release dependency gates', () => {
     expect(publishIndex).toBeGreaterThan(packedGateIndex)
   })
 
-  it('adds fixed breaking notes only to the 0.1.0 renderer family releases', () => {
+  it('creates one Markstream family release per commit instead of one per package tag', () => {
     const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release-stable.yml'), 'utf8')
-    const rendererPackages = 'markstream-react|markstream-octane|markstream-svelte|markstream-angular|markstream-vue2'
-    const pkgVariable = '$' + '{PKG}'
-    const versionVariable = '$' + '{VERSION}'
-    const familyBreakingVariable = '$' + '{FAMILY_BREAKING}'
-    const githubOutputVariable = '$' + '{GITHUB_OUTPUT}'
-    const actionsExpression = '$' + '{{'
-    const familyGate = workflow.slice(
-      workflow.indexOf('FAMILY_BREAKING=false'),
-      workflow.indexOf(`echo "pkg=${pkgVariable}"`),
+    const notesStep = workflow.slice(
+      workflow.indexOf('- name: Build family release notes'),
+      workflow.indexOf('- name: Resolve and validate package manifest'),
     )
-    const familyRelease = workflow.slice(
-      workflow.indexOf('- name: Create GitHub Release (0.1.0 renderer family)'),
-      workflow.indexOf('- name: Create GitHub Release (other packages)'),
+    const releaseStep = workflow.slice(
+      workflow.indexOf('- name: Create GitHub Release (Markstream family)'),
+      workflow.indexOf('# GitHub Packages only accepts scoped npm names'),
     )
 
-    expect(familyGate).toContain(`case "${pkgVariable}" in\n            ${rendererPackages})`)
-    expect(familyGate).toContain(`case "${versionVariable}" in\n                0.1.0|0.1.0-*) FAMILY_BREAKING=true ;;`)
-    expect(familyGate.match(/FAMILY_BREAKING=true/g)).toHaveLength(1)
-    expect(familyGate).not.toContain('stream-markdown-parser')
-    expect(familyGate).not.toContain('markstream-core')
-    expect(workflow).toContain(`echo "family_breaking=${familyBreakingVariable}" >> "${githubOutputVariable}"`)
+    expect(notesStep).toContain('git ls-remote --tags origin')
+    expect(notesStep).toContain('node scripts/build-family-release-notes.mjs')
+    expect(notesStep).toContain('echo "anchor=')
+    expect(notesStep).toContain('echo "title=')
+    expect(notesStep).toContain('echo "body_path=')
 
-    expect(familyRelease).toContain(`if: ${actionsExpression} steps.meta.outputs.family_breaking == 'true' }}`)
-    expect(familyRelease).toContain('## Breaking changes in the Markstream 2.0 renderer family')
-    expect(familyRelease).toContain('https://markstream.simonhe.me/guide/migration-2-0')
-    expect(familyRelease).toContain('generate_release_notes: true')
-    expect(familyRelease).toContain('append_body: true')
-    expect(workflow).toContain(`if: ${actionsExpression} steps.meta.outputs.pkg != 'markstream-vue' && steps.meta.outputs.family_breaking != 'true' }}`)
+    expect(workflow.match(/uses: softprops\/action-gh-release@v2/g)).toHaveLength(1)
+    expect(releaseStep).toContain('steps.family.outputs.anchor == \'true\'')
+    expect(releaseStep).toContain('steps.family.outputs.title')
+    expect(releaseStep).toContain('steps.family.outputs.body_path')
+    expect(releaseStep).toContain('steps.meta.outputs.prerelease == \'false\'')
+    expect(releaseStep).toContain('generate_release_notes: true')
+    expect(releaseStep).toContain('append_body: true')
+  })
+
+  it('keeps nightly runs tag-only so Releases stays a stable family history', () => {
+    const workflow = readFileSync(resolve(process.cwd(), '.github/workflows/release-nightly.yml'), 'utf8')
+
+    expect(workflow).toContain('node scripts/create-nightly-tags.mjs')
+    expect(workflow).not.toContain('softprops/action-gh-release')
+    expect(workflow).not.toContain('needs.tag.outputs.created')
   })
 
   it('binds the 1.0 benchmark report to the release version and commit', () => {

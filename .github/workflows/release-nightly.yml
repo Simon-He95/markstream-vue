@@ -1,5 +1,9 @@
 name: Release (Nightly)
 
+# Nightlies only create tags. GitHub Releases are reserved for stable family
+# releases (`.github/workflows/release-stable.yml`) so the repository's Releases
+# page stays a readable per-version history instead of hundreds of prereleases.
+
 on:
   schedule:
     # 02:15 UTC daily
@@ -17,8 +21,6 @@ permissions:
 jobs:
   tag:
     runs-on: ubuntu-latest
-    outputs:
-      created: ${{ steps.nightly.outputs.created }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,90 +49,4 @@ jobs:
             ARGS+=(--all)
           fi
 
-          OUT="$(node scripts/create-nightly-tags.mjs "${ARGS[@]}")"
-          echo "${OUT}"
-          CREATED_JSON="$(node -e 'const s=process.argv[1]; const j=JSON.parse(s); console.log(JSON.stringify(j.created||[]))' "${OUT}")"
-          echo "created=${CREATED_JSON}" >> "${GITHUB_OUTPUT}"
-
-  release:
-    needs: tag
-    if: ${{ needs.tag.outputs.created != '[]' }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        tag: ${{ fromJson(needs.tag.outputs.created) }}
-    steps:
-      - name: Parse tag
-        id: meta
-        shell: bash
-        run: |
-          set -euo pipefail
-          TAG="${{ matrix.tag }}"
-          PKG="${TAG%@*}"
-          ID="${TAG##*@}"
-          echo "pkg=${PKG}" >> "${GITHUB_OUTPUT}"
-          echo "name=[${PKG}] ${ID}" >> "${GITHUB_OUTPUT}"
-
-      - name: Checkout (for changelog body)
-        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Build changelog body (best effort)
-        id: changelog
-        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="$(grep -m1 '"version"' package.json | sed -E 's/.*"version": "([^"]+)".*/\1/')"
-          BODY_FILE="$(mktemp)"
-          FOUND=0
-
-          if [[ -n "${VERSION}" ]]; then
-            awk -v version="${VERSION}" '
-              BEGIN { capture = 0; found = 0 }
-              /^## \[/ {
-                if (capture == 1)
-                  exit
-                if ($0 ~ "^## \\[" version "\\]") {
-                  capture = 1
-                  found = 1
-                  next
-                }
-              }
-              capture == 1 { print }
-              END {
-                if (found == 0)
-                  exit 2
-              }
-            ' CHANGELOG.md > "${BODY_FILE}" && FOUND=1 || true
-          fi
-
-          if [[ "${FOUND}" == "1" && -s "${BODY_FILE}" ]]; then
-            echo "has_body=true" >> "${GITHUB_OUTPUT}"
-            echo "body_path=${BODY_FILE}" >> "${GITHUB_OUTPUT}"
-          else
-            echo "has_body=false" >> "${GITHUB_OUTPUT}"
-          fi
-
-      - name: Create GitHub Pre-release (markstream-vue with changelog)
-        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' && steps.changelog.outputs.has_body == 'true' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ matrix.tag }}
-          name: ${{ steps.meta.outputs.name }}
-          prerelease: true
-          generate_release_notes: true
-          body_path: ${{ steps.changelog.outputs.body_path }}
-          append_body: true
-
-      - name: Create GitHub Pre-release (fallback)
-        if: ${{ steps.meta.outputs.pkg != 'markstream-vue' || steps.changelog.outputs.has_body != 'true' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ matrix.tag }}
-          name: ${{ steps.meta.outputs.name }}
-          prerelease: true
-          generate_release_notes: true
+          node scripts/create-nightly-tags.mjs "${ARGS[@]}"

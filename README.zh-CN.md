@@ -648,6 +648,8 @@ setCustomComponents('docs', {
 ## 📦 发布
 
 - 最新版本与升级提示：[Releases](https://github.com/Simon-He95/markstream-vue/releases)
+- 每个稳定版都是一次 **Markstream Family Release**：每个发布批次只生成一条 GitHub Release，并在正文中列出 `markstream-vue`、`markstream-react`、`markstream-octane`、`markstream-solid`、`markstream-svelte`、`markstream-angular`、`markstream-vue2`、`markstream-core`、`stream-markdown-parser` 的版本与发布链接。
+- Nightly 只创建 tag（见 [Tags](https://github.com/Simon-He95/markstream-vue/tags)），GitHub Releases 保持为稳定的家族发布历史。
 - 完整历史：[CHANGELOG.md](./CHANGELOG.md)
 - 2.x 稳定版：
   - 通过无 tag 的 `markstream-vue` 安装；维护中的 1.x 继续通过 `@1` 或 `legacy` 获取。

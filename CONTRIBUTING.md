@@ -53,8 +53,8 @@ Avoid creating bare `v<version>` tags (they mix different package versions in a 
 
 ### Stable vs Nightly
 
-- **Stable**: tags are semver-based (`<pkg>@<version>`) and should match npm releases.
-- **Nightly**: tags are commit snapshots (`<pkg>@nightly-YYYYMMDD-<sha>`) and are published as GitHub **Pre-releases**.
+- **Stable**: tags are semver-based (`<pkg>@<version>`) and should match npm releases. Each release train creates **one** GitHub Release, anchored on `markstream-vue` when it ships with the train; the body lists every family package with its version and tag link. `make_latest` is pinned to the stable anchor so adapters cannot steal the repository's "Latest" badge.
+- **Nightly**: tags are commit snapshots (`<pkg>@nightly-YYYYMMDD-<sha>`) and only create tags — no GitHub Releases.
 
 Nightly tags can be **dependency-driven**: when `stream-markdown-parser` changes, nightly tags are also created for `markstream-vue`, `markstream-vue2`, and `markstream-react` so consumers can test the whole stack against the latest parser.
 

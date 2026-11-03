@@ -689,6 +689,8 @@ If markstream-vue helps your work, you can support ongoing maintenance via [GitH
 ## 📦 Releases
 
 - Latest: [Releases](https://github.com/Simon-He95/markstream-vue/releases) — see highlights and upgrade notes.
+- Every stable release is a **Markstream family release**: one GitHub Release per release train lists `markstream-vue`, `markstream-react`, `markstream-octane`, `markstream-solid`, `markstream-svelte`, `markstream-angular`, `markstream-vue2`, `markstream-core`, and `stream-markdown-parser` with versions and release links.
+- Nightly builds only create tags (see [Tags](https://github.com/Simon-He95/markstream-vue/tags)); GitHub Releases stays a stable family history.
 - Full history: [CHANGELOG.md](./CHANGELOG.md)
 - 2.0 stable:
   - Install `markstream-vue` (2.x on `latest`) with `stream-diffs`; the 1.x line stays available through `@1` / the `legacy` tag.

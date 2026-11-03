@@ -40,20 +40,9 @@ jobs:
             PRERELEASE=true
           fi
 
-          FAMILY_BREAKING=false
-          case "${PKG}" in
-            markstream-react|markstream-octane|markstream-svelte|markstream-angular|markstream-vue2)
-              case "${VERSION}" in
-                0.1.0|0.1.0-*) FAMILY_BREAKING=true ;;
-              esac
-              ;;
-          esac
-
           echo "pkg=${PKG}" >> "${GITHUB_OUTPUT}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "prerelease=${PRERELEASE}" >> "${GITHUB_OUTPUT}"
-          echo "family_breaking=${FAMILY_BREAKING}" >> "${GITHUB_OUTPUT}"
-          echo "name=[${PKG}] ${VERSION}" >> "${GITHUB_OUTPUT}"
 
       - name: Checkout (for changelog body)
         uses: actions/checkout@v4
@@ -75,6 +64,35 @@ jobs:
         # registry (npm's unauthenticated PUT response).
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+
+      # One GitHub Release per release train: the family notes are generated for
+      # every tag, but only the anchor tag (markstream-vue when it ships with the
+      # train, otherwise the first package in release order) creates the release.
+      # Without this, coordinated tags produce near-identical releases and the
+      # last adapter to finish steals the repository's "Latest" badge.
+      - name: Build family release notes
+        id: family
+        env:
+          PACKAGE_NAME: ${{ steps.meta.outputs.pkg }}
+          PACKAGE_VERSION: ${{ steps.meta.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAGS_FILE="$(mktemp)"
+          BODY_FILE="$(mktemp)"
+          git ls-remote --tags origin > "${TAGS_FILE}"
+
+          NOTES_JSON="$(node scripts/build-family-release-notes.mjs \
+            --package "${PACKAGE_NAME}" \
+            --version "${PACKAGE_VERSION}" \
+            --tags-file "${TAGS_FILE}" \
+            --output "${BODY_FILE}" \
+            --changelog CHANGELOG.md)"
+          echo "${NOTES_JSON}"
+
+          echo "anchor=$(node -e 'process.stdout.write(String(JSON.parse(process.argv[1]).anchor))' "${NOTES_JSON}")" >> "${GITHUB_OUTPUT}"
+          echo "title=$(node -e 'process.stdout.write(JSON.parse(process.argv[1]).title)' "${NOTES_JSON}")" >> "${GITHUB_OUTPUT}"
+          echo "body_path=${BODY_FILE}" >> "${GITHUB_OUTPUT}"
 
       - name: Resolve and validate package manifest
         id: package
@@ -185,88 +203,17 @@ jobs:
           pnpm --dir "${PACKAGE_DIR}" pack --pack-destination "${RUNNER_TEMP}"
           npm publish "${TARBALL}" --access public --tag "${DIST_TAG}"
 
-      - name: Build changelog body (best effort)
-        id: changelog
-        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION="${{ steps.meta.outputs.version }}"
-          BODY_FILE="$(mktemp)"
-          FOUND=0
-
-          awk -v version="${VERSION}" '
-            BEGIN { capture = 0; found = 0 }
-            /^## \[/ {
-              if (capture == 1)
-                exit
-              if ($0 ~ "^## \\[" version "\\]") {
-                capture = 1
-                found = 1
-                next
-              }
-            }
-            capture == 1 { print }
-            END {
-              if (found == 0)
-                exit 2
-            }
-          ' CHANGELOG.md > "${BODY_FILE}" && FOUND=1 || true
-
-          if [[ "${FOUND}" == "1" && -s "${BODY_FILE}" ]]; then
-            echo "has_body=true" >> "${GITHUB_OUTPUT}"
-            echo "body_path=${BODY_FILE}" >> "${GITHUB_OUTPUT}"
-          else
-            echo "has_body=false" >> "${GITHUB_OUTPUT}"
-            echo "::warning::Unable to find CHANGELOG.md section for version ${VERSION}; falling back to auto-generated release notes"
-          fi
-
-      - name: Create GitHub Release (markstream-vue with changelog)
-        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' && steps.changelog.outputs.has_body == 'true' }}
+      - name: Create GitHub Release (Markstream family)
+        if: ${{ steps.family.outputs.anchor == 'true' }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: ${{ steps.meta.outputs.name }}
+          name: ${{ steps.family.outputs.title }}
           prerelease: ${{ steps.meta.outputs.prerelease }}
+          make_latest: ${{ steps.meta.outputs.prerelease == 'false' }}
           generate_release_notes: true
-          body_path: ${{ steps.changelog.outputs.body_path }}
+          body_path: ${{ steps.family.outputs.body_path }}
           append_body: true
-
-      - name: Create GitHub Release (markstream-vue fallback)
-        if: ${{ steps.meta.outputs.pkg == 'markstream-vue' && steps.changelog.outputs.has_body != 'true' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ steps.meta.outputs.name }}
-          prerelease: ${{ steps.meta.outputs.prerelease }}
-          generate_release_notes: true
-
-      - name: Create GitHub Release (0.1.0 renderer family)
-        if: ${{ steps.meta.outputs.family_breaking == 'true' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ steps.meta.outputs.name }}
-          prerelease: ${{ steps.meta.outputs.prerelease }}
-          generate_release_notes: true
-          body: |
-            ## Breaking changes in the Markstream 2.0 renderer family
-
-            - Monaco and `stream-markdown` integrations, renderer selection, and their public configuration are removed.
-            - `stream-diffs` is the only built-in enhanced code-block runtime; without it, code fences use the plain `<pre><code>` fallback.
-            - These `0.1.0` adapter releases are not API-compatible with the prior `0.0.x` line.
-
-            Migration guide: https://markstream.simonhe.me/guide/migration-2-0
-          append_body: true
-
-      - name: Create GitHub Release (other packages)
-        if: ${{ steps.meta.outputs.pkg != 'markstream-vue' && steps.meta.outputs.family_breaking != 'true' }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ steps.meta.outputs.name }}
-          prerelease: ${{ steps.meta.outputs.prerelease }}
-          generate_release_notes: true
 
       # GitHub Packages only accepts scoped npm names, so mirror the public
       # `markstream-vue` package as `@simon-he95/markstream-vue`. The name is

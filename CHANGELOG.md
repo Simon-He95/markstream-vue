@@ -1,3 +1,33 @@
+## [2.0.24](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.23...markstream-vue@2.0.24) (2026-11-04)
+
+### Features
+
+* align streaming text fade and final rendering across every renderer with budgeted final-tail rendering, shared core DOM/fade helpers, batched completed-word cleanup and independent final signals in nested streaming blocks. ([#804](https://github.com/Simon-He95/markstream-vue/pull/804))
+* publish one Markstream family GitHub Release per stable train, with a family version matrix and Latest pinned to the anchor tag.
+
+### Bug Fixes
+
+* **parser:** keep comparison text such as `a<b && c>d` and `a </ b` literal instead of recovering it as HTML, and require `/>` for self-closing tag boundaries. ([#808](https://github.com/Simon-He95/markstream-vue/pull/808))
+* **solid:** add crawlable playground content, real 404 routing and discovery metadata. ([#803](https://github.com/Simon-He95/markstream-vue/pull/803))
+* **streaming:** preserve legacy streaming nodes and flush Octane final tails before paint.
+
+### Release Tooling
+
+* mirror `markstream-vue` to GitHub Packages as `@simon-he95/markstream-vue`.
+* link the hosted Octane playground from the docs.
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.25`
+* `markstream-core@2.0.24`
+* `markstream-vue@2.0.24`
+* `markstream-react@2.0.24`
+* `markstream-octane@2.0.24`
+* `markstream-solid@2.0.24`
+* `markstream-svelte@2.0.24`
+* `markstream-angular@2.0.24`
+* `markstream-vue2@2.0.24`
+
 ## [2.0.23](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.22...markstream-vue@2.0.23) (2026-10-31)
 
 ### Bug Fixes

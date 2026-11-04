@@ -336,6 +336,8 @@ function buildCommonHtmlTagSet(extraTags?: readonly string[]) {
 }
 
 const HTML_TAG_NAME_RE = /^([A-Z][\w-]*)/i
+const HTML_WHITESPACE_RE = /[\t\n\f\r ]/
+const HTML_ATTRIBUTE_NAME_START_RE = /[A-Z_:]/i
 
 interface ScannedHtmlTag {
   index: number
@@ -354,7 +356,7 @@ function isKnownHtmlTagPrefix(tag: string, tagSet: Set<string>) {
 
 function skipHtmlWhitespace(content: string, index: number) {
   let cursor = index
-  while (cursor < content.length && /[\t\n\f\r ]/.test(content[cursor] ?? ''))
+  while (cursor < content.length && HTML_WHITESPACE_RE.test(content[cursor] ?? ''))
     cursor++
   return cursor
 }
@@ -363,6 +365,9 @@ function skipHtmlWhitespace(content: string, index: number) {
  * A `<` starts an HTML tag only when a known tag name is followed by `>`,
  * `/`, or whitespace plus an attribute name. `a<b && c>d` and `a </ b` stay
  * comparisons: `&` is not an attribute, and the name is not glued to `<`.
+ *
+ * A `/` only closes a tag when it is immediately followed by `>` (or ends the
+ * buffer while streaming), so comparisons such as `a<b/c>d` stay text.
  */
 function scanHtmlTag(content: string, start: number, tagSet: Set<string>): ScannedHtmlTag | null {
   if (content[start] !== '<')
@@ -373,7 +378,7 @@ function scanHtmlTag(content: string, start: number, tagSet: Set<string>): Scann
   if (content[cursor] === '/') {
     closing = true
     cursor++
-    if (content[cursor] !== undefined && /[\t\n\f\r ]/.test(content[cursor]))
+    if (content[cursor] !== undefined && HTML_WHITESPACE_RE.test(content[cursor]))
       return null
   }
 
@@ -396,16 +401,32 @@ function scanHtmlTag(content: string, start: number, tagSet: Set<string>): Scann
   if (next === undefined)
     return { index: start, tag, closing, closeIndex: -1 }
 
-  if (next !== '>' && next !== '/' && !/[\t\n\f\r ]/.test(next))
+  if (next !== '>' && next !== '/' && !HTML_WHITESPACE_RE.test(next))
     return null
 
-  if (/[\t\n\f\r ]/.test(next)) {
+  if (next === '/') {
+    const afterSlash = content[afterName + 1]
+    if (afterSlash === undefined)
+      return { index: start, tag, closing, closeIndex: -1 }
+    if (afterSlash !== '>')
+      return null
+  }
+
+  if (HTML_WHITESPACE_RE.test(next)) {
     const attrAt = skipHtmlWhitespace(content, afterName)
     const attrChar = content[attrAt]
     if (attrChar === undefined)
       return { index: start, tag, closing, closeIndex: -1 }
-    if (attrChar !== '>' && attrChar !== '/' && !/[A-Z_:]/i.test(attrChar))
+    if (attrChar === '/') {
+      const afterSlash = content[attrAt + 1]
+      if (afterSlash === undefined)
+        return { index: start, tag, closing, closeIndex: -1 }
+      if (afterSlash !== '>')
+        return null
+    }
+    else if (attrChar !== '>' && !HTML_ATTRIBUTE_NAME_START_RE.test(attrChar)) {
       return null
+    }
   }
 
   return {
@@ -463,59 +484,99 @@ function splitTextToken(token: MarkdownToken, content: string) {
   return nt
 }
 
-function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<string>) {
+function fixStreamingHtmlInlineChildren(
+  children: MarkdownToken[],
+  tagSet: Set<string>,
+  allowIncompleteTags = true,
+) {
   if (!children.length)
     return { children }
 
   const out: MarkdownToken[] = []
-  let pending: { tag: string, buffer: string, closing: boolean } | null = null
+  let pending: {
+    tag: string
+    buffer: string
+    closing: boolean
+    tokens: MarkdownToken[]
+    fromText: boolean
+  } | null = null
   let pendingAtEnd: string | null = null
+
+  function createTextToken(text: string, baseToken?: MarkdownToken) {
+    if (baseToken)
+      return splitTextToken(baseToken, text)
+    return { type: 'text', content: text, raw: text } as MarkdownToken
+  }
 
   function pushTextPart(text: string, baseToken?: MarkdownToken) {
     if (!text)
       return
-    if (baseToken)
-      out.push(splitTextToken(baseToken, text))
-    else
-      out.push({ type: 'text', content: text, raw: text } as MarkdownToken)
+    out.push(createTextToken(text, baseToken))
+  }
+
+  function flushPendingAsText() {
+    if (!pending)
+      return
+    const tokens = pending.tokens
+    pending = null
+    pendingAtEnd = null
+
+    const last = tokens[tokens.length - 1]
+    if (tokens.length > 1)
+      out.push(...tokens.slice(0, -1))
+
+    if (last?.type === 'text') {
+      const content = String(last.content ?? '')
+      if (content)
+        processTextChunk(content, last)
+    }
+    else if (last) {
+      out.push(last)
+    }
   }
 
   function splitCompleteHtmlFromText(chunk: string, baseToken?: MarkdownToken) {
     let cursor = 0
+    // Accumulate literal text so a rejected "<" does not split the run into
+    // multiple text tokens (markdown-it-ts' text_join keeps the last token's
+    // `raw`, which corrupts html fragments built from `raw`).
+    let textStart = 0
     while (cursor < chunk.length) {
       const lt = chunk.indexOf('<', cursor)
-      if (lt === -1) {
-        pushTextPart(chunk.slice(cursor), baseToken)
+      if (lt === -1)
         break
-      }
-      pushTextPart(chunk.slice(cursor, lt), baseToken)
+
       const scanned = scanHtmlTag(chunk, lt, tagSet)
       if (!scanned || scanned.closeIndex === -1) {
-        pushTextPart('<', baseToken)
         cursor = lt + 1
         continue
       }
 
       const tagText = chunk.slice(lt, scanned.closeIndex + 1)
       if (tagSet.has(scanned.tag)) {
+        pushTextPart(chunk.slice(textStart, lt), baseToken)
         out.push({
           type: 'html_inline',
           tag: '',
           content: tagText,
           raw: tagText,
         } as MarkdownToken)
+        cursor = lt + tagText.length
+        textStart = cursor
+        continue
       }
-      else {
-        pushTextPart(tagText, baseToken)
-      }
+
       cursor = lt + tagText.length
     }
+
+    if (textStart < chunk.length)
+      pushTextPart(chunk.slice(textStart), baseToken)
   }
 
   function processTextChunk(chunk: string, baseToken?: MarkdownToken) {
     if (!chunk)
       return
-    const match = findFirstIncompleteTag(chunk, tagSet)
+    const match = allowIncompleteTags ? findFirstIncompleteTag(chunk, tagSet) : null
     if (!match) {
       splitCompleteHtmlFromText(chunk, baseToken)
       return
@@ -528,6 +589,8 @@ function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<s
       tag: match.tag,
       buffer: chunk.slice(match.index),
       closing: match.closing,
+      tokens: [createTextToken(chunk.slice(match.index), baseToken)],
+      fromText: true,
     }
     pendingAtEnd = pending.buffer
   }
@@ -535,10 +598,21 @@ function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<s
   for (const child of children) {
     if (pending) {
       pending.buffer += tokenToRaw(child)
+      pending.tokens.push(child)
       pendingAtEnd = pending.buffer
       const closeIdx = findTagCloseIndexOutsideQuotes(pending.buffer)
       if (closeIdx === -1) {
         // still incomplete: swallow this token to avoid rendering jitter
+        continue
+      }
+
+      // The raw buffer drops markdown markup (`a<b **x** && c>d` becomes
+      // `a<b x && c>d`), so a candidate that crossed an inline token is not a
+      // real tag even when the reconstructed text happens to look valid.
+      const candidate = scanHtmlTag(pending.buffer, 0, tagSet)
+      const crossedInlineMarkup = pending.fromText && pending.tokens.some(token => token.type !== 'text')
+      if (!candidate || candidate.closeIndex === -1 || crossedInlineMarkup) {
+        flushPendingAsText()
         continue
       }
 
@@ -561,7 +635,7 @@ function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<s
       const content = tokenToRaw(child)
       const tagMatch = content.match(TAG_NAME_AT_START_RE)
       const tagName = (tagMatch?.[1] ?? '').toLowerCase()
-      if (tagName && tagSet.has(tagName) && findTagCloseIndexOutsideQuotes(content) === -1) {
+      if (allowIncompleteTags && tagName && tagSet.has(tagName) && findTagCloseIndexOutsideQuotes(content) === -1) {
         // markdown-it may prematurely close a tag at a ">" inside a quoted
         // attribute value (e.g. `<a href="...a>b`), producing a broken html_inline
         // token. Treat it as a streaming mid-state and swallow until we see a
@@ -570,6 +644,8 @@ function fixStreamingHtmlInlineChildren(children: MarkdownToken[], tagSet: Set<s
           tag: tagName,
           buffer: content,
           closing: /^<\s*\//.test(content),
+          tokens: [child],
+          fromText: false,
         }
         pendingAtEnd = pending.buffer
         continue
@@ -733,9 +809,12 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
   // Streaming mid-state: suppress partial inline HTML in text tokens until the
   // tag is fully closed with `>`, then allow it to be tokenized as html_inline.
   md.core.ruler.after('inline', 'fix_html_inline_streaming', (state: unknown) => {
-    const s = state as unknown as { tokens?: MarkdownToken[] }
+    const s = state as unknown as { tokens?: MarkdownToken[], env?: { __markstreamFinal?: boolean } }
     const toks = s.tokens ?? []
     const { commonHtmlTags, customTagSet } = getRuleContext(state)
+    // A final parse has no more input coming, so an unterminated "<b" or
+    // "</" must stay literal text instead of being swallowed as a mid-state.
+    const allowIncompleteTags = s.env?.__markstreamFinal !== true
     for (const t of toks) {
       const tok = t as MarkdownToken & { children?: MarkdownToken[], content?: string, raw?: string }
       if (tok.type !== 'inline' || !Array.isArray(tok.children))
@@ -755,7 +834,7 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         continue
 
       try {
-        const fixed = fixStreamingHtmlInlineChildren(sourceChildren, commonHtmlTags)
+        const fixed = fixStreamingHtmlInlineChildren(sourceChildren, commonHtmlTags, allowIncompleteTags)
         tok.children = fixed.children
         if (fixed.pendingBuffer) {
           const idx = originalContent.lastIndexOf(fixed.pendingBuffer)

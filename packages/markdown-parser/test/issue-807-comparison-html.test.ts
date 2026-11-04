@@ -52,4 +52,62 @@ describe('issue #807 comparison operators are not HTML tags', () => {
     expect(textOf(nodes[0])).toBe('see')
     expect(JSON.stringify(nodes)).not.toContain('<fo')
   })
+
+  it.each(['a<b', 'The invariant is a<b', 'a </', 'a<br', 'a<i', 'see <fo', 'a <', 'a<'])(
+    'keeps an unterminated tag-like tail literal on a final parse: %s',
+    (markdown) => {
+      const nodes = parseMarkdownToStructure(markdown, getMarkdown(), { final: true })
+      expect(nodes.map(textOf).join('\n')).toBe(markdown)
+      expect(JSON.stringify(nodes)).not.toContain('"html_inline"')
+    },
+  )
+
+  it.each(['a<b', 'a </', 'see <fo', 'a <'])(
+    'still suppresses the unfinished tail while streaming: %s',
+    (markdown) => {
+      const nodes = parseMarkdownToStructure(markdown, getMarkdown(), { final: false })
+      expect(textOf(nodes[0])).not.toContain('<')
+    },
+  )
+
+  it.each([
+    'a<b **x** && c>d',
+    'a<b `x` && c>d',
+    'a<b $x$ && c>d',
+    'a<b \n&& c>d',
+  ])('keeps a comparison that spans inline content as text: %s', (markdown) => {
+    const nodes = parseMarkdownToStructure(markdown, getMarkdown(), { final: true })
+    expect(JSON.stringify(nodes)).not.toContain('"html_inline"')
+    expect(textOf(nodes[0])).toContain('a<b')
+    expect(textOf(nodes[0])).toContain('&& c>d')
+  })
+
+  it('preserves inline markup inside the comparison text', () => {
+    const nodes = parseMarkdownToStructure('a<b **x** && c>d', getMarkdown(), { final: true })
+    expect(textOf(nodes[0])).toBe('a<b x && c>d')
+    expect((nodes[0] as any).children.some((child: any) => child.type === 'strong')).toBe(true)
+  })
+
+  it.each(['a<b/c>d', 'a<b/x>d', 'a<b/ >d'])(
+    'keeps slash comparisons literal: %s',
+    (markdown) => {
+      const nodes = parseMarkdownToStructure(markdown, getMarkdown(), { final: true })
+      expect(nodes.map(textOf).join('')).toBe(markdown)
+      expect(JSON.stringify(nodes)).not.toContain('"html_inline"')
+    },
+  )
+
+  it('still parses a real self-closing tag', () => {
+    const nodes = parseMarkdownToStructure('a<b/>d', getMarkdown(), { final: true })
+    expect(JSON.stringify(nodes)).toContain('"html_inline"')
+  })
+
+  it.each([
+    ['<b>a<b && c>d</b>', '<b>a<b && c>d</b>'],
+    ['<span>a </ b</span>', '<span>a </ b</span>'],
+  ])('keeps a comparison inside inline HTML intact: %s', (markdown, expected) => {
+    const nodes = parseMarkdownToStructure(markdown, getMarkdown(), { final: true })
+    const html = (nodes[0] as any).children.find((child: any) => child.type === 'html_inline')
+    expect(html?.content).toBe(expected)
+  })
 })

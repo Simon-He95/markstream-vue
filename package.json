@@ -347,7 +347,7 @@
     }
   },
   "dependencies": {
-    "@chenglou/pretext": "^0.0.9",
+    "@chenglou/pretext": "^1.0.0",
     "@floating-ui/dom": "^1.8.0",
     "markstream-core": "workspace:*",
     "stream-markdown-parser": "workspace:*"

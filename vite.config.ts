@@ -99,6 +99,15 @@ export default defineConfig(({ mode }) => {
       },
       rollupOptions: {
         external: (id: string) => {
+          // Pretext is a regular dependency that is only reached through a
+          // dynamic import when height estimation is active. Keep it out of
+          // the published bundle so the package does not ship a second copy
+          // of its per-browser line-break data; consumers' bundlers split the
+          // dynamic import into a lazy chunk as usual.
+          if (id === '@chenglou/pretext' || id.startsWith('@chenglou/pretext/'))
+            return true
+          if (/node_modules\/@chenglou\/pretext(?:\/|$)/.test(id))
+            return true
           if (id === 'stream-diffs' || id.startsWith('stream-diffs/'))
             return true
           if (/node_modules\/stream-diffs(?:\/|$)/.test(id))

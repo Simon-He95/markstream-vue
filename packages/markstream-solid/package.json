@@ -1,7 +1,7 @@
 {
   "name": "markstream-solid",
   "type": "module",
-  "version": "2.0.24",
+  "version": "2.0.25",
   "description": "SolidJS streaming Markdown renderer for AI chat, incremental Markdown and long document restoration.",
   "author": "Simon He",
   "license": "MIT",

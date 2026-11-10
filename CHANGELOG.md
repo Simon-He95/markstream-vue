@@ -1,3 +1,26 @@
+## [2.0.25](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.24...markstream-vue@2.0.25) (2026-11-10)
+
+### Bug Fixes
+
+* render borders and thematic breaks without Tailwind preflight across Vue 3, Vue 2, React, Octane, Svelte, Angular and Solid. ([#812](https://github.com/Simon-He95/markstream-vue/issues/812), [#813](https://github.com/Simon-He95/markstream-vue/pull/813))
+
+### Performance
+
+* externalize `@chenglou/pretext` from the library bundle, reducing the npm tarball from 292.7 to 253.2 KiB and `dist` from 973.2 to 880.8 KiB while keeping height estimation lazily loaded. ([#811](https://github.com/Simon-He95/markstream-vue/pull/811))
+* upgrade the optional height-estimation engine to `@chenglou/pretext@1.0.0` for browser-accurate line breaking and faster relayout at new widths. ([#809](https://github.com/Simon-He95/markstream-vue/pull/809))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.25` (unchanged)
+* `markstream-core@2.0.25`
+* `markstream-vue@2.0.25`
+* `markstream-react@2.0.25`
+* `markstream-octane@2.0.25`
+* `markstream-solid@2.0.25`
+* `markstream-svelte@2.0.25`
+* `markstream-angular@2.0.25`
+* `markstream-vue2@2.0.25`
+
 ## [2.0.24](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.23...markstream-vue@2.0.24) (2026-11-04)
 
 ### Features

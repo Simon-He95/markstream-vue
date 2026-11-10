@@ -12,6 +12,19 @@
   color: inherit;
 }
 
+/* Border utilities must also work without Tailwind preflight. */
+:where(.markstream-vue2) :where(.border) {
+  border-style: solid;
+}
+
+:where(.markstream-vue2) :where(.border-t) {
+  border-top-style: solid;
+}
+
+:where(.markstream-vue2) :where(.border-b) {
+  border-bottom-style: solid;
+}
+
 @tailwind components;
 @tailwind utilities;
 

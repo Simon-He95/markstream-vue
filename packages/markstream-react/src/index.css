@@ -12,6 +12,19 @@
   color: inherit;
 }
 
+/* Border utilities must also work without Tailwind preflight. */
+:where(.markstream-react) :where(.border) {
+  border-style: solid;
+}
+
+:where(.markstream-react) :where(.border-t) {
+  border-top-style: solid;
+}
+
+:where(.markstream-react) :where(.border-b) {
+  border-bottom-style: solid;
+}
+
 @tailwind components;
 @tailwind utilities;
 
@@ -1017,6 +1030,7 @@
 
 :where(.markstream-react) .hr-node {
   margin: 3rem 0;
+  border: 0;
   border-top: 1px solid var(--hr-border-color, #e2e8f0);
 }
 

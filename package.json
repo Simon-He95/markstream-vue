@@ -290,6 +290,7 @@
     "check:workspace-deps-published": "node ./scripts/check-workspace-deps-published.mjs",
     "check:packed-workspace-deps": "node ./scripts/check-packed-workspace-deps.mjs --package-json package.json",
     "test:e2e:link-tooltip-streaming": "node scripts/e2e-link-tooltip-streaming.mjs",
+    "test:e2e:border-baseline": "node scripts/e2e-border-baseline.mjs",
     "test:smoke:core": "pnpm run -C packages/markstream-core build && node -e \"import('markstream-core').then((m) => { if (!m.createSmoothMarkdownStream) process.exit(1) })\" && node -e \"const { createRequire } = require('node:module'); const req = createRequire(process.cwd() + '/'); const m = req('markstream-core'); if (!m.createSmoothMarkdownStream) process.exit(1)\"",
     "test:smoke:parser": "pnpm run build:parser && node scripts/smoke-parser-packed-package.mjs",
     "test:smoke:minimal": "node scripts/smoke-minimal-install.mjs",

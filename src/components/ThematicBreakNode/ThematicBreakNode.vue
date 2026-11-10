@@ -6,7 +6,8 @@
 
 <style scoped>
 .hr-node {
-  @apply border-t border-[var(--hr-border)];
+  border: 0;
+  border-top: 1px solid var(--hr-border);
   margin: var(--ms-flow-hr-y) 0;
 }
 </style>

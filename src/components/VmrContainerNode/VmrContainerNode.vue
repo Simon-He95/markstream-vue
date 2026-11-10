@@ -85,7 +85,8 @@ function getNodeComponent(type: string) {
 
 <style scoped>
 .vmr-container {
-  @apply rounded-lg border p-4 my-4;
+  @apply rounded-lg p-4 my-4;
+  border: 1px solid hsl(var(--ms-border));
   border-left-width: var(--ms-border-width-strong);
 }
 </style>

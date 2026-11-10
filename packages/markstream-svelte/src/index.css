@@ -49,6 +49,7 @@ markstream-svelte {
   --diagram-border: hsl(var(--ms-border));
   --diagram-header-bg: hsl(var(--ms-muted));
   --blockquote-border: hsl(var(--ms-muted-foreground) / 0.2);
+  --footnote-border: hsl(var(--ms-border));
   --modal-overlay: hsl(0 0% 0% / 0.7);
   --modal-bg: hsl(var(--ms-popover));
   --modal-fg: hsl(var(--ms-popover-foreground));

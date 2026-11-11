@@ -1,0 +1,7 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and benchmark data that trigger generic-api-key false positives"
+paths = [ '''^test/benchmark/diff-cpu-history-2026-09\.json$''' ]
+regexes = [ '''^sub-320-probe-width$''' ]

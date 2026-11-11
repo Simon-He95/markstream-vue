@@ -17,6 +17,10 @@ Vue 包：
 [![NPM downloads](https://img.shields.io/npm/dm/markstream-vue)](https://www.npmjs.com/package/markstream-vue)
 [![Bundle size](https://img.shields.io/bundlephobia/minzip/markstream-vue)](https://bundlephobia.com/package/markstream-vue)
 
+<a href="https://trendshift.io/repositories/27243?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-27243" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/27243/weekly?language=Vue" alt="Simon-He95%2Fmarkstream-vue | Trendshift" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/27243?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-27243" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/27243/daily?language=Vue" alt="Simon-He95%2Fmarkstream-vue | Trendshift" width="250" height="55"/></a>
+<a href="https://trendshift.io/repositories/27243?utm_source=trendshift-badge&amp;utm_medium=badge&amp;utm_campaign=badge-trendshift-27243" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/trendshift/repositories/27243/monthly?language=Vue" alt="Simon-He95%2Fmarkstream-vue | Trendshift" width="250" height="55"/></a>
+
 其它框架包：
 
 [![markstream-react npm version](https://img.shields.io/npm/v/markstream-react?label=markstream-react)](https://www.npmjs.com/package/markstream-react)

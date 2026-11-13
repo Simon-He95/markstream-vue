@@ -1,3 +1,28 @@
+## [2.0.26](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.25...markstream-vue@2.0.26) (2026-11-13)
+
+### Performance
+
+* Reduce repeated work during streaming and finalization, and update `markdown-it-ts` to 1.1.6 for faster string-prefix comparisons. ([#816](https://github.com/Simon-He95/markstream-vue/pull/816), [#818](https://github.com/Simon-He95/markstream-vue/pull/818))
+* Use equivalent ASCII link-context patterns to reduce full-text parse time on CHANGELOG. ([#821](https://github.com/Simon-He95/markstream-vue/pull/821))
+* Add internal chunk and tokenizer-range experiments while keeping the default Vue string entry point. ([#817](https://github.com/Simon-He95/markstream-vue/pull/817), [#820](https://github.com/Simon-He95/markstream-vue/pull/820))
+
+### Bug Fixes
+
+* Avoid repeated scans over long blank-line runs and stack overflow on long emphasis delimiters. ([#821](https://github.com/Simon-He95/markstream-vue/pull/821))
+* Clean up Vue link tooltip state on unmount. ([#819](https://github.com/Simon-He95/markstream-vue/pull/819))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.26`
+* `markstream-core@2.0.26`
+* `markstream-vue@2.0.26`
+* `markstream-react@2.0.26`
+* `markstream-octane@2.0.26`
+* `markstream-svelte@2.0.26`
+* `markstream-angular@2.0.26`
+* `markstream-vue2@2.0.26`
+* `markstream-solid@2.0.26`
+
 ## [2.0.25](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.24...markstream-vue@2.0.25) (2026-11-10)
 
 ### Bug Fixes

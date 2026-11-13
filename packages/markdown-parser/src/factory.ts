@@ -83,7 +83,7 @@ interface InlineStateLike {
   md?: MarkdownItInstance & { validateLink: (url: string) => boolean }
 }
 
-function inlineTokenMayNeedLinkify(token: Token, linkify: LinkifyLike) {
+function inlineTokenMayNeedLinkify(token: Token, linkify: LinkifyLike, screen?: () => boolean) {
   if (token?.type !== 'inline')
     return false
 
@@ -113,8 +113,15 @@ function inlineTokenMayNeedLinkify(token: Token, linkify: LinkifyLike) {
     if (htmlLinkLevel > 0)
       continue
 
-    if (currentToken?.type === 'text' && linkify.test(String(currentToken.content ?? '')))
-      return true
+    if (currentToken?.type === 'text') {
+      const text = String(currentToken.content ?? '')
+      if (!screen || LINKIFY_SEED_RE.test(text)) {
+        if (linkify.test(text))
+          return true
+        if (screen && !screen())
+          screen = undefined
+      }
+    }
   }
 
   return false
@@ -160,6 +167,8 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
     let canScreen = !!nativeMethods && !!nativeBuilder && seedSafe
       && (state.env?.__markstreamFinal !== false || !!re?.cache.link_fuzzy_search)
     const screenedOptions = re?.opts
+    const screeningIsCurrent = () => linkify.re === re && re?.opts === screenedOptions && re?.cache === screenedCache
+      && linkify.test === nativeTest && linkify.match === nativeMatch
     const candidates = tokens.filter((token: Token) => {
       if (canScreen && token?.type === 'inline') {
         const children = token.children
@@ -170,10 +179,9 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
         else if (!LINKIFY_SEED_RE.test(String(token.content ?? ''))) {
           return false
         }
-        const mayLinkify = inlineTokenMayNeedLinkify(token, linkify)
+        const mayLinkify = inlineTokenMayNeedLinkify(token, linkify, screeningIsCurrent)
         // A schema validator can reconfigure linkify during the test.
-        canScreen = linkify.re === re && re?.opts === screenedOptions && re?.cache === screenedCache
-          && linkify.test === nativeTest && linkify.match === nativeMatch
+        canScreen = screeningIsCurrent()
         return mayLinkify
       }
       return inlineTokenMayNeedLinkify(token, linkify)

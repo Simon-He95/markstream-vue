@@ -156,8 +156,13 @@ export function parseTopLevelTokens(
 
   if (!options.final)
     syncTolerantMathBoundaryStreamCache(runtime, source)
+  const finalMathBoundary = options.final && hasMarkstreamMathPlugin(md)
+    ? getTolerantMathBlockBoundaryStreamKey(source)
+    : null
+  if (finalMathBoundary)
+    runtime.resetStreamOnly()
   const pendingMathBoundary = options.final
-    ? hasMarkstreamMathPlugin(md) && getTolerantMathBlockBoundaryStreamKey(source)?.startsWith('pending:')
+    ? finalMathBoundary?.startsWith('pending:')
     : shouldUseSyncParseForPendingTolerantMathBoundary(runtime)
   if (pendingMathBoundary) {
     runtime.topLevelStreamParseMode = 'sync'

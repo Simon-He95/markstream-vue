@@ -97,6 +97,9 @@ export interface MarkdownParsingOptions {
   logPerf: (label: string, data: Record<string, unknown>) => void
 }
 
+interface ChunkPatch { start: number, nodes: ParsedNode[] }
+type CreateChunkParser = (md: MarkdownIt) => { append: (chunk: string) => ChunkPatch }
+
 export interface MarkdownParsingState {
   effectiveCustomHtmlTags: ComputedRef<readonly string[]>
   effectiveCustomHtmlTagsSet: ComputedRef<Set<string>>
@@ -959,6 +962,62 @@ function findDirtyStartIndexWithMetrics(
   return nextNodes.length === previousNodes.length ? -1 : limit
 }
 
+function stabilizeChunkPatch(
+  previousNodes: ParsedNode[],
+  patch: ChunkPatch,
+  reuseDirtyTail: boolean,
+): ParsedNodeStabilizeResult {
+  const { start, nodes } = patch
+  const nextLength = start + nodes.length
+  const limit = Math.min(previousNodes.length, nextLength)
+  let dirty = start
+  for (; dirty < limit; dirty++) {
+    const previous = previousNodes[dirty]!
+    const next = nodes[dirty - start]!
+    reuseParsedDescendants(previous, next)
+    if (!areTopLevelNodesStable(previous, next))
+      break
+  }
+
+  if (dirty === limit && nextLength === previousNodes.length) {
+    return {
+      nodes: previousNodes,
+      metrics: {
+        reusedNodeCount: nextLength,
+        dirtyStartIndex: -1,
+        stablePrefixNodeCount: nextLength,
+        dirtyTailNodeCount: 0,
+      },
+    }
+  }
+
+  const nextNodes = previousNodes.slice(0, dirty)
+  let reusedNodeCount = dirty
+  for (let i = dirty; i < nextLength; i++) {
+    const previous = previousNodes[i]
+    const next = nodes[i - start]!
+    if (previous && i !== dirty)
+      reuseParsedDescendants(previous, next)
+    if (previous && reuseDirtyTail && isParsedNodeStable(previous, next)) {
+      nextNodes.push(previous)
+      reusedNodeCount++
+    }
+    else {
+      nextNodes.push(next)
+    }
+  }
+
+  return {
+    nodes: nextNodes,
+    metrics: {
+      reusedNodeCount,
+      dirtyStartIndex: dirty,
+      stablePrefixNodeCount: dirty,
+      dirtyTailNodeCount: getDirtyTailNodeCount(dirty, nextNodes, previousNodes),
+    },
+  }
+}
+
 function stabilizeParsedNodes(
   nextNodes: ParsedNode[],
   previousNodes: ParsedNode[],
@@ -1115,11 +1174,18 @@ function getStreamStatsDelta(current: StreamStatsLike, previous: StreamStatsLike
 export function useMarkdownParsing(
   props: Readonly<NodeRendererProps>,
   options: MarkdownParsingOptions,
+  createChunkParser?: CreateChunkParser,
 ): MarkdownParsingState {
   const defaultMd = getMarkdown(options.instanceMsgId)
   const customTagCache = new Map<string, MarkdownIt>()
   const smoothStreamingEnabled = options.smoothStreamingEnabled ?? computed(() => false)
   const contentToParse = ref(options.renderContent.value)
+  let chunkSession: { md: MarkdownIt, source: string, parser: ReturnType<CreateChunkParser> } | undefined
+  function discardChunkSession() {
+    if (chunkSession)
+      resetStreamParseCache(chunkSession.md)
+    chunkSession = undefined
+  }
   let previousParsedNodes: ParsedNode[] = []
   let previousParserCacheSemanticKey = ''
   let previousNodeReuseSemanticKey = ''
@@ -1299,6 +1365,7 @@ export function useMarkdownParsing(
 
   const parsedNodes = computed<ParsedNode[]>(() => {
     if (props.nodes?.length) {
+      discardChunkSession()
       previousParsedNodes = []
       previousContent = ''
       commitParsedNodesDirtyStartIndex(0)
@@ -1308,6 +1375,7 @@ export function useMarkdownParsing(
     const content = contentToParse.value
 
     if (!content) {
+      discardChunkSession()
       previousParsedNodes = []
       previousContent = ''
       commitParsedNodesDirtyStartIndex(-1)
@@ -1327,7 +1395,10 @@ export function useMarkdownParsing(
       && currentParserCacheSemanticKey !== previousParserCacheSemanticKey
       && currentNodeReuseSemanticKey !== previousNodeReuseSemanticKey
     ) {
-      resetStreamParseCache(md)
+      if (chunkSession?.md === md)
+        discardChunkSession()
+      else
+        resetStreamParseCache(md)
     }
 
     if (
@@ -1388,16 +1459,47 @@ export function useMarkdownParsing(
       parserMetrics?: ParserTimingMetrics
     }
 
-    const nextParsed = parseMarkdownToStructure(
-      content,
-      md,
-      parseOptionsForCall,
-    )
+    const useChunkParser = createChunkParser
+      && parseOptionsForCall.final !== true
+      && parseOptionsForCall.streamParse === true
+      && !props.customMarkdownIt
+      && !parserHasCustomExtensions
+      && !hasCustomComponents
+      && reuseStableTopLevelNodes
+      && !collectPerformanceMetrics
+      && Object.keys(mergedParseOptions.value).every(key => key === 'streamParse' || key === 'final')
+      && (!chunkSession || (content.length >= chunkSession.source.length
+        && content.slice(0, chunkSession.source.length) === chunkSession.source))
+
+    let patch: ChunkPatch | undefined
+    let nextParsed: ParsedNode[]
+    if (useChunkParser) {
+      // The patch is relative to the last snapshot this session published to Vue.
+      if (!canReuseParsedNodes || chunkSession?.source !== previousContent || chunkSession.md !== md)
+        discardChunkSession()
+      if (!chunkSession) {
+        resetStreamParseCache(md)
+        chunkSession = { md, source: '', parser: createChunkParser(md) }
+      }
+      patch = chunkSession.parser.append(content.slice(chunkSession.source.length))
+      chunkSession.source = content
+      nextParsed = patch.nodes
+    }
+    else {
+      // Finalization already invalidates the parser's stream state.
+      if (parseOptionsForCall.final === true && chunkSession?.md === md)
+        chunkSession = undefined
+      else
+        discardChunkSession()
+      nextParsed = parseMarkdownToStructure(content, md, parseOptionsForCall)
+    }
+    const stablePatch = patch && patch.start > 0 ? patch : undefined
     const reuseStart = collectPerformanceMetrics
       ? getNow()
       : 0
     if (
-      canReuseParsedNodes
+      !stablePatch
+      && canReuseParsedNodes
       && !parserHasCustomExtensions
       && !hasCustomComponents
       && !mergedParseOptions.value.preTransformTokens
@@ -1449,11 +1551,16 @@ export function useMarkdownParsing(
             customComponentBoundaryCache,
           )
         : undefined
-      if (signatureTiming) {
+      if (stablePatch) {
+        const result = stabilizeChunkPatch(previousParsedNodes, stablePatch, reuseDirtyTail)
+        parsed = result.nodes
+        stabilizeMetrics = result.metrics
+      }
+      else if (signatureTiming) {
         const result = stabilizeParsedNodesWithMetrics(nextParsed, previousParsedNodes, signatureTiming, {
           canReuseNode,
           reuseDirtyTail,
-          scanStartIndex,
+          scanStartIndex: patch ? 0 : scanStartIndex,
         })
         parsed = result.nodes
         stabilizeMetrics = result.metrics
@@ -1462,7 +1569,7 @@ export function useMarkdownParsing(
         const result = stabilizeParsedNodes(nextParsed, previousParsedNodes, {
           canReuseNode,
           reuseDirtyTail,
-          scanStartIndex,
+          scanStartIndex: patch ? 0 : scanStartIndex,
         })
         parsed = result.nodes
         stabilizeMetrics = result.metrics

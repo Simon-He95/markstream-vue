@@ -116,8 +116,12 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
   if (timing)
     addTiming(timing, 'safeMarkdownMs', getParserNow() - parseStartedAt)
 
-  const standaloneHtmlDocument = parseStandaloneHtmlDocument(safeMarkdown)
+  const standaloneHtmlDocument = !options.isFragment && runtime.safeMarkdown?.cannotBeStandaloneHtml
+    ? null
+    : parseStandaloneHtmlDocument(safeMarkdown)
   if (standaloneHtmlDocument) {
+    if (runtime.chunkUpdate && !options.isFragment)
+      runtime.structuredStream = undefined
     if (options.includeSourceMap) {
       const sourceMapOptions: ParseContext = {
         ...options,
@@ -211,7 +215,9 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
   const tailStart = reuseTailStart && reuseTailStart > 0 && reuseTailStart < result.length
     ? reuseTailStart
     : 0
-  const hasHtml = hasTopLevelHtmlBlock(result)
+  const hasHtml = !runtime.chunkUpdate?.start || options.isFragment
+    ? hasTopLevelHtmlBlock(result)
+    : false
   if (hasHtml) {
     const htmlPassesStartedAt = timing ? getParserNow() : 0
     const htmlStructureContext: HtmlStructureContext = {

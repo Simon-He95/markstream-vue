@@ -699,12 +699,8 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
       configuredCustomTagSet.add(name)
     }
   }
-  const getRuleContext = (state: unknown) => {
-    const s = state as unknown as { env?: { __markstreamCustomHtmlTags?: readonly unknown[] } }
+  const createRuleContext = (envTags: readonly unknown[]) => {
     const customTagSet = new Set(configuredCustomTagSet)
-    const envTags = Array.isArray(s.env?.__markstreamCustomHtmlTags)
-      ? s.env.__markstreamCustomHtmlTags
-      : []
     for (const t of envTags) {
       const name = normalizeCustomHtmlTagName(String(t ?? ''))
       if (name)
@@ -724,6 +720,11 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
       customTagSet,
       shouldMergeHtmlBlockTag,
     }
+  }
+  const configuredContext = createRuleContext([])
+  const getRuleContext = (state: unknown) => {
+    const tags = (state as { env?: { __markstreamCustomHtmlTags?: readonly unknown[] } }).env?.__markstreamCustomHtmlTags
+    return Array.isArray(tags) && tags.length ? createRuleContext(tags) : configuredContext
   }
   const getHtmlBlockCarrierContent = (token: MarkdownToken & { content?: string, children?: MarkdownToken[] }) => {
     if (token.type === 'html_block')

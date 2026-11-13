@@ -13,6 +13,12 @@ import {
   syncTolerantMathBoundaryStreamCache,
 } from './boundary-state'
 
+type ChunkTokenizer = NonNullable<MarkdownIt['stream']> & {
+  append?: (chunk: string, env: Record<string, unknown>) => Token[]
+  hasCache?: () => boolean
+  lastUpdate?: () => { tokenStart: number, coreSourceStart: number | null }
+}
+
 interface TokenizerTimingCallbacks {
   recordTokenCloneMs?: (durationMs: number) => void
 }
@@ -178,14 +184,48 @@ export function parseTopLevelTokens(
     : undefined
 
   runtime.markStreamParseStarted()
-  const tokens = md.stream!.parse!(source, getStableStreamEnv(runtime, env))
+  const stream = md.stream! as ChunkTokenizer
+  const stableEnv = getStableStreamEnv(runtime, env)
+  const update = runtime.chunkUpdate
+  if (update)
+    stableEnv.__mdtsReuseStableBlocks = true
+  const previousSource = runtime.tokenizerSource
+  const append = update && !options.final && previousSource !== undefined
+    && source.length > previousSource.length && stream.append && stream.hasCache?.()
+    && runtime.sourceExtends(previousSource, source)
+    ? runtime.getSafeChunk(previousSource, source) ?? source.slice(previousSource.length)
+    : undefined
+  let tokens: Token[]
+  try {
+    tokens = append === undefined
+      ? stream.parse!(source, stableEnv)
+      : stream.append!(append, stableEnv)
+  }
+  finally {
+    if (update)
+      delete stableEnv.__mdtsReuseStableBlocks
+  }
+  if (update) {
+    const range = stream.lastUpdate?.()
+    update.tokenStart = range?.tokenStart ?? 0
+    update.coreSourceStart = range ? range.coreSourceStart : 0
+    update.appended = append !== undefined
+    runtime.tokenizerSource = source
+  }
   // An unfinished rule can become paragraph text or a continuation of the preceding list.
   // Reparse its preceding boundary as well instead of keeping that block prematurely closed.
   const replacement = tokens[previousTailIndex]
   const continuedBlock = hadTrailingRule && (replacement?.type === 'paragraph_open'
     || (listBeforeRule !== undefined && replacement?.type === 'bullet_list_open' && replacement.markup === listBeforeRule))
-  if (continuedBlock || shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)) {
+  if (continuedBlock || (
+    (options.isFragment || !runtime.safeMarkdown?.noMathBoundaryOpener)
+    && shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)
+  )) {
     runtime.resetStreamOnly()
+    if (update) {
+      update.tokenStart = 0
+      update.coreSourceStart = 0
+    }
     runtime.topLevelStreamParseMode = 'sync'
     return md.parse(source, env)
   }

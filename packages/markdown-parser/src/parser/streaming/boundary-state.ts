@@ -549,7 +549,7 @@ export function stripPendingExplicitMathTail(markdown: string, runtime: ParserRu
     : previous && runtime.sourceExtends(previous.source, markdown)
       ? updateExplicitBracketMathStreamState(
         previous.state,
-        markdown.slice(previous.source.length),
+        runtime.getSafeChunk(previous.source, markdown) ?? markdown.slice(previous.source.length),
         previous.source.length - previous.state.lineBuffer.length,
       ).state
       : scanExplicitBracketMathStreamState(markdown).state
@@ -744,7 +744,10 @@ export function syncTolerantMathBoundaryStreamCache(runtime: ParserRuntime, sour
     return
 
   const sourceExtendsPrevious = previous ? runtime.sourceExtends(previous.source, source) : false
-  const appended = sourceExtendsPrevious && previous ? source.slice(previous.source.length) : ''
+  const safeChunk = previous && runtime.getSafeChunk(previous.source, source)
+  const appended = sourceExtendsPrevious && previous
+    ? safeChunk ?? source.slice(previous.source.length)
+    : ''
   const explicitBracketMathUpdate = sourceExtendsPrevious && previous
     ? updateExplicitBracketMathStreamState(
         previous.explicitBracketMath,
@@ -758,12 +761,13 @@ export function syncTolerantMathBoundaryStreamCache(runtime: ParserRuntime, sour
     : false
 
   if (previous && sourceExtendsPrevious) {
+    const previousTail = safeChunk === undefined ? previous.source : previous.explicitBracketMath.lineBuffer
     if (
       previous.key === null
       && previous.pendingCandidate === false
       && !completesExplicitBracketMathClose
-      && !appendedChunkMayAffectTolerantMathBoundary(previous.source, appended)
-      && !sourceEndsWithSplitTolerantBoundaryPrefix(source)
+      && !appendedChunkMayAffectTolerantMathBoundary(previousTail, appended)
+      && !sourceEndsWithSplitTolerantBoundaryPrefix(safeChunk ?? source)
     ) {
       previous.source = source
       previous.explicitBracketMath = nextExplicitBracketMath

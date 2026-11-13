@@ -3,6 +3,7 @@ import type { ParseOptions } from '../../types'
 import type { ParseContext } from '../parse-context'
 import type { ParserRuntime } from '../runtime'
 import {
+  getTolerantMathBlockBoundaryStreamKey,
   hasMarkstreamMathPlugin,
   mayContainTolerantMathBlockBoundaryOpener,
 } from '../../plugins/math'
@@ -153,8 +154,17 @@ export function parseTopLevelTokens(
     return md.parse(source, env)
   }
 
-  syncTolerantMathBoundaryStreamCache(runtime, source)
-  if (shouldUseSyncParseForPendingTolerantMathBoundary(runtime)) {
+  if (!options.final)
+    syncTolerantMathBoundaryStreamCache(runtime, source)
+  const finalMathBoundary = options.final && hasMarkstreamMathPlugin(md)
+    ? getTolerantMathBlockBoundaryStreamKey(source)
+    : null
+  if (finalMathBoundary)
+    runtime.resetStreamOnly()
+  const pendingMathBoundary = options.final
+    ? finalMathBoundary?.startsWith('pending:')
+    : shouldUseSyncParseForPendingTolerantMathBoundary(runtime)
+  if (pendingMathBoundary) {
     runtime.topLevelStreamParseMode = 'sync'
     return md.parse(source, env)
   }

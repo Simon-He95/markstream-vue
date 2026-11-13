@@ -1018,6 +1018,23 @@ describe('parseMarkdownToStructure stream parser integration', () => {
     expect(getStreamStats(md).total).toBe(1)
   })
 
+  it('clears preexisting stream tokens when a final math boundary falls back to sync parsing', () => {
+    const md = getMarkdown('stream-parser-final-pending-math')
+    const stream = md.stream!
+    stream.parse!('old text')
+    expect(stream.peek!()).not.toHaveLength(0)
+
+    const source = 'prefix $$\nx^2 + y'
+    const nodes = parseMarkdownToStructure(source, md, { final: true, streamParse: true })
+    const cold = parseMarkdownToStructure(source, getMarkdown('stream-parser-final-pending-math-cold'), {
+      final: true,
+      streamParse: false,
+    })
+
+    expect(nodes).toEqual(cold)
+    expect(stream.peek!()).toHaveLength(0)
+  })
+
   it('does not reuse the streaming env cache when final semantics change', () => {
     const md = getMarkdown('stream-parser-final-env-reset')
     ;(md as any).stream.resetStats()

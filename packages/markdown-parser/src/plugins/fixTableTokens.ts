@@ -205,7 +205,9 @@ export function fixTableTokens(tokens: MarkdownToken[], final = false, source = 
 
   const sourceMap = tokens[i - 1]?.map
   const tcontent = String(token.content ?? '')
-  const headerContent = tcontent.split('\n')[0] ?? ''
+  if (!tcontent.startsWith('|'))
+    return tokens
+
   const [headerLine = '', separatorLine = '', ...rest] = tcontent.split('\n')
   const hasTrailingNewlineSeparatorStart = !final
     && !tcontent.includes('\n')
@@ -226,7 +228,7 @@ export function fixTableTokens(tokens: MarkdownToken[], final = false, source = 
       || hasTrailingNewlineSeparatorStart
     )
   ) {
-    const body = headerContent.slice(1, -1).split('|').map(i => i.trim()).flatMap(i => createTh(i))
+    const body = headerLine.slice(1, -1).split('|').map(i => i.trim()).flatMap(i => createTh(i))
     const insert = ([
       ...createStart(sourceMap),
       ...body,
@@ -242,7 +244,7 @@ export function fixTableTokens(tokens: MarkdownToken[], final = false, source = 
     && isTableSeparatorRow(separatorLine)
   ) {
     // 解析 table
-    const body = headerContent.slice(1, -1).split('|').map(i => i.trim()).flatMap(i => createTh(i))
+    const body = headerLine.slice(1, -1).split('|').map(i => i.trim()).flatMap(i => createTh(i))
     const insert = ([
       ...createStart(sourceMap),
       ...body,

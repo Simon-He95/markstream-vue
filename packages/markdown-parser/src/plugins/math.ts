@@ -808,7 +808,15 @@ export function mayContainTolerantMathBlockBoundaryOpener(
   if (!fullSource || (!fullSource.includes('$$') && !fullSource.includes('\\[')))
     return false
 
-  const { source } = getTolerantBoundaryScanWindow(fullSource, scanWindowCache)
+  // The predicate only needs text, not absolute line numbers.
+  let source = fullSource
+  if (scanWindowCache) {
+    source = getTolerantBoundaryScanWindow(fullSource, scanWindowCache).source
+  }
+  else if (fullSource.length > TOLERANT_BOUNDARY_SCAN_TAIL_CHARS) {
+    const nextLineBreak = fullSource.indexOf('\n', fullSource.length - TOLERANT_BOUNDARY_SCAN_TAIL_CHARS)
+    source = nextLineBreak === -1 ? '' : fullSource.slice(nextLineBreak + 1)
+  }
   if (!source)
     return false
 

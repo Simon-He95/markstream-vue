@@ -42,8 +42,7 @@ import { parseStrongToken } from './strong-parser'
 import { parseTextToken } from './text-parser'
 
 // Precompiled regexes used frequently in inline parsing
-const STRIKETHROUGH_RE = /[^~]*~{2,}[^~]+/
-const HAS_STRONG_RE = /\*\*/
+const STRIKETHROUGH_RE = /~~[^~]/
 const INLINE_REPARSE_MARKER_RE = /[[_*^~]/
 
 function isCurrentStreamToken(state: InlineParseState, token: MarkdownToken) {
@@ -51,6 +50,11 @@ function isCurrentStreamToken(state: InlineParseState, token: MarkdownToken) {
 }
 
 function handleEmphasisAndStrikethrough(state: InlineParseState, content: string, token: MarkdownToken): boolean {
+  const hasAsterisk = content.includes('*')
+  const hasStrikethrough = content.includes('~~')
+  if (!hasAsterisk && !hasStrikethrough)
+    return false
+
   const rawSource = isCurrentStreamToken(state, token) && state.tokens.length === 1
     ? state.raw
     : String(token.content ?? '')
@@ -58,7 +62,7 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
     type: 'strong' | 'emphasis' | 'strikethrough'
     index: number
   }> = []
-  const literalIntrawordRunPairEnd = findLiteralIntrawordAsteriskRunPairEnd(content)
+  const literalIntrawordRunPairEnd = hasAsterisk ? findLiteralIntrawordAsteriskRunPairEnd(content) : -1
   if (literalIntrawordRunPairEnd !== -1) {
     state.pushText(content.slice(0, literalIntrawordRunPairEnd), content.slice(0, literalIntrawordRunPairEnd))
     const afterContent = content.slice(literalIntrawordRunPairEnd)
@@ -69,17 +73,17 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
     state.index++
     return true
   }
-  if (STRIKETHROUGH_RE.test(content)) {
+  if (hasStrikethrough && STRIKETHROUGH_RE.test(content)) {
     const idx = content.indexOf('~~')
     if (idx !== -1)
       markerCandidates.push({ type: 'strikethrough', index: idx })
   }
-  if (HAS_STRONG_RE.test(content)) {
+  if (hasAsterisk) {
     const idx = content.indexOf('**')
     if (idx !== -1)
       markerCandidates.push({ type: 'strong', index: idx })
   }
-  if (/[^*]*\*[^*]+/.test(content)) {
+  if (hasAsterisk && /\*[^*]/.test(content)) {
     const idx = rawSource
       ? findNextUnescapedAsterisk(rawSource, 0)
       : content.indexOf('*')

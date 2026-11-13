@@ -9,6 +9,81 @@ import { normalizeStreamingCustomHtmlSource } from './custom-html-preprocess'
 
 const SAFE_MARKDOWN_WINDOW_MARGIN = 1024
 const SAFE_MARKDOWN_WINDOW_OVERLAP = 16
+// Find the same earliest line break as (?:^|\n)\s*, without retrying at
+// every blank line when the marker is followed by ordinary text.
+function findMarkerLineStart(source: string, marker: number, requireNewline = false) {
+  const whitespaceStart = source.slice(0, marker).trimEnd().length
+  if (whitespaceStart === 0 && !requireNewline)
+    return 0
+  const newline = source.indexOf('\n', whitespaceStart)
+  return newline !== -1 && newline < marker ? newline : -1
+}
+
+function scanDigitsBackward(source: string, end: number) {
+  let start = end
+  while (source.charCodeAt(start - 1) >= 48 && source.charCodeAt(start - 1) <= 57)
+    start--
+  return start
+}
+
+function recoverStreamingTail(source: string) {
+  if (source.endsWith('- *'))
+    return `${source.slice(0, -1)}\\*`
+
+  const trimmed = source.trimEnd()
+  const end = trimmed.length
+  const last = trimmed[end - 1]
+  let marker = end - 1
+
+  if (last === '-' && trimmed[marker - 1] === '-') {
+    marker--
+  }
+  else if (last === '*' || last === '+') {
+    const start = findMarkerLineStart(source, marker, true)
+    if (start !== -1)
+      return `${source.slice(0, start)}\n`
+    if (last === '+')
+      return source
+
+    while (trimmed[marker - 1] === '*')
+      marker--
+    if (end - marker <= 3) {
+      const prefixEnd = trimmed.slice(0, marker).trimEnd().length
+      if (prefixEnd < marker && (trimmed[prefixEnd - 1] === '.' || trimmed[prefixEnd - 1] === ')')) {
+        const digits = scanDigitsBackward(trimmed, prefixEnd - 1)
+        if (digits < prefixEnd - 1 && findMarkerLineStart(source, digits) !== -1)
+          return trimmed.slice(0, marker) + '\\*'.repeat(end - marker)
+      }
+    }
+    return source
+  }
+  else if (last === '.' || last === ')') {
+    marker = scanDigitsBackward(trimmed, marker)
+    if (marker === end - 1)
+      return source
+  }
+  else if (last >= '0' && last <= '9') {
+    marker = scanDigitsBackward(trimmed, end)
+    if (marker === 0 || source.slice(0, marker).trim() === '')
+      return source
+  }
+  else if (last === '[' || last === '(') {
+    if (trimmed[marker - 1] !== '\n' || !/^\n*$/.test(source.slice(end)))
+      return source
+    while (trimmed[marker - 3] === '\n' && trimmed[marker - 1] === '\n' && (trimmed[marker - 2] === '[' || trimmed[marker - 2] === '('))
+      marker -= 2
+    return `${source.slice(0, marker - 1)}\n`
+  }
+  else if (last !== '-' && last !== '>') {
+    return source
+  }
+
+  const start = findMarkerLineStart(source, marker)
+  if (start === -1)
+    return source
+  return source[start] === '\n' ? `${source.slice(0, start)}\n` : ''
+}
+
 /**
  * Cached streaming safe-markdown transform, owned by the parser runtime.
  *
@@ -37,69 +112,8 @@ function transformStreamingSafeMarkdown(
     return shouldReconstruct ? `${before}\\n${cmd}` : full
   })
 
-  // Marker recovery only applies when the last non-whitespace character is a digit or punctuation.
-  if (!isFinal && !/[a-z]$/i.test(safeMarkdown.trimEnd())) {
-    if (safeMarkdown.endsWith('- *')) {
-      // 放置markdown 解析 - * 会被处理成多个 ul >li 嵌套列表
-      safeMarkdown = safeMarkdown.replace(/- \*$/, '- \\*')
-    }
-    if (/(?:^|\n)\s*-\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：单独的 "-" 行（或以换行结尾的 "-\n"）会被渲染成文本/列表前缀，
-      // 也会导致输入 "---" 时第一个 "-" 先闪出来再跳成 hr。
-      safeMarkdown = safeMarkdown.replace(/(?:^|\n)\s*-\s*$/, (m) => {
-        return m.startsWith('\n') ? '\n' : ''
-      })
-    }
-    else if (/(?:^|\n)\s*--\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：输入 "---" 时的 "--" 前缀也不应该作为文本渲染，避免跳动。
-      safeMarkdown = safeMarkdown.replace(/(?:^|\n)\s*--\s*$/, (m) => {
-        return m.startsWith('\n') ? '\n' : ''
-      })
-    }
-    else if (/(?:^|\n)\s*>\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：单独的 ">" 行会先被识别成 blockquote，导致 UI 闪烁/跳动。
-      // 只裁剪末尾这一个 marker，等后续内容到齐再正常解析。
-      safeMarkdown = safeMarkdown.replace(/(?:^|\n)\s*>\s*$/, (m) => {
-        return m.startsWith('\n') ? '\n' : ''
-      })
-    }
-    else if (/\n\s*[*+]\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：单独的 "*"/"+" 行会被识别成空的 list item，导致 UI 闪出一个圆点
-      safeMarkdown = safeMarkdown.replace(/\n\s*[*+]\s*$/, '\n')
-    }
-    else if (/(?:^|\n)\s*\d+\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：单独的 "2" / "10" 行常是有序列表 marker 的前缀（下一字符才到 "." / ")"）。
-      // 在此状态下 markdown-it 会把它解析成 paragraph/text，导致先撑开一段空白再被下一次解析替换，形成抖动。
-      // 只裁剪末尾这一行，等 marker 完整或有内容后再正常解析。
-      // 但当整个文档本身就是纯数字（例如 "1234567"）时，这不是列表前缀，而是正常文本内容，
-      // 不应被裁剪为空，否则会导致 parse 结果一直为空。
-      if (!/^\d+$/.test(safeMarkdown.trim())) {
-        safeMarkdown = safeMarkdown.replace(/(?:^|\n)\s*\d+\s*$/, (m) => {
-          return m.startsWith('\n') ? '\n' : ''
-        })
-      }
-    }
-    else if (/(?:^|\n)\s*\d+[.)]\s+\*{1,3}\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：有序列表项刚开始输出 "**"（粗体）时，常会经历 "1. *" / "1. **" 等尾部状态。
-      // markdown-it 在这些状态下可能把 "*" 当作空的 bullet list marker（嵌套列表），导致 UI 先闪一个圆点/空块再恢复。
-      // 将尾部孤立的星号临时转义，避免被当作列表 marker。
-      safeMarkdown = safeMarkdown.replace(
-        /((?:^|\n)\s*\d+[.)]\s+)(\*{1,3})\s*$/,
-        (_, prefix: string, stars: string) => `${prefix}${stars.split('').map(() => '\\*').join('')}`,
-      )
-    }
-    else if (/(?:^|\n)\s*\d+[.)]\s*$/.test(safeMarkdown)) {
-      // streaming 中间态：单独的 "2." / "3)" 行会先被渲染成列表/段落占位，随后合并成真正的 list item，导致抖动。
-      // 裁剪末尾这一个 marker，等后续内容到齐再正常解析。
-      safeMarkdown = safeMarkdown.replace(/(?:^|\n)\s*\d+[.)]\s*$/, (m) => {
-        return m.startsWith('\n') ? '\n' : ''
-      })
-    }
-    else if (/\n[[(]\n*$/.test(safeMarkdown)) {
-      // 此时 markdown 解析会出错要跳过
-      safeMarkdown = safeMarkdown.replace(/(\n\[|\n\()+\n*$/g, '\n')
-    }
-  }
+  if (!isFinal)
+    safeMarkdown = recoverStreamingTail(safeMarkdown)
 
   if (!isFinal) {
     // The tolerant-math boundary scan is applied by the caller to the full

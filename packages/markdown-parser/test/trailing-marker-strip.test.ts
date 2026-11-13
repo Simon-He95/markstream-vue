@@ -27,6 +27,24 @@ describe('trailing mid-state marker stripping', () => {
     expect(paragraphText('**bold** text *')).toBe('**bold**| text *')
   })
 
+  it('keeps a punctuation tail after a long run of blank lines', () => {
+    const source = `Intro\n${'\n'.repeat(32768)}!`
+    const nodes = parseMarkdownToStructure(source, getMarkdown('blank-tail'), { final: false, streamParse: true })
+    expect(nodes).toMatchObject([
+      { type: 'paragraph', raw: 'Intro' },
+      { type: 'paragraph', raw: '!' },
+    ])
+  })
+
+  it.each([['~', 'strikethrough'], ['*', 'strong']])('recovers long %s runs without exhausting the stack', (marker, type) => {
+    const source = `Intro ${marker.repeat(8192)}!`
+    const nodes = parseMarkdownToStructure(source, getMarkdown('long-markers'), { final: true, streamParse: false })
+    expect(nodes[0]).toMatchObject({ type: 'paragraph', raw: source })
+    const children = (nodes[0] as { children: Array<{ type: string, raw?: string }> }).children
+    expect(children.filter(child => child.type === type)).toHaveLength(2048)
+    expect(children.map(child => child.raw).join('')).toBe(source)
+  })
+
   it('still strips streaming mid-state markers in non-final parses', () => {
     // In streaming mode the trailing marker is a mid-state artifact and is
     // dropped so the UI does not flash a dangling `(` / `*`.

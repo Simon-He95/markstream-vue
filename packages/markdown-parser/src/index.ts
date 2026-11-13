@@ -17,6 +17,7 @@ import {
   parseMarkdownToStructure,
   processTokens,
 } from './parser'
+import { getCachedSourceLineOffsets, getParserRuntime } from './parser/runtime'
 import { applyInlinePairs } from './plugins/inlinePairs'
 
 // Module-level registry for callers that want to add plugins to every
@@ -208,35 +209,32 @@ export function getMarkdown(msgId: string = `editor-${Date.now()}`, options: Get
     }
     const src: string = s.src
     const envFinal = !!s.env?.__markstreamFinal
-    // Fence tokens are rare in most documents; only pay the O(lines) split when
-    // at least one fence token made it through the block parser. Streaming
-    // parses run this rule on every commit, so skipping the split for
-    // fence-free documents removes a steady allocation source.
-    let lines: string[] | undefined
+    // Tail parses retain absolute line maps and expose the full source here.
+    let offsets: number[] | undefined
     for (const token of s.tokens) {
       if (token.type !== 'fence' || !token.map || !token.markup)
         continue
-      const openLine: number = token.map[0]
-      const endLine: number = token.map[1]
-      const markup: string = token.markup
-      const marker = markup[0]
-      const minLen = markup.length
-      // The closing line, if exists, should be the last line consumed by the block
-      const lineIdx = Math.max(0, endLine - 1)
-      lines ??= src.split(/\r?\n/)
-      const line = lines[lineIdx] ?? ''
-      let i = 0
-      while (i < line.length && (line[i] === ' ' || line[i] === '\t')) i++
-      let count = 0
-      while (i + count < line.length && line[i + count] === marker) count++
-      let j = i + count
-      while (j < line.length && (line[j] === ' ' || line[j] === '\t')) j++
-      const closed = envFinal ? true : (endLine > openLine + 1 && count >= minLen && j === line.length)
-      const tokenShape = token as unknown as { meta?: Record<string, unknown> }
-      tokenShape.meta = tokenShape.meta ?? {}
-      ; (tokenShape.meta as Record<string, unknown>).unclosed = !closed
-      // also set a explicit `closed` boolean for compatibility with plugins/tests
-      ; (tokenShape.meta as Record<string, unknown>).closed = !!closed
+      const [openLine, endLine] = token.map
+      let closed = envFinal
+      if (!closed && endLine > openLine + 1) {
+        offsets ??= getCachedSourceLineOffsets(getParserRuntime(md), src)
+        const start = offsets[endLine - 1] ?? src.length
+        const next = offsets[endLine]
+        let end = next === undefined ? src.length : next - 1
+        if (next !== undefined && src[end - 1] === '\r')
+          end--
+        const line = src.slice(start, end)
+        let i = 0
+        while (i < line.length && (line[i] === ' ' || line[i] === '\t')) i++
+        let count = 0
+        while (i + count < line.length && line[i + count] === token.markup[0]) count++
+        let j = i + count
+        while (j < line.length && (line[j] === ' ' || line[j] === '\t')) j++
+        closed = count >= token.markup.length && j === line.length
+      }
+      const meta = token.meta ??= {}
+      meta.unclosed = !closed
+      meta.closed = closed
     }
   })
 

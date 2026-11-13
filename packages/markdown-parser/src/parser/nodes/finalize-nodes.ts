@@ -19,8 +19,13 @@ export function finalizeHtmlBlockLoading(nodes: ParsedNode[]) {
     if (node.type === 'html_block' && node.loading === true)
       node.loading = false
 
-    for (const child of Object.values(node))
-      visit(child)
+    for (const key in node) {
+      if (!Object.prototype.hasOwnProperty.call(node, key))
+        continue
+      const child = node[key]
+      if (child && typeof child === 'object')
+        visit(child)
+    }
   }
 
   visit(nodes)

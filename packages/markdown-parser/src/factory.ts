@@ -159,6 +159,7 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
     // Keep cold streaming initialization spread across frames as in the native path.
     let canScreen = !!nativeMethods && !!nativeBuilder && seedSafe
       && (state.env?.__markstreamFinal !== false || !!re?.cache.link_fuzzy_search)
+    const screenedOptions = re?.opts
     const candidates = tokens.filter((token: Token) => {
       if (canScreen && token?.type === 'inline') {
         const children = token.children
@@ -169,8 +170,11 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
         else if (!LINKIFY_SEED_RE.test(String(token.content ?? ''))) {
           return false
         }
-        // Native validators can change schemas or methods during this rule run.
-        canScreen = false
+        const mayLinkify = inlineTokenMayNeedLinkify(token, linkify)
+        // A schema validator can reconfigure linkify during the test.
+        canScreen = linkify.re === re && re?.opts === screenedOptions && re?.cache === screenedCache
+          && linkify.test === nativeTest && linkify.match === nativeMatch
+        return mayLinkify
       }
       return inlineTokenMayNeedLinkify(token, linkify)
     })

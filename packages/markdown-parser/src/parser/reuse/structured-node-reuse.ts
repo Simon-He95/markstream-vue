@@ -250,7 +250,16 @@ function getReusableTopLevelTokenGroups(
 }
 
 function sourceEndsWithBlankLine(source: string) {
-  return /\r?\n[\t ]*\r?\n[\t ]*$/.test(source)
+  let index = source.length - 1
+  while (source.charCodeAt(index) === 32 || source.charCodeAt(index) === 9)
+    index--
+  if (source.charCodeAt(index--) !== 10)
+    return false
+  if (source.charCodeAt(index) === 13)
+    index--
+  while (source.charCodeAt(index) === 32 || source.charCodeAt(index) === 9)
+    index--
+  return source.charCodeAt(index) === 10
 }
 
 export function canReuseStructuredStreamNodes(options: ParseOptions) {

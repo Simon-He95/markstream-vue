@@ -199,7 +199,8 @@ export class ParserRuntime {
     if (this.sourceRelationPrevious === previousSource && this.sourceRelationCurrent === currentSource)
       return true
 
-    if (!currentSource.startsWith(previousSource))
+    // Slice equality takes V8's fast string comparison path for long prefixes.
+    if (currentSource.slice(0, previousSource.length) !== previousSource)
       return false
 
     this.sourceRelationPrevious = previousSource

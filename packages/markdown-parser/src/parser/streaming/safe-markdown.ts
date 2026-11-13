@@ -37,7 +37,8 @@ function transformStreamingSafeMarkdown(
     return shouldReconstruct ? `${before}\\n${cmd}` : full
   })
 
-  if (!isFinal) {
+  // Marker recovery only applies when the last non-whitespace character is a digit or punctuation.
+  if (!isFinal && !/[a-z]$/i.test(safeMarkdown.trimEnd())) {
     if (safeMarkdown.endsWith('- *')) {
       // 放置markdown 解析 - * 会被处理成多个 ul >li 嵌套列表
       safeMarkdown = safeMarkdown.replace(/- \*$/, '- \\*')
@@ -98,7 +99,9 @@ function transformStreamingSafeMarkdown(
       // 此时 markdown 解析会出错要跳过
       safeMarkdown = safeMarkdown.replace(/(\n\[|\n\()+\n*$/g, '\n')
     }
+  }
 
+  if (!isFinal) {
     // The tolerant-math boundary scan is applied by the caller to the full
     // document (it carries incremental fence/math state across commits).
     safeMarkdown = getStreamingAdmonitionOpenTailReplacement(safeMarkdown, options.customHtmlTags) ?? safeMarkdown
@@ -113,7 +116,15 @@ export function getSafeMarkdown(runtime: ParserRuntime, sourceMarkdown: string, 
   const mode = `${isFinal ? 'final' : 'stream'}:${(options.customHtmlTags ?? []).join(',')}`
   const previous = options.isFragment ? undefined : runtime.safeMarkdown
 
+  const update = !isFinal && !options.isFragment && runtime.chunkUpdate?.source === sourceMarkdown
+    ? runtime.chunkUpdate
+    : undefined
+  const tailLength = SAFE_MARKDOWN_WINDOW_MARGIN + SAFE_MARKDOWN_WINDOW_OVERLAP
+  // A cached tail exists only while preprocessing leaves the raw source intact.
+  let rawTail: string | undefined
+  let noMathBoundaryOpener = false
   let safeMarkdown: string
+  let extendsPreviousSafeMarkdown = false
   if (
     // Append-only streaming fast path: only the appended tail can introduce
     // new mid-state markers, and the prefix of the previous safe markdown was
@@ -133,8 +144,11 @@ export function getSafeMarkdown(runtime: ParserRuntime, sourceMarkdown: string, 
     // source with it: any char-inserting fix earlier in the document (e.g.
     // `\n(abla|eq|ot|exists)` / `\r(ight|ho)`) made the two index spaces
     // diverge and silently dropped/repeated chars at the seam.
-    const windowStart = Math.max(0, previous.source.length - SAFE_MARKDOWN_WINDOW_MARGIN - SAFE_MARKDOWN_WINDOW_OVERLAP)
-    const window = sourceMarkdown.slice(windowStart)
+    const windowStart = Math.max(0, previous.source.length - tailLength)
+    const cachedTail = update?.previous === previous.source ? previous.unchangedRawTail : undefined
+    const window = update && cachedTail !== undefined
+      ? cachedTail + update.chunk
+      : sourceMarkdown.slice(windowStart)
     const transformed = transformStreamingSafeMarkdown(window, isFinal, options)
     // Overlap verification: the part of the window that overlaps the previous
     // source (its first `previous.source.length - windowStart` chars) must be
@@ -146,10 +160,28 @@ export function getSafeMarkdown(runtime: ParserRuntime, sourceMarkdown: string, 
     // full-document transform, which is always correct.
     const overlapLength = previous.source.length - windowStart
     const overlapOk = transformed.length >= overlapLength
-      && transformed.slice(0, overlapLength) === previous.safeMarkdown.slice(-overlapLength)
-    safeMarkdown = overlapOk
-      ? previous.safeMarkdown.slice(0, previous.safeMarkdown.length - overlapLength) + transformed
-      : transformStreamingSafeMarkdown(sourceMarkdown, isFinal, options)
+      && transformed.slice(0, overlapLength) === (cachedTail ?? previous.safeMarkdown.slice(-overlapLength))
+    if (overlapOk) {
+      extendsPreviousSafeMarkdown = true
+      if (transformed === window && (cachedTail !== undefined || previous.safeMarkdown === previous.source)) {
+        safeMarkdown = sourceMarkdown
+        if (update) {
+          rawTail = window.slice(-tailLength)
+          if (previous.noMathBoundaryOpener !== false) {
+            const mathWindow = previous.noMathBoundaryOpener ? window : sourceMarkdown
+            noMathBoundaryOpener = !mathWindow.includes('$$') && !mathWindow.includes('\\[')
+          }
+          if (update.previous === previous.source)
+            update.safeChunk = update.chunk
+        }
+      }
+      else {
+        safeMarkdown = previous.safeMarkdown.slice(0, previous.safeMarkdown.length - overlapLength) + transformed
+      }
+    }
+    else {
+      safeMarkdown = transformStreamingSafeMarkdown(sourceMarkdown, isFinal, options)
+    }
   }
   else {
     safeMarkdown = transformStreamingSafeMarkdown(sourceMarkdown, isFinal, options)
@@ -159,10 +191,36 @@ export function getSafeMarkdown(runtime: ParserRuntime, sourceMarkdown: string, 
   // its own cache keyed by md, so it must always run on the full document
   // (not a tail window) — otherwise pre-window math openers would be
   // invisible and ambiguous tails would not be hidden.
-  if (!isFinal)
+  if (!isFinal) {
+    // A verified overlap proves the transformed prefix is unchanged. A math
+    // truncation can preserve that proof only if it leaves the entire prefix.
+    if (extendsPreviousSafeMarkdown && previous)
+      runtime.rememberSourceExtension(previous.safeMarkdown, safeMarkdown)
+    const unstrippedLength = safeMarkdown.length
     safeMarkdown = stripPendingExplicitMathTail(safeMarkdown, runtime, !options.isFragment)
+    if (safeMarkdown.length < unstrippedLength) {
+      rawTail = undefined
+      if (update)
+        update.safeChunk = undefined
+    }
+    if (extendsPreviousSafeMarkdown && previous
+      && safeMarkdown.length < unstrippedLength && safeMarkdown.length >= previous.safeMarkdown.length) {
+      runtime.rememberSourceExtension(previous.safeMarkdown, safeMarkdown)
+    }
+  }
 
-  if (!options.isFragment)
-    runtime.safeMarkdown = { source: sourceMarkdown, safeMarkdown, mode }
+  if (!options.isFragment) {
+    runtime.safeMarkdown = {
+      source: sourceMarkdown,
+      safeMarkdown,
+      mode,
+      unchangedRawTail: rawTail,
+      noMathBoundaryOpener: rawTail === undefined ? undefined : noMathBoundaryOpener,
+      cannotBeStandaloneHtml: rawTail !== undefined && (
+        (extendsPreviousSafeMarkdown && previous?.cannotBeStandaloneHtml)
+        || (!previous?.cannotBeStandaloneHtml && /^\s*[^<\s]/.test(safeMarkdown))
+      ),
+    }
+  }
   return safeMarkdown
 }

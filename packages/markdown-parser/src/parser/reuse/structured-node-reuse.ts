@@ -380,6 +380,12 @@ function updateStructuredStreamCache(
     mixed: groups.mixed,
     source,
     nodes,
+    ...(runtime.chunkUpdate
+      ? {
+          hasTopLevelHtml: nodes.some(node => node.type === 'html_block'),
+          contexts: linkifyDemotionContexts,
+        }
+      : {}),
     linkifyDemotionContext,
     stableGroupCount,
     requireClosingStrong: options.requireClosingStrong,
@@ -461,6 +467,54 @@ export function processTopLevelTokensWithReuse(
     return callbacks.processTokens(tokens, options)
 
   const previous = runtime.structuredStream
+  const update = runtime.chunkUpdate
+  if (update && previous?.contexts && !previous.hasTopLevelHtml
+    && previous.tokens === tokens && update.tokenStart > 0) {
+    let stableGroups = previous.groupStarts.length
+    while (stableGroups > 0 && previous.groupStarts[stableGroups - 1]! >= update.tokenStart)
+      stableGroups--
+    if (stableGroups > 0 && update.tokenStart < previous.tokenCount
+      && previous.groupStarts[stableGroups] !== update.tokenStart) {
+      stableGroups--
+    }
+    const tailStart = previous.groupStarts[stableGroups] ?? update.tokenStart
+    const groups = getReusableTopLevelTokenGroups(tokens, options.validateLink, tailStart)
+    if (groups) {
+      const tailOptions = {
+        ...options,
+        linkifyDemotionSeedContext: previous.contexts[stableGroups - 1],
+      }
+      const tailNodes = callbacks.processTokens(tokens.slice(tailStart), tailOptions)
+      const contexts = tailOptions.linkifyDemotionResultContexts
+      if (tailNodes.length === groups.starts.length && contexts
+        && !tailNodes.some(node => node.type === 'html_block')) {
+        previous.nodes.length = stableGroups
+        previous.groupStarts.length = stableGroups
+        previous.contexts.length = stableGroups
+        for (const node of tailNodes)
+          previous.nodes.push(node)
+        for (const start of groups.starts)
+          previous.groupStarts.push(start)
+        for (const context of contexts)
+          previous.contexts.push(context)
+        previous.tokenCount = tokens.length
+        previous.source = source
+        update.start = stableGroups
+        return previous.nodes
+      }
+    }
+  }
+
+  // A reset or unsupported tail requires a full snapshot, including HTML processing.
+  if (update) {
+    const groups = getReusableTopLevelTokenGroups(tokens, options.validateLink)
+    const result = callbacks.processTokens(tokens, options)
+    if (groups)
+      updateStructuredStreamCache(runtime, source, tokens, groups, result, options, options.linkifyDemotionResultContexts)
+    else
+      runtime.structuredStream = undefined
+    return result
+  }
   const mode = getTopLevelStreamParseMode(runtime)
   // markdown-it-ts returns the SAME cached token array (with the same prefix
   // token objects) across append/tail parses, so identity proves the prefix is

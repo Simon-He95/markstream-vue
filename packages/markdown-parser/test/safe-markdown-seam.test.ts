@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { getMarkdown, parseMarkdownToStructure } from '../src'
+import { createChunkParserPrototype } from '../src/chunk-prototype'
 
 /**
  * Regression: the streaming safe-markdown tail window must be cut with a
@@ -60,5 +61,26 @@ describe('streaming safe-markdown tail-window seam', () => {
     const cold2 = parseMarkdownToStructure(commit2, coldMd, { final: false, streamParse: false })
 
     expect(JSON.stringify(nodes2)).toBe(JSON.stringify(cold2))
+  })
+
+  it.each([
+    ['\n\n$', '$', '\n', 'f(', 'x)', '\n$', '$', '\n\nNext'],
+    ['\n\n\\', '[', '\n', 'f(', 'x)', '\n\\', ']', '\n\nNext'],
+    ['\n\nWord\r', 'ight', '\n\nNext'],
+  ])('keeps chunk and string ASTs aligned through a tail rewrite (%s)', (...chunks) => {
+    const parser = createChunkParserPrototype(getMarkdown('safe-window'))
+    const oracle = getMarkdown('safe-window')
+    const options = { streamParse: true, reuseStableTopLevelNodes: true }
+    let source = ''
+    let nodes: ReturnType<typeof parseMarkdownToStructure> = []
+    for (const chunk of ['Ordinary paragraph.\n\n'.repeat(60), 'Warm-up', ' text', ...chunks]) {
+      source += chunk
+      const update = parser.append(chunk)
+      nodes = nodes.slice(0, update.start).concat(update.nodes)
+      expect(nodes).toEqual(parseMarkdownToStructure(source, oracle, { ...options, final: false }))
+    }
+    const update = parser.finish()
+    expect(nodes.slice(0, update.start).concat(update.nodes))
+      .toEqual(parseMarkdownToStructure(source, oracle, { ...options, final: true }))
   })
 })

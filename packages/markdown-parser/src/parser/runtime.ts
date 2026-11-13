@@ -26,6 +26,9 @@ export interface SafeMarkdownRuntimeState {
   source: string
   safeMarkdown: string
   mode: string
+  unchangedRawTail?: string
+  cannotBeStandaloneHtml?: boolean
+  noMathBoundaryOpener?: boolean
 }
 
 export interface TolerantMathBoundaryRuntimeState {
@@ -62,6 +65,8 @@ export interface StructuredStreamRuntimeState {
   mixed: boolean
   source: string
   nodes: ParsedNode[]
+  hasTopLevelHtml?: boolean
+  contexts?: (LinkifyDemotionContext | undefined)[]
   linkifyDemotionContext?: LinkifyDemotionContext
   stableGroupCount: number
   requireClosingStrong: boolean | undefined
@@ -102,9 +107,13 @@ export function getCachedSourceLineOffsets(runtime: ParserRuntime, source: strin
 
   if (cached && source.length > cached.source.length && runtime.sourceExtends(cached.source, source)) {
     const offsets = cached.offsets
-    for (let i = cached.source.length; i < source.length; i++) {
-      if (source.charCodeAt(i) === 10)
-        offsets.push(i + 1)
+    const start = cached.source.length
+    const chunk = runtime.getSafeChunk(cached.source, source)
+    const scan = chunk ?? source
+    const base = chunk === undefined ? 0 : start
+    for (let i = start - base; i < scan.length; i++) {
+      if (scan.charCodeAt(i) === 10)
+        offsets.push(base + i + 1)
     }
     cached.source = source
     return offsets
@@ -164,6 +173,8 @@ export class ParserRuntime {
   pendingExplicitMathTail?: PendingExplicitMathTailRuntimeState
   readonly streamParseEnvs = new Map<string, Record<string, unknown>>()
   topLevelStreamParseMode?: string
+  chunkUpdate?: { previous: string, source: string, chunk: string, safeChunk?: string, start: number, tokenStart: number, coreSourceStart: number | null, appended: boolean }
+  tokenizerSource?: string
   structuredStream?: StructuredStreamRuntimeState
   /**
    * Number of reused (stable) prefix nodes when the last
@@ -195,6 +206,12 @@ export class ParserRuntime {
     this.markdownIt = markdownIt
   }
 
+  getSafeChunk(previousSource: string, currentSource: string) {
+    const update = this.chunkUpdate
+    if (update?.previous === previousSource && update.source === currentSource)
+      return update.safeChunk
+  }
+
   sourceExtends(previousSource: string, currentSource: string) {
     if (this.sourceRelationPrevious === previousSource && this.sourceRelationCurrent === currentSource)
       return true
@@ -203,20 +220,29 @@ export class ParserRuntime {
     if (currentSource.slice(0, previousSource.length) !== previousSource)
       return false
 
+    this.rememberSourceExtension(previousSource, currentSource)
+    return true
+  }
+
+  rememberSourceExtension(previousSource: string, currentSource: string) {
     this.sourceRelationPrevious = previousSource
     this.sourceRelationCurrent = currentSource
-    return true
   }
 
   beginRootParse(source: string, semantics: ParserRuntimeSemantics) {
     this.streamResetInCurrentRootParse = false
-    const sourceChangedNonAppend = this.documentSource !== undefined
+    const update = this.chunkUpdate
+    const trustedAppend = update && update.source === source && update.previous === this.documentSource
+    const sourceChangedNonAppend = !trustedAppend && this.documentSource !== undefined
       && source !== this.documentSource
       && !this.sourceExtends(this.documentSource, source)
     const semanticsChanged = this.semantics !== undefined && !sameSemantics(this.semantics, semantics)
 
     if (this.finalized || sourceChangedNonAppend || semanticsChanged)
       this.resetDocument(this.streamStateActive)
+
+    if (trustedAppend)
+      this.rememberSourceExtension(update.previous, source)
 
     this.finalized = false
     this.documentSource = source
@@ -262,6 +288,7 @@ export class ParserRuntime {
     if (!stream || typeof reset !== 'function')
       return
 
+    this.tokenizerSource = undefined
     this.resettingStream = true
     try {
       reset.call(stream)
@@ -278,6 +305,7 @@ export class ParserRuntime {
   }
 
   handleExternalStreamReset() {
+    this.tokenizerSource = undefined
     this.streamStateActive = false
     this.streamResetInCurrentRootParse = true
     this.clearDocumentCaches()

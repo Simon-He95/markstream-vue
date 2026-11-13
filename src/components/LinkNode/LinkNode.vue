@@ -2,7 +2,7 @@
 // 定义链接节点
 import type { LinkNodeProps } from '../../types/component-props'
 import { shouldOpenLinkInNewTab } from 'stream-markdown-parser'
-import { computed, inject, useAttrs } from 'vue'
+import { computed, inject, onBeforeUnmount, useAttrs, watch } from 'vue'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
 import { sanitizeAttrs } from '../../utils/htmlRenderer'
 import { useCustomNodeComponents } from '../../utils/nodeComponents'
@@ -143,6 +143,14 @@ const anchorAttrs = computed(() => {
 })
 
 // Tooltip handlers using singleton tooltip
+let dismissTooltip: (() => void) | undefined
+
+onBeforeUnmount(() => dismissTooltip?.())
+watch([() => props.node.loading, tooltipEnabled], ([loading, enabled]) => {
+  if (loading || !enabled)
+    dismissTooltip?.()
+})
+
 function onAnchorEnter(e: Event) {
   if (!tooltipEnabled.value)
     return
@@ -150,7 +158,7 @@ function onAnchorEnter(e: Event) {
   const origin = ev?.clientX != null && ev?.clientY != null ? { x: ev.clientX, y: ev.clientY } : undefined
   // show the link href in tooltip; fall back to title/text if href missing
   const txt = props.node?.title || (safeHref.value?.includes('xn--') && props.node?.text?.includes('://') ? props.node.text : safeHref.value) || ''
-  showTooltipForAnchor(e.currentTarget as HTMLElement, txt, 'top', false, origin)
+  dismissTooltip = showTooltipForAnchor(e.currentTarget as HTMLElement, txt, 'top', false, origin)
 }
 
 function onAnchorLeave() {

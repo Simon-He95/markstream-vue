@@ -110,6 +110,11 @@ export function showTooltipForAnchor(
   if (immediate)
     void doShow()
   else showTimer = setTimeout(doShow, 80)
+
+  return () => {
+    if (requestId === showRequestId)
+      hideTooltip(true)
+  }
 }
 
 export function hideTooltip(immediate = false) {

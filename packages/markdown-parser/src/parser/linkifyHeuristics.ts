@@ -15,6 +15,10 @@ const MARKET_TICKER_CONTEXT_SYMBOL_RE = /^(?=.{1,12}$)[A-Z0-9]+(?:[-.][A-Z0-9]+)
 const EXPLICIT_FILENAME_CONTEXT_RE = /文件名\s*[:：]?|附件\s*[:：]?|路径\s*[:：]?|路徑\s*[:：]?|文件列表\s*[:：]?|文档列表\s*[:：]?|文檔列表\s*[:：]?|\bfile\s*names?\b\s*[:：]?|\battachments?\b\s*[:：]?|\bpaths?\b\s*[:：]?|\bfile\s+lists?\b\s*[:：]?|\bdocument\s+lists?\b\s*[:：]?/iu
 const FILENAME_CONTEXT_RE = /文件名\s*[:：]?|文件\s*[:：]?|附件\s*[:：]?|档案\s*[:：]?|檔案\s*[:：]?|文档\s*[:：]?|文檔\s*[:：]?|资料\s*[:：]?|資料\s*[:：]?|路径\s*[:：]?|路徑\s*[:：]?|\bfile\s*name\b\s*[:：]?|\battachments?\b\s*[:：]?|\bfiles?\b\s*[:：]?|\bdocuments?\b\s*[:：]?|\bdocs?\b\s*[:：]?|\bpaths?\b\s*[:：]?/iu
 const MARKET_TICKER_CONTEXT_RE = /股票代码|股票代碼|证券代码|證券代碼|(?:代码|代碼|交易所|后缀|後綴|市场|市場)(?=$|[\s:：/|,，、()（）])|\btickers?\b|\bsymbols?\b|\bexchanges?\b/iu
+const NON_ASCII_RE = /[\x80-\uFFFF]/
+const ASCII_EXPLICIT_FILENAME_CONTEXT_RE = /\bfile\s*names?\b|\battachments?\b|\bpaths?\b|\bfile\s+lists?\b|\bdocument\s+lists?\b/i
+const ASCII_FILENAME_CONTEXT_RE = /\bfile\s*name\b|\battachments?\b|\bfiles?\b|\bdocuments?\b|\bdocs?\b|\bpaths?\b/i
+const ASCII_MARKET_TICKER_CONTEXT_RE = /\btickers?\b|\bsymbols?\b|\bexchanges?\b/i
 const LINKIFY_DEMOTION_CONTEXT_CACHE_LIMIT = 2000
 const LINKIFY_DEMOTION_CONTEXT_CACHE_MAX_TEXT_LENGTH = 16384
 const LINKIFY_DEMOTION_CONTEXT_CACHE_MAX_TOTAL_TEXT_LENGTH = 512 * LINKIFY_DEMOTION_CONTEXT_CACHE_LIMIT
@@ -361,11 +365,13 @@ export function inferLinkifyDemotionContext(contextText?: string): LinkifyDemoti
   if (!mayContainLinkifyDemotionContext(text))
     return rememberLinkifyDemotionContext(text, EMPTY_LINKIFY_DEMOTION_CONTEXT)
 
-  const explicitFilename = EXPLICIT_FILENAME_CONTEXT_RE.test(text)
+  const ascii = !NON_ASCII_RE.test(text)
+
+  // ASCII input cannot match the CJK alternatives or Unicode case folds.
   const context = {
-    explicitFilename,
-    filename: FILENAME_CONTEXT_RE.test(text),
-    marketTicker: MARKET_TICKER_CONTEXT_RE.test(text),
+    explicitFilename: (ascii ? ASCII_EXPLICIT_FILENAME_CONTEXT_RE : EXPLICIT_FILENAME_CONTEXT_RE).test(text),
+    filename: (ascii ? ASCII_FILENAME_CONTEXT_RE : FILENAME_CONTEXT_RE).test(text),
+    marketTicker: (ascii ? ASCII_MARKET_TICKER_CONTEXT_RE : MARKET_TICKER_CONTEXT_RE).test(text),
   }
   return rememberLinkifyDemotionContext(text, context)
 }

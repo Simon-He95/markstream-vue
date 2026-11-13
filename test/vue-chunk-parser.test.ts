@@ -100,14 +100,21 @@ describe('experimental Vue chunk parser', () => {
       current.props.nodes = chunk.props.nodes = undefined
       compare()
       assert.equal(create.mock.calls.length, 2)
+      current.props.parseOptions = chunk.props.parseOptions = { includeSourceMap: true }
+      compare()
+      assert.ok(chunk.state.parsedNodes.value[0]?.sourceMap)
+      assert.equal(create.mock.calls.length, 2)
+      current.props.parseOptions = chunk.props.parseOptions = undefined
+      compare()
+      assert.equal(create.mock.calls.length, 3)
       current.content.value = chunk.content.value = text.replace('First', 'Edited')
       compare()
-      assert.equal(create.mock.calls.length, 2)
+      assert.equal(create.mock.calls.length, 3)
       current.content.value = chunk.content.value = ''
       compare()
       current.content.value = chunk.content.value = text
       compare()
-      assert.equal(create.mock.calls.length, 3)
+      assert.equal(create.mock.calls.length, 4)
     }
     finally {
       current.stop()

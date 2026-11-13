@@ -49,7 +49,7 @@ function isCurrentStreamToken(state: InlineParseState, token: MarkdownToken) {
   return token === state.tokens[state.index]
 }
 
-function handleEmphasisAndStrikethrough(state: InlineParseState, content: string, token: MarkdownToken): boolean {
+function handleEmphasisAndStrikethrough(state: InlineParseState, content: string, token: MarkdownToken): boolean | string {
   const hasAsterisk = content.includes('*')
   const hasStrikethrough = content.includes('~~')
   if (!hasAsterisk && !hasStrikethrough)
@@ -66,10 +66,8 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
   if (literalIntrawordRunPairEnd !== -1) {
     state.pushText(content.slice(0, literalIntrawordRunPairEnd), content.slice(0, literalIntrawordRunPairEnd))
     const afterContent = content.slice(literalIntrawordRunPairEnd)
-    if (afterContent) {
-      state.dispatchToken({ type: 'text', content: afterContent, raw: afterContent } as unknown as MarkdownToken)
-      state.index--
-    }
+    if (afterContent)
+      return afterContent
     state.index++
     return true
   }
@@ -128,14 +126,8 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
     ], 0, state.parseInlineTokens, state.options)
     state.resetCurrentTextNode()
     state.pushParsed(node)
-    if (after) {
-      state.dispatchToken({
-        type: 'text',
-        content: after,
-        raw: after,
-      })
-      state.index--
-    }
+    if (after)
+      return after
     state.index++
     return true
   }
@@ -221,10 +213,8 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
           state.resetCurrentTextNode()
           state.pushParsed(node)
           const afterContent = content.slice(closeIndex + 3)
-          if (afterContent) {
-            state.dispatchToken({ type: 'text', content: afterContent, raw: afterContent } as unknown as MarkdownToken)
-            state.index--
-          }
+          if (afterContent)
+            return afterContent
           state.index++
           return true
         }
@@ -234,10 +224,8 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
       const literalRun = content.slice(openIdx, openIdx + runInfo.len)
       state.pushText(literalRun, literalRun)
       const afterContent = content.slice(openIdx + runInfo.len)
-      if (afterContent) {
-        state.dispatchToken({ type: 'text', content: afterContent, raw: afterContent } as unknown as MarkdownToken)
-        state.index--
-      }
+      if (afterContent)
+        return afterContent
       state.index++
       return true
     }
@@ -296,14 +284,8 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
     ], 0, state.parseInlineTokens, state.raw, state.options)
     state.resetCurrentTextNode()
     state.pushParsed(node)
-    if (after) {
-      state.dispatchToken({
-        type: 'text',
-        content: after,
-        raw: after,
-      })
-      state.index--
-    }
+    if (after)
+      return after
     state.index++
     return true
   }
@@ -319,10 +301,8 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
     if (!isEmphasisOpenDelimiter(content, idx)) {
       state.pushText(content[idx], content[idx])
       const afterContent = content.slice(idx + 1)
-      if (afterContent) {
-        state.dispatchToken({ type: 'text', content: afterContent, raw: afterContent } as unknown as MarkdownToken)
-        state.index--
-      }
+      if (afterContent)
+        return afterContent
       state.index++
       return true
     }
@@ -355,15 +335,22 @@ function handleEmphasisAndStrikethrough(state: InlineParseState, content: string
     state.pushParsed(node)
     if (closeIndex !== -1 && closeIndex < content.length - 1) {
       const afterContent = content.slice(closeIndex + 1)
-      if (afterContent) {
-        state.dispatchToken({ type: 'text', content: afterContent, raw: afterContent } as unknown as MarkdownToken)
-        state.index--
-      }
+      if (afterContent)
+        return afterContent
     }
     state.index++
     return true
   }
   return false
+}
+
+function handleEmphasisBeforeCode(state: InlineParseState, content: string, token: MarkdownToken) {
+  const handled = handleEmphasisAndStrikethrough(state, content, token)
+  if (typeof handled === 'string') {
+    handleTextToken(state, { type: 'text', content: handled, raw: handled } as MarkdownToken)
+    return true
+  }
+  return handled
 }
 
 function handleInlineCodeContent(state: InlineParseState, content: string, _token: MarkdownToken): boolean {
@@ -405,7 +392,7 @@ function handleInlineCodeContent(state: InlineParseState, content: string, _toke
       const beforeText = content.slice(0, codeStart)
       const codeContent = content.slice(codeStart + 1)
       if (beforeText) {
-        const handled = handleEmphasisAndStrikethrough(state, beforeText, _token)
+        const handled = handleEmphasisBeforeCode(state, beforeText, _token)
         if (!handled)
           state.pushText(beforeText, beforeText)
         else
@@ -432,7 +419,7 @@ function handleInlineCodeContent(state: InlineParseState, content: string, _toke
   if (beforeText) {
     // Try to parse emphasis/strong inside the pre-code fragment, without
     // advancing the outer token cursor permanently.
-    const handled = handleEmphasisAndStrikethrough(state, beforeText, _token)
+    const handled = handleEmphasisBeforeCode(state, beforeText, _token)
     if (!handled)
       state.pushText(beforeText, beforeText)
     else
@@ -499,6 +486,15 @@ function commitTextNode(state: InlineParseState, content: string, token: Markdow
 }
 
 export function handleTextToken(state: InlineParseState, token: MarkdownToken) {
+  // Each continuation consumes an emphasis delimiter before returning a suffix.
+  let remaining = handleTextTokenPart(state, token)
+  while (remaining !== undefined) {
+    const suffix = remaining
+    remaining = handleTextTokenPart(state, { type: 'text', content: suffix, raw: suffix } as MarkdownToken)
+  }
+}
+
+function handleTextTokenPart(state: InlineParseState, token: MarkdownToken): string | undefined {
   // 合并连续的 text 节点
   const rawContent = String(token.content ?? '')
   const rawMarkerFlags = getInlineTextMarkerFlags(rawContent)
@@ -617,8 +613,9 @@ export function handleTextToken(state: InlineParseState, token: MarkdownToken) {
     state.index++
     return
   }
-  if (handleEmphasisAndStrikethrough(state, content, token))
-    return
+  const handled = handleEmphasisAndStrikethrough(state, content, token)
+  if (handled)
+    return typeof handled === 'string' ? handled : undefined
 
   // Emit remaining text token
   commitTextNode(state, content, token, preToken, nextToken, markerFlags)

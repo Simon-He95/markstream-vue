@@ -2460,11 +2460,12 @@ async function flushPlainCodeUpdateQueue(generation = plainCodeUpdateGeneration)
         break
       const next = pendingPlainCodeUpdate
       pendingPlainCodeUpdate = null
-      if (next.code === renderedPlainCode?.code && next.language === renderedPlainCode.language)
+      const previous = renderedPlainCode
+      if (next.code === previous?.code && next.language === previous.language)
         continue
       try {
         await Promise.resolve(updateCode(next.code, next.language))
-        if (generation === plainCodeUpdateGeneration)
+        if (renderedPlainCode === previous)
           renderedPlainCode = next
         await nextTick()
         if (!isUnmounted && !isDiff.value) {

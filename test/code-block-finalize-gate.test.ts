@@ -238,6 +238,61 @@ describe('codeBlockNode final Diffs gate', () => {
     wrapper.unmount()
   })
 
+  it('does not update the new File surface with the same snapshot when the fence closes', async () => {
+    const runtime = helpers()
+    let finishCreation!: () => void
+    runtime.createEditor.mockImplementation((container: HTMLElement) => new Promise<void>((resolve) => {
+      finishCreation = () => {
+        installFinalDiffsDom(container)
+        resolve()
+      }
+    }))
+    const wrapper = mount(DeferredCodeBlockNode, {
+      props: {
+        node: makeNode('const value =', true),
+        loading: true,
+        stream: true,
+      },
+    })
+
+    await flush()
+    observers.at(-1)?.emit()
+    await wrapper.setProps({ node: makeNode('const value = 1', false), loading: false })
+    await vi.waitFor(() => expect(runtime.createEditor).toHaveBeenCalledTimes(1))
+    finishCreation()
+    await vi.waitFor(() => expect(wrapper.get('[data-markstream-enhanced]').attributes('data-markstream-enhanced')).toBe('true'))
+    expect(runtime.updateCode).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('applies the final snapshot after a different update finishes across stream settlement', async () => {
+    const runtime = helpers()
+    const original = makeNode('const value = 1', false)
+    const intermediate = makeNode('const value = 2', false)
+    const wrapper = mount(DeferredCodeBlockNode, {
+      props: { node: original, loading: false, stream: true },
+    })
+
+    await flush()
+    observers.at(-1)?.emit()
+    await vi.waitFor(() => expect(wrapper.get('[data-markstream-enhanced]').attributes('data-markstream-enhanced')).toBe('true'))
+
+    let finishUpdate!: () => void
+    runtime.updateCode.mockImplementationOnce(() => new Promise<void>((resolve) => {
+      finishUpdate = resolve
+    }))
+    await wrapper.setProps({ node: intermediate, loading: true })
+    await vi.waitFor(() => expect(runtime.updateCode).toHaveBeenCalledWith(intermediate.code, 'typescript'))
+
+    await wrapper.setProps({ node: original, loading: false })
+    await new Promise(resolve => requestAnimationFrame(resolve))
+    expect(runtime.updateCode).toHaveBeenCalledTimes(1)
+    finishUpdate()
+
+    await vi.waitFor(() => expect(runtime.updateCode).toHaveBeenNthCalledWith(2, original.code, 'typescript'))
+    wrapper.unmount()
+  })
+
   it('merges neutral options before host invariants and recreates when options change', async () => {
     const runtime = helpers()
     const onLineClick = vi.fn()

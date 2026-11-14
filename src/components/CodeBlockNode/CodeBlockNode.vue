@@ -2440,6 +2440,7 @@ function shouldDeferStreamingEditorCreation() {
 }
 
 let pendingPlainCodeUpdate: { code: string, language: string } | null = null
+let renderedPlainCode: { code: string, language: string } | null = null
 let plainCodeUpdateRunning = false
 let plainCodeUpdateGeneration = 0
 
@@ -2459,8 +2460,13 @@ async function flushPlainCodeUpdateQueue(generation = plainCodeUpdateGeneration)
         break
       const next = pendingPlainCodeUpdate
       pendingPlainCodeUpdate = null
+      const previous = renderedPlainCode
+      if (next.code === previous?.code && next.language === previous.language)
+        continue
       try {
         await Promise.resolve(updateCode(next.code, next.language))
+        if (renderedPlainCode === previous)
+          renderedPlainCode = next
         await nextTick()
         if (!isUnmounted && !isDiff.value) {
           syncEditorHostHeight(false)
@@ -2862,6 +2868,7 @@ async function runEditorCreation(el: HTMLElement) {
   clearEditorHeightSyncBindings()
   clearInlineFoldProxies()
   resetEditorHost(el)
+  renderedPlainCode = null
   syncStreamDiffsRuntimeOptions()
   await syncStreamDiffsWorkerTheme(resolveWorkerPoolTheme())
   if (isUnmounted)
@@ -2883,7 +2890,9 @@ async function runEditorCreation(el: HTMLElement) {
       }
     }
     else {
-      await createEditor!(el as HTMLElement, displayCode.value, runtimeLanguage.value)
+      const initial = { code: displayCode.value, language: runtimeLanguage.value }
+      renderedPlainCode = initial
+      await createEditor!(el as HTMLElement, initial.code, initial.language)
     }
     editorRuntimeCreated.value = true
   })()

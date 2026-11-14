@@ -238,6 +238,33 @@ describe('codeBlockNode final Diffs gate', () => {
     wrapper.unmount()
   })
 
+  it('does not update the new File surface with the same snapshot when the fence closes', async () => {
+    const runtime = helpers()
+    let finishCreation!: () => void
+    runtime.createEditor.mockImplementation((container: HTMLElement) => new Promise<void>((resolve) => {
+      finishCreation = () => {
+        installFinalDiffsDom(container)
+        resolve()
+      }
+    }))
+    const wrapper = mount(DeferredCodeBlockNode, {
+      props: {
+        node: makeNode('const value =', true),
+        loading: true,
+        stream: true,
+      },
+    })
+
+    await flush()
+    observers.at(-1)?.emit()
+    await wrapper.setProps({ node: makeNode('const value = 1', false), loading: false })
+    await vi.waitFor(() => expect(runtime.createEditor).toHaveBeenCalledTimes(1))
+    finishCreation()
+    await vi.waitFor(() => expect(wrapper.get('[data-markstream-enhanced]').attributes('data-markstream-enhanced')).toBe('true'))
+    expect(runtime.updateCode).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
   it('merges neutral options before host invariants and recreates when options change', async () => {
     const runtime = helpers()
     const onLineClick = vi.fn()

@@ -498,41 +498,50 @@ function resolveScrollRootElement(node?: HTMLElement | null) {
   return scrollRoot
 }
 
-function adjustScrollAfterHeightChange(container: HTMLElement, previousHeight: number, nextHeight: number) {
-  if (typeof window === 'undefined')
-    return
-  const roundedPrev = Math.ceil(previousHeight)
-  const roundedNext = Math.ceil(nextHeight)
-  const delta = roundedNext - roundedPrev
-  if (!delta)
+function captureScrollAnchor(block: HTMLElement | null) {
+  if (!block)
     return
 
-  const root = resolveScrollRootElement(container)
+  const root = resolveScrollRootElement(block)
   if (!root)
     return
 
-  const doc = container.ownerDocument ?? document
-  const viewportRoot = root === doc.body || root === doc.documentElement || root === doc.scrollingElement
-  const rootTop = viewportRoot ? 0 : root.getBoundingClientRect().top
-  const containerTop = container.getBoundingClientRect().top - rootTop
-  if (containerTop >= 0)
+  const viewportRoot = root === block.ownerDocument.scrollingElement
+  const rootTop = viewportRoot ? 0 : root.getBoundingClientRect().top + root.clientTop
+  const previousRect = block.getBoundingClientRect()
+  if (previousRect.bottom > rootTop)
     return
 
-  if (viewportRoot && typeof window.scrollBy === 'function') {
-    window.scrollBy(0, delta)
+  const previousScrollTop = root.scrollTop
+  if (root.scrollHeight - root.clientHeight - previousScrollTop <= PIXEL_EPSILON)
     return
+
+  return () => {
+    // The fallback can hold the outer height while the hidden editor is resized.
+    const delta = block.getBoundingClientRect().height - previousRect.height
+    if (Math.abs(delta) <= PIXEL_EPSILON)
+      return
+
+    // The browser may have already compensated for this layout change.
+    const scrollTop = root.scrollTop
+    const remainingDelta = delta - (scrollTop - previousScrollTop)
+    if (Math.abs(remainingDelta) <= PIXEL_EPSILON)
+      return
+
+    if (viewportRoot)
+      window.scrollBy(0, remainingDelta)
+    else
+      root.scrollTop = scrollTop + remainingDelta
   }
-
-  root.scrollTop += delta
 }
 
 function updateExpandedHeight() {
+  const restoreScrollAnchor = captureScrollAnchor(container.value)
   try {
     const container = codeEditor.value
     if (!container)
       return
 
-    const oldHeight = container.getBoundingClientRect().height
     const h = computeContentHeight()
     if (h != null && h > 0) {
       const nextHeight = Math.ceil(h)
@@ -540,10 +549,12 @@ function updateExpandedHeight() {
       container.style.height = `${nextHeight}px`
       container.style.maxHeight = 'none'
       container.style.overflow = 'visible'
-      adjustScrollAfterHeightChange(container, oldHeight, nextHeight)
     }
   }
   catch {}
+  finally {
+    restoreScrollAnchor?.()
+  }
 }
 
 function scheduleEditorVisualSync() {
@@ -569,62 +580,57 @@ function applyCollapsedContainerHeight(container: HTMLElement, contentHeight: nu
   container.style.height = `${Math.ceil(cappedHeight)}px`
   container.style.maxHeight = `${Math.ceil(maxHeight)}px`
   container.style.overflow = shouldScroll ? 'auto' : 'hidden'
-  return Math.ceil(cappedHeight)
 }
 
 function updateCollapsedHeight() {
+  const restoreScrollAnchor = captureScrollAnchor(container.value)
   try {
     const container = codeEditor.value
     if (!container)
       return
 
-    const oldHeight = container.getBoundingClientRect().height
-
     const max = getMaxHeightValue()
     if (resumeGuardFrames > 0) {
       resumeGuardFrames--
       if (heightBeforeCollapse.value != null) {
-        const h = applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max)
-        adjustScrollAfterHeightChange(container, oldHeight, h)
+        applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max)
         return
       }
     }
     const h0 = computeContentHeight()
     // 1) 有实时内容高度 -> 采用并记忆原始内容高度（未裁剪前），用于下一次恢复
     if (h0 != null && h0 > 0) {
-      const h = applyCollapsedContainerHeight(container, h0, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, h0, max)
       return
     }
 
     // 2) 使用折叠前的内容高度（不更新记忆值）
     if (heightBeforeCollapse.value != null) {
-      const h = applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max)
       return
     }
 
     // 3) 使用当前 DOM 高度（不更新记忆值）
     const rectH = Math.ceil((container.getBoundingClientRect?.().height) || 0)
     if (rectH > 0) {
-      const h = applyCollapsedContainerHeight(container, rectH, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, rectH, max)
       return
     }
 
     // 4) 兜底：若有先前行高/字体，可估一个最小高度；否则保持现状，避免强制跳到 MAX
     const prev = Number.parseFloat(container.style.height)
     if (!Number.isNaN(prev) && prev > 0) {
-      const h = applyCollapsedContainerHeight(container, prev, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, prev, max)
     }
     else {
       // 实在没有历史高度，才退到 max（极少数首次场景）
-      const h = applyCollapsedContainerHeight(container, max, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, max, max)
     }
   }
   catch {}
+  finally {
+    restoreScrollAnchor?.()
+  }
 }
 
 function getMaxHeightValue(): number {

@@ -1680,49 +1680,50 @@ function isExternallyManagedScroll(container: HTMLElement) {
   return codeBlockHostScrollManaged.value || isHostScrollManagedCodeBlockElement(container)
 }
 
-function adjustScrollAfterHeightChange(container: HTMLElement, previousHeight: number, nextHeight: number) {
-  if (typeof window === 'undefined')
-    return
-  if (isDiff.value)
-    return
-  if (isExternallyManagedScroll(container))
+function captureScrollAnchor(block: HTMLElement | null) {
+  if (!block || isDiff.value || isExternallyManagedScroll(block))
     return
 
-  const roundedPrev = Math.ceil(previousHeight)
-  const roundedNext = Math.ceil(nextHeight)
-  const delta = roundedNext - roundedPrev
-
-  // 1px is usually runtime/pre/browser rounding noise. Never mutate scrollTop
-  // for it, even outside a virtualizer.
-  if (Math.abs(delta) <= 1)
-    return
-
-  const root = resolveScrollRootElement(container)
+  const root = resolveScrollRootElement(block)
   if (!root)
     return
 
-  const doc = container.ownerDocument ?? document
-  const viewportRoot = root === doc.body || root === doc.documentElement || root === doc.scrollingElement
-  const rootTop = viewportRoot ? 0 : root.getBoundingClientRect().top
-  const containerTop = container.getBoundingClientRect().top - rootTop
-  if (containerTop >= 0)
+  const viewportRoot = root === block.ownerDocument.scrollingElement
+  const rootTop = viewportRoot ? 0 : root.getBoundingClientRect().top + root.clientTop
+  const previousRect = block.getBoundingClientRect()
+  if (previousRect.bottom > rootTop)
     return
 
-  if (viewportRoot && typeof window.scrollBy === 'function') {
-    window.scrollBy(0, delta)
+  const previousScrollTop = root.scrollTop
+  if (root.scrollHeight - root.clientHeight - previousScrollTop <= PIXEL_EPSILON)
     return
+
+  return () => {
+    // The fallback can hold the outer height while the hidden editor is resized.
+    const delta = block.getBoundingClientRect().height - previousRect.height
+    if (Math.abs(delta) <= PIXEL_EPSILON)
+      return
+
+    // The browser may have already compensated for this layout change.
+    const scrollTop = root.scrollTop
+    const remainingDelta = delta - (scrollTop - previousScrollTop)
+    if (Math.abs(remainingDelta) <= PIXEL_EPSILON)
+      return
+
+    if (viewportRoot)
+      window.scrollBy(0, remainingDelta)
+    else
+      root.scrollTop = scrollTop + remainingDelta
   }
-
-  root.scrollTop += delta
 }
 
 function updateExpandedHeight() {
+  const restoreScrollAnchor = captureScrollAnchor(container.value)
   try {
     const container = codeEditor.value
     if (!container)
       return
 
-    const oldHeight = container.getBoundingClientRect().height
     const h = computeContentHeight()
     if (h != null && h > 0) {
       const allowBelowEstimatedFloor = !isDiff.value
@@ -1734,7 +1735,6 @@ function updateExpandedHeight() {
       container.style.height = `${nextHeight}px`
       container.style.maxHeight = 'none'
       container.style.overflow = 'visible'
-      adjustScrollAfterHeightChange(container, oldHeight, nextHeight)
       return
     }
     const floor = getPendingEstimatedEditorHeightFloor()
@@ -1743,10 +1743,12 @@ function updateExpandedHeight() {
       container.style.height = `${floor}px`
       container.style.maxHeight = 'none'
       container.style.overflow = 'visible'
-      adjustScrollAfterHeightChange(container, oldHeight, floor)
     }
   }
   catch {}
+  finally {
+    restoreScrollAnchor?.()
+  }
 }
 
 function clearEditorHeightSyncBindings() {
@@ -1937,8 +1939,6 @@ function applyCollapsedContainerHeight(
     || resolvedContentHeight > maxHeight + PIXEL_EPSILON
     || hasScrollableOverflow(container, nextHeight)
   container.style.overflow = shouldScroll ? 'auto' : 'hidden'
-
-  return nextHeight
 }
 
 function hasScrollableOverflow(container: HTMLElement, visibleHeight = 0) {
@@ -2072,6 +2072,7 @@ interface EditorHostHeightSyncOptions {
 }
 
 function updateCollapsedHeight(options: EditorHostHeightSyncOptions = {}) {
+  const restoreScrollAnchor = captureScrollAnchor(container.value)
   try {
     const container = codeEditor.value
     if (!container)
@@ -2091,21 +2092,19 @@ function updateCollapsedHeight(options: EditorHostHeightSyncOptions = {}) {
     if (resumeGuardFrames > 0) {
       resumeGuardFrames--
       if (heightBeforeCollapse.value != null) {
-        const h = applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max, {
+        applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max, {
           preserveScrollableOverflow: shouldRestoreScrollableOverflow(container),
         })
-        adjustScrollAfterHeightChange(container, oldHeight, h)
         return
       }
     }
     if (isDiff.value && !hasRenderedDiffDom && showPreWhileRuntimeLoads.value) {
       const fallbackHeight = syncEditorHostToFallbackHeight()
       if (fallbackHeight != null) {
-        const h = applyCollapsedContainerHeight(container, fallbackHeight, max, {
+        applyCollapsedContainerHeight(container, fallbackHeight, max, {
           allowBelowEstimatedFloor: true,
         })
         layoutEditorToHost(true)
-        adjustScrollAfterHeightChange(container, oldHeight, h)
         return
       }
     }
@@ -2187,22 +2186,20 @@ function updateCollapsedHeight(options: EditorHostHeightSyncOptions = {}) {
     }
     // 1) 有实时内容高度 -> 采用原始内容高度（未裁剪前）
     if (h0 != null && h0 > 0) {
-      const h = applyCollapsedContainerHeight(container, h0, max, {
+      applyCollapsedContainerHeight(container, h0, max, {
         clearEstimatedFloor: true,
         allowBelowEstimatedFloor: allowBelowPlainEstimatedFloor || allowBelowStreamingDiffEstimatedFloor,
         preserveScrollableOverflow: shouldRestoreScrollableOverflow(container),
         renderedStreamingDiffHeight: measuredDiffHeight,
       })
-      adjustScrollAfterHeightChange(container, oldHeight, h)
       return
     }
 
     // 2) 使用折叠前的内容高度（不更新记忆值）
     if (heightBeforeCollapse.value != null) {
-      const h = applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max, {
+      applyCollapsedContainerHeight(container, heightBeforeCollapse.value, max, {
         preserveScrollableOverflow: shouldRestoreScrollableOverflow(container),
       })
-      adjustScrollAfterHeightChange(container, oldHeight, h)
       return
     }
 
@@ -2214,31 +2211,30 @@ function updateCollapsedHeight(options: EditorHostHeightSyncOptions = {}) {
         )
     // 3) 使用当前 DOM 高度或保守估算高度（不更新记忆值）
     if (stableFallbackHeight > 0) {
-      const h = applyCollapsedContainerHeight(container, stableFallbackHeight, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, stableFallbackHeight, max)
       return
     }
 
     const floor = getPendingEstimatedEditorHeightFloor()
     if (floor != null && !(isDiff.value && props.loading !== false && hasRenderedDiffDom)) {
-      const h = applyCollapsedContainerHeight(container, floor, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, floor, max)
       return
     }
 
     // 4) 兜底：若有先前行高/字体，可估一个最小高度；否则保持现状，避免强制跳到 MAX
     const prev = Number.parseFloat(container.style.height)
     if (!Number.isNaN(prev) && prev > 0) {
-      const h = applyCollapsedContainerHeight(container, prev, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, prev, max)
     }
     else if (!isDiff.value) {
       // 实在没有历史高度，才退到 max（极少数首次场景）
-      const h = applyCollapsedContainerHeight(container, max, max)
-      adjustScrollAfterHeightChange(container, oldHeight, h)
+      applyCollapsedContainerHeight(container, max, max)
     }
   }
   catch {}
+  finally {
+    restoreScrollAnchor?.()
+  }
 }
 
 function hasRenderedDiffEditorDom(root = codeEditor.value) {

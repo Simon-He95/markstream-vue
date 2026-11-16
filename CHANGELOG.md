@@ -1,3 +1,26 @@
+## [2.0.27](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.26...markstream-vue@2.0.27) (2026-11-16)
+
+### Bug Fixes
+
+* Preserve chat scroll in Vue 3 and Vue 2 during code block height changes. Scroll compensation now measures the rendered block and leaves bottom-pinned chats to the host. ([#815](https://github.com/Simon-He95/markstream-vue/issues/815), [#823](https://github.com/Simon-He95/markstream-vue/pull/823))
+* Keep the final code snapshot current when a Vue 3 stream settles and avoid duplicate editor updates. ([#822](https://github.com/Simon-He95/markstream-vue/pull/822))
+
+### Dependencies
+
+* Update the stream-markdown-parser dependency on `markdown-it-ts` to `^1.1.7`.
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.27`
+* `markstream-core@2.0.27`
+* `markstream-vue@2.0.27`
+* `markstream-react@2.0.27`
+* `markstream-octane@2.0.27`
+* `markstream-svelte@2.0.27`
+* `markstream-angular@2.0.27`
+* `markstream-vue2@2.0.27`
+* `markstream-solid@2.0.27`
+
 ## [2.0.26](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.25...markstream-vue@2.0.26) (2026-11-13)
 
 ### Performance

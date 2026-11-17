@@ -1,3 +1,21 @@
+## [2.0.28](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.27...markstream-vue@2.0.28) (2026-11-17)
+
+### Bug Fixes
+
+* Keep the Vue 3 code block header height stable during mount: the overflow ("more") menu wrapper now uses the same flex layout in the mounted shell and in the loading placeholder, so the action row no longer changes height when the header swaps in. ([#824](https://github.com/Simon-He95/markstream-vue/issues/824), [#825](https://github.com/Simon-He95/markstream-vue/pull/825))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.27` (unchanged)
+* `markstream-core@2.0.28`
+* `markstream-vue@2.0.28`
+* `markstream-react@2.0.28`
+* `markstream-octane@2.0.28`
+* `markstream-svelte@2.0.28`
+* `markstream-angular@2.0.28`
+* `markstream-vue2@2.0.28`
+* `markstream-solid@2.0.28`
+
 ## [2.0.27](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.26...markstream-vue@2.0.27) (2026-11-16)
 
 ### Bug Fixes

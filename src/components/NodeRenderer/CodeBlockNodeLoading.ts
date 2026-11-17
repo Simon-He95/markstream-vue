@@ -161,7 +161,7 @@ export default defineComponent({
                   : null,
                 props.showCopyButton === false ? null : action('copy'),
                 props.showCollapseButton === false ? null : action('collapse'),
-                showMore ? h('div', { class: 'relative' }, [action('more')]) : null,
+                showMore ? h('div', { class: 'relative flex' }, [action('more')]) : null,
               ]),
             ]),
         h('div', {

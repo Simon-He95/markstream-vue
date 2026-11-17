@@ -182,7 +182,7 @@ const fontIncreaseDisabled = computed(() =>
         </button>
 
         <!-- More menu (overflow for secondary actions) -->
-        <div v-if="hasOverflowItems" class="relative">
+        <div v-if="hasOverflowItems" class="relative flex">
           <button
             ref="moreBtnRef"
             type="button"

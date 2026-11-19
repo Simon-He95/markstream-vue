@@ -6,7 +6,7 @@ import { isDecodedFromRawPunycode, shouldDemoteFilenameLikeLinkify } from '../li
 import { cloneTokenWithMutableChildren } from '../token-copy'
 import { parseEmphasisToken } from './emphasis-parser'
 import { parseImageToken } from './image-parser'
-import { isImpossibleInlineTarget } from './inline-target'
+import { isDeadInlineTarget } from './inline-target'
 import { parseLinkToken } from './link-parser'
 import { hasEscapedMarkup, isEscapedVisibleChar, recoverTrailingMarkdownLinkLabel } from './literal-text-helpers'
 import { parseStrongToken } from './strong-parser'
@@ -328,18 +328,19 @@ function buildLoadingOuterImageLinkNode(
 // link-based recoveries ask the same question about the href they would use.
 function isRecoverableImageTarget(state: InlineParseState, href: string) {
   const candidate = `![x](${href})`
-  return !isImpossibleInlineTarget(
+  return !isDeadInlineTarget(
     state.options?.markdownIt,
     candidate,
     candidate.indexOf('](') + 1,
     candidate.length,
+    state.options?.final === true,
   )
 }
 
 // `![...]` that can no longer become an inline image stays literal text instead
 // of a loading image placeholder: a closed bracket that isn't followed by `(`
-// (Rust's `vec![1, 2, 3]` in prose) and a `(...)` target markdown-it rejects
-// (`![a](b c)`).
+// (Rust's `vec![1, 2, 3]` in prose) and a `(...)` target that is already dead
+// (`![a](b c)`, or anything unfinished once the parse is final).
 function isClosedNonImageBracket(
   state: InlineParseState,
   content: string,
@@ -351,11 +352,16 @@ function isClosedNonImageBracket(
   if (closeIdx < content.length - 1) {
     if (content[closeIdx + 1] !== '(')
       return true
-    return isImpossibleInlineTarget(
+    // `final` means the document ended, not that this token ended: when the
+    // `(` is the last character here and more tokens follow, the target
+    // continues there (`![alt $x[y]$](` + link tokens), so it isn't unfinished.
+    const targetEndsHere = closeIdx + 2 < content.length || !state.tokens[state.index + 1]
+    return isDeadInlineTarget(
       state.options?.markdownIt,
       content,
       closeIdx + 1,
       content.length,
+      state.options?.final === true && targetEndsHere,
     )
   }
   // The bracket closes this token. It can still end up as an image through the
@@ -607,7 +613,8 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
     // A destination that can never be a link target (`[a](b c)`) stays text,
     // the same way markdown-it renders it. An unfinished one keeps its loading
     // placeholder for the rest of the stream.
-    if (isImpossibleInlineTarget(state.options?.markdownIt, content, linkEnd + 1, content.length))
+    const targetEndsHere = linkContentEnd !== -1 || !state.tokens[state.index + 1]
+    if (isDeadInlineTarget(state.options?.markdownIt, content, linkEnd + 1, content.length, state.options?.final === true && targetEndsHere))
       return false
     let emphasisMatch = textNodeContent.match(/\*+$/)
     if (emphasisMatch) {

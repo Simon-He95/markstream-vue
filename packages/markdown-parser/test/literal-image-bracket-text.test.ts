@@ -194,15 +194,31 @@ describe('`![...](...)` whose target can never be an image', () => {
   })
 
   it.each([
-    ['![a](b', 'a'],
-    ['![a](b "t', 'a'],
-    ['![a](b(c', 'a'],
-  ])('keeps the placeholder for the unfinished target %j', (input, alt) => {
-    // An unfinished target can still be completed by the next tokens, so it is
-    // not treated as dead — unlike a target that already contains a character
-    // that can never appear in a destination.
+    '![a](<b)',
+    '![a](b "t)',
+    '![a](b(c)',
+    '![a](b',
+    '![a](b "t',
+    '![a](b(c',
+  ])('keeps the unfinished target %j as a placeholder while streaming', (input) => {
+    expect(paragraphChildren(input, false)).toEqual([
+      expect.objectContaining({ type: 'image', alt: 'a', loading: true }),
+    ])
+  })
+
+  it.each([
+    '![a](<b)',
+    '![a](b "t)',
+    '![a](b(c)',
+    '![a](b',
+    '![a](b "t',
+    '![a](b(c',
+  ])('keeps the unfinished target %j as text when the parse is final', (input) => {
+    // Nothing can arrive any more, so a target that never closed can't resolve.
+    // ImageNode renders only a shimmer while `loading` is true, so a final
+    // placeholder would shimmer forever.
     expect(paragraphChildren(input, true)).toEqual([
-      expect.objectContaining({ type: 'image', alt, loading: true }),
+      expect.objectContaining({ type: 'text' }),
     ])
   })
 

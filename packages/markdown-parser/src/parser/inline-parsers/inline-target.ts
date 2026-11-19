@@ -34,8 +34,9 @@ interface ResolvedInlineHelpers {
  * `valid`: markdown-it accepts this `(...)` as the target of `![label]` or
  * `[label]`. `invalid`: no continuation can turn it into one (`![a](b c)`).
  * `pending`: the text stops mid-target; more input may still complete it.
+ * `unknown`: the markdown-it helpers are unavailable, so nothing is assumed.
  */
-export type InlineTargetKind = 'invalid' | 'pending' | 'valid'
+export type InlineTargetKind = 'invalid' | 'pending' | 'unknown' | 'valid'
 
 function skipTargetSpaces(src: string, pos: number, max: number) {
   let next = pos
@@ -71,7 +72,7 @@ export function classifyInlineTarget(
 ): InlineTargetKind {
   const helpers = resolveHelpers(md)
   if (!helpers)
-    return 'pending'
+    return 'unknown'
 
   const destinationStart = skipTargetSpaces(src, openParen + 1, max)
   if (destinationStart >= max)
@@ -110,15 +111,25 @@ export function classifyInlineTarget(
 }
 
 /**
- * Whether the `(...)` target at `openParen` can never become an inline image or
- * link, whatever follows it. A target that is merely unfinished (`![a](b`) is
- * not impossible: it keeps its placeholder, which is what a cut-off stream needs.
+ * Whether the `(...)` target at `openParen` is dead, i.e. it should stay text
+ * instead of an image or link placeholder.
+ *
+ * While streaming only a target that no continuation can fix is dead
+ * (`![a](b c)`), because an unfinished one (`![a](b`) may still complete. Once
+ * the parse is final nothing more can arrive, so an unfinished target is dead
+ * too — that is also what markdown-it renders.
  */
-export function isImpossibleInlineTarget(
+export function isDeadInlineTarget(
   md: MarkdownIt | undefined,
   src: string,
   openParen: number,
   max: number,
+  final: boolean,
 ) {
-  return classifyInlineTarget(md, src, openParen, max) === 'invalid'
+  const kind = classifyInlineTarget(md, src, openParen, max)
+  if (kind === 'valid' || kind === 'unknown')
+    return false
+  if (kind === 'invalid')
+    return true
+  return final
 }

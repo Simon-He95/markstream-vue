@@ -320,13 +320,25 @@ function buildLoadingOuterImageLinkNode(
 // `![...]` that is already closed and followed by something other than `(`
 // can't become an inline image any more (e.g. Rust's `vec![1, 2, 3]` in
 // prose), so it stays literal text instead of a loading image placeholder.
-function isClosedNonImageBracket(content: string, imageStart: number, nextToken?: MarkdownToken) {
+function isClosedNonImageBracket(
+  content: string,
+  imageStart: number,
+  nextToken: MarkdownToken | undefined,
+  final: boolean | undefined,
+) {
   const closeIdx = findMatchingClose(content, imageStart + 2, '[', ']')
   if (closeIdx === -1)
     return false
   if (closeIdx < content.length - 1)
     return content[closeIdx + 1] !== '('
-  return !!nextToken && !(nextToken.type === 'text' && String(nextToken.content ?? '').startsWith('('))
+  // The bracket closes this token. It can still end up as an image through the
+  // next token (`` ](... ``), and at the end of the input only while streaming:
+  // once the parse is final nothing can add the destination, so `![alt]` /
+  // `好的![微笑]` are literal text. A reference image whose definition exists is
+  // already an image token from markdown-it and never reaches this recovery.
+  if (nextToken)
+    return !(nextToken.type === 'text' && String(nextToken.content ?? '').startsWith('('))
+  return final === true
 }
 
 function buildLoadingImageNodeFromRaw(raw: string): ParsedNode {
@@ -351,7 +363,7 @@ export function recoverOuterImageLinkFromRawText(state: InlineParseState, conten
     return false
   if (typeof state.raw === 'string' && state.tokens.length === 1 && isEscapedVisibleChar(state.raw, outerStart, '['))
     return false
-  if (isClosedNonImageBracket(content, outerStart + 1, state.tokens[state.index + 1]))
+  if (isClosedNonImageBracket(content, outerStart + 1, state.tokens[state.index + 1], state.options?.final))
     return false
 
   const before = content.slice(0, outerStart)
@@ -647,7 +659,7 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
 export function handleInlineImageContent(state: InlineParseState, content: string): boolean {
   const nextToken = state.tokens[state.index + 1]
   let imageStart = content.indexOf('![')
-  while (imageStart !== -1 && isClosedNonImageBracket(content, imageStart, nextToken))
+  while (imageStart !== -1 && isClosedNonImageBracket(content, imageStart, nextToken, state.options?.final))
     imageStart = content.indexOf('![', imageStart + 2)
   if (imageStart === -1)
     return false

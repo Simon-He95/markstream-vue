@@ -66,6 +66,46 @@ function findFirst(nodes: any[], predicate: (node: any) => boolean): any {
   return undefined
 }
 
+function findLinks(nodes: any[]): any[] {
+  const out: any[] = []
+  const walk = (node: any) => {
+    if (!node || typeof node !== 'object')
+      return
+    if (node.type === 'link')
+      out.push(node)
+    if (Array.isArray(node.children))
+      node.children.forEach(walk)
+    if (Array.isArray(node.items))
+      node.items.forEach(walk)
+  }
+  nodes.forEach(walk)
+  return out
+}
+
+/**
+ * A link may only be clickable when its label names its own destination, so a
+ * reader cannot be sent somewhere the visible text does not say.
+ */
+function labelNamesOwnDestination(link: any) {
+  const text = String(link.text ?? '')
+  const href = String(link.href ?? '')
+  if (!text || !href)
+    return true
+  const shape = (value: string) => {
+    try {
+      const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `http://${value}`)
+      return url.protocol === 'mailto:'
+        ? `mailto:${url.pathname}`
+        : `${url.host}${url.pathname}${url.search}${url.hash}`
+    }
+    catch {
+      return null
+    }
+  }
+  const label = shape(text)
+  return label === null || label === shape(href)
+}
+
 /** The text a reader sees: text content, a link label once, math with its delimiters. */
 function visibleTextOf(nodes: any[]): string {
   let out = ''
@@ -273,16 +313,20 @@ describe('a final parse never leaves a loading image or link', () => {
   })
 
   it('never turns a folded autolink tail into a clickable link', () => {
-    // The recovery stamps `autolink` on `[label](` + `<url>` + trailing text,
-    // and folds the trailing text into the href. Keeping that node clickable
-    // would render a trusted-looking label that points at another origin.
-    const children = childrenOf('[www.trusted.com/login] (<https://www.trusted.com>@evil.com', true)
-    expect(children).toEqual([
-      expect.objectContaining({
-        type: 'text',
-        content: '[www.trusted.com/login](https://www.trusted.com@evil.com',
-      }),
-    ])
+    // The recovery used to fold `[label](` + `<url>` + trailing text into one
+    // link, so a trusted-looking label pointed at the `@evil.com` origin. With
+    // the space in front of the paren there is no link syntax to fold: the
+    // label and the URL each keep a link to their own destination, and the
+    // trailing `@evil.com` stays text.
+    const input = '[www.trusted.com/login] (<https://www.trusted.com>@evil.com'
+    const children = childrenOf(input, true)
+    for (const link of findLinks(children)) {
+      expect(link, input).not.toMatchObject({ href: expect.stringContaining('@evil.com') })
+      expect(labelNamesOwnDestination(link), `${input} => ${link.text} | ${link.href}`).toBe(true)
+    }
+    const visible = visibleTextOf(children)
+    expect(visible, input).toContain('@evil.com')
+    expect(visible, input).not.toContain('](https://www.trusted.com@evil.com')
   })
 
   it('keeps a complete detected URL a link, but only with its own text', () => {
@@ -404,7 +448,12 @@ describe('a final parse never leaves a loading image or link', () => {
       '![登录] (HTTP://XN--EVIL.COM',
     ]) {
       const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
-      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+      for (const link of findLinks(final)) {
+        // A link is fine as long as it shows the destination it leads to: the
+        // space means the label was never its text.
+        expect(labelNamesOwnDestination(link), `${input} => ${link.text} | ${link.href}`).toBe(true)
+        expect(link.text, input).not.toBe('登录')
+      }
     }
   })
 

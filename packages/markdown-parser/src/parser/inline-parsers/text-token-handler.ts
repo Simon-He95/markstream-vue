@@ -438,11 +438,27 @@ function handleInlineCodeContent(state: InlineParseState, content: string, _toke
   return true
 }
 
+// One inline parse keeps its token members for its whole lifetime
+// (`ensureWorkingTokens` only copies the array to rewrite entries), so "does
+// this run contain math" is cached per parse instead of re-scanned for every
+// text token: that scan is O(tokens), which made a paragraph with many text
+// tokens quadratic.
+const mathInlineCache = new WeakMap<InlineParseState, boolean>()
+
+function hasMathInlineToken(state: InlineParseState) {
+  const cached = mathInlineCache.get(state)
+  if (cached !== undefined)
+    return cached
+  const has = state.tokens.some(token => token?.type === 'math_inline')
+  mathInlineCache.set(state, has)
+  return has
+}
+
 function tryReparseCollapsedInlineText(state: InlineParseState, rawContent: string): ParsedNode[] | null {
   const md = state.options.markdownIt
   if (!md)
     return null
-  if (state.tokens.length <= 1 || !state.tokens.some(token => token?.type === 'math_inline'))
+  if (state.tokens.length <= 1 || !hasMathInlineToken(state))
     return null
   if (!INLINE_REPARSE_MARKER_RE.test(rawContent))
     return null

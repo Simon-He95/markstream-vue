@@ -9,8 +9,9 @@
  * because there the first unclosed destination ends the scan.
  *
  * The parity fixture below pins the exact output the fix must preserve, and the
- * scaling assertion fails while the parse is quadratic (4x the targets costs
- * ~12-16x the time) and passes once it is linear (~4x).
+ * scaling assertion compares equal volumes: four paragraphs of N targets cost
+ * the same as one paragraph of 4N when the scan is linear, and ~3-4x more while
+ * it is quadratic.
  * @vitest-environment node
  */
 import type { ParsedNode } from 'stream-markdown-parser'
@@ -19,9 +20,12 @@ import { describe, expect, it } from 'vitest'
 
 const md = getMarkdown('inline-unclosed-image-bench')
 
-/** One paragraph per case, with the unclosed destinations joined by spaces. */
-function makeTargets(count: number) {
-  return Array.from({ length: count }, (_, index) => `![a](https://e.com/${index}.png`).join(' ')
+/**
+ * One paragraph per case, with the unclosed destinations joined by spaces.
+ * `seed` keeps separately measured paragraphs from sharing an identical source.
+ */
+function makeTargets(count: number, seed = 0) {
+  return Array.from({ length: count }, (_, index) => `![a](https://e.com/${seed}/${index}.png`).join(' ')
 }
 
 function describeNode(node: any): string {
@@ -61,6 +65,57 @@ function bestOf(input: string, final: boolean, runs = 3) {
   return best
 }
 
+/**
+ * `smallInputs` hold the same characters as `largeInput`, so a linear scan costs
+ * the same on both sides and a quadratic one costs ~4x more. Both timings are
+ * taken inside one repetition, so a busy runner slows them down together; a bare
+ * "4x the input costs < 8x the time" ratio cannot do that, because taking the
+ * best of a few runs favours the shorter workload and inflates the ratio.
+ *
+ * Returns the best repetition: a GC pause or a scheduling hiccup can only
+ * inflate one side of one repetition, while a quadratic build is slow in every
+ * repetition, so the best one still clears the threshold on its own.
+ */
+function equalVolumeRatio(smallInputs: string[], largeInput: string, final: boolean, runs = 5) {
+  const parseAll = (inputs: string[]) => {
+    for (const input of inputs)
+      parseMarkdownToStructure(input, md, { final })
+  }
+  const measure = (inputs: string[]) => {
+    const start = performance.now()
+    parseAll(inputs)
+    return performance.now() - start
+  }
+
+  // Warm every code path twice (plugin setup, caches, JIT tier-up) before
+  // timing: the first timed repetition would otherwise pay for making the hot
+  // loops optimized, which skewed an early quadratic measurement to ~1x.
+  for (let pass = 0; pass < 2; pass++) {
+    parseAll(smallInputs)
+    parseAll([largeInput])
+  }
+
+  let best = { ratio: Number.POSITIVE_INFINITY, smallMs: 0, largeMs: 0 }
+  for (let run = 0; run < runs; run++) {
+    // Alternate the order: one side never systematically pays for the heap
+    // growth or the CPU ramp of the repetition before it.
+    let smallMs: number
+    let largeMs: number
+    if (run % 2 === 0) {
+      smallMs = measure(smallInputs)
+      largeMs = measure([largeInput])
+    }
+    else {
+      largeMs = measure([largeInput])
+      smallMs = measure(smallInputs)
+    }
+    const ratio = largeMs / Math.max(0.001, smallMs)
+    if (ratio < best.ratio)
+      best = { ratio, smallMs, largeMs }
+  }
+  return best
+}
+
 describe('unclosed image destinations — final parse', () => {
   it('keeps the current output while the destinations stay unclosed', () => {
     // `final`: nothing can arrive any more, so the placeholder becomes the
@@ -94,15 +149,13 @@ describe('unclosed image destinations — final parse', () => {
   })
 
   it('scales linearly with the number of unclosed destinations at final', () => {
-    // 4x the input: a quadratic parse grows ~16x, and `main` measures ~10x on
-    // this pair (179ms -> 1916ms, machine under load), so the threshold below
-    // clears the fixed ~4x (28ms -> 111ms) without admitting the quadratic
-    // curve, even when one noisy sample halves the denominator.
+    // Equal volume on both sides: four paragraphs of `small` cost the same as
+    // one paragraph with four times the targets when the scan is linear, and
+    // ~4x more while it is quadratic. Measured here: the fix 1.0-1.2x, `main`
+    // 2.8-4.0x, so 2.0 splits the two with room on either side.
     const small = 1600
-    const large = 6400
-    const smallMs = bestOf(makeTargets(small), true)
-    const largeMs = bestOf(makeTargets(large), true)
-    const ratio = largeMs / Math.max(0.001, smallMs)
+    const smallInputs = [0, 1, 2, 3].map(seed => makeTargets(small, seed))
+    const final = equalVolumeRatio(smallInputs, makeTargets(small * 4), true)
 
     // Streaming is measured on a bigger pair: its absolute times are small, so
     // a ratio at the sizes above is mostly noise there.
@@ -116,17 +169,17 @@ describe('unclosed image destinations — final parse', () => {
     const tailMs = bestOf(makeTargets(12_800), true)
 
     console.log(
-      `[unclosed-image-bench] final ${small}=${smallMs.toFixed(1)}ms ${large}=${largeMs.toFixed(1)}ms ratio=${ratio.toFixed(2)}x (4x input)`,
+      `[unclosed-image-bench] final ${small}x4=${final.smallMs.toFixed(1)}ms ${small * 4}=${final.largeMs.toFixed(1)}ms ratio=${final.ratio.toFixed(2)}x (equal volume)`,
     )
     console.log(
       `[unclosed-image-bench] stream 3200=${streamSmallMs.toFixed(1)}ms 12800=${streamLargeMs.toFixed(1)}ms ratio=${streamRatio.toFixed(2)}x (4x input)`,
     )
-    console.log(`[unclosed-image-bench] final 12800=${tailMs.toFixed(1)}ms (logged only)`)
+    console.log(`[unclosed-image-bench] final ${small * 8}=${tailMs.toFixed(1)}ms (logged only)`)
 
-    // Quadratic growth gives ~12-16x for 4x the input; linear gives ~4x. The
+    // Quadratic growth makes the equal-volume pair ~4x, linear ~1x. The
     // threshold leaves room for timing noise on a shared CI machine while still
     // rejecting the quadratic curve.
-    expect(ratio).toBeLessThan(8)
+    expect(final.ratio).toBeLessThan(2)
     expect(streamRatio).toBeLessThan(8)
   }, 120_000)
 })

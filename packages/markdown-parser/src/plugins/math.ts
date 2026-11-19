@@ -426,8 +426,12 @@ function findRangeAt(ranges: Array<[number, number]>, index: number): [number, n
  *
  * The per-opener loop this replaces walked to the end of the source for every
  * opener whose destination never closed, which is O(openers × source length) —
- * quadratic for a paragraph holding many unclosed images. Bucketing positions by
- * prefix value once makes each opener a binary search instead.
+ * quadratic for a paragraph holding many unclosed images. Depth moves by at most
+ * one per character, so the first index right of `from` that dips below
+ * `prefix[from]` lands exactly on `prefix[from] - 1`, and one monotonic stack
+ * pass answers that for every position. Positions live in Int32Arrays rather
+ * than a map from depth to positions, so a paragraph of a million nested parens
+ * costs a few megabytes instead of a map entry per distinct depth.
  */
 function buildDelimiterScan(src: string, open: string, close: string): (from: number) => number {
   const prefix = new Int32Array(src.length + 1)
@@ -439,31 +443,21 @@ function buildDelimiterScan(src: string, open: string, close: string): (from: nu
     prefix[index + 1] = prefix[index]! + delta
   }
 
-  const positionsByValue = new Map<number, number[]>()
-  for (let index = 0; index <= src.length; index++) {
+  const missing = src.length + 1
+  const nextDeeper = new Int32Array(src.length + 1).fill(missing)
+  const pending = new Int32Array(src.length + 1)
+  let depth = 0
+  for (let index = src.length; index >= 0; index--) {
     const value = prefix[index]!
-    const positions = positionsByValue.get(value)
-    if (positions)
-      positions.push(index)
-    else
-      positionsByValue.set(value, [index])
+    while (depth > 0 && prefix[pending[depth - 1]!]! >= value)
+      depth--
+    nextDeeper[index] = depth > 0 ? pending[depth - 1]! : missing
+    pending[depth++] = index
   }
 
   return (from: number) => {
-    const positions = positionsByValue.get(prefix[from]! - 1)
-    if (!positions)
-      return -1
-    // First position at or after `from + 1`; `positions` is ascending.
-    let low = 0
-    let high = positions.length
-    while (low < high) {
-      const mid = (low + high) >> 1
-      if (positions[mid]! < from + 1)
-        low = mid + 1
-      else
-        high = mid
-    }
-    return low < positions.length ? positions[low]! - 1 : -1
+    const deeper = nextDeeper[from]!
+    return deeper === missing ? -1 : deeper - 1
   }
 }
 

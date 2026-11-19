@@ -94,15 +94,19 @@ describe('unclosed image destinations — final parse', () => {
   })
 
   it('scales linearly with the number of unclosed destinations at final', () => {
-    const small = 800
-    const large = 3200
+    // 4x the input: a quadratic parse grows ~16x, and `main` measures ~10x on
+    // this pair (179ms -> 1916ms, machine under load), so the threshold below
+    // clears the fixed ~4x (28ms -> 111ms) without admitting the quadratic
+    // curve, even when one noisy sample halves the denominator.
+    const small = 1600
+    const large = 6400
     const smallMs = bestOf(makeTargets(small), true)
     const largeMs = bestOf(makeTargets(large), true)
     const ratio = largeMs / Math.max(0.001, smallMs)
 
-    // Streaming is measured on a bigger pair: at these sizes its absolute times
-    // are only a few milliseconds, so a ratio over 800/3200 is mostly noise.
-    const streamSmallMs = bestOf(makeTargets(large), false)
+    // Streaming is measured on a bigger pair: its absolute times are small, so
+    // a ratio at the sizes above is mostly noise there.
+    const streamSmallMs = bestOf(makeTargets(3200), false)
     const streamLargeMs = bestOf(makeTargets(12_800), false)
     const streamRatio = streamLargeMs / Math.max(0.001, streamSmallMs)
 
@@ -115,7 +119,7 @@ describe('unclosed image destinations — final parse', () => {
       `[unclosed-image-bench] final ${small}=${smallMs.toFixed(1)}ms ${large}=${largeMs.toFixed(1)}ms ratio=${ratio.toFixed(2)}x (4x input)`,
     )
     console.log(
-      `[unclosed-image-bench] stream ${large}=${streamSmallMs.toFixed(1)}ms 12800=${streamLargeMs.toFixed(1)}ms ratio=${streamRatio.toFixed(2)}x (4x input)`,
+      `[unclosed-image-bench] stream 3200=${streamSmallMs.toFixed(1)}ms 12800=${streamLargeMs.toFixed(1)}ms ratio=${streamRatio.toFixed(2)}x (4x input)`,
     )
     console.log(`[unclosed-image-bench] final 12800=${tailMs.toFixed(1)}ms (logged only)`)
 

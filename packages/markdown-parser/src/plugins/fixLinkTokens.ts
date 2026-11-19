@@ -78,7 +78,9 @@ function createLinkToken(
     loading,
     href,
     title,
-    titleClosed,
+    // Only a placeholder is rebuilt from this source hint; a complete link keeps
+    // no trace of it in the node it hands to consumers.
+    ...(loading ? { titleClosed } : {}),
     text,
     children: [
       {

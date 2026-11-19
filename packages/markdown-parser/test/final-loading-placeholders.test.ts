@@ -171,6 +171,17 @@ describe('a final parse never leaves a loading image or link', () => {
     ])
   })
 
+  it('does not leak the fold-time title flag into final nodes', () => {
+    const link = childrenOf('See the [docs for *streaming*](https://example.com/guide', true)[3] as any
+    expect(link.type).toBe('link')
+    expect('titleClosed' in link).toBe(false)
+
+    const container = parseMarkdownToStructure('::: tip\n<https://example.com>\n:::', md, { final: true }) as any[]
+    const containerLink = container[0].children[0].children[0]
+    expect(containerLink.type).toBe('link')
+    expect('titleClosed' in containerLink).toBe(false)
+  })
+
   it('never turns a folded autolink tail into a clickable link', () => {
     // The recovery stamps `autolink` on `[label](` + `<url>` + trailing text,
     // and folds the trailing text into the href. Keeping that node clickable

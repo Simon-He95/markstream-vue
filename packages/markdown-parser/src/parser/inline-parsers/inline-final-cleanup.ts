@@ -71,7 +71,11 @@ function keepUrlLink(node: LoadingNode): ParsedNode[] | null {
   const children = Array.isArray(node.children) && node.children.length
     ? node.children
     : [textNode(label)]
-  return [{ ...node, children, loading: false, text: label } as ParsedNode]
+  const kept = { ...node, children, loading: false, text: label } as LoadingNode
+  // The flag is a fold-time hint for rebuilding a placeholder, not part of the
+  // node shape a final parse hands to consumers.
+  delete kept.titleClosed
+  return [kept as ParsedNode]
 }
 
 /**

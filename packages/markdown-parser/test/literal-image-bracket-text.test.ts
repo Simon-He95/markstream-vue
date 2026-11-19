@@ -228,6 +228,22 @@ describe('`![...](...)` whose target can never be an image', () => {
     expect(children[0]).toMatchObject({ type: 'text' })
   })
 
+  it.each([
+    '![a](b`x`',
+    '![a](b*x*',
+    '![a](<b`x`',
+    '![a](b$x$',
+  ])('keeps %j as text when an inline token ends a target that cannot continue', (input) => {
+    // A destination can continue through more text or through the link tokens a
+    // mid-state `](` produces, but never through inline code, emphasis or math.
+    // A loading link would keep its spinner forever at final, so this is text.
+    const children = paragraphChildren(input, true)
+    expect(children[0]).toMatchObject({ type: 'text' })
+    expect(children[0].content.startsWith('![a](b') || children[0].content.startsWith('![a](<b')).toBe(true)
+    expect(children.some(child => child.type === 'image')).toBe(false)
+    expect(children.some(child => child.type === 'link')).toBe(false)
+  })
+
   it('keeps images that follow a dead destination', () => {
     expect(paragraphChildren('![a](b c) ![b](https://e.com/b.png)', true)).toEqual([
       expect.objectContaining({ type: 'text', content: '![a](b c) ' }),

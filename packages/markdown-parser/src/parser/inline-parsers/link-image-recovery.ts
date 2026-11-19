@@ -341,6 +341,15 @@ function isRecoverableImageTarget(state: InlineParseState, href: string) {
 // of a loading image placeholder: a closed bracket that isn't followed by `(`
 // (Rust's `vec![1, 2, 3]` in prose) and a `(...)` target that is already dead
 // (`![a](b c)`, or anything unfinished once the parse is final).
+// A target cut off at a token boundary can only continue through more text or
+// through the link tokens a mid-state `](` produces (`![alt $x[y]$](` +
+// link_open + url + link_close). Inline code, emphasis and math cannot continue
+// a destination, so for them a token boundary is as good as the document end.
+function nextTokenCanCarryTarget(state: InlineParseState) {
+  const next = state.tokens[state.index + 1]
+  return next?.type === 'text' || next?.type === 'link_open' || next?.type === 'link'
+}
+
 function isClosedNonImageBracket(
   state: InlineParseState,
   content: string,
@@ -352,16 +361,12 @@ function isClosedNonImageBracket(
   if (closeIdx < content.length - 1) {
     if (content[closeIdx + 1] !== '(')
       return true
-    // `final` means the document ended, not that this token ended: when the
-    // `(` is the last character here and more tokens follow, the target
-    // continues there (`![alt $x[y]$](` + link tokens), so it isn't unfinished.
-    const targetEndsHere = closeIdx + 2 < content.length || !state.tokens[state.index + 1]
     return isDeadInlineTarget(
       state.options?.markdownIt,
       content,
       closeIdx + 1,
       content.length,
-      state.options?.final === true && targetEndsHere,
+      state.options?.final === true && !nextTokenCanCarryTarget(state),
     )
   }
   // The bracket closes this token. It can still end up as an image through the
@@ -613,7 +618,7 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
     // A destination that can never be a link target (`[a](b c)`) stays text,
     // the same way markdown-it renders it. An unfinished one keeps its loading
     // placeholder for the rest of the stream.
-    const targetEndsHere = linkContentEnd !== -1 || !state.tokens[state.index + 1]
+    const targetEndsHere = linkContentEnd !== -1 || !nextTokenCanCarryTarget(state)
     if (isDeadInlineTarget(state.options?.markdownIt, content, linkEnd + 1, content.length, state.options?.final === true && targetEndsHere))
       return false
     let emphasisMatch = textNodeContent.match(/\*+$/)

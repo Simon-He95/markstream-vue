@@ -100,17 +100,24 @@ describe('unclosed image destinations — final parse', () => {
     const largeMs = bestOf(makeTargets(large), true)
     const ratio = largeMs / Math.max(0.001, smallMs)
 
-    // Streaming stays linear for the same sources; it doubles with the input.
-    const streamSmallMs = bestOf(makeTargets(small), false)
-    const streamLargeMs = bestOf(makeTargets(large), false)
+    // Streaming is measured on a bigger pair: at these sizes its absolute times
+    // are only a few milliseconds, so a ratio over 800/3200 is mostly noise.
+    const streamSmallMs = bestOf(makeTargets(large), false)
+    const streamLargeMs = bestOf(makeTargets(12_800), false)
     const streamRatio = streamLargeMs / Math.max(0.001, streamSmallMs)
+
+    // Logged only: the token rewrite still grows faster than linear at this size
+    // (it splices a growing token array once per folded link), which is a
+    // separate cost from the image-range scan fixed here.
+    const tailMs = bestOf(makeTargets(12_800), true)
 
     console.log(
       `[unclosed-image-bench] final ${small}=${smallMs.toFixed(1)}ms ${large}=${largeMs.toFixed(1)}ms ratio=${ratio.toFixed(2)}x (4x input)`,
     )
     console.log(
-      `[unclosed-image-bench] stream ${small}=${streamSmallMs.toFixed(1)}ms ${large}=${streamLargeMs.toFixed(1)}ms ratio=${streamRatio.toFixed(2)}x (4x input)`,
+      `[unclosed-image-bench] stream ${large}=${streamSmallMs.toFixed(1)}ms 12800=${streamLargeMs.toFixed(1)}ms ratio=${streamRatio.toFixed(2)}x (4x input)`,
     )
+    console.log(`[unclosed-image-bench] final 12800=${tailMs.toFixed(1)}ms (logged only)`)
 
     // Quadratic growth gives ~12-16x for 4x the input; linear gives ~4x. The
     // threshold leaves room for timing noise on a shared CI machine while still

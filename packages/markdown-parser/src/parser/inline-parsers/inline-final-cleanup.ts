@@ -120,31 +120,50 @@ function replaceLoadingNode(node: LoadingNode, raw: string | undefined): ParsedN
   return null
 }
 
-/**
- * A `[` in front of this node is already in the source when the text before it
- * has one that nothing closed yet; adding another would double it.
- */
-function hasOpenBracket(out: ParsedNode[]) {
-  const previous = out[out.length - 1]
-  if (previous?.type !== 'text')
-    return false
-  const content = String(previous.content ?? '')
-  return content.lastIndexOf('[') > content.lastIndexOf(']')
-}
-
 function unwrap(list: ParsedNode[], raw: string | undefined): ParsedNode[] {
   let changed = false
   const out: ParsedNode[] = []
-  const pushText = (node: TextNode) => {
-    const previous = out[out.length - 1]
-    if (previous?.type === 'text') {
-      // Replace rather than mutate: these node objects can be reused across
-      // parses, and mutating one would append its own content again.
-      out[out.length - 1] = textNode(`${previous.content}${node.content}`)
+  // Adjacent text is concatenated once, when the run ends. Replacing the
+  // previous node on every append recopies the whole accumulated string, which
+  // is quadratic for a paragraph that holds many recovered placeholders.
+  let pendingNodes: TextNode[] = []
+  let pendingContents: string[] = []
+  let pendingLength = 0
+  let lastOpenBracket = -1
+  let lastCloseBracket = -1
+
+  const flushText = () => {
+    if (!pendingNodes.length)
       return
-    }
-    out.push(node)
+    // A lone node keeps its identity; a merged run becomes one fresh node, the
+    // same shape the previous merge produced. Never mutate: these node objects
+    // can be reused across parses, and mutating one appends its content again.
+    out.push(pendingNodes.length === 1 ? pendingNodes[0]! : textNode(pendingContents.join('')))
+    pendingNodes = []
+    pendingContents = []
+    pendingLength = 0
+    lastOpenBracket = -1
+    lastCloseBracket = -1
   }
+
+  const appendText = (node: TextNode) => {
+    const content = String(node.content ?? '')
+    const open = content.lastIndexOf('[')
+    if (open !== -1)
+      lastOpenBracket = pendingLength + open
+    const close = content.lastIndexOf(']')
+    if (close !== -1)
+      lastCloseBracket = pendingLength + close
+    pendingNodes.push(node)
+    pendingContents.push(content)
+    pendingLength += content.length
+  }
+
+  /**
+   * A `[` in front of this node is already in the source when the text before it
+   * has one that nothing closed yet; adding another would double it.
+   */
+  const hasOpenBracket = () => pendingLength > 0 && lastOpenBracket > lastCloseBracket
 
   for (const original of list) {
     let node = original as LoadingNode
@@ -164,13 +183,14 @@ function unwrap(list: ParsedNode[], raw: string | undefined): ParsedNode[] {
       for (const replacement of replaced) {
         if (replacement.type === 'text') {
           const content = String((replacement as TextNode).content ?? '')
-          if (first && content === '[' && hasOpenBracket(out)) {
+          if (first && content === '[' && hasOpenBracket()) {
             first = false
             continue
           }
-          pushText(replacement as TextNode)
+          appendText(replacement as TextNode)
         }
         else {
+          flushText()
           out.push(replacement)
         }
         first = false
@@ -179,12 +199,14 @@ function unwrap(list: ParsedNode[], raw: string | undefined): ParsedNode[] {
     }
 
     if (node.type === 'text') {
-      pushText(node as TextNode)
+      appendText(node as TextNode)
       continue
     }
+    flushText()
     out.push(node)
   }
 
+  flushText()
   return changed ? out : list
 }
 

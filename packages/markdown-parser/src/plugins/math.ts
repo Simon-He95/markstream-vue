@@ -418,49 +418,82 @@ function findRangeAt(ranges: Array<[number, number]>, index: number): [number, n
   return null
 }
 
+/**
+ * Resolves where a delimiter scan that opens one level at `from` closes, for
+ * every `from`. `prefix[p]` is the net depth change over `[0, p)` for `open`
+ * and `close`, ignoring escaped delimiters, so the scan closes at the first
+ * `t >= from` where `prefix[t + 1] === prefix[from] - 1`.
+ *
+ * The per-opener loop this replaces walked to the end of the source for every
+ * opener whose destination never closed, which is O(openers × source length) —
+ * quadratic for a paragraph holding many unclosed images. Bucketing positions by
+ * prefix value once makes each opener a binary search instead.
+ */
+function buildDelimiterScan(src: string, open: string, close: string): (from: number) => number {
+  const prefix = new Int32Array(src.length + 1)
+  for (let index = 0; index < src.length; index++) {
+    const char = src[index]
+    let delta = 0
+    if ((char === open || char === close) && !isEscapedAt(src, index))
+      delta = char === open ? 1 : -1
+    prefix[index + 1] = prefix[index]! + delta
+  }
+
+  const positionsByValue = new Map<number, number[]>()
+  for (let index = 0; index <= src.length; index++) {
+    const value = prefix[index]!
+    const positions = positionsByValue.get(value)
+    if (positions)
+      positions.push(index)
+    else
+      positionsByValue.set(value, [index])
+  }
+
+  return (from: number) => {
+    const positions = positionsByValue.get(prefix[from]! - 1)
+    if (!positions)
+      return -1
+    // First position at or after `from + 1`; `positions` is ascending.
+    let low = 0
+    let high = positions.length
+    while (low < high) {
+      const mid = (low + high) >> 1
+      if (positions[mid]! < from + 1)
+        low = mid + 1
+      else
+        high = mid
+    }
+    return low < positions.length ? positions[low]! - 1 : -1
+  }
+}
+
 function buildImageRanges(src: string, allowIncomplete = false): Array<[number, number]> {
   const ranges: Array<[number, number]> = []
+  let closeLabel: ((from: number) => number) | null = null
+  let closeDestination: ((from: number) => number) | null = null
   let i = 0
   while (i < src.length - 1) {
-    if (src[i] === '!' && src[i + 1] === '[') {
-      const start = i
-      let j = i + 2
-      let labelDepth = 1
-      while (j < src.length && labelDepth > 0) {
-        if (src[j] === '\\' && j + 1 < src.length) {
-          j += 2
-          continue
-        }
-        if (src[j] === '[')
-          labelDepth++
-        else if (src[j] === ']')
-          labelDepth--
-        j++
+    if (src[i] !== '!' || src[i + 1] !== '[') {
+      i++
+      continue
+    }
+
+    const start = i
+    closeLabel ??= buildDelimiterScan(src, '[', ']')
+    // The label opens at `[`; the scan resumes right after it.
+    const labelEnd = closeLabel(i + 2)
+    const openParen = labelEnd === -1 ? -1 : labelEnd + 1
+    if (openParen !== -1 && openParen < src.length && src[openParen] === '(') {
+      closeDestination ??= buildDelimiterScan(src, '(', ')')
+      const destinationEnd = closeDestination(openParen + 1)
+      if (destinationEnd !== -1) {
+        ranges.push([start, destinationEnd + 1])
+        i = destinationEnd + 1
+        continue
       }
-      if (labelDepth === 0 && j < src.length && src[j] === '(') {
-        let k = j + 1
-        let depth = 1
-        while (k < src.length && depth > 0) {
-          if (src[k] === '\\' && k + 1 < src.length) {
-            k += 2
-            continue
-          }
-          if (src[k] === '(')
-            depth++
-          else if (src[k] === ')')
-            depth--
-          k++
-        }
-        if (depth === 0) {
-          ranges.push([start, k])
-          i = k
-          continue
-        }
-        if (allowIncomplete) {
-          ranges.push([start, src.length])
-          i = src.length
-          continue
-        }
+      if (allowIncomplete) {
+        ranges.push([start, src.length])
+        break
       }
     }
     i++

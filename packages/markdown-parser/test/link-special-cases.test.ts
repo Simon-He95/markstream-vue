@@ -279,4 +279,39 @@ describe('special link cases', () => {
     expect(references.map(ref => ref.id)).toEqual(['1', '2', '3'])
     expect(textIncludes(nodes, '随便输入一些文字')).toBe(true)
   })
+
+  it('does not fold a bracket separated from its paren into a link', () => {
+    // `]` and `(` have to touch for the source to be link syntax. With a space in
+    // between, markdown-it renders the text and gives the URL its own link; the
+    // label must not become that link's text, and the space must survive.
+    const cases = [
+      { input: '[a] (https://e.com/l)', text: '[a] (', href: 'https://e.com/l' },
+      { input: '[a]  (https://e.com/l)', text: '[a]  (', href: 'https://e.com/l' },
+      { input: 'text [a] (https://e.com/l) end', text: 'text [a] (', href: 'https://e.com/l' },
+    ]
+
+    for (const { input, text, href } of cases) {
+      for (const final of [false, true]) {
+        const nodes = parseMarkdownToStructure(input, md, { final })
+        const links = collectByType(nodes, 'link')
+        expect(links, `${input} final=${final}`).toHaveLength(1)
+        expect(links[0]).toMatchObject({ href, text: href, loading: false })
+        expect(textIncludes(nodes, text), `${input} final=${final}`).toBe(true)
+      }
+    }
+
+    // No space: the source is a link, and its label is the link's text.
+    for (const final of [false, true]) {
+      const links = collectByType(parseMarkdownToStructure('[a](https://e.com/l)', md, { final }), 'link')
+      expect(links, `final=${final}`).toHaveLength(1)
+      expect(links[0]).toMatchObject({ href: 'https://e.com/l', text: 'a' })
+    }
+
+    // `![a] (url)` used to become an image, which markdown-it never produces.
+    for (const final of [false, true]) {
+      const nodes = parseMarkdownToStructure('![a] (https://e.com/i.png)', md, { final })
+      expect(collectByType(nodes, 'image'), `final=${final}`).toHaveLength(0)
+      expect(textIncludes(nodes, '![a] ('), `final=${final}`).toBe(true)
+    }
+  })
 })

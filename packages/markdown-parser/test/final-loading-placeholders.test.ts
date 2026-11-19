@@ -66,6 +66,46 @@ function findFirst(nodes: any[], predicate: (node: any) => boolean): any {
   return undefined
 }
 
+function findLinks(nodes: any[]): any[] {
+  const out: any[] = []
+  const walk = (node: any) => {
+    if (!node || typeof node !== 'object')
+      return
+    if (node.type === 'link')
+      out.push(node)
+    if (Array.isArray(node.children))
+      node.children.forEach(walk)
+    if (Array.isArray(node.items))
+      node.items.forEach(walk)
+  }
+  nodes.forEach(walk)
+  return out
+}
+
+/**
+ * A link may only be clickable when its label names its own destination, so a
+ * reader cannot be sent somewhere the visible text does not say.
+ */
+function labelNamesOwnDestination(link: any) {
+  const text = String(link.text ?? '')
+  const href = String(link.href ?? '')
+  if (!text || !href)
+    return true
+  const shape = (value: string) => {
+    try {
+      const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `http://${value}`)
+      return url.protocol === 'mailto:'
+        ? `mailto:${url.pathname}`
+        : `${url.host}${url.pathname}${url.search}${url.hash}`
+    }
+    catch {
+      return null
+    }
+  }
+  const label = shape(text)
+  return label === null || label === shape(href)
+}
+
 /** The text a reader sees: text content, a link label once, math with its delimiters. */
 function visibleTextOf(nodes: any[]): string {
   let out = ''
@@ -207,6 +247,69 @@ describe('a final parse never leaves a loading image or link', () => {
     ])
   })
 
+  it('keeps the destination of a validator-rejected link, not just its label', () => {
+    // Dropping to the label alone lost the destination and the syntax around it:
+    // `![a](ftp://e.com/a.png` rendered as `!a`, and a closed target kept a stray
+    // `)`. markdown-it with this package's validator renders the source, so the
+    // reader must see exactly that.
+    const cases = [
+      '![a](ftp://e.com/a.png',
+      '[a](ftp://e.com/a.png',
+      '[a](ftp://e.com/a.png)',
+      '[a](javascript:alert(1))',
+      '[a](data:text/html;base64,AA)',
+      '![a](javascript:alert(1))',
+      'see ![a](ftp://e.com/a.png end',
+      '- [a](ftp://e.com/a.png)',
+      '**[a](ftp://e.com/a.png)**',
+    ]
+
+    for (const input of cases) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(visibleTextOf(final), input).toBe(input.replace(/^[-*]+\s/, '').replace(/\*\*/g, ''))
+      // Nothing rejected may become clickable or keep a placeholder alive.
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+      expect(findFirst(final, node => node.type === 'image'), input).toBeUndefined()
+      expect(findLoading(final), input).toEqual([])
+    }
+
+    // A rejected destination that is still arriving shows the same source while
+    // streaming instead of a bare label.
+    for (const input of ['![a](ftp://e.com/a.png', '[a](ftp://e.com/a.png']) {
+      const stream = parseMarkdownToStructure(input, md, { final: false }) as any[]
+      expect(visibleTextOf(stream), input).toBe(input)
+      expect(findLoading(stream), input).toEqual([])
+    }
+  })
+
+  it('does not invent link syntax around a rejected destination', () => {
+    // A bare URL that linkify matched has its own text as the label; printing
+    // `[url](url)` would be syntax the document never had.
+    const prose = 'Download the release from ftp://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz here.'
+    for (const final of [false, true]) {
+      const nodes = parseMarkdownToStructure(prose, md, { final }) as any[]
+      expect(visibleTextOf(nodes), `final=${final}`).toBe(prose)
+      expect(findLinks(nodes), `final=${final}`).toEqual([])
+    }
+    expect(visibleTextOf(parseMarkdownToStructure('see <ftp://e.com/x> end', md, { final: true }) as any[]))
+      .toBe('see ftp://e.com/x end')
+
+    // The space in front of the paren means the source never wrote link syntax,
+    // so the destination is all that is missing from the text.
+    for (const final of [false, true]) {
+      const nodes = parseMarkdownToStructure('[a] (ftp://e.com/x)', md, { final }) as any[]
+      expect(visibleTextOf(nodes), `final=${final}`).toBe('[a] (ftp://e.com/x)')
+      expect(findLinks(nodes), `final=${final}`).toEqual([])
+    }
+
+    // A folded token cannot tell a closed paren from a missing one when a title
+    // follows, so the reconstruction must not add a paren the source may lack.
+    expect(visibleTextOf(parseMarkdownToStructure('[a](ftp://e.com/x "t"', md, { final: true }) as any[]))
+      .toBe('[a](ftp://e.com/x "t"')
+    expect(visibleTextOf(parseMarkdownToStructure('[a](ftp://e.com/x)', md, { final: true }) as any[]))
+      .toBe('[a](ftp://e.com/x)')
+  })
+
   it('keeps the closing quote of a title that a fragment parse never saw as source', () => {
     // A container or emphasis child is parsed without the surrounding inline
     // source, so the cleanup cannot read the quote back from `raw`; the folded
@@ -238,16 +341,20 @@ describe('a final parse never leaves a loading image or link', () => {
   })
 
   it('never turns a folded autolink tail into a clickable link', () => {
-    // The recovery stamps `autolink` on `[label](` + `<url>` + trailing text,
-    // and folds the trailing text into the href. Keeping that node clickable
-    // would render a trusted-looking label that points at another origin.
-    const children = childrenOf('[www.trusted.com/login] (<https://www.trusted.com>@evil.com', true)
-    expect(children).toEqual([
-      expect.objectContaining({
-        type: 'text',
-        content: '[www.trusted.com/login](https://www.trusted.com@evil.com',
-      }),
-    ])
+    // The recovery used to fold `[label](` + `<url>` + trailing text into one
+    // link, so a trusted-looking label pointed at the `@evil.com` origin. With
+    // the space in front of the paren there is no link syntax to fold: the
+    // label and the URL each keep a link to their own destination, and the
+    // trailing `@evil.com` stays text.
+    const input = '[www.trusted.com/login] (<https://www.trusted.com>@evil.com'
+    const children = childrenOf(input, true)
+    for (const link of findLinks(children)) {
+      expect(link, input).not.toMatchObject({ href: expect.stringContaining('@evil.com') })
+      expect(labelNamesOwnDestination(link), `${input} => ${link.text} | ${link.href}`).toBe(true)
+    }
+    const visible = visibleTextOf(children)
+    expect(visible, input).toContain('@evil.com')
+    expect(visible, input).not.toContain('](https://www.trusted.com@evil.com')
   })
 
   it('keeps a complete detected URL a link, but only with its own text', () => {
@@ -369,7 +476,12 @@ describe('a final parse never leaves a loading image or link', () => {
       '![登录] (HTTP://XN--EVIL.COM',
     ]) {
       const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
-      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+      for (const link of findLinks(final)) {
+        // A link is fine as long as it shows the destination it leads to: the
+        // space means the label was never its text.
+        expect(labelNamesOwnDestination(link), `${input} => ${link.text} | ${link.href}`).toBe(true)
+        expect(link.text, input).not.toBe('登录')
+      }
     }
   })
 

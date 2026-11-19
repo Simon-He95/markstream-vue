@@ -363,7 +363,9 @@ function fixLinkToken(tokens: MarkdownToken[], raw?: string): MarkdownToken[] {
         }
       }
     }
-    else if (curToken?.type === 'text' && curToken.content?.endsWith('(') && tokens[i + 1]?.type === 'link_open') {
+    // `](` has to touch: `[a] (url)` is text and a URL, not link syntax, and the
+    // space between the bracket and the paren has to survive.
+    else if (curToken?.type === 'text' && curToken.content?.endsWith('](') && tokens[i + 1]?.type === 'link_open') {
       const match = curToken.content!.match(/\[([^\]]+)\]/)
       if (match) {
         let beforeText = curToken.content!.slice(0, match.index)
@@ -459,7 +461,7 @@ function fixLinkToken(tokens: MarkdownToken[], raw?: string): MarkdownToken[] {
         continue
       }
     }
-    else if (curToken.type === 'link_open' && curToken.markup === 'linkify' && tokens[i - 1]?.type === 'text' && tokens[i - 1].content?.endsWith('(')) {
+    else if (curToken.type === 'link_open' && curToken.markup === 'linkify' && tokens[i - 1]?.type === 'text' && tokens[i - 1].content?.endsWith('](')) {
       if (tokens[i - 2]?.type === 'link_close') {
         // 合并link
         const replacerTokens = []

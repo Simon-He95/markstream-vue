@@ -4,6 +4,7 @@
 
 * **parser:** render a final parse the way markdown-it does: keep `![...]` that is not a valid image, and image or link targets that never close or point nowhere, as their source text instead of a loading placeholder. ([#827](https://github.com/Simon-He95/markstream-vue/pull/827), [#828](https://github.com/Simon-He95/markstream-vue/pull/828), [#829](https://github.com/Simon-He95/markstream-vue/pull/829), [#831](https://github.com/Simon-He95/markstream-vue/pull/831), [#833](https://github.com/Simon-He95/markstream-vue/pull/833))
 * **parser:** keep the source of a destination the validator rejects, including a space between the label and its paren, and do not add link syntax that destination lacks. ([#836](https://github.com/Simon-He95/markstream-vue/pull/836))
+* **parser:** delete the stale declaration files under `src`. They duplicated their neighbouring modules, so the dts build could resolve a months-old declaration instead of the source and publish `isCustomHtmlComponentTag` as returning `any`.
 
 ### Performance
 

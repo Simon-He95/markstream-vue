@@ -171,6 +171,10 @@ describe('link markup source', () => {
     ] as [string, string][])
       expect(firstLink(parseMarkdownToStructure(source, md, { final: false })).markup).toBe(expected)
 
+    // The angle destination lost its label in the fold, so at final it must not
+    // stay a clickable link whose label belongs to other text.
+    expect(collectLinks(parseMarkdownToStructure('[x] ](<https://a.com>', md, { final: true }))).toHaveLength(0)
+
     const complete = 'Use [n] to index](https://example.com)'
     expect(firstLink(parseMarkdownToStructure(complete, md, { final: true })).markup).toBe('linkify')
   })
@@ -182,15 +186,10 @@ describe('link markup source', () => {
     expect(imageLink.markup).toBe('')
     expect(imageLink.loading).toBe(true)
 
-    // At final the wrapper cannot resolve; the image inside it is real, so the
-    // image is kept and the wrapper becomes its source text. LinkNode does not
-    // render children while loading, so this is what makes the image visible.
-    const final = parseMarkdownToStructure('[![img](a.png)]( http://s', md, { final: true }) as any[]
-    const children = (final[0] as any).children ?? []
-    expect(children.map((child: any) => child.type)).toEqual(['text', 'image', 'text'])
-    expect(children[0].content).toBe('[')
-    expect(children[1]).toMatchObject({ type: 'image', src: 'a.png', loading: false })
-    expect(children[2].content).toBe('](http://s')
+    // At final the wrapper cannot resolve, so no link may survive; the exact
+    // shape (source text around a kept image) is pinned by
+    // final-loading-placeholders.test.ts.
+    expect(collectLinks(parseMarkdownToStructure('[![img](a.png)]( http://s', md, { final: true }))).toHaveLength(0)
   })
 
   it('keeps the link source when token hooks are configured', () => {

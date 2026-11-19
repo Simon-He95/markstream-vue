@@ -1,7 +1,5 @@
-import type { MarkdownIt } from '../../markdown-it-types'
 import type { ParsedNode, TextNode } from '../../types'
 import type { ParseContext } from '../parse-context'
-import { isDeadInlineTarget } from './inline-target'
 
 type LoadingNode = ParsedNode & {
   alt?: unknown
@@ -15,13 +13,22 @@ type LoadingNode = ParsedNode & {
   title?: unknown
 }
 
+const URL_MARKUP = new Set(['autolink', 'linkify'])
+
 function textNode(content: string): TextNode {
   return { type: 'text', content, raw: content } as TextNode
 }
 
-function titleSuffix(title: unknown) {
+/**
+ * The source's title, with a closing quote only when the source had one: a title
+ * that was still streaming in must not gain a quote it never had.
+ */
+function titleSuffix(title: unknown, raw: string | undefined) {
   const value = title == null ? '' : String(title)
-  return value ? ` "${value}"` : ''
+  if (!value)
+    return ''
+  const quoted = ` "${value}"`
+  return raw?.includes(quoted) ? quoted : ` "${value}`
 }
 
 /**
@@ -30,55 +37,61 @@ function titleSuffix(title: unknown) {
  * the inline source actually had.
  */
 function loadingLinkSource(node: LoadingNode, raw: string | undefined) {
-  const base = `[${String(node.text ?? '')}](${String(node.href ?? '')}${titleSuffix(node.title)}`
+  const base = `[${String(node.text ?? '')}](${String(node.href ?? '')}${titleSuffix(node.title, raw)}`
   return raw?.endsWith(`${base})`) ? `${base})` : base
 }
 
-function isDeadTargetIn(source: string, md: MarkdownIt | undefined) {
-  const openParen = source.indexOf('](')
-  if (openParen === -1)
-    return true
-  return isDeadInlineTarget(md, source, openParen + 1, source.length, true)
+/**
+ * A link that only wraps a complete URL can stay a link: its label is the URL
+ * itself, so clearing `loading` cannot misrepresent where it leads.
+ *
+ * `markup` alone is not proof of that. The recovery also stamps `autolink` on a
+ * folded `[label](` tail and appends the trailing text to the href; there the
+ * label comes from the source and can disagree with the destination. Keeping
+ * such a node clickable would let a trusted-looking label point at another
+ * origin, so the label has to be empty or identical to the destination — which
+ * is what markdown-it and linkify produce for a real URL.
+ */
+function keepUrlLink(node: LoadingNode): ParsedNode[] | null {
+  const href = String(node.href ?? '')
+  const text = String(node.text ?? '')
+  if (!URL_MARKUP.has(String(node.markup ?? '')) || !href || /\s/.test(href) || node.title)
+    return null
+  if (text && text !== href)
+    return null
+
+  const label = text || href
+  const children = Array.isArray(node.children) && node.children.length
+    ? node.children
+    : [textNode(label)]
+  return [{ ...node, children, loading: false, text: label } as ParsedNode]
 }
 
 /**
- * Source text for an image that is still loading at `final`, or `null` when the
- * image must be kept: a target that markdown-it accepts but a link validator
- * rejected is a real image, not a half-typed one.
+ * Source text for an image that is still loading at `final`. A target that
+ * markdown-it accepts but the link validator rejects keeps `src: ''`; there is
+ * nothing to load, and markdown-it renders such an image as its source, which
+ * `raw` already holds (it can also carry a trailing text that got swallowed).
  */
-function loadingImageSource(node: LoadingNode, md: MarkdownIt | undefined) {
+function loadingImageSource(node: LoadingNode) {
   const raw = typeof node.raw === 'string' ? node.raw : ''
   const src = String(node.src ?? '')
-  const hasImageSyntax = raw.startsWith('![')
-  if (hasImageSyntax && !src && !isDeadTargetIn(raw, md))
-    return null
-  if (hasImageSyntax)
+  if (!src && raw.startsWith('!['))
     return raw
   return `![${String(node.alt ?? '')}](${src})`
 }
 
-function replaceLoadingNode(node: LoadingNode, md: MarkdownIt | undefined, raw: string | undefined): ParsedNode[] | null {
+function replaceLoadingNode(node: LoadingNode, raw: string | undefined): ParsedNode[] | null {
   if (!node.loading)
     return null
 
-  if (node.type === 'image') {
-    const source = loadingImageSource(node, md)
-    return source == null ? null : [textNode(source)]
-  }
+  if (node.type === 'image')
+    return [textNode(loadingImageSource(node))]
 
   if (node.type === 'link') {
-    // `<url>` delimits its own destination, so an autolink is never unfinished:
-    // its label is the href by definition. A container parse can still hand it
-    // over marked as loading with the label lost, and rewriting that to source
-    // text would mangle a valid link; keep the link and supply the implied label.
-    if (node.markup === 'autolink' && node.href) {
-      const href = String(node.href)
-      const label = String(node.text ?? '') || href
-      const autolinkChildren = Array.isArray(node.children) && node.children.length
-        ? node.children
-        : [textNode(label)]
-      return [{ ...node, children: autolinkChildren, loading: false, text: label } as ParsedNode]
-    }
+    const urlLink = keepUrlLink(node)
+    if (urlLink)
+      return urlLink
     const children = Array.isArray(node.children) ? node.children : []
     if (children.some(child => child?.type !== 'text')) {
       // LinkNode renders only `text` while loading, so the children (for
@@ -87,7 +100,7 @@ function replaceLoadingNode(node: LoadingNode, md: MarkdownIt | undefined, raw: 
       return [
         textNode('['),
         ...children,
-        textNode(`](${String(node.href ?? '')}${titleSuffix(node.title)}`),
+        textNode(`](${String(node.href ?? '')}${titleSuffix(node.title, raw)}`),
       ]
     }
     return [textNode(loadingLinkSource(node, raw))]
@@ -96,7 +109,19 @@ function replaceLoadingNode(node: LoadingNode, md: MarkdownIt | undefined, raw: 
   return null
 }
 
-function unwrap(list: ParsedNode[], md: MarkdownIt | undefined, raw: string | undefined): ParsedNode[] {
+/**
+ * A `[` in front of this node is already in the source when the text before it
+ * has one that nothing closed yet; adding another would double it.
+ */
+function hasOpenBracket(out: ParsedNode[]) {
+  const previous = out[out.length - 1]
+  if (previous?.type !== 'text')
+    return false
+  const content = String(previous.content ?? '')
+  return content.lastIndexOf('[') > content.lastIndexOf(']')
+}
+
+function unwrap(list: ParsedNode[], raw: string | undefined): ParsedNode[] {
   let changed = false
   const out: ParsedNode[] = []
   const pushText = (node: TextNode) => {
@@ -114,21 +139,30 @@ function unwrap(list: ParsedNode[], md: MarkdownIt | undefined, raw: string | un
     let node = original as LoadingNode
     const children = node.children
     if (Array.isArray(children) && children.length) {
-      const next = unwrap(children, md, raw)
+      const next = unwrap(children, raw)
       if (next !== children) {
         changed = true
         node = { ...node, children: next } as LoadingNode
       }
     }
 
-    const replaced = replaceLoadingNode(node, md, raw)
+    const replaced = replaceLoadingNode(node, raw)
     if (replaced) {
       changed = true
+      let first = true
       for (const replacement of replaced) {
-        if (replacement.type === 'text')
+        if (replacement.type === 'text') {
+          const content = String((replacement as TextNode).content ?? '')
+          if (first && content === '[' && hasOpenBracket(out)) {
+            first = false
+            continue
+          }
           pushText(replacement as TextNode)
-        else
+        }
+        else {
           out.push(replacement)
+        }
+        first = false
       }
       continue
     }
@@ -147,12 +181,11 @@ function unwrap(list: ParsedNode[], md: MarkdownIt | undefined, raw: string | un
  * A final parse has nothing left to arrive, so no node may stay `loading`: image
  * and link placeholders exist for a stream that is still growing, and any that
  * survive the last chunk would show a spinner (or an empty shimmer) that never
- * resolves. Links are rebuilt as their markdown source; images only when they
- * are recovery artifacts — a target that markdown-it accepts but a link
- * validator rejects stays a real image.
+ * resolves. Links are rebuilt as their markdown source, except a link that only
+ * wraps a complete URL; images become their source when there is no src to load.
  */
 export function unwrapFinalLoadingNodes(nodes: ParsedNode[], options: ParseContext, raw?: string): ParsedNode[] {
   if (options.final !== true)
     return nodes
-  return unwrap(nodes, options.markdownIt, raw)
+  return unwrap(nodes, raw)
 }

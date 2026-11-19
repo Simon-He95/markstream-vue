@@ -42,15 +42,19 @@ describe('a final parse never leaves a loading image or link', () => {
     '![a](https://e.com/a b.png)',
     '![a](https://e.com/a b.png) tail',
     'see ![a](https://e.com/a b.png) end',
-    '![a](https://e.com/a.png "t t")',
     '[a](https://e.com/a b.png)',
     'see [a](https://e.com/a b.png) end',
+    '![a](javascript:alert(1))',
+    '![a](data:text/html;base64,AA)',
     '[guide](http://s',
+    '[x](http://s "t',
+    '[www.trusted.com/login] (<https://www.trusted.com>@evil.com',
     'text [x](http://s z',
     '- [x](http://s',
     '| h |\n|---|\n| [x](http://s |',
     '**![a](https://e.com/a b.png)** ok',
     '> ![a](https://e.com/a b.png)',
+    '::: tip\n[a *em*](http://s\n:::',
   ]
 
   it.each(cases)('keeps %j free of loading nodes', (input) => {
@@ -131,13 +135,87 @@ describe('a final parse never leaves a loading image or link', () => {
     }
   })
 
-  it('keeps a rejected scheme as an image, since its target is valid markdown', () => {
-    // `javascript:` is blocked by validateLink, not half-typed: this repo shows
-    // it as a placeholder with no src at every stage, which fix-link-inline
-    // asserts for `file:///` with validateLink: () => false as well.
-    const children = childrenOf('![a](javascript:alert(1))', true)
+  it('shows a validator-rejected target as its source instead of loading forever', () => {
+    // `javascript:` is blocked by `validateLink`, so the image keeps `src: ''`
+    // and there is nothing to load; markdown-it renders it as literal text. The
+    // raw source also carries a trailing text that the recovery swallowed.
+    expect(childrenOf('![a](javascript:alert(1))', true)).toEqual([
+      expect.objectContaining({ type: 'text', content: '![a](javascript:alert(1))' }),
+    ])
+    expect(childrenOf('![a](data:text/html;base64,AA)', true)).toEqual([
+      expect.objectContaining({ type: 'text', content: '![a](data:text/html;base64,AA)' }),
+    ])
+    expect(childrenOf('![a](javascript:alert(1)) tail', true)).toEqual([
+      expect.objectContaining({ type: 'text', content: '![a](javascript:alert(1)) tail' }),
+    ])
+  })
+
+  it('never turns a folded autolink tail into a clickable link', () => {
+    // The recovery stamps `autolink` on `[label](` + `<url>` + trailing text,
+    // and folds the trailing text into the href. Keeping that node clickable
+    // would render a trusted-looking label that points at another origin.
+    const children = childrenOf('[www.trusted.com/login] (<https://www.trusted.com>@evil.com', true)
     expect(children).toEqual([
-      expect.objectContaining({ type: 'image', src: '', loading: true }),
+      expect.objectContaining({
+        type: 'text',
+        content: '[www.trusted.com/login](https://www.trusted.com@evil.com',
+      }),
+    ])
+  })
+
+  it('keeps a complete detected URL a link, but only with its own text', () => {
+    // A linkify match is a complete URL, so it stays a link with `loading`
+    // cleared instead of being rebuilt as `[url](url)`.
+    const children = childrenOf('See the [docs for *streaming*](https://example.com/guide', true)
+    expect(children.map(child => child.type)).toEqual(['text', 'emphasis', 'text', 'link'])
+    expect(children[3]).toMatchObject({
+      type: 'link',
+      href: 'https://example.com/guide',
+      loading: false,
+      markup: 'linkify',
+      text: 'https://example.com/guide',
+    })
+    expect(JSON.stringify(children)).not.toContain(']([https://example.com/guide')
+
+    // A container parse hands over an autolink whose label was lost; the label
+    // an autolink implies is its href, never the neighbouring text.
+    const container = parseMarkdownToStructure('::: tip\n<https://example.com>\n:::', md, { final: true }) as any[]
+    expect(container[0].children[0].children[0]).toMatchObject({
+      type: 'link',
+      loading: false,
+      markup: 'autolink',
+      text: 'https://example.com',
+    })
+  })
+
+  it('shows a container link whose label was lost once, without a fabricated []', () => {
+    const container = parseMarkdownToStructure('::: tip\n[a *em*](http://s\n:::', md, { final: true }) as any[]
+    const children = container[0].children[0].children
+    expect(children.map((child: any) => child.type)).toEqual(['text', 'emphasis', 'text', 'link'])
+    expect(children[3]).toMatchObject({ loading: false, href: 'http://s' })
+    const visible = children.map((child: any) => {
+      if (child.type === 'text')
+        return child.content
+      if (child.type === 'emphasis')
+        return child.children.map((inner: any) => inner.content).join('')
+      if (child.type === 'link')
+        return child.text
+      return ''
+    }).join('')
+    expect(visible).toBe('[a em](http://s')
+  })
+
+  it('does not duplicate the label bracket or invent a closing quote', () => {
+    // The opening bracket is already source text in front of the image.
+    const imageLabel = childrenOf('See [![logo](a.png)]( http://s', true)
+    expect(imageLabel.map(child => child.type)).toEqual(['text', 'image', 'text'])
+    expect(imageLabel[0]).toMatchObject({ content: 'See [' })
+    expect(imageLabel[1]).toMatchObject({ src: 'a.png', loading: false })
+    expect(imageLabel[2]).toMatchObject({ content: '](http://s' })
+
+    // The title never closed, so the source text must not close it either.
+    expect(childrenOf('[x](http://s "t', true)).toEqual([
+      expect.objectContaining({ type: 'text', content: '[x](http://s "t' }),
     ])
   })
 

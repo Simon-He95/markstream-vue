@@ -249,8 +249,14 @@ describe('`![...](...)` whose target can never be an image', () => {
 
     // While streaming the tail is still a placeholder, which is what lets a
     // destination that is only being typed keep its skeleton.
-    const streaming = paragraphChildren('![a](https://e.com/a b.png', false)
-    expect(streaming.some(child => child.type === 'link' || child.type === 'image')).toBe(true)
+    const streaming = paragraphChildren('![a](https://e.com/a b.png)', false)
+    expect(streaming[0]).toMatchObject({ type: 'text', content: '!' })
+    expect(streaming[1]).toMatchObject({
+      type: 'link',
+      href: 'https://e.com/a b.png)',
+      loading: true,
+      text: 'a',
+    })
   })
 
   it.each([

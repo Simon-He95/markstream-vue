@@ -230,12 +230,14 @@ describe('`![...](...)` whose target can never be an image', () => {
     // `[a](https://e.com/a b.png)`. Pinned here so it cannot silently turn back
     // into an image with a space and a stray `)` in its src.
     const children = paragraphChildren('![a](https://e.com/a b.png)', true)
+    expect(children).toHaveLength(2)
     expect(children.some(child => child.type === 'image')).toBe(false)
     expect(children[0]).toMatchObject({ type: 'text', content: '!' })
     expect(children[1]).toMatchObject({
       type: 'link',
       href: 'https://e.com/a b.png)',
       loading: true,
+      text: 'a',
     })
   })
 

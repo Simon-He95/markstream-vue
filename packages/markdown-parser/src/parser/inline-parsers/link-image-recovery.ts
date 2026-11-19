@@ -287,11 +287,14 @@ function recoverMarkdownImageFromTrailingBang(state: InlineParseState, token: Ma
   // arrive, and `ImageNode` renders no `<img>` while `loading` is true, so a
   // final placeholder would only shimmer forever. Keep the source as text, the
   // same way a truncated `![a](b` already stays text.
+  //
+  // The text goes back through the normal text path instead of being appended
+  // here: writing into `previous` would make this node grow by one image per
+  // target, and every following target re-reads it, which turns a paragraph
+  // with many unclosed targets quadratic.
   if (state.options?.final === true && linkToken.loading) {
     const source = `[${alt}](${href}${title ? ` "${title}"` : ''}`
-    previous.content += source
-    previous.raw += source
-    state.currentTextNode = previous
+    state.dispatchToken({ type: 'text', content: source, raw: source } as unknown as MarkdownToken)
     return true
   }
 

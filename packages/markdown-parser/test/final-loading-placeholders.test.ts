@@ -19,6 +19,23 @@ function describeNode(node: any): string {
   return String(node?.type)
 }
 
+function collectKeys(nodes: any[]): string[] {
+  const keys: string[] = []
+  const walk = (node: any) => {
+    if (!node || typeof node !== 'object')
+      return
+    keys.push(...Object.keys(node))
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value))
+        value.forEach(walk)
+      else if (value && typeof value === 'object')
+        walk(value)
+    }
+  }
+  nodes.forEach(walk)
+  return keys
+}
+
 function findLoading(nodes: any[]): string[] {
   const out: string[] = []
   for (const node of nodes) {
@@ -171,15 +188,13 @@ describe('a final parse never leaves a loading image or link', () => {
     ])
   })
 
-  it('does not leak the fold-time title flag into final nodes', () => {
-    const link = childrenOf('See the [docs for *streaming*](https://example.com/guide', true)[3] as any
-    expect(link.type).toBe('link')
-    expect('titleClosed' in link).toBe(false)
-
-    const container = parseMarkdownToStructure('::: tip\n<https://example.com>\n:::', md, { final: true }) as any[]
-    const containerLink = container[0].children[0].children[0]
-    expect(containerLink.type).toBe('link')
-    expect('titleClosed' in containerLink).toBe(false)
+  it('does not leak the fold-time title flag into a final node', () => {
+    // Both fold through the synthetic link token with `loading: false`, which is
+    // where the hint used to reach the node handed to consumers.
+    for (const input of ['[see] (<https://a.com>)', '[x] (http://s)']) {
+      const nodes = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(collectKeys(nodes), input).not.toContain('titleClosed')
+    }
   })
 
   it('never turns a folded autolink tail into a clickable link', () => {

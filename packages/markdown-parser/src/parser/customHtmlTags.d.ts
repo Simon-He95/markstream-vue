@@ -1,1 +1,0 @@
-export { getHtmlTagFromContent, hasCompleteHtmlTagContent, isHtmlLikeTagName, mergeCustomHtmlTags, normalizeCustomHtmlTags, normalizeCustomHtmlTagName as normalizeCustomTag, resolveCustomHtmlTags, shouldRenderUnknownHtmlTagAsText, stripCustomHtmlWrapper, } from '../customHtmlTags';

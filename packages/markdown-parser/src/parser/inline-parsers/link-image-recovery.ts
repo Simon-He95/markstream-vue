@@ -805,9 +805,22 @@ function rejectedLinkSource(state: InlineParseState, token: MarkdownToken): stri
   if (current?.type === 'text' && String(current.content ?? '').endsWith(']('))
     return `${label}${titleSuffix}`
 
-  // The destination closed when the token says so, or when the source closed the
-  // title quote: a folded token stays `loading` while a title follows the URL.
-  const closed = link.loading === false || link.titleClosed === true
+  // A bare URL that linkify matched has its own text as the label: writing
+  // `[url](url)` would print brackets the document does not contain.
+  if (label === href)
+    return label
+
+  // `[a] (url)` reaches this branch as the text `[a] (` plus the URL: with a
+  // space in front of the paren the source never wrote link syntax, so only the
+  // destination is left to write.
+  const currentContent = String(current?.content ?? '')
+  if (currentContent.endsWith('(') && !currentContent.endsWith(']('))
+    return label
+
+  // A folded token that is `loading` may still be missing its closing paren (the
+  // source `[a](url "title"` and `[a](url "title")` produce the same token), so
+  // never write one the source may not have.
+  const closed = link.loading === false
   return `[${label}](${href}${titleSuffix}${closed ? ')' : ''}`
 }
 

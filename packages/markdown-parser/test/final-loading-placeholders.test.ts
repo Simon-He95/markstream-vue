@@ -282,6 +282,34 @@ describe('a final parse never leaves a loading image or link', () => {
     }
   })
 
+  it('does not invent link syntax around a rejected destination', () => {
+    // A bare URL that linkify matched has its own text as the label; printing
+    // `[url](url)` would be syntax the document never had.
+    const prose = 'Download the release from ftp://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz here.'
+    for (const final of [false, true]) {
+      const nodes = parseMarkdownToStructure(prose, md, { final }) as any[]
+      expect(visibleTextOf(nodes), `final=${final}`).toBe(prose)
+      expect(findLinks(nodes), `final=${final}`).toEqual([])
+    }
+    expect(visibleTextOf(parseMarkdownToStructure('see <ftp://e.com/x> end', md, { final: true }) as any[]))
+      .toBe('see ftp://e.com/x end')
+
+    // The space in front of the paren means the source never wrote link syntax,
+    // so the destination is all that is missing from the text.
+    for (const final of [false, true]) {
+      const nodes = parseMarkdownToStructure('[a] (ftp://e.com/x)', md, { final }) as any[]
+      expect(visibleTextOf(nodes), `final=${final}`).toBe('[a] (ftp://e.com/x)')
+      expect(findLinks(nodes), `final=${final}`).toEqual([])
+    }
+
+    // A folded token cannot tell a closed paren from a missing one when a title
+    // follows, so the reconstruction must not add a paren the source may lack.
+    expect(visibleTextOf(parseMarkdownToStructure('[a](ftp://e.com/x "t"', md, { final: true }) as any[]))
+      .toBe('[a](ftp://e.com/x "t"')
+    expect(visibleTextOf(parseMarkdownToStructure('[a](ftp://e.com/x)', md, { final: true }) as any[]))
+      .toBe('[a](ftp://e.com/x)')
+  })
+
   it('keeps the closing quote of a title that a fragment parse never saw as source', () => {
     // A container or emphasis child is parsed without the surrounding inline
     // source, so the cleanup cannot read the quote back from `raw`; the folded

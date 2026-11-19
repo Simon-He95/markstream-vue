@@ -6,6 +6,7 @@ import { isDecodedFromRawPunycode, shouldDemoteFilenameLikeLinkify } from '../li
 import { cloneTokenWithMutableChildren } from '../token-copy'
 import { parseEmphasisToken } from './emphasis-parser'
 import { parseImageToken } from './image-parser'
+import { isImpossibleInlineTarget } from './inline-target'
 import { parseLinkToken } from './link-parser'
 import { hasEscapedMarkup, isEscapedVisibleChar, recoverTrailingMarkdownLinkLabel } from './literal-text-helpers'
 import { parseStrongToken } from './strong-parser'
@@ -219,6 +220,9 @@ function recoverMarkdownImageFromLoadingImageTailLink(state: InlineParseState, l
   if (previous?.type !== 'image' || previous.src || !previous.loading || !String(previous.raw ?? '').endsWith(']('))
     return false
 
+  if (!isRecoverableImageTarget(state, link.href))
+    return false
+
   const nextToken = state.tokens[nextIndex]
   const nextContent = String(nextToken?.content ?? '')
   if (nextToken?.type !== 'text' || !nextContent.startsWith(')'))
@@ -261,17 +265,6 @@ function recoverMarkdownImageFromTrailingBang(state: InlineParseState, token: Ma
   if (hasEscapedMarkup(previousToken, '\\!'))
     return false
 
-  const before = previousContent.slice(0, -1)
-  if (before) {
-    previous.content = before
-    previous.raw = before
-    state.currentTextNode = previous
-  }
-  else {
-    state.result.pop()
-    state.currentTextNode = null
-  }
-
   const linkToken = token as MarkdownToken & {
     href?: string
     loading?: boolean
@@ -286,6 +279,20 @@ function recoverMarkdownImageFromTrailingBang(state: InlineParseState, token: Ma
   )
   const href = String(linkToken.href ?? '')
   const title = linkToken.title == null || linkToken.title === '' ? null : String(linkToken.title)
+
+  if (!isRecoverableImageTarget(state, href))
+    return false
+
+  const before = previousContent.slice(0, -1)
+  if (before) {
+    previous.content = before
+    previous.raw = before
+    state.currentTextNode = previous
+  }
+  else {
+    state.result.pop()
+    state.currentTextNode = null
+  }
 
   state.pushParsed({
     type: 'image',
@@ -317,28 +324,49 @@ function buildLoadingOuterImageLinkNode(
   } as ParsedNode
 }
 
-// `![...]` that is already closed and followed by something other than `(`
-// can't become an inline image any more (e.g. Rust's `vec![1, 2, 3]` in
-// prose), so it stays literal text instead of a loading image placeholder.
+// A link token can carry the target of the image it stands in for, so the
+// link-based recoveries ask the same question about the href they would use.
+function isRecoverableImageTarget(state: InlineParseState, href: string) {
+  const candidate = `![x](${href})`
+  return !isImpossibleInlineTarget(
+    state.options?.markdownIt,
+    candidate,
+    candidate.indexOf('](') + 1,
+    candidate.length,
+  )
+}
+
+// `![...]` that can no longer become an inline image stays literal text instead
+// of a loading image placeholder: a closed bracket that isn't followed by `(`
+// (Rust's `vec![1, 2, 3]` in prose) and a `(...)` target markdown-it rejects
+// (`![a](b c)`).
 function isClosedNonImageBracket(
+  state: InlineParseState,
   content: string,
   imageStart: number,
-  nextToken: MarkdownToken | undefined,
-  final: boolean | undefined,
 ) {
   const closeIdx = findMatchingClose(content, imageStart + 2, '[', ']')
   if (closeIdx === -1)
     return false
-  if (closeIdx < content.length - 1)
-    return content[closeIdx + 1] !== '('
+  if (closeIdx < content.length - 1) {
+    if (content[closeIdx + 1] !== '(')
+      return true
+    return isImpossibleInlineTarget(
+      state.options?.markdownIt,
+      content,
+      closeIdx + 1,
+      content.length,
+    )
+  }
   // The bracket closes this token. It can still end up as an image through the
   // next token (`` ](... ``), and at the end of the input only while streaming:
   // once the parse is final nothing can add the destination, so `![alt]` /
   // `好的![微笑]` are literal text. A reference image whose definition exists is
   // already an image token from markdown-it and never reaches this recovery.
+  const nextToken = state.tokens[state.index + 1]
   if (nextToken)
     return !(nextToken.type === 'text' && String(nextToken.content ?? '').startsWith('('))
-  return final === true
+  return state.options?.final === true
 }
 
 function buildLoadingImageNodeFromRaw(raw: string): ParsedNode {
@@ -363,7 +391,7 @@ export function recoverOuterImageLinkFromRawText(state: InlineParseState, conten
     return false
   if (typeof state.raw === 'string' && state.tokens.length === 1 && isEscapedVisibleChar(state.raw, outerStart, '['))
     return false
-  if (isClosedNonImageBracket(content, outerStart + 1, state.tokens[state.index + 1], state.options?.final))
+  if (isClosedNonImageBracket(state, content, outerStart + 1))
     return false
 
   const before = content.slice(0, outerStart)
@@ -576,6 +604,11 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
     const linkContentEnd = content.indexOf(')', linkEnd)
     const href = linkContentEnd !== -1 ? content.slice(linkEnd + 2, linkContentEnd) : ''
     const loading = linkContentEnd === -1
+    // A destination that can never be a link target (`[a](b c)`) stays text,
+    // the same way markdown-it renders it. An unfinished one keeps its loading
+    // placeholder for the rest of the stream.
+    if (isImpossibleInlineTarget(state.options?.markdownIt, content, linkEnd + 1, content.length))
+      return false
     let emphasisMatch = textNodeContent.match(/\*+$/)
     if (emphasisMatch) {
       textNodeContent = textNodeContent.replace(/\*+$/, '')
@@ -657,9 +690,8 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
 }
 
 export function handleInlineImageContent(state: InlineParseState, content: string): boolean {
-  const nextToken = state.tokens[state.index + 1]
   let imageStart = content.indexOf('![')
-  while (imageStart !== -1 && isClosedNonImageBracket(content, imageStart, nextToken, state.options?.final))
+  while (imageStart !== -1 && isClosedNonImageBracket(state, content, imageStart))
     imageStart = content.indexOf('![', imageStart + 2)
   if (imageStart === -1)
     return false

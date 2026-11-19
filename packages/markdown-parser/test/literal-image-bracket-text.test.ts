@@ -124,3 +124,98 @@ describe('closed `![...]` that is not an image', () => {
     }
   })
 })
+
+describe('`![...](...)` whose target can never be an image', () => {
+  // markdown-it renders each of these as plain text, so recovery must not build
+  // an image that loads forever (`![a](b c)` used to swallow the rest of the line).
+  it.each([
+    '![a](b c)',
+    '![a](b c) tail',
+    '![a]( b c )',
+    '![a](b\tc)',
+    '![a](b c',
+    'see ![a](b c) end',
+  ])('keeps %j as plain text', (input) => {
+    for (const final of [false, true]) {
+      expect(paragraphChildren(input, final)).toEqual([
+        expect.objectContaining({ type: 'text', content: input }),
+      ])
+    }
+  })
+
+  it('keeps a dead destination followed by a title as text', () => {
+    // The typographer turns the quotes, so only the node type is compared.
+    for (const final of [false, true]) {
+      const children = paragraphChildren('![a](b c "t")', final)
+      expect(children.map(child => child.type)).toEqual(['text'])
+      expect(children[0].content.startsWith('![a](b c')).toBe(true)
+    }
+  })
+
+  it('keeps a link with the same dead destination as text', () => {
+    for (const final of [false, true]) {
+      expect(paragraphChildren('[a](b c)', final)).toEqual([
+        expect.objectContaining({ type: 'text', content: '[a](b c)' }),
+      ])
+    }
+  })
+
+  it('keeps a dead destination inside strong as text', () => {
+    const children = paragraphChildren('**![a](b c)** ok', true)
+    expect(children.map(child => child.type)).toEqual(['strong', 'text'])
+    expect(children[0].children).toEqual([
+      expect.objectContaining({ type: 'text', content: '![a](b c)' }),
+    ])
+  })
+
+  it('still builds images for every target markdown-it accepts', () => {
+    const valid: Array<[string, string]> = [
+      ['![a](<b c>)', 'b%20c'],
+      ['![a](b "t")', 'b'],
+      ['![a](b(c))', 'b(c)'],
+      ['![a]("t")', '%22t%22'],
+      ['![a](b"t")', 'b%22t%22'],
+    ]
+    for (const [input, src] of valid) {
+      for (const final of [false, true]) {
+        expect(paragraphChildren(input, final), input).toEqual([
+          expect.objectContaining({ type: 'image', alt: 'a', src, loading: false }),
+        ])
+      }
+    }
+  })
+
+  it('still builds an image for an empty destination', () => {
+    for (const input of ['![a]()', '![a]( )']) {
+      expect(paragraphChildren(input, true), input).toEqual([
+        expect.objectContaining({ type: 'image', alt: 'a', src: '', loading: false }),
+      ])
+    }
+  })
+
+  it.each([
+    ['![a](b', 'a'],
+    ['![a](b "t', 'a'],
+    ['![a](b(c', 'a'],
+  ])('keeps the placeholder for the unfinished target %j', (input, alt) => {
+    // An unfinished target can still be completed by the next tokens, so it is
+    // not treated as dead — unlike a target that already contains a character
+    // that can never appear in a destination.
+    expect(paragraphChildren(input, true)).toEqual([
+      expect.objectContaining({ type: 'image', alt, loading: true }),
+    ])
+  })
+
+  it('does not turn a linkified destination containing a space into an image', () => {
+    const children = paragraphChildren('![a](https://e.com/a b.png)', true)
+    expect(children.some(child => child.type === 'image')).toBe(false)
+    expect(children[0]).toMatchObject({ type: 'text' })
+  })
+
+  it('keeps images that follow a dead destination', () => {
+    expect(paragraphChildren('![a](b c) ![b](https://e.com/b.png)', true)).toEqual([
+      expect.objectContaining({ type: 'text', content: '![a](b c) ' }),
+      expect.objectContaining({ type: 'image', alt: 'b', src: 'https://e.com/b.png', loading: false }),
+    ])
+  })
+})

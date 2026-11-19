@@ -373,6 +373,18 @@ describe('a final parse never leaves a loading image or link', () => {
     }
   })
 
+  it('does not accept an alternate numeric spelling of the same host', () => {
+    // `0x7f.1` and `2130706433` are `127.0.0.1` to `URL`, so normalizing alone
+    // would keep these links and show a reader an address they cannot read.
+    for (const input of [
+      '[0x7f.1]](http://127.0.0.1',
+      '[2130706433]](http://127.0.0.1',
+    ]) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+    }
+  })
+
   it('matches a cold final parse when the stream was parsed incrementally', () => {
     for (const input of [
       '![a](https://e.com/a b.png)',

@@ -83,9 +83,12 @@ function isUrlSpelling(text: string, href: string) {
     return false
   if (href === `http://${text}` || href === `mailto:${text}`)
     return true
-  // A non-ASCII label and a punycode href only describe one URL when the label's
-  // own host encodes to the href's host; `例子.com` ↔ `xn--fsqu00a.com` passes,
-  // `登录` → `xn--evil.com` does not.
+  // An IDNA spelling is the only rewriting left that still names the source
+  // label: `例子.com` ↔ `http://xn--fsqu00a.com` passes, `登录` → `xn--evil.com`
+  // does not (different host), and a numeric spelling such as `0x7f.1` for
+  // `127.0.0.1` does not either (same host, but not the spelling a reader sees).
+  if (!/[^\u0020-\u007E]/u.test(text) || !/xn--/i.test(href))
+    return false
   const label = urlShape(text)
   return label !== null && label === urlShape(href)
 }

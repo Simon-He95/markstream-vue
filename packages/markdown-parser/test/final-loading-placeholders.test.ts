@@ -150,6 +150,27 @@ describe('a final parse never leaves a loading image or link', () => {
     ])
   })
 
+  it('keeps the closing quote of a title that a fragment parse never saw as source', () => {
+    // A container or emphasis child is parsed without the surrounding inline
+    // source, so the cleanup cannot read the quote back from `raw`; the folded
+    // link token records whether the source closed the title instead.
+    const container = parseMarkdownToStructure('::: tip\n[x](https://ok.com "title"\n:::', md, { final: true }) as any[]
+    expect(container[0].children[0].children).toEqual([
+      expect.objectContaining({ type: 'text', content: '[x](https://ok.com "title"' }),
+    ])
+
+    const strong = parseMarkdownToStructure('**[x](https://ok.com "title"**', md, { final: true }) as any[]
+    expect(strong[0].children[0].children).toEqual([
+      expect.objectContaining({ type: 'text', content: '[x](https://ok.com "title"' }),
+    ])
+
+    // An unterminated title must not gain a quote it never had.
+    const unterminated = parseMarkdownToStructure('::: tip\n[x](http://s "t\n:::', md, { final: true }) as any[]
+    expect(unterminated[0].children[0].children).toEqual([
+      expect.objectContaining({ type: 'text', content: '[x](http://s "t' }),
+    ])
+  })
+
   it('never turns a folded autolink tail into a clickable link', () => {
     // The recovery stamps `autolink` on `[label](` + `<url>` + trailing text,
     // and folds the trailing text into the href. Keeping that node clickable

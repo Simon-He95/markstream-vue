@@ -11,6 +11,7 @@ type LoadingNode = ParsedNode & {
   src?: string
   text?: string
   title?: unknown
+  titleClosed?: boolean
 }
 
 const URL_MARKUP = new Set(['autolink', 'linkify'])
@@ -22,12 +23,18 @@ function textNode(content: string): TextNode {
 /**
  * The source's title, with a closing quote only when the source had one: a title
  * that was still streaming in must not gain a quote it never had.
+ *
+ * The folded link token records the quote (`titleClosed`). `raw` is only a
+ * fallback: a fragment parse — a container child or an emphasis child — does not
+ * receive the inline source, so it cannot answer this question.
  */
-function titleSuffix(title: unknown, raw: string | undefined) {
+function titleSuffix(title: unknown, raw: string | undefined, titleClosed?: boolean) {
   const value = title == null ? '' : String(title)
   if (!value)
     return ''
   const quoted = ` "${value}"`
+  if (typeof titleClosed === 'boolean')
+    return titleClosed ? quoted : ` "${value}`
   return raw?.includes(quoted) ? quoted : ` "${value}`
 }
 
@@ -37,7 +44,7 @@ function titleSuffix(title: unknown, raw: string | undefined) {
  * the inline source actually had.
  */
 function loadingLinkSource(node: LoadingNode, raw: string | undefined) {
-  const base = `[${String(node.text ?? '')}](${String(node.href ?? '')}${titleSuffix(node.title, raw)}`
+  const base = `[${String(node.text ?? '')}](${String(node.href ?? '')}${titleSuffix(node.title, raw, node.titleClosed)}`
   return raw?.endsWith(`${base})`) ? `${base})` : base
 }
 
@@ -100,7 +107,7 @@ function replaceLoadingNode(node: LoadingNode, raw: string | undefined): ParsedN
       return [
         textNode('['),
         ...children,
-        textNode(`](${String(node.href ?? '')}${titleSuffix(node.title, raw)}`),
+        textNode(`](${String(node.href ?? '')}${titleSuffix(node.title, raw, node.titleClosed)}`),
       ]
     }
     return [textNode(loadingLinkSource(node, raw))]

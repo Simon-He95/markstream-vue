@@ -92,9 +92,24 @@ describe('closed `![...]` that is not an image', () => {
     ])
   })
 
-  it('keeps a truncated destination as a loading image when the parse is final', () => {
-    expect(paragraphChildren('![alt](https://example.com/x.png', true)).toEqual([
+  it('keeps a truncated URL destination as a placeholder while streaming', () => {
+    // The destination is grabbable by linkify, so the image is rebuilt from a
+    // synthetic link token; while the stream is open it still shows the
+    // progressive skeleton.
+    expect(paragraphChildren('![alt](https://example.com/x.png', false)).toEqual([
       expect.objectContaining({ type: 'image', alt: 'alt', src: 'https://example.com/x.png', loading: true }),
+    ])
+  })
+
+  it.each([
+    ['![alt](https://example.com/x.png', '![alt](https://example.com/x.png'],
+    ['![alt](https://example.com/x.png "t"', '![alt](https://example.com/x.png "t"'],
+    ['see ![alt](https://example.com/x.png', 'see ![alt](https://example.com/x.png'],
+  ])('keeps the truncated URL %j as text when the parse is final', (input, expected) => {
+    // Nothing can close the destination any more, and ImageNode renders no
+    // <img> while `loading` is true, so a final placeholder would only shimmer.
+    expect(paragraphChildren(input, true)).toEqual([
+      expect.objectContaining({ type: 'text', content: expected }),
     ])
   })
 

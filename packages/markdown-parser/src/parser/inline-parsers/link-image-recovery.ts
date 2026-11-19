@@ -283,6 +283,22 @@ function recoverMarkdownImageFromTrailingBang(state: InlineParseState, token: Ma
   if (!isRecoverableImageTarget(state, href))
     return false
 
+  // A destination that never closed cannot resolve once nothing more can
+  // arrive, and `ImageNode` renders no `<img>` while `loading` is true, so a
+  // final placeholder would only shimmer forever. Keep the source as text, the
+  // same way a truncated `![a](b` already stays text.
+  //
+  // The text is written into `previous` rather than pushed as its own node: one
+  // growing text node keeps the inline result free of long text runs, which the
+  // text handler re-reads on every following text token.
+  if (state.options?.final === true && linkToken.loading) {
+    const source = `[${alt}](${href}${title ? ` "${title}"` : ''}`
+    previous.content += source
+    previous.raw += source
+    state.currentTextNode = previous
+    return true
+  }
+
   const before = previousContent.slice(0, -1)
   if (before) {
     previous.content = before

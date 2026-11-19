@@ -1,6 +1,5 @@
 import type { ParsedNode, TextNode } from '../../types'
 import type { ParseContext } from '../parse-context'
-import { isDecodedFromRawPunycode } from '../linkifyHeuristics'
 
 type LoadingNode = ParsedNode & {
   alt?: unknown
@@ -50,13 +49,32 @@ function loadingLinkSource(node: LoadingNode, raw: string | undefined) {
 }
 
 /**
+ * The URL `value` names, with the scheme defaulted, or `null` when it names
+ * none. `URL` applies the same normalization a browser does — lowercases the
+ * scheme and host, drops a default port, and IDNA-encodes a non-ASCII host — so
+ * two strings that spell one URL compare equal while a label that spells a
+ * different host never does.
+ */
+function urlShape(value: string) {
+  try {
+    const url = new URL(/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `http://${value}`)
+    if (url.protocol === 'mailto:')
+      return `mailto:${url.pathname}`
+    return `${url.username}:${url.password}@${url.host}${url.pathname}${url.search}${url.hash}`
+  }
+  catch {
+    return null
+  }
+}
+
+/**
  * Whether `text` is the source spelling of `href`. Linkify writes the URL the
  * source had into the label and the normalized one into the href: a bare domain
  * gains `http://`, an address gains `mailto:`, and a non-ASCII host is punycode
  * in the href. Those differences describe the same URL, so keeping the link
  * cannot point the label at another origin.
  */
-function isUrlSpelling(text: string, href: string, raw: string | undefined) {
+function isUrlSpelling(text: string, href: string) {
   if (text === href)
     return true
   // A control character in the label means a malformed punycode host was
@@ -65,7 +83,11 @@ function isUrlSpelling(text: string, href: string, raw: string | undefined) {
     return false
   if (href === `http://${text}` || href === `mailto:${text}`)
     return true
-  return isDecodedFromRawPunycode(text, href, raw)
+  // A non-ASCII label and a punycode href only describe one URL when the label's
+  // own host encodes to the href's host; `例子.com` ↔ `xn--fsqu00a.com` passes,
+  // `登录` → `xn--evil.com` does not.
+  const label = urlShape(text)
+  return label !== null && label === urlShape(href)
 }
 
 /**
@@ -86,7 +108,7 @@ function keepUrlLink(node: LoadingNode): ParsedNode[] | null {
   const text = String(node.text ?? '')
   if (!URL_MARKUP.has(String(node.markup ?? '')) || !href || /\s/.test(href) || node.title)
     return null
-  if (text && !isUrlSpelling(text, href, typeof node.raw === 'string' ? node.raw : undefined))
+  if (text && !isUrlSpelling(text, href))
     return null
 
   const label = text || href

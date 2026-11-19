@@ -359,6 +359,20 @@ describe('a final parse never leaves a loading image or link', () => {
     }
   })
 
+  it('never points a source label at another host', () => {
+    // A non-ASCII label and a punycode destination only spell one URL when the
+    // label's own host encodes to the destination's host. `xn--evil.com` is not
+    // the encoding of `登录`, so the label may not become a link to it.
+    for (const input of [
+      '[登录] (HTTP://XN--EVIL.COM',
+      '[例子.com] (HTTP://XN--EVIL.COM',
+      '![登录] (HTTP://XN--EVIL.COM',
+    ]) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+    }
+  })
+
   it('matches a cold final parse when the stream was parsed incrementally', () => {
     for (const input of [
       '![a](https://e.com/a b.png)',

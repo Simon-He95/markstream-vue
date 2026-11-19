@@ -1,3 +1,26 @@
+## [2.0.29](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.28...markstream-vue@2.0.29) (2026-11-20)
+
+### Bug Fixes
+
+* **parser:** render a final parse the way markdown-it does: keep `![...]` that is not a valid image, and image or link targets that never close or point nowhere, as their source text instead of a loading placeholder. ([#827](https://github.com/Simon-He95/markstream-vue/pull/827), [#828](https://github.com/Simon-He95/markstream-vue/pull/828), [#829](https://github.com/Simon-He95/markstream-vue/pull/829), [#831](https://github.com/Simon-He95/markstream-vue/pull/831), [#833](https://github.com/Simon-He95/markstream-vue/pull/833))
+* **parser:** keep the source of a destination the validator rejects, including a space between the label and its paren, and do not add link syntax that destination lacks. ([#836](https://github.com/Simon-He95/markstream-vue/pull/836))
+
+### Performance
+
+* **parser:** make the final parse of unclosed image destinations linear by matching image delimiters with a monotonic stack instead of rescanning the rest of the source per target, and calibrate the scaling benchmark so it separates linear from quadratic growth on shared CI runners. ([#832](https://github.com/Simon-He95/markstream-vue/pull/832), [#837](https://github.com/Simon-He95/markstream-vue/pull/837))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.28`
+* `markstream-core@2.0.29`
+* `markstream-vue@2.0.29`
+* `markstream-react@2.0.29`
+* `markstream-octane@2.0.29`
+* `markstream-svelte@2.0.29`
+* `markstream-angular@2.0.29`
+* `markstream-vue2@2.0.29`
+* `markstream-solid@2.0.29`
+
 ## [2.0.28](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.27...markstream-vue@2.0.28) (2026-11-17)
 
 ### Bug Fixes

@@ -632,11 +632,17 @@ describe('inline parser fixes (link mid-states)', () => {
         validateLink: () => false,
       },
     })
+    // A rejected destination has no src to load: it keeps the placeholder while
+    // streaming, and a final parse shows the source, as markdown-it renders it.
+    const rejectedStreamingNodes = parseMarkdownToStructure(markdown, rejectingMd, { final: false })
+    const rejectedStreamingImages = collectTarget(rejectedStreamingNodes as any[], 'image')
+    expect(rejectedStreamingImages).toHaveLength(1)
+    expect(rejectedStreamingImages[0]).toMatchObject({ src: '', loading: true })
+
     const rejectedNodes = parseMarkdownToStructure(markdown, rejectingMd, { final: true })
-    const rejectedImages = collectTarget(rejectedNodes as any[], 'image')
-    expect(rejectedImages).toHaveLength(1)
-    expect(rejectedImages[0]).toMatchObject({ src: '', loading: true })
+    expect(collectTarget(rejectedNodes as any[], 'image')).toHaveLength(0)
     expect(collectLinks(rejectedNodes as any[])).toHaveLength(0)
+    expect(collectTarget(rejectedNodes as any[], 'text').map((node: any) => node.content)).toEqual([markdown])
   })
 
   it('does not turn escaped exclamation plus link into an image mid-state', () => {

@@ -239,16 +239,19 @@ describe('`![...](...)` whose target can never be an image', () => {
 
   it('does not turn a linkified destination containing a space into an image', () => {
     // `https://e.com/a b.png` is grabbed by linkify, so this never reaches the
-    // image path with a `(b c)`-style destination. The image recovery correctly
-    // declines it; what remains is the tolerant linkify tail (`!` plus a
-    // loading link), which is the same shape this repo already produces for
-    // `[a](https://e.com/a b.png)`. Pinned here so it cannot silently turn back
-    // into an image with a space and a stray `)` in its src.
-    const children = paragraphChildren('![a](https://e.com/a b.png)', true)
-    expect(children).toHaveLength(2)
-    expect(children.some(child => child.type === 'image')).toBe(false)
-    expect(children[0]).toMatchObject({ type: 'text', content: '!' })
-    expect(children[1]).toMatchObject({
+    // image path with a `(b c)`-style destination, so the image recovery
+    // declines it and linkify's tolerant tail takes over. At final that tail is
+    // source text: a loading link here would spin forever, and its href carried
+    // a space and a stray `)`.
+    expect(paragraphChildren('![a](https://e.com/a b.png)', true)).toEqual([
+      expect.objectContaining({ type: 'text', content: '![a](https://e.com/a b.png)' }),
+    ])
+
+    // While streaming the tail is still a placeholder, which is what lets a
+    // destination that is only being typed keep its skeleton.
+    const streaming = paragraphChildren('![a](https://e.com/a b.png)', false)
+    expect(streaming[0]).toMatchObject({ type: 'text', content: '!' })
+    expect(streaming[1]).toMatchObject({
       type: 'link',
       href: 'https://e.com/a b.png)',
       loading: true,

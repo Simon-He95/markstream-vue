@@ -130,9 +130,11 @@ describe('link markup source', () => {
     expect(second[0]).toBe(first[0])
   })
 
-  it('reports an unfinished hand-written link as explicit', () => {
+  it('reports an unfinished hand-written link as explicit while it streams', () => {
     // The destination is still streaming in, so linkify may match the partial
     // URL, but the source clearly wrote `](`: it must not look auto-detected.
+    // Once the parse is final nothing can complete the destination, so the
+    // same source is text instead of a link that would load forever.
     for (const source of [
       '[summary.md](http://summary.md',
       '[guide](http://s',
@@ -141,10 +143,12 @@ describe('link markup source', () => {
       '| h |\n|---|\n| [x](http://s |',
       '[x*](http://s',
     ]) {
-      const links = collectLinks(parseMarkdownToStructure(source, md, { final: true }))
+      const links = collectLinks(parseMarkdownToStructure(source, md, { final: false }))
       expect(links).toHaveLength(1)
       expect(links[0].loading).toBe(true)
       expect(links[0].markup).toBe('')
+
+      expect(collectLinks(parseMarkdownToStructure(source, md, { final: true }))).toHaveLength(0)
     }
   })
 
@@ -159,21 +163,33 @@ describe('link markup source', () => {
   it('keeps unrelated bracketed text off the hand-written source', () => {
     // The text in front of the folded token ends with `](`, but its label does
     // not sit directly in front of it, so the matched destination is still the
-    // auto-detected part.
+    // auto-detected part. The first two sources are unfinished, so they are
+    // only links while streaming.
     for (const [source, expected] of [
       ['[x] ](https://a.com', 'linkify'],
-      ['Use [n] to index](https://example.com)', 'linkify'],
       ['[x] ](<https://a.com>', 'autolink'],
     ] as [string, string][])
-      expect(firstLink(parseMarkdownToStructure(source, md, { final: true })).markup).toBe(expected)
+      expect(firstLink(parseMarkdownToStructure(source, md, { final: false })).markup).toBe(expected)
+
+    // The angle destination lost its label in the fold, so at final it must not
+    // stay a clickable link whose label belongs to other text.
+    expect(collectLinks(parseMarkdownToStructure('[x] ](<https://a.com>', md, { final: true }))).toHaveLength(0)
+
+    const complete = 'Use [n] to index](https://example.com)'
+    expect(firstLink(parseMarkdownToStructure(complete, md, { final: true })).markup).toBe('linkify')
   })
 
   it('marks the recovered loading image link wrapper as explicit', () => {
     // The outer link of a still-loading image link was written as
-    // `[![...]](`, so the wrapper stays an explicit link.
-    const imageLink = firstLink(parseMarkdownToStructure('[![img](a.png)]( http://s', md, { final: true }))
+    // `[![...]](`, so the wrapper stays an explicit link while it streams.
+    const imageLink = firstLink(parseMarkdownToStructure('[![img](a.png)]( http://s', md, { final: false }))
     expect(imageLink.markup).toBe('')
     expect(imageLink.loading).toBe(true)
+
+    // At final the wrapper cannot resolve, so no link may survive; the exact
+    // shape (source text around a kept image) is pinned by
+    // final-loading-placeholders.test.ts.
+    expect(collectLinks(parseMarkdownToStructure('[![img](a.png)]( http://s', md, { final: true }))).toHaveLength(0)
   })
 
   it('keeps the link source when token hooks are configured', () => {

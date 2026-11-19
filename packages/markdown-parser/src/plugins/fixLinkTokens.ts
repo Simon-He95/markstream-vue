@@ -12,6 +12,7 @@ type SyntheticLinkToken = MarkdownToken & {
   href?: string
   text?: string
   title?: string
+  titleClosed?: boolean
   children?: MarkdownToken[] | null
 }
 
@@ -63,16 +64,23 @@ function createLinkToken(
   origin: SyntheticLinkOrigin = 'recovery',
 ): SyntheticLinkToken {
   let title = ''
+  let titleClosed = false
   if (href.includes('"')) {
     const temps = href.split('"')
     href = temps[0].trim()
     title = temps[1].trim()
+    // A third piece means the source closed the quote. The escaped quote in
+    // `"a\"b` splits the same way but is not a closing one.
+    titleClosed = temps.length > 2 && !temps[1].endsWith('\\')
   }
   return setSyntheticLinkOrigin({
     type: 'link',
     loading,
     href,
     title,
+    // Only a placeholder is rebuilt from this source hint; a complete link keeps
+    // no trace of it in the node it hands to consumers.
+    ...(loading ? { titleClosed } : {}),
     text,
     children: [
       {

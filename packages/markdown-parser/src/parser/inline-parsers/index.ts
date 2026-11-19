@@ -5,6 +5,7 @@ import { resolveLinkMarkup } from '../../plugins/linkTokenMetadata'
 import { inferLinkifyDemotionContext } from '../linkifyHeuristics'
 import { ensureParseContext } from '../parse-context'
 import { cloneTokenWithMutableChildren } from '../token-copy'
+import { unwrapFinalLoadingNodes } from './inline-final-cleanup'
 import { dispatchInlineToken } from './inline-token-dispatcher'
 
 export { isLikelyUrl } from './link-image-recovery'
@@ -111,5 +112,5 @@ export function parseInlineTokens(
     dispatchInlineToken(state, token)
   }
 
-  return state.result
+  return unwrapFinalLoadingNodes(state.result, parseContext, raw)
 }

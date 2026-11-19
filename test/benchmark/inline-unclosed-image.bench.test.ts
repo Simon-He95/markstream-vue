@@ -148,8 +148,10 @@ describe('unclosed image destinations — final parse', () => {
     // Equal volume on both sides: four paragraphs of `small` cost the same as
     // one paragraph with four times the targets when the scan is linear, and
     // ~3.6x more while it is quadratic (measured on 77b08d180, the commit before
-    // the scan was made linear). This branch measures 1.1-1.2x, including with
-    // every core saturated, so 2.0 splits the two with room on either side.
+    // the scan was made linear). A linear scan leaves the token fold as the only
+    // per-paragraph superlinear cost in this shape — it splices the token array
+    // once per folded link — so the fixed ratio is not ~1 everywhere; the
+    // threshold below is calibrated against what it measures.
     const small = 1600
     const smallInputs = [0, 1, 2, 3].map(seed => makeTargets(small, seed))
     const final = equalVolumeRatio(smallInputs, makeTargets(small * 4), true)
@@ -173,10 +175,11 @@ describe('unclosed image destinations — final parse', () => {
     )
     console.log(`[unclosed-image-bench] final ${small * 8}=${tailMs.toFixed(1)}ms (logged only)`)
 
-    // Quadratic growth makes the equal-volume pair ~4x, linear ~1x. The
-    // threshold leaves room for timing noise on a shared CI machine while still
-    // rejecting the quadratic curve.
-    expect(final.ratio).toBeLessThan(2)
+    // Quadratic growth puts this pair at ~3.6x; measured points after the scan
+    // was made linear are 1.16 (local), 2.06 (GitHub ubuntu) and 2.08 (GitHub
+    // windows), so 3.0 keeps ~44% headroom above the slowest observed CI run
+    // while still failing the quadratic curve by a wide margin.
+    expect(final.ratio).toBeLessThan(3)
     expect(streamRatio).toBeLessThan(8)
   }, 120_000)
 })

@@ -51,6 +51,46 @@ function findLoading(nodes: any[]): string[] {
   return out
 }
 
+function findFirst(nodes: any[], predicate: (node: any) => boolean): any {
+  for (const node of nodes) {
+    if (!node || typeof node !== 'object')
+      continue
+    if (predicate(node))
+      return node
+    for (const key of ['children', 'items']) {
+      const found = Array.isArray(node[key]) ? findFirst(node[key], predicate) : undefined
+      if (found)
+        return found
+    }
+  }
+  return undefined
+}
+
+/** The text a reader sees: text content, a link label once, math with its delimiters. */
+function visibleTextOf(nodes: any[]): string {
+  let out = ''
+  const walk = (node: any) => {
+    if (!node || typeof node !== 'object')
+      return
+    if (node.type === 'text')
+      out += String(node.content ?? '')
+    else if (node.type === 'math_inline')
+      out += `$${String(node.content ?? '')}$`
+    else if (node.type === 'inline_code')
+      out += String(node.code ?? node.raw ?? '')
+    else if (node.type === 'image')
+      out += '' // Renders as an image, not as text.
+    else if (Array.isArray(node.children))
+      node.children.forEach(walk)
+    else if (node.type === 'link')
+      out += String(node.text ?? '')
+    if (Array.isArray(node.items))
+      node.items.forEach(walk)
+  }
+  nodes.forEach(walk)
+  return out
+}
+
 describe('a final parse never leaves a loading image or link', () => {
   // Every one of these used to keep a placeholder that spun forever: the URL is
   // grabbed by linkify (a space is not allowed in a destination) or the
@@ -264,6 +304,85 @@ describe('a final parse never leaves a loading image or link', () => {
     expect(childrenOf('[x](http://s "t', true)).toEqual([
       expect.objectContaining({ type: 'text', content: '[x](http://s "t' }),
     ])
+  })
+
+  it('renders an unclosed destination the way markdown-it does', () => {
+    // markdown-it 14 gives up on the image (nothing can close its destination)
+    // and linkifies the URL on its own, so the reader sees the source prefix
+    // followed by one link. Expected text below is markdown-it's textContent.
+    const cases = [
+      { input: '![a $x$](https://e.com/a.png', text: '![a $x$](https://e.com/a.png', href: 'https://e.com/a.png', label: 'https://e.com/a.png' },
+      { input: '![](https://e.com/a.png', text: '![](https://e.com/a.png', href: 'https://e.com/a.png', label: 'https://e.com/a.png' },
+      { input: '![a](www.e.com/a.png', text: '![a](www.e.com/a.png', href: 'http://www.e.com/a.png', label: 'www.e.com/a.png' },
+      { input: '![a](mailto:x@example.com', text: '![a](mailto:x@example.com', href: 'mailto:x@example.com', label: 'mailto:x@example.com' },
+      { input: '![a](<https://e.com/a.png', text: '![a](<https://e.com/a.png', href: 'https://e.com/a.png', label: 'https://e.com/a.png' },
+      { input: '![$x$](https://e.com/a.png', text: '![$x$](https://e.com/a.png', href: 'https://e.com/a.png', label: 'https://e.com/a.png' },
+      // The link has no image in front of it; the fold used to give its label
+      // the destination's normalized href and print it twice.
+      { input: '[a](www.e.com/a.png', text: '[a](www.e.com/a.png', href: 'http://www.e.com/a.png', label: 'www.e.com/a.png' },
+      { input: '![a](www.e.com/a.png "title', text: '![a](www.e.com/a.png "title', href: 'http://www.e.com/a.png', label: 'www.e.com/a.png' },
+      { input: 'see ![a](www.e.com/a.png end', text: 'see ![a](www.e.com/a.png end', href: 'http://www.e.com/a.png', label: 'www.e.com/a.png' },
+      // The label spells the destination the way the source did: an address
+      // gains `mailto:`, a non-ASCII host is punycode in the href.
+      { input: '![a](user@example.com', text: '![a](user@example.com', href: 'mailto:user@example.com', label: 'user@example.com' },
+      { input: '![a](例子.com', text: '![a](例子.com', href: 'http://xn--fsqu00a.com', label: '例子.com' },
+    ]
+
+    for (const { input, text, href, label } of cases) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(visibleTextOf(final), input).toBe(text)
+      // The destination stays a link, with the URL as the source spelled it.
+      const link = findFirst(final, node => node.type === 'link')
+      expect(link, input).toMatchObject({ loading: false, markup: 'linkify', href, text: label })
+    }
+  })
+
+  it('keeps the placeholder for an unclosed destination while streaming', () => {
+    for (const input of [
+      '![a](www.e.com/a.png',
+      '[a](www.e.com/a.png',
+      '![a $x$](https://e.com/a.png',
+      '![a](<https://e.com/a.png',
+    ]) {
+      const stream = parseMarkdownToStructure(input, md, { final: false }) as any[]
+      expect(findLoading(stream).length, input).toBeGreaterThan(0)
+    }
+  })
+
+  it('never makes an undecodable punycode destination clickable', () => {
+    // `xn--attacker` is not valid punycode, so the label the tokenizer decodes
+    // from it is unprintable. Selecting that as the label would put a link with
+    // control characters in front of the reader.
+    for (const input of ['[例子.com](xn--attacker.com', '![例子.com](xn--attacker.com']) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+    }
+  })
+
+  it('never points a source label at another host', () => {
+    // A non-ASCII label and a punycode destination only spell one URL when the
+    // label's own host encodes to the destination's host. `xn--evil.com` is not
+    // the encoding of `登录`, so the label may not become a link to it.
+    for (const input of [
+      '[登录] (HTTP://XN--EVIL.COM',
+      '[例子.com] (HTTP://XN--EVIL.COM',
+      '![登录] (HTTP://XN--EVIL.COM',
+    ]) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+    }
+  })
+
+  it('does not accept an alternate numeric spelling of the same host', () => {
+    // `0x7f.1` and `2130706433` are `127.0.0.1` to `URL`, so normalizing alone
+    // would keep these links and show a reader an address they cannot read.
+    for (const input of [
+      '[0x7f.1]](http://127.0.0.1',
+      '[2130706433]](http://127.0.0.1',
+    ]) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+    }
   })
 
   it('matches a cold final parse when the stream was parsed incrementally', () => {

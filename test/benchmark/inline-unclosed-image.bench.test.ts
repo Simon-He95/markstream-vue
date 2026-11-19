@@ -67,16 +67,16 @@ function bestOf(input: string, final: boolean, runs = 3) {
 
 /**
  * `smallInputs` hold the same characters as `largeInput`, so a linear scan costs
- * the same on both sides and a quadratic one costs ~4x more. Both timings are
- * taken inside one repetition, so a busy runner slows them down together; a bare
- * "4x the input costs < 8x the time" ratio cannot do that, because taking the
- * best of a few runs favours the shorter workload and inflates the ratio.
+ * the same on both sides and a quadratic one costs ~4x more.
  *
- * Returns the best repetition: a GC pause or a scheduling hiccup can only
- * inflate one side of one repetition, while a quadratic build is slow in every
- * repetition, so the best one still clears the threshold on its own.
+ * Each side is sampled on its own and the two smallest samples are compared. A
+ * busy runner only ever adds time, so a minimum converges on the real cost; a
+ * ratio taken inside one repetition needs *both* sides to escape contention in
+ * that same repetition, which a shared runner cannot promise. That is why this
+ * measured 2.25 for a linear parse on a loaded Ubuntu job while the same code
+ * measures ~1.1 when sampled this way.
  */
-function equalVolumeRatio(smallInputs: string[], largeInput: string, final: boolean, runs = 5) {
+function equalVolumeRatio(smallInputs: string[], largeInput: string, final: boolean, runs = 9) {
   const parseAll = (inputs: string[]) => {
     for (const input of inputs)
       parseMarkdownToStructure(input, md, { final })
@@ -95,25 +95,21 @@ function equalVolumeRatio(smallInputs: string[], largeInput: string, final: bool
     parseAll([largeInput])
   }
 
-  let best = { ratio: Number.POSITIVE_INFINITY, smallMs: 0, largeMs: 0 }
+  let smallMs = Number.POSITIVE_INFINITY
+  let largeMs = Number.POSITIVE_INFINITY
   for (let run = 0; run < runs; run++) {
     // Alternate the order: one side never systematically pays for the heap
     // growth or the CPU ramp of the repetition before it.
-    let smallMs: number
-    let largeMs: number
     if (run % 2 === 0) {
-      smallMs = measure(smallInputs)
-      largeMs = measure([largeInput])
+      smallMs = Math.min(smallMs, measure(smallInputs))
+      largeMs = Math.min(largeMs, measure([largeInput]))
     }
     else {
-      largeMs = measure([largeInput])
-      smallMs = measure(smallInputs)
+      largeMs = Math.min(largeMs, measure([largeInput]))
+      smallMs = Math.min(smallMs, measure(smallInputs))
     }
-    const ratio = largeMs / Math.max(0.001, smallMs)
-    if (ratio < best.ratio)
-      best = { ratio, smallMs, largeMs }
   }
-  return best
+  return { ratio: largeMs / Math.max(0.001, smallMs), smallMs, largeMs }
 }
 
 describe('unclosed image destinations — final parse', () => {
@@ -151,8 +147,9 @@ describe('unclosed image destinations — final parse', () => {
   it('scales linearly with the number of unclosed destinations at final', () => {
     // Equal volume on both sides: four paragraphs of `small` cost the same as
     // one paragraph with four times the targets when the scan is linear, and
-    // ~4x more while it is quadratic. Measured here: the fix 1.0-1.2x, `main`
-    // 2.8-4.0x, so 2.0 splits the two with room on either side.
+    // ~3.6x more while it is quadratic (measured on 77b08d180, the commit before
+    // the scan was made linear). This branch measures 1.1-1.2x, including with
+    // every core saturated, so 2.0 splits the two with room on either side.
     const small = 1600
     const smallInputs = [0, 1, 2, 3].map(seed => makeTargets(small, seed))
     const final = equalVolumeRatio(smallInputs, makeTargets(small * 4), true)

@@ -157,6 +157,13 @@ function recoverMarkdownLinkFromTrailingText(state: InlineParseState, token: Mar
   if (token.type !== 'link')
     return false
 
+  // `[label](` + a linkified URL folds into one markdown link while streaming,
+  // because the destination may still close. Once the parse is final it never
+  // will, and markdown-it renders that source as the text `[label](` followed
+  // by the URL link: folding would hand the label a destination it never had.
+  if (state.options?.final === true)
+    return false
+
   const previous = state.result[state.result.length - 1] as TextNode | undefined
   if (!previous || previous.type !== 'text')
     return false

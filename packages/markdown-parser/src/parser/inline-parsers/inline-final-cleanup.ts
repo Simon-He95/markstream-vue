@@ -1,5 +1,6 @@
 import type { ParsedNode, TextNode } from '../../types'
 import type { ParseContext } from '../parse-context'
+import { isDecodedFromRawPunycode } from '../linkifyHeuristics'
 
 type LoadingNode = ParsedNode & {
   alt?: unknown
@@ -49,6 +50,25 @@ function loadingLinkSource(node: LoadingNode, raw: string | undefined) {
 }
 
 /**
+ * Whether `text` is the source spelling of `href`. Linkify writes the URL the
+ * source had into the label and the normalized one into the href: a bare domain
+ * gains `http://`, an address gains `mailto:`, and a non-ASCII host is punycode
+ * in the href. Those differences describe the same URL, so keeping the link
+ * cannot point the label at another origin.
+ */
+function isUrlSpelling(text: string, href: string, raw: string | undefined) {
+  if (text === href)
+    return true
+  // A control character in the label means a malformed punycode host was
+  // decoded into unprintable text; never make that clickable.
+  if (/\p{Cc}/u.test(text))
+    return false
+  if (href === `http://${text}` || href === `mailto:${text}`)
+    return true
+  return isDecodedFromRawPunycode(text, href, raw)
+}
+
+/**
  * A link that only wraps a complete URL can stay a link: its label is the URL
  * itself, so clearing `loading` cannot misrepresent where it leads.
  *
@@ -56,15 +76,17 @@ function loadingLinkSource(node: LoadingNode, raw: string | undefined) {
  * folded `[label](` tail and appends the trailing text to the href; there the
  * label comes from the source and can disagree with the destination. Keeping
  * such a node clickable would let a trusted-looking label point at another
- * origin, so the label has to be empty or identical to the destination — which
- * is what markdown-it and linkify produce for a real URL.
+ * origin, so the label has to be empty or spell the destination itself, which is
+ * what markdown-it and linkify produce for a real URL. Rebuilding the markdown
+ * source instead (`[www.e.com](http://www.e.com`) would print the URL twice and
+ * leak the brackets, which is not what markdown-it renders either.
  */
 function keepUrlLink(node: LoadingNode): ParsedNode[] | null {
   const href = String(node.href ?? '')
   const text = String(node.text ?? '')
   if (!URL_MARKUP.has(String(node.markup ?? '')) || !href || /\s/.test(href) || node.title)
     return null
-  if (text && text !== href)
+  if (text && !isUrlSpelling(text, href, typeof node.raw === 'string' ? node.raw : undefined))
     return null
 
   const label = text || href

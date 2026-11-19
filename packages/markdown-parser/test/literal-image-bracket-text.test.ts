@@ -223,9 +223,20 @@ describe('`![...](...)` whose target can never be an image', () => {
   })
 
   it('does not turn a linkified destination containing a space into an image', () => {
+    // `https://e.com/a b.png` is grabbed by linkify, so this never reaches the
+    // image path with a `(b c)`-style destination. The image recovery correctly
+    // declines it; what remains is the tolerant linkify tail (`!` plus a
+    // loading link), which is the same shape this repo already produces for
+    // `[a](https://e.com/a b.png)`. Pinned here so it cannot silently turn back
+    // into an image with a space and a stray `)` in its src.
     const children = paragraphChildren('![a](https://e.com/a b.png)', true)
     expect(children.some(child => child.type === 'image')).toBe(false)
-    expect(children[0]).toMatchObject({ type: 'text' })
+    expect(children[0]).toMatchObject({ type: 'text', content: '!' })
+    expect(children[1]).toMatchObject({
+      type: 'link',
+      href: 'https://e.com/a b.png)',
+      loading: true,
+    })
   })
 
   it.each([

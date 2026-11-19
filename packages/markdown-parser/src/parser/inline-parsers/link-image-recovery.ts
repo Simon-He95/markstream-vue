@@ -618,7 +618,10 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
       pushInlineTextContent(state, textNodeContent, _token)
       const hrefFromToken = String(textToken.content ?? '')
       if (state.options?.validateLink && !state.options.validateLink(hrefFromToken)) {
-        state.pushText(text, text)
+        // Keep the source instead of the label alone; the closing paren is
+        // consumed above, so it has to be written back here.
+        const source = `[${text}](${hrefFromToken}${loading ? '' : ')'}`
+        state.pushText(source, source)
       }
       else {
         state.pushParsed({
@@ -643,6 +646,13 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
     // placeholder for the rest of the stream.
     const targetEndsHere = linkContentEnd !== -1 || !nextTokenCanCarryTarget(state)
     if (isDeadInlineTarget(state.options?.markdownIt, content, linkEnd + 1, content.length, state.options?.final === true && targetEndsHere))
+      return false
+    // A destination the consumer's validator rejects must keep the source the
+    // document wrote: rebuilding just the label dropped both the destination and
+    // the `[label](` around it (`[a](javascript:alert(1))` rendered as `a)`).
+    // The text token already holds the whole construct, so leaving it alone is
+    // both cheaper and exact.
+    if (href && state.options?.validateLink && !state.options.validateLink(href))
       return false
     let emphasisMatch = textNodeContent.match(/\*+$/)
     if (emphasisMatch) {
@@ -696,20 +706,15 @@ export function handleInlineLinkContent(state: InlineParseState, content: string
       }
     }
     else {
-      if (state.options?.validateLink && !state.options.validateLink(href)) {
-        state.pushText(text, text)
-      }
-      else {
-        state.pushParsed({
-          type: 'link',
-          href,
-          title: null,
-          text,
-          children: [{ type: 'text', content: text, raw: text }],
-          loading,
-          markup: '',
-        } as ParsedNode)
-      }
+      state.pushParsed({
+        type: 'link',
+        href,
+        title: null,
+        text,
+        children: [{ type: 'text', content: text, raw: text }],
+        loading,
+        markup: '',
+      } as ParsedNode)
     }
 
     const afterText = linkContentEnd !== -1 ? content.slice(linkContentEnd + 1) : ''
@@ -759,12 +764,61 @@ export function handleImageToken(state: InlineParseState, token: MarkdownToken) 
   }
 }
 
+/**
+ * The markdown source of a link whose destination `validateLink` rejects, so a
+ * reader still sees the destination instead of a bare label. The `final` image
+ * path already shows its source in the same situation.
+ *
+ * `[label](` that is already a text node in front of this token is not repeated:
+ * the fold leaves the markdown prefix behind as its own text, and this token
+ * then only stands for the destination.
+ */
+function rejectedLinkSource(state: InlineParseState, token: MarkdownToken): string {
+  const link = token as MarkdownToken & {
+    href?: string
+    loading?: boolean
+    text?: string
+    title?: string | null
+    titleClosed?: boolean
+  }
+  const href = String(link.href ?? '')
+  const label = String(link.text ?? '')
+  // A folded token in an emphasis label (`[*em*](url`) carries no destination at
+  // all: there is nothing to rebuild, so the label alone is all that is left.
+  if (!href)
+    return label
+
+  const title = link.title == null || link.title === '' ? null : String(link.title)
+  // A title that never closed keeps its quote open, like the final cleanup does
+  // when it rebuilds a placeholder source.
+  const titleSuffix = title ? ` "${title}${link.titleClosed === false ? '' : '"'}` : ''
+
+  const current = state.currentTextNode
+    ?? state.result[state.result.length - 1] as TextNode | undefined
+  // An enclosing loading link already stands for `[label](` here: the outer-link
+  // recovery leaves one for `[![img](a.png)](url` and for `\[a](url`, and a final
+  // parse rebuilds it as `[` + children + `](`. Writing `[label](` again would
+  // double the brackets, so only the destination is missing.
+  const previous = state.result[state.result.length - 1] as (ParsedNode & { loading?: boolean }) | undefined
+  if (previous?.type === 'link' && previous.loading === true)
+    return label
+  if (current?.type === 'text' && String(current.content ?? '').endsWith(']('))
+    return `${label}${titleSuffix}`
+
+  // The destination closed when the token says so, or when the source closed the
+  // title quote: a folded token stays `loading` while a title follows the URL.
+  const closed = link.loading === false || link.titleClosed === true
+  return `[${label}](${href}${titleSuffix}${closed ? ')' : ''}`
+}
+
 export function handleFallbackToken(state: InlineParseState, token: MarkdownToken) {
   const syntheticLink = token as MarkdownToken & { href?: unknown, text?: unknown }
   if (token.type === 'link' && syntheticLink.href != null && state.options.validateLink && !state.options.validateLink(String(syntheticLink.href))) {
-    state.resetCurrentTextNode()
-    const displayText = String(syntheticLink.text ?? '')
-    state.pushText(displayText, displayText)
+    // Keep the source instead of the label alone: dropping the destination left
+    // `![a](ftp://e.com/a.png` as `!a` and `[a](ftp://e.com/a.png)` as `a`.
+    const source = rejectedLinkSource(state, token)
+    if (source)
+      state.pushText(source, source)
     state.index++
   }
   else if (recoverOuterImageLinkFromSyntheticLinkToken(state, token)) {

@@ -207,6 +207,41 @@ describe('a final parse never leaves a loading image or link', () => {
     ])
   })
 
+  it('keeps the destination of a validator-rejected link, not just its label', () => {
+    // Dropping to the label alone lost the destination and the syntax around it:
+    // `![a](ftp://e.com/a.png` rendered as `!a`, and a closed target kept a stray
+    // `)`. markdown-it with this package's validator renders the source, so the
+    // reader must see exactly that.
+    const cases = [
+      '![a](ftp://e.com/a.png',
+      '[a](ftp://e.com/a.png',
+      '[a](ftp://e.com/a.png)',
+      '[a](javascript:alert(1))',
+      '[a](data:text/html;base64,AA)',
+      '![a](javascript:alert(1))',
+      'see ![a](ftp://e.com/a.png end',
+      '- [a](ftp://e.com/a.png)',
+      '**[a](ftp://e.com/a.png)**',
+    ]
+
+    for (const input of cases) {
+      const final = parseMarkdownToStructure(input, md, { final: true }) as any[]
+      expect(visibleTextOf(final), input).toBe(input.replace(/^[-*]+\s/, '').replace(/\*\*/g, ''))
+      // Nothing rejected may become clickable or keep a placeholder alive.
+      expect(findFirst(final, node => node.type === 'link'), input).toBeUndefined()
+      expect(findFirst(final, node => node.type === 'image'), input).toBeUndefined()
+      expect(findLoading(final), input).toEqual([])
+    }
+
+    // A rejected destination that is still arriving shows the same source while
+    // streaming instead of a bare label.
+    for (const input of ['![a](ftp://e.com/a.png', '[a](ftp://e.com/a.png']) {
+      const stream = parseMarkdownToStructure(input, md, { final: false }) as any[]
+      expect(visibleTextOf(stream), input).toBe(input)
+      expect(findLoading(stream), input).toEqual([])
+    }
+  })
+
   it('keeps the closing quote of a title that a fragment parse never saw as source', () => {
     // A container or emphasis child is parsed without the surrounding inline
     // source, so the cleanup cannot read the quote back from `raw`; the folded

@@ -3249,16 +3249,7 @@ function resolveWorkerPoolTheme() {
   const themes = props.themes
   if (themes && typeof themes[0] === 'string' && typeof themes[1] === 'string')
     return { dark: themes[0], light: themes[1] }
-  // Always cross the worker boundary with a `{ dark, light }` pair.
-  // @pierre/diffs keeps themes per thread and attaches the resolved set to each
-  // worker; a pool initialized with a single string and then updated with a
-  // pair leaves the worker unable to resolve the theme it is asked to render
-  // (1.6.x throws `Theme "pierre-dark" has not been resolved`). Mirroring the
-  // single name into both slots keeps the shape stable for either init form.
-  const theme = resolveRequestedTheme()
-  if (typeof theme === 'string')
-    return { dark: theme, light: theme }
-  return theme
+  return resolveRequestedTheme()
 }
 
 function themeLooksDark(theme: CodeBlockTheme | null | undefined) {

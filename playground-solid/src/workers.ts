@@ -11,5 +11,11 @@ setStreamDiffsWorkerPool(getOrCreateWorkerPoolSingleton({
     poolSize: Math.min(4, navigator.hardwareConcurrency || 4),
     workerFactory: () => new DiffsWorker({ name: 'markstream-highlight' }),
   },
-  highlighterOptions: { theme: 'vitesse-dark' },
+  highlighterOptions: {
+    // A `{ dark, light }` pair keeps the value distinct from the single theme
+    // name CodeBlockNode syncs, so @pierre/diffs re-sends the resolved theme
+    // set to its workers instead of short-circuiting and leaving them without
+    // one (`Theme "pierre-dark" has not been resolved`).
+    theme: { dark: 'vitesse-dark', light: 'vitesse-light' },
+  },
 }))

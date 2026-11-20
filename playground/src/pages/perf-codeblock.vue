@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { canUseWASM } from '@pierre/diffs'
 import { getOrCreateWorkerPoolSingleton } from '@pierre/diffs/worker'
 import DiffsWorker from '@pierre/diffs/worker/worker.js?worker'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
@@ -11,14 +10,10 @@ import { getStreamDiffsWorkerPool, setStreamDiffsWorkerPool } from '../../../src
 const pool = getOrCreateWorkerPoolSingleton({
   poolOptions: {
     poolSize: Math.min(4, (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 4),
-    // Matches main.ts: small fences skip the worker round trip.
-    mainThreadMaxCharacters: 4_000,
     workerFactory: () => new DiffsWorker(),
   },
   highlighterOptions: {
     theme: 'vitesse-dark',
-    // Same rule as main.ts so the singleton resolves identically.
-    preferredHighlighter: canUseWASM() ? 'highlights' : 'shiki-js',
   },
 })
 

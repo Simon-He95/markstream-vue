@@ -140,40 +140,6 @@ const codeBlockOptions: CodeBlockOptions = {
 
 `fontSize`, `lineHeight`, `fontFamily`, numeric-pixel `maxHeight`, numeric-pixel symmetric `padding`, and `tabSize` are host-managed so the fallback and finalized surface share geometry. Other supported fields are forwarded to `stream-diffs`. Use the separate component props for header and toolbar controls.
 
-`preferredHighlighter` also belongs here and defaults to `'auto'`, which uses the WASM `highlights` backend when the platform supports it and falls back to `'shiki-js'` when it does not. It is not per-block state: only one highlighting backend can be active per thread and the choice is fixed on first highlight, so pass the same value to the worker pool when you inject one. Upstream silently ignores later values, which means a per-block line-count rule (for example "use WASM above 600 lines") does not work — whichever block highlights first pins every block.
-
-### Edit a finalized block (opt-in)
-
-`markstream-vue` renders code blocks read-only. If a block needs in-place editing, take the surface `onController` hands you and attach the upstream editor from `stream-diffs/edit`:
-
-```vue
-<script setup lang="ts">
-import type { CodeBlockOptions } from 'markstream-vue'
-import { Editor } from 'stream-diffs/edit'
-
-const codeBlockOptions: CodeBlockOptions = {
-  async onController(controller) {
-    // onController fires after mount(), but highlighting may still be in flight.
-    await controller.whenVisualReady?.()
-    await controller.prepareForEditing?.()
-    const editor = new Editor('file', {
-      onChange: event => persist(event.file.contents),
-    })
-    editor.edit(controller.getNativeInstance())
-  },
-}
-</script>
-```
-
-The controller is `stream-diffs`' `DiffSurfaceController`: `getNativeInstance()`, `prepareForEditing()`, `whenVisualReady()`, `onDidRender()`, `getInput()`, `getDiff()`, `update()`, and `dispose()` are all available.
-
-Two constraints come from owning the surface outside the component:
-
-- **Re-attach after any re-render.** A theme/typography change, a language change, a content update, or a virtual-scroll recycle replaces or disposes the native `File`/`FileDiff`, which ends the edit session. `onController` does not fire again, so subscribe with `controller.onDidRender(...)` or drive editing from your own view outside the markdown tree.
-- **Streaming blocks are not editable.** While a block is still streaming, every content update replaces the instance. Attach only after the block settles; for diffs parsed from a patch, complete file contents must be available (`loadDiffFiles`) before the editor can attach.
-
-If those trade-offs do not fit, register your own `code_block` renderer with `setCustomComponents` and own the surface end to end.
-
 ### Custom loading placeholder
 
 ```vue twoslash

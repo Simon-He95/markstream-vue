@@ -43,18 +43,6 @@ export interface CodeBlockOptions {
   useTokenTransformer?: boolean
   tokenizeMaxLineLength?: number
   tokenizeMaxLength?: number
-  /**
-   * Syntax-highlighting backend. Defaults to `'auto'`.
-   *
-   * `'auto'` uses the WASM `highlights` backend when the platform can run it
-   * (WebAssembly + SIMD) and falls back to `'shiki-js'` when it cannot or when
-   * the backend fails to load. The decision is app-wide and made once, because
-   * `@pierre/diffs` keeps a single shared highlighter per thread and the first
-   * caller fixes the backend; a per-block rule cannot work.
-   *
-   * When you inject a worker pool, give it the same backend so both paths agree.
-   */
-  preferredHighlighter?: 'auto' | 'shiki-js' | 'shiki-wasm' | 'highlights'
   unsafeCSS?: string
   diffStyle?: 'unified' | 'split'
   diffIndicators?: 'classic' | 'bars' | 'none'
@@ -62,7 +50,7 @@ export interface CodeBlockOptions {
   hunkSeparators?: 'simple' | 'metadata' | 'line-info' | 'line-info-basic'
   expandUnchanged?: boolean
   collapsedContextThreshold?: number
-  lineDiffType?: 'word-alt' | 'word-line' | 'word' | 'char' | 'none'
+  lineDiffType?: 'word-alt' | 'word' | 'char' | 'none'
   maxLineDiffLength?: number
   expansionLineCount?: number
   parseDiffOptions?: Record<string, unknown>

@@ -1,4 +1,3 @@
-import { canUseWASM } from '@pierre/diffs'
 import { getOrCreateWorkerPoolSingleton } from '@pierre/diffs/worker'
 import DiffsWorker from '@pierre/diffs/worker/worker.js?worker'
 import { getStreamDiffsWorkerPool, setInfographicLoader, setStreamDiffsWorkerPool } from 'markstream-vue'
@@ -20,28 +19,13 @@ import './styles/main.css'
 // enhanced surface. poolSize = number of parallel highlight workers. The pool
 // theme is only the initial value — CodeBlockNode re-syncs the active theme on
 // every block via setRenderOptions.
-// Mirror stream-diffs' `auto` backend so worker-produced tokens match what the
-// main thread would produce. The registry is per-thread, but the theme and
-// grammar payloads cross the boundary, so both sides must agree.
-const preferredHighlighter = canUseWASM() ? 'highlights' : 'shiki-js'
-
 setStreamDiffsWorkerPool(getOrCreateWorkerPoolSingleton({
   poolOptions: {
     poolSize: Math.min(4, (typeof navigator !== 'undefined' && navigator.hardwareConcurrency) || 4),
-    // Chat-sized fences highlight faster on the main thread than through a
-    // worker round trip; anything larger still goes to the pool.
-    mainThreadMaxCharacters: 4_000,
     workerFactory: () => new DiffsWorker(),
   },
   highlighterOptions: {
-    // A `{ dark, light }` pair is required here: @pierre/diffs 1.6.x does not
-    // re-send a theme set to workers when `setRenderOptions` is called with a
-    // value equal to the pool's current theme, leaving the worker without the
-    // theme it is asked to render (`Theme "pierre-dark" has not been
-    // resolved`). CodeBlockNode syncs a resolved single name, so keeping the
-    // init shape distinct guarantees the worker receives the resolved set.
-    theme: { dark: 'vitesse-dark', light: 'vitesse-light' },
-    preferredHighlighter,
+    theme: 'vitesse-dark',
   },
 }))
 

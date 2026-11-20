@@ -16,8 +16,8 @@ const pool = getOrCreateWorkerPoolSingleton({
     workerFactory: () => new DiffsWorker(),
   },
   highlighterOptions: {
-    // Same shape and backend as main.ts so the singleton resolves identically.
-    theme: { dark: 'vitesse-dark', light: 'vitesse-light' },
+    theme: 'vitesse-dark',
+    // Same rule as main.ts so the singleton resolves identically.
     preferredHighlighter: canUseWASM() ? 'highlights' : 'shiki-js',
   },
 })

@@ -62,6 +62,9 @@ The supported surface includes:
 
 - host-managed typography and layout: `fontSize`, `lineHeight`, `fontFamily`, numeric-pixel `maxHeight`, numeric-pixel symmetric `padding`, and `tabSize`;
 - File options such as `disableLineNumbers`, `overflow`, highlighting limits, and virtualization/highlighter controls; `overflow: 'wrap'` is passed to the compatibility runtime as `wordWrap: 'on'`, while `overflow: 'scroll'` is passed as `wordWrap: 'off'`; the default is `overflow: 'wrap'`.
+- `preferredHighlighter` selects the syntax-highlighting backend. The default is `'auto'`: the WASM `'highlights'` backend when the platform can run WebAssembly with SIMD, otherwise `'shiki-js'`; a load failure also falls back to `'shiki-js'` instead of breaking the block. Set `'shiki-js'`, `'shiki-wasm'`, or `'highlights'` to pin one explicitly.
+
+  It cannot vary per block: `@pierre/diffs` keeps one shared highlighter per thread and the **first** surface to request one fixes the backend. Later values, including a different value on a larger block, are silently ignored until `disposeHighlighter()`. A per-block line-count rule therefore cannot work — the first small fence would pin the whole app to `shiki-js`. The resolution is app-wide and cached, and you should pass the same backend to the worker pool so both paths tokenize alike.
 - FileDiff layout, indicators, unchanged-region folding, and line-diff controls;
 - line/token interactions, selection callbacks, annotations, `onController`, and `workerManager`.
 
@@ -120,6 +123,10 @@ Behavior notes:
 - **Theme sync** — `CodeBlockNode` forwards the active theme to the pool via `setRenderOptions` on every theme change, so worker-generated tokens match the requested theme. No host wiring needed.
 - **Per-block override** — a `codeBlockOptions.workerManager` passed to an individual block wins over the shared injected pool.
 - **Fallback is automatic** — if the pool reports itself unavailable (`isWorkingPool() === false`), `@pierre/diffs` falls back to main-thread highlighting. A broken or terminated pool never blocks rendering.
+- **Small blocks (`@pierre/diffs` ≥ 1.6)** — `poolOptions.mainThreadMaxCharacters` highlights files and diffs at or below that many characters on the main thread instead of paying a worker round trip. Unset keeps "every highlight uses a worker", which is the wrong default for chat-sized fences. The playground uses `4_000`, which covers ordinary chat fences and leaves anything larger on the pool; measure on your own payloads before raising it, because this value pushes work back onto the main thread.
+- **Error reporting (`@pierre/diffs` ≥ 1.5.2)** — `poolOptions.onWorkerError` receives worker load failures instead of `console.error`, so you can report a broken worker chunk once and keep the automatic main-thread fallback.
+
+The pool and the code blocks must share one `@pierre/diffs` copy. `markstream-vue` and `stream-diffs` are hoisted to a single copy by your package manager; if you also depend on `@pierre/diffs` directly for the pool, keep its version compatible with the one `stream-diffs` requires (`^1.6.4` at the time of writing). A second copy means a second highlighter registry on the main thread, and `preferredHighlighter` then silently disagrees with the renderer.
 
 ## Diff interactions
 

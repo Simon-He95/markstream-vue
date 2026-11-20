@@ -3277,6 +3277,12 @@ function buildStreamDiffsRuntimeOptions() {
     // CodeBlockShell owns the file header for every enhanced code block.
     // Pierre's header would otherwise duplicate that chrome for File surfaces.
     disableFileHeader: true,
+    // Default to stream-diffs' `auto` backend: WASM `highlights` when the
+    // platform can run it, otherwise `shiki-js`. The choice is app-wide (the
+    // upstream registry is first-call-wins), so it belongs to the runtime
+    // options rather than to a per-block line count.
+    preferredHighlighter: (resolvedEditorOptions.value as Record<string, unknown> | undefined)?.preferredHighlighter
+      ?? 'auto',
     // A host-injected WorkerPoolManager moves Shiki tokenization off the main
     // thread. A per-block `codeBlockOptions.workerManager` (if any) wins over
     // the shared injected pool; when neither exists we stay on the main thread.

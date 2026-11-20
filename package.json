@@ -136,6 +136,7 @@
     "benchmark:heavy-restore": "node scripts/benchmark-heavy-restore.mjs",
     "benchmark:parser-perf": "pnpm run build:parser && node --expose-gc scripts/benchmark-parser-performance.mjs --profile=deep",
     "benchmark:real-corpus": "pnpm run build:parser && pnpm run build:core && node --expose-gc scripts/benchmark-parser-performance.mjs --profile=deep && node scripts/benchmark-real-corpus-performance.mjs",
+    "benchmark:diffs-upgrade": "node scripts/benchmark-diffs-versions.mjs",
     "check:parser-perf": "node scripts/check-parser-performance.mjs",
     "update:parser-perf-baseline": "node scripts/check-parser-performance.mjs --update-baseline",
     "validate:parser-differential": "pnpm run build:parser && node scripts/validate-parser-differential.mjs",
@@ -323,7 +324,7 @@
     "@terrastruct/d2": ">=0.1.33",
     "katex": ">=0.16.22",
     "mermaid": ">=11",
-    "stream-diffs": ">=0.0.2",
+    "stream-diffs": ">=0.0.4",
     "vue": ">=3.0.0",
     "vue-i18n": ">=9"
   },
@@ -355,7 +356,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
-    "@pierre/diffs": "^1.2.12",
+    "@pierre/diffs": "^1.6.4",
     "@shikijs/vitepress-twoslash": "^4.3.1",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/node": "^18.19.130",

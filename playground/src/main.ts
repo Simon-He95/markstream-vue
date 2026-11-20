@@ -34,13 +34,7 @@ setStreamDiffsWorkerPool(getOrCreateWorkerPoolSingleton({
     workerFactory: () => new DiffsWorker(),
   },
   highlighterOptions: {
-    // A `{ dark, light }` pair is required here: @pierre/diffs 1.6.x does not
-    // re-send a theme set to workers when `setRenderOptions` is called with a
-    // value equal to the pool's current theme, leaving the worker without the
-    // theme it is asked to render (`Theme "pierre-dark" has not been
-    // resolved`). CodeBlockNode syncs a resolved single name, so keeping the
-    // init shape distinct guarantees the worker receives the resolved set.
-    theme: { dark: 'vitesse-dark', light: 'vitesse-light' },
+    theme: 'vitesse-dark',
     preferredHighlighter,
   },
 }))

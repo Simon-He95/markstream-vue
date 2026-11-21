@@ -346,6 +346,16 @@ function wrapMarkdownItBoundaries(md: MarkdownIt) {
   if (!wrappedMarkdownItInstances.has(owner)) {
     wrappedMarkdownItInstances.add(owner)
 
+    md.core.ruler.before('inline', 'markstream_fragment_references', ({ env }: {
+      env: { __markstreamOuterReferences?: Record<string, unknown>, references?: Record<string, unknown> }
+    }) => {
+      const outer = env.__markstreamOuterReferences
+      if (outer) {
+        // The block pass has collected local definitions. Look up missing labels in the parent.
+        env.references = Object.setPrototypeOf(env.references ?? {}, outer)
+      }
+    })
+
     const originalUse = md.use
     md.use = function (this: MarkdownIt, ...args: Parameters<MarkdownIt['use']>) {
       try {

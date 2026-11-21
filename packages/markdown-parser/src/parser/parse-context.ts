@@ -16,6 +16,11 @@ export interface ParseContext extends ParseOptions {
   linkifyDemotionResultContexts?: Array<LinkifyDemotionContext | undefined>
   linkifyDemotionSeedContext?: LinkifyDemotionContext
   markdownIt?: MarkdownIt
+  /**
+   * Reference definitions of the enclosing document, so that reference links
+   * inside a re-parsed HTML wrapper fragment can resolve against them.
+   */
+  referenceDefinitions?: Record<string, unknown>
   runtime?: ParserRuntime
   sourceLineMapper?: (line: number) => MarkdownNodeSourceMap
   sourceLineOffsets?: number[]
@@ -54,6 +59,7 @@ export function createChildParseContext(
   return createParseContext(options, {
     runtime: parent.runtime,
     markdownIt: parent.markdownIt,
+    referenceDefinitions: parent.referenceDefinitions,
     ...overrides,
   })
 }

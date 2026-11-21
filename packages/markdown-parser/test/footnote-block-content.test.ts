@@ -47,7 +47,8 @@ describe('footnote block content', () => {
     ].join('\n')
     const codeEnd = (code: string) => source.indexOf(code) + code.length
     const footnoteChildren = (markdown: string, final = false) => parseMarkdownToStructure(markdown, md, { final })
-      .find(node => node.type === 'footnote')?.children
+      .find(node => node.type === 'footnote')
+      ?.children
 
     for (let end = codeEnd(indentedCode); end <= source.length; end++) {
       const children = footnoteChildren(source.slice(0, end))

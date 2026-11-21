@@ -50,25 +50,27 @@ describe('html wrapper children and outer reference definitions', () => {
     expect(link?.href).toBe('https://example.com/docs')
   })
 
-  it('keeps the badge image on every frame after its definition arrives', () => {
+  it('keeps the badge image and link on every frame after their definitions arrive', () => {
     const md = getMarkdown()
+    const linkDefinitionEnd = badgeMarkdown.length
     const imageDefinitionEnd = badgeMarkdown.indexOf('[ci-link]:')
+    const source = `${badgeMarkdown}\nTail text.\n\nMore tail.\n`
     let nodes: any[] = []
-    for (let end = 1; end <= badgeMarkdown.length; end++) {
-      nodes = parseMarkdownToStructure(badgeMarkdown.slice(0, end), md, { final: false })
+    for (let end = 1; end <= source.length; end++) {
+      nodes = parseMarkdownToStructure(source.slice(0, end), md, { final: false })
       if (end === imageDefinitionEnd + 1)
         expect(md.stream!.stats!()).toMatchObject({ lastMode: 'cache' })
       if (end >= imageDefinitionEnd)
         expect(findAll(nodes, 'image').map(image => image.src), `prefix length ${end}`).toEqual(['https://example.com/ci.svg'])
+      if (end >= linkDefinitionEnd)
+        expect(findAll(nodes, 'link').map(link => link.href), `prefix length ${end}`).toEqual(['https://example.com/ci'])
     }
 
-    expect(findAll(nodes, 'link').map(link => link.href)).toEqual(['https://example.com/ci'])
-
-    const cached = parseMarkdownToStructure(badgeMarkdown, md, { final: false })
+    const cached = parseMarkdownToStructure(source, md, { final: false })
     expect(md.stream!.stats!()).toMatchObject({ lastMode: 'cache' })
     expect(cached).toEqual(nodes)
-    expect(parseMarkdownToStructure(badgeMarkdown, md, { final: true })).toEqual(
-      parseMarkdownToStructure(badgeMarkdown, getMarkdown(), { final: true }),
+    expect(parseMarkdownToStructure(source, md, { final: true })).toEqual(
+      parseMarkdownToStructure(source, getMarkdown(), { final: true }),
     )
   })
 

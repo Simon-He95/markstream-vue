@@ -62,7 +62,8 @@ export function parseFootnote(
     }
     if (block) {
       footnoteChildren.push(block[0])
-      linkifyContext.remember(block[0].raw)
+      if (block[0].type !== 'code_block')
+        linkifyContext.remember(block[0].raw)
       j = block[1]
     }
     else {

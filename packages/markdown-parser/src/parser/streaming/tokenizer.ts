@@ -29,22 +29,6 @@ function getParserNow() {
     : Date.now()
 }
 
-function getStableStreamEnv(runtime: ParserRuntime, env: Record<string, unknown>) {
-  const modeKey = env.__markstreamFinal === true ? 'final' : 'streaming'
-  let stableEnv = runtime.streamParseEnvs.get(modeKey)
-  if (!stableEnv) {
-    stableEnv = {}
-    runtime.streamParseEnvs.set(modeKey, stableEnv)
-  }
-
-  for (const key of Object.keys(stableEnv)) {
-    if (!Object.prototype.hasOwnProperty.call(env, key))
-      delete stableEnv[key]
-  }
-  Object.assign(stableEnv, env)
-  return stableEnv
-}
-
 export function shouldUseTopLevelStreamParse(runtime: ParserRuntime, options: ParseContext) {
   const md = runtime.markdownIt
   const stream = md.stream
@@ -185,7 +169,18 @@ export function parseTopLevelTokens(
 
   runtime.markStreamParseStarted()
   const stream = md.stream! as ChunkTokenizer
-  const stableEnv = getStableStreamEnv(runtime, env)
+  const modeKey = env.__markstreamFinal === true ? 'final' : 'streaming'
+  let stableEnv = runtime.streamParseEnvs.get(modeKey)
+  if (!stableEnv) {
+    stableEnv = {}
+    runtime.streamParseEnvs.set(modeKey, stableEnv)
+  }
+  const previousReferences = stableEnv.references
+  for (const key of Object.keys(stableEnv)) {
+    if (!Object.prototype.hasOwnProperty.call(env, key))
+      delete stableEnv[key]
+  }
+  Object.assign(stableEnv, env)
   const update = runtime.chunkUpdate
   if (update)
     stableEnv.__mdtsReuseStableBlocks = true
@@ -217,7 +212,12 @@ export function parseTopLevelTokens(
   const replacement = tokens[previousTailIndex]
   const continuedBlock = hadTrailingRule && (replacement?.type === 'paragraph_open'
     || (listBeforeRule !== undefined && replacement?.type === 'bullet_list_open' && replacement.markup === listBeforeRule))
-  if (continuedBlock || (
+  const stats = stream.stats?.() as { lastMode?: string } | undefined
+  const mode = stats?.lastMode ?? 'stream'
+  // A tail parse only sees definitions in the part it parsed. References affect the whole document.
+  const partialReferences = (mode === 'tail' || mode === 'append')
+    && (previousReferences !== undefined || stableEnv.references !== undefined)
+  if (continuedBlock || partialReferences || (
     (options.isFragment || !runtime.safeMarkdown?.noMathBoundaryOpener)
     && shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)
   )) {
@@ -230,8 +230,12 @@ export function parseTopLevelTokens(
     return md.parse(source, env)
   }
 
-  const stats = md.stream?.stats?.() as { lastMode?: string } | undefined
-  runtime.topLevelStreamParseMode = stats?.lastMode ?? 'stream'
+  if (mode === 'cache' && previousReferences !== undefined)
+    stableEnv.references = previousReferences
+  if (stableEnv.references !== undefined)
+    env.references = stableEnv.references
+
+  runtime.topLevelStreamParseMode = mode
 
   if (!shouldCloneTopLevelStreamTokens(options))
     return tokens

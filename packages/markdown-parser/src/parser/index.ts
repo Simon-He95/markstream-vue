@@ -145,7 +145,10 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
 
   // Get tokens from markdown-it
   const tokenizeStartedAt = timing ? getParserNow() : 0
-  const tokens = parseTopLevelTokens(runtime, safeMarkdown, { __markstreamFinal: isFinal }, options, tokenizerTiming)
+  const tokenEnv: Record<string, unknown> = { __markstreamFinal: isFinal }
+  if (options.isFragment && options.referenceDefinitions)
+    tokenEnv.__markstreamOuterReferences = options.referenceDefinitions
+  const tokens = parseTopLevelTokens(runtime, safeMarkdown, tokenEnv, options, tokenizerTiming)
   if (timing)
     addTiming(timing, 'tokenizeMs', getParserNow() - tokenizeStartedAt)
   // Defensive: ensure tokens is an array
@@ -178,6 +181,7 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
       ? computeSourceLineOffsets(safeMarkdown)
       : getCachedSourceLineOffsets(runtime, safeMarkdown),
     customHtmlBlockCursor: 0,
+    referenceDefinitions: (tokenEnv.references as Record<string, unknown> | undefined) ?? options.referenceDefinitions,
   }
   let result = processTopLevelTokensWithReuse(runtime, safeMarkdown, transformedTokens, internalOptions, {
     processTokens: (nextTokens, nextOptions) => processTokensWithTiming(nextTokens, nextOptions, timing),

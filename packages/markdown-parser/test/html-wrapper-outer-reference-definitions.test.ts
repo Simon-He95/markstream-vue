@@ -114,13 +114,13 @@ describe('html wrapper children and outer reference definitions', () => {
     const nodes = parser.append(initial).nodes
     md.stream!.resetStats!()
 
-    for (const chunk of ['First tail.\n\n', 'Second tail.\n\n', 'Third tail.\n\n']) {
+    for (const chunk of ['First tail.\n\n', 'Second tail.\n', '\nThird tail.', '\n\nFourth tail.\n']) {
       const patch = parser.append(chunk)
       nodes.splice(patch.start, nodes.length - patch.start, ...patch.nodes)
       expect(findAll(nodes, 'link').map(link => link.href)).toEqual(['https://example.com/docs'])
       expect(md.stream!.stats!()).toMatchObject({ lastMode: 'append' })
     }
-    expect(md.stream!.stats!()).toMatchObject({ fullParses: 0, appendHits: 3 })
+    expect(md.stream!.stats!()).toMatchObject({ fullParses: 0, appendHits: 4 })
   })
 
   it('resolves references in a changed tail as well as in the unchanged wrapper', () => {

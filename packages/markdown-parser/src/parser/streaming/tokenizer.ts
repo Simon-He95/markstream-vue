@@ -218,12 +218,12 @@ export function parseTopLevelTokens(
     && (previousReferences !== undefined || stableEnv.references !== undefined)
   const tailStart = range?.coreSourceStart
   if (requiresFullReferenceParse && previousReferences !== undefined && stableEnv.references === undefined
-    && previousSource !== undefined && tailStart != null && tailStart > 1 && tailStart <= previousSource.length
+    && previousSource !== undefined && tailStart != null && tailStart > 1
     && source.charCodeAt(tailStart - 1) === 10 && !source.includes('[', tailStart)
     && runtime.sourceExtends(previousSource, source)) {
-    const previousLineEnd = source.lastIndexOf('\n', tailStart - 2)
-    // A blank line ends any preceding definition. This tail has no reference syntax.
-    if (previousLineEnd !== -1 && /^[ \t\r]*$/.test(source.slice(previousLineEnd + 1, tailStart - 1))) {
+    // A blank-line gap starting at or before the old end keeps preceding definitions unchanged.
+    const gapStart = source.lastIndexOf('\n', Math.min(tailStart - 2, previousSource.length))
+    if (gapStart !== -1 && /^[ \t\r\n]*$/.test(source.slice(gapStart + 1, tailStart - 1))) {
       stableEnv.references = previousReferences
       requiresFullReferenceParse = false
     }

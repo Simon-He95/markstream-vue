@@ -230,6 +230,9 @@ export function parseTopLevelTokens(
     return md.parse(source, env)
   }
 
+  if (stableEnv.references !== undefined)
+    env.references = stableEnv.references
+
   const stats = md.stream?.stats?.() as { lastMode?: string } | undefined
   runtime.topLevelStreamParseMode = stats?.lastMode ?? 'stream'
 

@@ -74,29 +74,103 @@ describe('html wrapper children and outer reference definitions', () => {
     )
   })
 
-  it.each(['> ', '- '])('keeps the wrapper linked while appending after a %s reference definition', (marker) => {
+  it.each(['> ', '- '])('keeps the wrapper linked on every tail frame after a %s reference definition', (marker) => {
     const md = getMarkdown()
-    let source = headingMarkdown.replace('[docs]:', `${marker}[docs]:`)
-    const readLinks = (nodes: any[]) => findAll(nodes, 'link').map(link => link.href)
-    const expected = ['https://example.com/docs']
-    for (const chunk of ['', '\n', 'First tail.\n', '\n', 'Second tail.\n', '\n']) {
-      source += chunk
-      expect(readLinks(parseMarkdownToStructure(source, md, { final: false })), JSON.stringify(source)).toEqual(expected)
+    const initial = `${headingMarkdown.replace('[docs]:', `${marker}[docs]:`)}\nStable paragraph.\n\n`
+    const tail = 'Read [docs] and then keep going.'
+    const source = initial + tail
+    const readLinks = (nodes: ParsedNode[]) => findAll(nodes, 'link').map(link => link.href)
+    const docs = 'https://example.com/docs'
+    parseMarkdownToStructure(initial, md, { final: false })
+
+    for (let end = 1; end <= tail.length; end++) {
+      const frame = parseMarkdownToStructure(initial + tail.slice(0, end), md, { final: false })
+      const expected = end > tail.indexOf(']') ? [docs, docs] : [docs]
+      expect(readLinks(frame), `prefix ${end}`).toEqual(expected)
     }
-    expect((md.stream!.stats!() as { tailHits: number }).tailHits).toBeGreaterThan(0)
-    expect(readLinks(parseMarkdownToStructure(source, md, { final: true }))).toEqual(expected)
+    expect(md.stream!.stats!()).toMatchObject({ fullParses: 1, resets: 0, tailHits: tail.length })
+    const cached = parseMarkdownToStructure(source, md, { final: false })
+    expect(md.stream!.stats!()).toMatchObject({ lastMode: 'cache' })
+    expect(readLinks(cached)).toEqual([docs, docs])
+    expect(readLinks(parseMarkdownToStructure(source, md, { final: true }))).toEqual([docs, docs])
   })
 
-  it('keeps reference links across chunk parser patches', () => {
+  it('keeps the node sequence after merging a wrapper before a list of reference definitions', () => {
+    const md = getMarkdown()
+    const initial = `${headingMarkdown.replace('[docs]:', '- [docs]:')}- [other]: /other\n\nStable paragraph.\n\n`
+    const options = { final: false, reuseStableTopLevelNodes: true }
+    const before = parseMarkdownToStructure(initial, md, options)
+    expect(before.map(node => node.type)).toEqual(['html_block', 'paragraph'])
+
+    const source = `${initial}Read [docs].`
+    const streamed = parseMarkdownToStructure(source, md, options)
+    expect(md.stream!.stats!()).toMatchObject({ lastMode: 'tail' })
+    expect(streamed).toEqual(parseMarkdownToStructure(source, getMarkdown(), { final: false, streamParse: false }))
+    expect(parseMarkdownToStructure(source, md, options)).toEqual(streamed)
+    expect(md.stream!.stats!()).toMatchObject({ lastMode: 'cache' })
+  })
+
+  it('keeps references and local precedence across chunk parser appends', () => {
     const parser = createChunkParserPrototype(getMarkdown())
-    const initial = headingMarkdown.replace('[docs]:', '> [docs]:')
+    const initial = `> [docs]: /outside
+> [logo]: /logo.svg
+
+<div>
+
+## Title
+
+See [docs] and ![Badge][logo].
+
+> [docs]: /inside
+
+</div>
+
+Stable paragraph.
+
+`
     const nodes: ParsedNode[] = []
-    for (const chunk of [initial, '\n', 'First tail.\n', '\n', 'Second tail.\n', '\n']) {
+    const patch = parser.append(initial)
+    nodes.splice(patch.start, nodes.length - patch.start, ...patch.nodes)
+    expect(findAll(nodes, 'link').map(link => link.href)).toEqual(['/inside'])
+    for (const chunk of ['Read [docs].\n\n', 'See [docs] again.\n\n']) {
       const patch = parser.append(chunk)
       nodes.splice(patch.start, nodes.length - patch.start, ...patch.nodes)
-      expect(findAll(nodes, 'link').map(link => link.href)).toEqual(['https://example.com/docs'])
+      expect(parser.stats().stream).toMatchObject({ lastMode: 'append' })
+      expect(findAll(nodes, 'link')[0]?.href).toBe('/inside')
+      expect(findAll(nodes, 'link').at(-1)?.href).toBe('/outside')
+      expect(findAll(nodes, 'image').map(image => image.src)).toEqual(['/logo.svg'])
     }
-    expect(parser.stats().tokenizerAppendCalls).toBeGreaterThan(0)
+    expect(parser.stats()).toMatchObject({ tokenizerAppendCalls: 2, stream: { fullParses: 1, resets: 0 } })
+  })
+
+  it('resolves a new nested definition whose delimiter straddles two frames', () => {
+    const md = getMarkdown()
+    const initial = `${headingMarkdown.replace('see [docs]', 'see [docs] and [late]').replace('[docs]:', '> [docs]:')
+    }\nStable paragraph.\n\n> [late]`
+    const readLinks = (source: string) => findAll(parseMarkdownToStructure(source, md, { final: false }), 'link').map(link => link.href)
+    expect(readLinks(initial)).toEqual(['https://example.com/docs'])
+    const source = `${initial}: /late\n> [docs]: /duplicate\n\n`
+    expect(readLinks(source)).toEqual(['https://example.com/docs', '/late'])
+    expect(readLinks(source)).toEqual(['https://example.com/docs', '/late'])
+  })
+
+  it('reparses an unfinished nested definition when its destination changes', () => {
+    const md = getMarkdown()
+    const initial = headingMarkdown.replace('[docs]: https://example.com/docs\n', '> [docs]: /draft')
+    const readLinks = (source: string) => findAll(parseMarkdownToStructure(source, md, { final: false }), 'link').map(link => link.href)
+    expect(readLinks(initial)).toEqual(['/draft'])
+    expect(readLinks(`${initial}-updated`)).toEqual(['/draft-updated'])
+    expect(readLinks(`${initial}-updated invalid trailing text`)).toEqual([])
+  })
+
+  it('picks up the title of a nested definition across multiple lines', () => {
+    const md = getMarkdown()
+    const initial = headingMarkdown.replace('[docs]: https://example.com/docs\n', '> [docs]: /docs\n> "Line one\n> Line two')
+    const readLink = (source: string) => findAll(parseMarkdownToStructure(source, md, { final: false }), 'link')[0]
+    expect(readLink(initial)).toMatchObject({ href: '/docs', title: null })
+    const complete = `${initial}"\n\nStable paragraph.\n\n`
+    expect(readLink(complete)).toMatchObject({ href: '/docs', title: 'Line one\nLine two' })
+    expect(readLink(`${complete}More text.`)).toMatchObject({ href: '/docs', title: 'Line one\nLine two' })
   })
 
   it('keeps definitions inside the wrapper working', () => {

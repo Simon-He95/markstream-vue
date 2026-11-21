@@ -200,13 +200,13 @@ export function parseTopLevelTokens(
     if (update)
       delete stableEnv.__mdtsReuseStableBlocks
   }
+  const range = update || previousReferences !== undefined ? stream.lastUpdate?.() : undefined
   if (update) {
-    const range = stream.lastUpdate?.()
     update.tokenStart = range?.tokenStart ?? 0
     update.coreSourceStart = range ? range.coreSourceStart : 0
     update.appended = append !== undefined
-    runtime.tokenizerSource = source
   }
+  runtime.tokenizerSource = source
   // An unfinished rule can become paragraph text or a continuation of the preceding list.
   // Reparse its preceding boundary as well instead of keeping that block prematurely closed.
   const replacement = tokens[previousTailIndex]
@@ -214,10 +214,21 @@ export function parseTopLevelTokens(
     || (listBeforeRule !== undefined && replacement?.type === 'bullet_list_open' && replacement.markup === listBeforeRule))
   const stats = stream.stats?.() as { lastMode?: string } | undefined
   const mode = stats?.lastMode ?? 'stream'
-  // A tail parse only sees definitions in the part it parsed. References affect the whole document.
-  const partialReferences = (mode === 'tail' || mode === 'append')
+  let requiresFullReferenceParse = (mode === 'tail' || mode === 'append')
     && (previousReferences !== undefined || stableEnv.references !== undefined)
-  if (continuedBlock || partialReferences || (
+  const tailStart = range?.coreSourceStart
+  if (requiresFullReferenceParse && previousReferences !== undefined && stableEnv.references === undefined
+    && previousSource !== undefined && tailStart != null && tailStart > 1 && tailStart <= previousSource.length
+    && source.charCodeAt(tailStart - 1) === 10 && !source.includes('[', tailStart)
+    && runtime.sourceExtends(previousSource, source)) {
+    const previousLineEnd = source.lastIndexOf('\n', tailStart - 2)
+    // A blank line ends any preceding definition. This tail has no reference syntax.
+    if (previousLineEnd !== -1 && /^[ \t\r]*$/.test(source.slice(previousLineEnd + 1, tailStart - 1))) {
+      stableEnv.references = previousReferences
+      requiresFullReferenceParse = false
+    }
+  }
+  if (continuedBlock || requiresFullReferenceParse || (
     (options.isFragment || !runtime.safeMarkdown?.noMathBoundaryOpener)
     && shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)
   )) {

@@ -1,4 +1,3 @@
-import type { ParsedNode } from '../src'
 import { describe, expect, it } from 'vitest'
 import { getMarkdown, parseMarkdownToStructure } from '../src'
 import { createChunkParserPrototype } from '../src/chunk-prototype'
@@ -33,6 +32,8 @@ see [docs]
 
 [docs]: https://example.com/docs
 `
+
+const earlierParagraphs = 'Earlier paragraphs stay outside the tokenizer tail.\n\n'.repeat(40)
 
 describe('html wrapper children and outer reference definitions', () => {
   it('resolves reference links inside a wrapper against definitions after it', () => {
@@ -87,16 +88,60 @@ describe('html wrapper children and outer reference definitions', () => {
     expect(readLinks(parseMarkdownToStructure(source, md, { final: true }))).toEqual(expected)
   })
 
-  it('keeps reference links across chunk parser patches', () => {
-    const parser = createChunkParserPrototype(getMarkdown())
-    const initial = headingMarkdown.replace('[docs]:', '> [docs]:')
-    const nodes: ParsedNode[] = []
-    for (const chunk of [initial, '\n', 'First tail.\n', '\n', 'Second tail.\n', '\n']) {
+  it.each(['> ', '- '])('keeps ordinary tail appends incremental after a stable %s definition', (marker) => {
+    const md = getMarkdown()
+    let source = `${headingMarkdown.replace('[docs]:', `${marker}[docs]:`)}\n${earlierParagraphs}`
+    const expected = ['https://example.com/docs']
+    parseMarkdownToStructure(source, md, { final: false })
+    md.stream!.resetStats!()
+
+    for (const chunk of ['Start of the tail.', ' More plain text.', '\n\nNext tail.', ' More plain text.']) {
+      source += chunk
+      const nodes = parseMarkdownToStructure(source, md, { final: false })
+      expect(findAll(nodes, 'link').map(link => link.href)).toEqual(expected)
+      expect(md.stream!.stats!()).toMatchObject({ lastMode: 'tail' })
+    }
+
+    const cached = parseMarkdownToStructure(source, md, { final: false })
+    expect(findAll(cached, 'link').map(link => link.href)).toEqual(expected)
+    expect(md.stream!.stats!()).toMatchObject({ lastMode: 'cache', fullParses: 0, tailHits: 4 })
+  })
+
+  it.each(['> ', '- '])('keeps reference links in incrementally appended chunk parser patches for %s', (marker) => {
+    const md = getMarkdown()
+    const parser = createChunkParserPrototype(md)
+    const initial = `${headingMarkdown.replace('[docs]:', `${marker}[docs]:`)}\n${earlierParagraphs}`
+    const nodes = parser.append(initial).nodes
+    md.stream!.resetStats!()
+
+    for (const chunk of ['First tail.\n\n', 'Second tail.\n\n', 'Third tail.\n\n']) {
       const patch = parser.append(chunk)
       nodes.splice(patch.start, nodes.length - patch.start, ...patch.nodes)
       expect(findAll(nodes, 'link').map(link => link.href)).toEqual(['https://example.com/docs'])
+      expect(md.stream!.stats!()).toMatchObject({ lastMode: 'append' })
     }
-    expect(parser.stats().tokenizerAppendCalls).toBeGreaterThan(0)
+    expect(md.stream!.stats!()).toMatchObject({ fullParses: 0, appendHits: 3 })
+  })
+
+  it('resolves references in a changed tail as well as in the unchanged wrapper', () => {
+    const md = getMarkdown()
+    const initial = `${headingMarkdown.replace('[docs]:', '> [docs]:')}\n${earlierParagraphs}`
+    parseMarkdownToStructure(initial, md, { final: false })
+    const source = `${initial}See the [guide][docs] for more.\n`
+    const nodes = parseMarkdownToStructure(source, md, { final: false })
+    expect(findAll(nodes, 'link').map(link => link.href)).toEqual([
+      'https://example.com/docs',
+      'https://example.com/docs',
+    ])
+  })
+
+  it('drops a reference if an append invalidates its unfinished definition', () => {
+    const md = getMarkdown()
+    const source = headingMarkdown.replace('[docs]:', '> [docs]:').replace('https://example.com/docs', '/guide').trimEnd()
+    const before = parseMarkdownToStructure(source, md, { final: false })
+    expect(findAll(before, 'link').map(link => link.href)).toEqual(['/guide'])
+    const after = parseMarkdownToStructure(`${source} unexpected`, md, { final: false })
+    expect(findAll(after, 'link')).toHaveLength(0)
   })
 
   it('keeps definitions inside the wrapper working', () => {

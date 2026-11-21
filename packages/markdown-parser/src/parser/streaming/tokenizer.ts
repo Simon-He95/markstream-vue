@@ -123,6 +123,8 @@ function shouldFallbackDuplicateTolerantMathStreamTokens(
     && hasAdjacentDuplicateParagraphTokenTriplet(tokens)
 }
 
+const BLANK_LINE_RE = /\n[ \t]*\r?\n/g
+
 export function getTopLevelStreamParseMode(runtime: ParserRuntime) {
   return runtime.topLevelStreamParseMode
 }
@@ -185,6 +187,16 @@ export function parseTopLevelTokens(
   if (update)
     stableEnv.__mdtsReuseStableBlocks = true
   const previousSource = runtime.tokenizerSource
+  const referenceBoundary = runtime.tokenizerReferenceBoundary
+  const stableReferences = previousReferences !== undefined
+    && previousSource !== undefined && source.length > previousSource.length
+    && referenceBoundary !== undefined
+    && runtime.sourceExtends(previousSource, source)
+    && !source.includes(']:', previousSource.length - 1)
+    ? previousReferences
+    : undefined
+  if (stableReferences !== undefined)
+    stableEnv.__markstreamStableReferences = stableReferences
   const append = update && !options.final && previousSource !== undefined
     && source.length > previousSource.length && stream.append && stream.hasCache?.()
     && runtime.sourceExtends(previousSource, source)
@@ -199,13 +211,14 @@ export function parseTopLevelTokens(
   finally {
     if (update)
       delete stableEnv.__mdtsReuseStableBlocks
+    if (stableReferences !== undefined)
+      delete stableEnv.__markstreamStableReferences
   }
+  const range = update || stableReferences !== undefined ? stream.lastUpdate?.() : undefined
   if (update) {
-    const range = stream.lastUpdate?.()
     update.tokenStart = range?.tokenStart ?? 0
     update.coreSourceStart = range ? range.coreSourceStart : 0
     update.appended = append !== undefined
-    runtime.tokenizerSource = source
   }
   // An unfinished rule can become paragraph text or a continuation of the preceding list.
   // Reparse its preceding boundary as well instead of keeping that block prematurely closed.
@@ -214,10 +227,15 @@ export function parseTopLevelTokens(
     || (listBeforeRule !== undefined && replacement?.type === 'bullet_list_open' && replacement.markup === listBeforeRule))
   const stats = stream.stats?.() as { lastMode?: string } | undefined
   const mode = stats?.lastMode ?? 'stream'
-  // A tail parse only sees definitions in the part it parsed. References affect the whole document.
-  const partialReferences = (mode === 'tail' || mode === 'append')
-    && (previousReferences !== undefined || stableEnv.references !== undefined)
-  if (continuedBlock || partialReferences || (
+  const partial = mode === 'tail' || mode === 'append'
+  const usedStableReferences = stableReferences !== undefined && stableEnv.references === stableReferences
+  const afterReferenceBoundary = referenceBoundary !== undefined && (range?.coreSourceStart ?? 0) >= referenceBoundary
+  // Reuse the table only when the tokenizer left the definition prefix intact.
+  const referencesNeedFullParse = partial
+    ? (previousReferences !== undefined || stableEnv.references !== undefined)
+    && !(usedStableReferences && afterReferenceBoundary)
+    : mode !== 'cache' && usedStableReferences
+  if (continuedBlock || referencesNeedFullParse || (
     (options.isFragment || !runtime.safeMarkdown?.noMathBoundaryOpener)
     && shouldFallbackDuplicateTolerantMathStreamTokens(md, source, tokens)
   )) {
@@ -235,6 +253,18 @@ export function parseTopLevelTokens(
   if (stableEnv.references !== undefined)
     env.references = stableEnv.references
 
+  runtime.tokenizerSource = source
+  if (env.references === undefined) {
+    runtime.tokenizerReferenceBoundary = undefined
+  }
+  else if (mode !== 'cache' && stableReferences === undefined) {
+    const lastMarker = source.lastIndexOf(']:')
+    // A reference's destination or title can span lines, but cannot cross a blank line.
+    BLANK_LINE_RE.lastIndex = lastMarker + 2
+    runtime.tokenizerReferenceBoundary = lastMarker >= 0 && BLANK_LINE_RE.test(source)
+      ? BLANK_LINE_RE.lastIndex
+      : undefined
+  }
   runtime.topLevelStreamParseMode = mode
 
   if (!shouldCloneTopLevelStreamTokens(options))

@@ -257,6 +257,9 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
     )
     const mergeIdentityPreserving = htmlResult.length === htmlInput.length
       && htmlResult.every((node, index) => node === htmlInput[index])
+    // The merge mutates openers and can consume nodes still present in the pre-merge cache.
+    if (!mergeIdentityPreserving && !options.isFragment)
+      runtime.structuredStream = undefined
     if (hasDetailsInput)
       htmlResult = combineStructuredDetailsHtmlBlocks(htmlResult, safeMarkdown, htmlStructureContext, internalOptions, isFinal, htmlSourceStart)[0]
     htmlResult = structureGenericHtmlBlockChildren(htmlResult, htmlStructureContext, internalOptions, isFinal)

@@ -175,6 +175,7 @@ export class ParserRuntime {
   topLevelStreamParseMode?: string
   chunkUpdate?: { previous: string, source: string, chunk: string, safeChunk?: string, start: number, tokenStart: number, coreSourceStart: number | null, appended: boolean }
   tokenizerSource?: string
+  tokenizerReferenceBoundary?: number
   structuredStream?: StructuredStreamRuntimeState
   /**
    * Number of reused (stable) prefix nodes when the last
@@ -289,6 +290,7 @@ export class ParserRuntime {
       return
 
     this.tokenizerSource = undefined
+    this.tokenizerReferenceBoundary = undefined
     this.resettingStream = true
     try {
       reset.call(stream)
@@ -306,6 +308,7 @@ export class ParserRuntime {
 
   handleExternalStreamReset() {
     this.tokenizerSource = undefined
+    this.tokenizerReferenceBoundary = undefined
     this.streamStateActive = false
     this.streamResetInCurrentRootParse = true
     this.clearDocumentCaches()
@@ -347,12 +350,19 @@ function wrapMarkdownItBoundaries(md: MarkdownIt) {
     wrappedMarkdownItInstances.add(owner)
 
     md.core.ruler.before('inline', 'markstream_fragment_references', ({ env }: {
-      env: { __markstreamOuterReferences?: Record<string, unknown>, references?: Record<string, unknown> }
+      env: {
+        __markstreamOuterReferences?: Record<string, unknown>
+        __markstreamStableReferences?: Record<string, unknown>
+        references?: Record<string, unknown>
+      }
     }) => {
       const outer = env.__markstreamOuterReferences
       if (outer) {
         // The block pass has collected local definitions. Look up missing labels in the parent.
         env.references = Object.setPrototypeOf(env.references ?? {}, outer)
+      }
+      else if (env.__markstreamStableReferences) {
+        env.references ??= env.__markstreamStableReferences
       }
     })
 

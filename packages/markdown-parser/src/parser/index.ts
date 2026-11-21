@@ -91,23 +91,6 @@ function resolveValidateLink(md: MarkdownIt, options: ParseOptions) {
     ?? (typeof mdAny.validateLink === 'function' ? mdAny.validateLink : undefined)
 }
 
-const REFERENCE_DEFINITION_RE = /^ {0,3}\[[^\]\n]+\]:/m
-
-// HTML wrapper fragments are parsed on their own, so seed them with the
-// reference definitions of the enclosing document. A definition inside the
-// fragment keeps priority for its own label, as before.
-function getFragmentReferenceDefinitions(
-  md: MarkdownIt,
-  source: string,
-  outer: Record<string, unknown>,
-): Record<string, unknown> {
-  if (!REFERENCE_DEFINITION_RE.test(source))
-    return { ...outer }
-  const innerEnv: Record<string, unknown> = {}
-  md.block.parse(source, md, innerEnv, [])
-  return { ...outer, ...(innerEnv.references as Record<string, unknown> | undefined) }
-}
-
 function parseMarkdownWithContext(markdown: string, inputContext: ParseContext): ParsedNode[] {
   const runtime = inputContext.runtime!
   const md = inputContext.markdownIt!
@@ -164,7 +147,7 @@ function parseMarkdownWithContext(markdown: string, inputContext: ParseContext):
   const tokenizeStartedAt = timing ? getParserNow() : 0
   const tokenEnv: Record<string, unknown> = { __markstreamFinal: isFinal }
   if (options.isFragment && options.referenceDefinitions)
-    tokenEnv.references = getFragmentReferenceDefinitions(md, safeMarkdown, options.referenceDefinitions)
+    tokenEnv.__markstreamOuterReferences = options.referenceDefinitions
   const tokens = parseTopLevelTokens(runtime, safeMarkdown, tokenEnv, options, tokenizerTiming)
   if (timing)
     addTiming(timing, 'tokenizeMs', getParserNow() - tokenizeStartedAt)

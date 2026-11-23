@@ -90,9 +90,11 @@ const corpusDefinitions = [
     // Dollar-heavy prose with no valid formula: prices, ranges and a deposit
     // rate, but no closing `$` that Pandoc would accept. Every `$` is a math
     // opener candidate that has to be rejected, so this case covers the cost of
-    // the rejection path (no formula is produced at any scale).
+    // the rejection path (no formula is produced at any scale). 24 base units
+    // keep the 1x sample large enough that the 1x/2x/4x growth ratios measure
+    // the per-character cost instead of per-commit fixed overhead.
     id: 'currency-no-formula',
-    baseUnits: 8,
+    baseUnits: 24,
     createUnit(index) {
       return [
         `#### Pricing block ${index}`,

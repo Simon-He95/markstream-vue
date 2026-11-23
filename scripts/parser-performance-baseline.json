@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "benchmarkVersion": "parser-performance-v1",
-  "corpusVersion": "sha256:e709391de19a6c99d46e75ba4df7d2277b9e2e0574b04403fbcd3863066044b2",
-  "updatedAt": "2026-11-23T06:50:36.523Z",
-  "evidence": "issue #838: add the currency-no-formula corpus case so the 1x/2x/4x budgets cover dollar-heavy text with no valid formula; budgets measured on the pre-change parser (main@259b27388) on darwin/arm64/Apple M1 Pro/node 26, head compared same-runner in the PR.",
+  "corpusVersion": "sha256:bcf3580b96120cc029130562a407db3916822e2c86fa5a6d01ca48a658056f1d",
+  "updatedAt": "2026-11-23T07:07:47.965Z",
+  "evidence": "issue #838: add the currency-no-formula corpus case (dollar-heavy prose with no valid formula) so the 1x/2x/4x budgets cover the rejection path; budgets measured on the pre-change parser (main@259b27388) on darwin/arm64/Apple M1 Pro/node 26, head compared same-runner in the PR.",
   "environment": {
     "node": "v26.10.0",
     "v8": "14.6.202.34-node.34",
@@ -64,11 +64,11 @@
             "sizesSha256": "2673cdc27e069a49c2cc6c4deb36779a7ca301cfdd9bb6b5f870b0e00883eb3f"
           },
           "metrics": {
-            "streamTotalMs": 25.951,
-            "commitMedianMs": 0.398,
-            "commitP95Ms": 10.23,
-            "commitMaxMs": 10.23,
-            "finalFlushMs": 1.523,
+            "streamTotalMs": 26.082,
+            "commitMedianMs": 0.391,
+            "commitP95Ms": 10.114,
+            "commitMaxMs": 10.114,
+            "finalFlushMs": 1.831,
             "processedTokenCount": 180,
             "reusedNodeCount": 288,
             "reuseRatio": 0.818182,
@@ -99,11 +99,11 @@
             "sizesSha256": "7328ce7dd39369ca6d73c36dd33f902037272950e3d4f58c9e39b5b2c07e6767"
           },
           "metrics": {
-            "streamTotalMs": 29.717,
-            "commitMedianMs": 0.274,
-            "commitP95Ms": 8.881,
-            "commitMaxMs": 9.808,
-            "finalFlushMs": 2.263,
+            "streamTotalMs": 30.883,
+            "commitMedianMs": 0.312,
+            "commitP95Ms": 9.007,
+            "commitMaxMs": 9.798,
+            "finalFlushMs": 2.779,
             "processedTokenCount": 328,
             "reusedNodeCount": 1240,
             "reuseRatio": 0.911765,
@@ -134,11 +134,11 @@
             "sizesSha256": "8fb86caaaebe1ab57f17c8e4ce45b5b6938fb8dc28a02096568490abe3b0894a"
           },
           "metrics": {
-            "streamTotalMs": 36.736,
-            "commitMedianMs": 0.251,
-            "commitP95Ms": 1.153,
-            "commitMaxMs": 9.804,
-            "finalFlushMs": 4.186,
+            "streamTotalMs": 39.362,
+            "commitMedianMs": 0.279,
+            "commitP95Ms": 1.249,
+            "commitMaxMs": 9.917,
+            "finalFlushMs": 5.19,
             "processedTokenCount": 622,
             "reusedNodeCount": 5072,
             "reuseRatio": 0.956259,
@@ -205,109 +205,109 @@
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.145
+              "maxRatio": 2.184
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.236
+              "maxRatio": 2.275
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 2.416
+              "maxRatio": 2.509
             }
           ],
           "commitMedianMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.688
+              "maxRatio": 1.798
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 1.916
+              "maxRatio": 1.894
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.631
+              "maxRatio": 1.714
             }
           ],
           "commitP95Ms": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.868
+              "maxRatio": 1.891
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 1.13
+              "maxRatio": 1.139
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.113
+              "maxRatio": 1.123
             }
           ],
           "commitMaxMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.959
+              "maxRatio": 1.969
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2
+              "maxRatio": 2.012
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.958
+              "maxRatio": 1.981
             }
           ],
           "finalFlushMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.486
+              "maxRatio": 2.518
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.85
+              "maxRatio": 2.868
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 4.123
+              "maxRatio": 4.252
             }
           ]
         },
         "absoluteTiming": {
           "1": {
-            "streamTotalMs": 45.414,
-            "commitMedianMs": 2.092,
-            "commitP95Ms": 32.69,
-            "commitMaxMs": 32.69,
-            "finalFlushMs": 6.569
+            "streamTotalMs": 45.644,
+            "commitMedianMs": 2.064,
+            "commitP95Ms": 32.342,
+            "commitMaxMs": 32.342,
+            "finalFlushMs": 7.493
           },
           "2": {
-            "streamTotalMs": 52.005,
-            "commitMedianMs": 1.596,
-            "commitP95Ms": 28.643,
-            "commitMaxMs": 31.424,
-            "finalFlushMs": 8.789
+            "streamTotalMs": 54.045,
+            "commitMedianMs": 1.748,
+            "commitP95Ms": 29.021,
+            "commitMaxMs": 31.394,
+            "finalFlushMs": 10.337
           },
           "4": {
-            "streamTotalMs": 64.288,
-            "commitMedianMs": 1.504,
-            "commitP95Ms": 5.459,
-            "commitMaxMs": 31.412,
-            "finalFlushMs": 14.558
+            "streamTotalMs": 68.883,
+            "commitMedianMs": 1.616,
+            "commitP95Ms": 5.747,
+            "commitMaxMs": 31.751,
+            "finalFlushMs": 17.57
           }
         },
         "retainedHeapBytesMax": {
@@ -351,11 +351,11 @@
             "sizesSha256": "3ea984cbaf981f50390822d9adfbc050c390c05f1250723a425a46664450f960"
           },
           "metrics": {
-            "streamTotalMs": 10.394,
-            "commitMedianMs": 0.402,
-            "commitP95Ms": 3.79,
-            "commitMaxMs": 3.79,
-            "finalFlushMs": 1.846,
+            "streamTotalMs": 11.046,
+            "commitMedianMs": 0.436,
+            "commitP95Ms": 3.81,
+            "commitMaxMs": 3.81,
+            "finalFlushMs": 2.238,
             "processedTokenCount": 357,
             "reusedNodeCount": 132,
             "reuseRatio": 0.763006,
@@ -386,11 +386,11 @@
             "sizesSha256": "a7786b96688724a5a78b190f0beffd6146d6a59da9cde634daed09d48a13a016"
           },
           "metrics": {
-            "streamTotalMs": 13.763,
-            "commitMedianMs": 0.339,
-            "commitP95Ms": 3.296,
-            "commitMaxMs": 3.75,
-            "finalFlushMs": 3.117,
+            "streamTotalMs": 15.437,
+            "commitMedianMs": 0.413,
+            "commitP95Ms": 3.472,
+            "commitMaxMs": 3.875,
+            "finalFlushMs": 4.197,
             "processedTokenCount": 753,
             "reusedNodeCount": 643,
             "reuseRatio": 0.884457,
@@ -421,11 +421,11 @@
             "sizesSha256": "e2376df0112dff774a8dbe974ba445825b84bb3f9a2e68eb29d10105a98a794b"
           },
           "metrics": {
-            "streamTotalMs": 22.359,
-            "commitMedianMs": 0.351,
-            "commitP95Ms": 1.396,
-            "commitMaxMs": 3.749,
-            "finalFlushMs": 5.969,
+            "streamTotalMs": 28.469,
+            "commitMedianMs": 0.449,
+            "commitP95Ms": 1.573,
+            "commitMaxMs": 3.992,
+            "finalFlushMs": 7.874,
             "processedTokenCount": 1525,
             "reusedNodeCount": 2646,
             "reuseRatio": 0.939964,
@@ -492,109 +492,109 @@
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.324
+              "maxRatio": 2.398
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.625
+              "maxRatio": 2.844
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 3.227
+              "maxRatio": 3.866
             }
           ],
           "commitMedianMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.843
+              "maxRatio": 1.947
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.035
+              "maxRatio": 2.087
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.873
+              "maxRatio": 2.03
             }
           ],
           "commitP95Ms": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.87
+              "maxRatio": 1.911
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 1.424
+              "maxRatio": 1.453
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.368
+              "maxRatio": 1.413
             }
           ],
           "commitMaxMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.989
+              "maxRatio": 2.017
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2
+              "maxRatio": 2.03
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.989
+              "maxRatio": 2.048
             }
           ],
           "finalFlushMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.689
+              "maxRatio": 2.875
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.915
+              "maxRatio": 2.876
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 4.85
+              "maxRatio": 5.277
             }
           ]
         },
         "absoluteTiming": {
           "1": {
-            "streamTotalMs": 18.189,
-            "commitMedianMs": 2.108,
-            "commitP95Ms": 13.37,
-            "commitMaxMs": 13.37,
-            "finalFlushMs": 7.538
+            "streamTotalMs": 19.331,
+            "commitMedianMs": 2.244,
+            "commitP95Ms": 13.43,
+            "commitMaxMs": 13.43,
+            "finalFlushMs": 8.714
           },
           "2": {
-            "streamTotalMs": 24.085,
-            "commitMedianMs": 1.856,
-            "commitP95Ms": 11.888,
-            "commitMaxMs": 13.25,
-            "finalFlushMs": 11.351
+            "streamTotalMs": 27.015,
+            "commitMedianMs": 2.152,
+            "commitP95Ms": 12.416,
+            "commitMaxMs": 13.625,
+            "finalFlushMs": 14.591
           },
           "4": {
-            "streamTotalMs": 39.128,
-            "commitMedianMs": 1.904,
-            "commitP95Ms": 6.188,
-            "commitMaxMs": 13.247,
-            "finalFlushMs": 19.907
+            "streamTotalMs": 49.821,
+            "commitMedianMs": 2.296,
+            "commitP95Ms": 6.719,
+            "commitMaxMs": 13.976,
+            "finalFlushMs": 25.622
           }
         },
         "retainedHeapBytesMax": {
@@ -629,32 +629,32 @@
       "referenceScales": [
         {
           "scale": 1,
-          "sourceChars": 1872,
-          "sourceBytes": 1888,
-          "sourceSha256": "d45077dc4b4700196cab90107872d3f2bffe4f340e7e77452bea95be670f40f4",
+          "sourceChars": 5658,
+          "sourceBytes": 5706,
+          "sourceSha256": "b46bd52033180ae5be482208397091ec34e1a348e72289906c8e455538723706",
           "chunkPlan": {
             "id": "fixed-size-cycle-v1",
-            "chunks": 14,
-            "sizesSha256": "d569afd791046d8fc50e08482a583da80d81d6c37e7c3b55eba4a0c0e51e2d42"
+            "chunks": 40,
+            "sizesSha256": "6b645ee02bc56fa35cc936208f32c801dacc00e81ad9d98bd28b5ac801b38e9c"
           },
           "metrics": {
-            "streamTotalMs": 12.965,
-            "commitMedianMs": 0.287,
-            "commitP95Ms": 8.809,
-            "commitMaxMs": 8.809,
-            "finalFlushMs": 1.698,
-            "processedTokenCount": 87,
-            "reusedNodeCount": 107,
-            "reuseRatio": 0.786765,
-            "retainedHeapBytes": 350648,
-            "outputNodeVisits": 136,
-            "finalNodeCount": 16,
+            "streamTotalMs": 22.027,
+            "commitMedianMs": 0.311,
+            "commitP95Ms": 0.619,
+            "commitMaxMs": 8.97,
+            "finalFlushMs": 4.901,
+            "processedTokenCount": 261,
+            "reusedNodeCount": 925,
+            "reuseRatio": 0.914032,
+            "retainedHeapBytes": 630496,
+            "outputNodeVisits": 1012,
+            "finalNodeCount": 48,
             "streamStats": {
-              "total": 15,
+              "total": 41,
               "cacheHits": 0,
               "appendHits": 0,
               "unboundedAppendHits": 0,
-              "tailHits": 13,
+              "tailHits": 39,
               "fullParses": 2,
               "resets": 2,
               "chunkedParses": 0,
@@ -664,32 +664,32 @@
         },
         {
           "scale": 2,
-          "sourceChars": 3762,
-          "sourceBytes": 3794,
-          "sourceSha256": "ed1e180ec6d4b49b480bceea4527b8e648a4db93571c315587411070a7240233",
+          "sourceChars": 11346,
+          "sourceBytes": 11442,
+          "sourceSha256": "51c35b883d2183201767513d0e9a9f0a859dab291e5a5663582d37994b06f433",
           "chunkPlan": {
             "id": "fixed-size-cycle-v1",
-            "chunks": 27,
-            "sizesSha256": "fa9e8192605c7df6003c6a9a71273fe3ba385a55ba525b750ba794ce0257acea"
+            "chunks": 81,
+            "sizesSha256": "5aa4fe2a4a7a40589cd405324453a92c294e7533ae3efe7e7d720a2adf10dea1"
           },
           "metrics": {
-            "streamTotalMs": 16.832,
-            "commitMedianMs": 0.286,
-            "commitP95Ms": 0.67,
-            "commitMaxMs": 8.84,
-            "finalFlushMs": 2.875,
-            "processedTokenCount": 174,
-            "reusedNodeCount": 415,
-            "reuseRatio": 0.877378,
-            "retainedHeapBytes": 467112,
-            "outputNodeVisits": 473,
-            "finalNodeCount": 32,
+            "streamTotalMs": 33.801,
+            "commitMedianMs": 0.292,
+            "commitP95Ms": 0.507,
+            "commitMaxMs": 9.012,
+            "finalFlushMs": 9.199,
+            "processedTokenCount": 525,
+            "reusedNodeCount": 3859,
+            "reuseRatio": 0.956619,
+            "retainedHeapBytes": 1446960,
+            "outputNodeVisits": 4034,
+            "finalNodeCount": 96,
             "streamStats": {
-              "total": 28,
+              "total": 82,
               "cacheHits": 0,
               "appendHits": 0,
               "unboundedAppendHits": 0,
-              "tailHits": 26,
+              "tailHits": 80,
               "fullParses": 2,
               "resets": 2,
               "chunkedParses": 0,
@@ -699,32 +699,32 @@
         },
         {
           "scale": 4,
-          "sourceChars": 7554,
-          "sourceBytes": 7618,
-          "sourceSha256": "7a97461db9533fc8f7667c37b11156d2b86806ee0fcc8a8bd33a35c0812bd472",
+          "sourceChars": 22722,
+          "sourceBytes": 22914,
+          "sourceSha256": "5e6e11598e73b2dc0a9206b38bc2aab896aa17c0f5fec51dc1287a67d4119025",
           "chunkPlan": {
             "id": "fixed-size-cycle-v1",
-            "chunks": 54,
-            "sizesSha256": "aad9ea98a690bab144bbbebc0b43662a9d99b6570f2a2935854779e9c0ed668d"
+            "chunks": 161,
+            "sizesSha256": "5f9eb590a6723eb7364dfbe494e4364b0b8cd96ecc37405fb330a15f4c5555eb"
           },
           "metrics": {
-            "streamTotalMs": 23.494,
-            "commitMedianMs": 0.26,
-            "commitP95Ms": 0.495,
-            "commitMaxMs": 8.998,
-            "finalFlushMs": 5.38,
-            "processedTokenCount": 351,
-            "reusedNodeCount": 1702,
-            "reuseRatio": 0.935679,
-            "retainedHeapBytes": 853288,
-            "outputNodeVisits": 1819,
-            "finalNodeCount": 64,
+            "streamTotalMs": 54.917,
+            "commitMedianMs": 0.274,
+            "commitP95Ms": 0.497,
+            "commitMaxMs": 8.849,
+            "finalFlushMs": 17.33,
+            "processedTokenCount": 1050,
+            "reusedNodeCount": 15363,
+            "reuseRatio": 0.977725,
+            "retainedHeapBytes": 4416920,
+            "outputNodeVisits": 15713,
+            "finalNodeCount": 192,
             "streamStats": {
-              "total": 55,
+              "total": 162,
               "cacheHits": 0,
               "appendHits": 0,
               "unboundedAppendHits": 0,
-              "tailHits": 53,
+              "tailHits": 160,
               "fullParses": 2,
               "resets": 2,
               "chunkedParses": 0,
@@ -736,42 +736,42 @@
       "budgets": {
         "work": {
           "1": {
-            "processedTokenCountMin": 82,
-            "processedTokenCountMax": 96,
-            "reusedNodeCountMin": 101,
-            "reuseRatioMin": 0.756765,
+            "processedTokenCountMin": 247,
+            "processedTokenCountMax": 279,
+            "reusedNodeCountMin": 878,
+            "reuseRatioMin": 0.884032,
             "fullParsesMax": 3
           },
           "2": {
-            "processedTokenCountMin": 165,
-            "processedTokenCountMax": 187,
-            "reusedNodeCountMin": 394,
-            "reuseRatioMin": 0.847378,
-            "fullParsesMax": 3
+            "processedTokenCountMin": 498,
+            "processedTokenCountMax": 556,
+            "reusedNodeCountMin": 3666,
+            "reuseRatioMin": 0.926619,
+            "fullParsesMax": 4
           },
           "4": {
-            "processedTokenCountMin": 333,
-            "processedTokenCountMax": 373,
-            "reusedNodeCountMin": 1616,
-            "reuseRatioMin": 0.905679,
-            "fullParsesMax": 4
+            "processedTokenCountMin": 997,
+            "processedTokenCountMax": 1107,
+            "reusedNodeCountMin": 14594,
+            "reuseRatioMin": 0.947725,
+            "fullParsesMax": 6
           }
         },
         "workGrowth": [
           {
             "fromScale": 1,
             "toScale": 2,
-            "processedTokenCountMaxRatio": 3
+            "processedTokenCountMaxRatio": 3.017
           },
           {
             "fromScale": 2,
             "toScale": 4,
-            "processedTokenCountMaxRatio": 3.026
+            "processedTokenCountMaxRatio": 3
           },
           {
             "fromScale": 1,
             "toScale": 4,
-            "processedTokenCountMaxRatio": 6.052
+            "processedTokenCountMaxRatio": 6.034
           }
         ],
         "timingGrowth": {
@@ -779,133 +779,133 @@
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.298
+              "maxRatio": 2.535
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.396
+              "maxRatio": 2.625
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 2.812
+              "maxRatio": 3.74
             }
           ],
           "commitMedianMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.997
+              "maxRatio": 1.939
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 1.909
+              "maxRatio": 1.938
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.906
+              "maxRatio": 1.881
             }
           ],
           "commitP95Ms": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 1.076
+              "maxRatio": 1.819
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 1.739
+              "maxRatio": 1.98
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 1.056
+              "maxRatio": 1.803
             }
           ],
           "commitMaxMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.004
+              "maxRatio": 2.005
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.018
+              "maxRatio": 1.982
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 2.021
+              "maxRatio": 1.987
             }
           ],
           "finalFlushMs": [
             {
               "fromScale": 1,
               "toScale": 2,
-              "maxRatio": 2.693
+              "maxRatio": 2.877
             },
             {
               "fromScale": 2,
               "toScale": 4,
-              "maxRatio": 2.871
+              "maxRatio": 2.884
             },
             {
               "fromScale": 1,
               "toScale": 4,
-              "maxRatio": 4.753
+              "maxRatio": 5.304
             }
           ]
         },
         "absoluteTiming": {
           "1": {
-            "streamTotalMs": 22.689,
-            "commitMedianMs": 1.648,
-            "commitP95Ms": 28.427,
-            "commitMaxMs": 28.427,
-            "finalFlushMs": 7.094
+            "streamTotalMs": 38.547,
+            "commitMedianMs": 1.744,
+            "commitP95Ms": 3.857,
+            "commitMaxMs": 28.91,
+            "finalFlushMs": 16.703
           },
           "2": {
-            "streamTotalMs": 29.456,
-            "commitMedianMs": 1.644,
-            "commitP95Ms": 4.01,
-            "commitMaxMs": 28.52,
-            "finalFlushMs": 10.625
+            "streamTotalMs": 59.152,
+            "commitMedianMs": 1.668,
+            "commitP95Ms": 3.521,
+            "commitMaxMs": 29.036,
+            "finalFlushMs": 29.597
           },
           "4": {
-            "streamTotalMs": 41.114,
-            "commitMedianMs": 1.54,
-            "commitP95Ms": 3.485,
-            "commitMaxMs": 28.994,
-            "finalFlushMs": 18.14
+            "streamTotalMs": 96.105,
+            "commitMedianMs": 1.596,
+            "commitP95Ms": 3.491,
+            "commitMaxMs": 28.547,
+            "finalFlushMs": 53.99
           }
         },
         "retainedHeapBytesMax": {
-          "1": 3149096,
-          "2": 3498488,
-          "4": 4657016
+          "1": 3988640,
+          "2": 6438032,
+          "4": 15347912
         },
         "retainedHeapGrowth": [
           {
             "fromScale": 1,
             "toScale": 2,
-            "maxRatio": 1.998,
+            "maxRatio": 3.442,
             "denominatorFloorBytes": 262144
           },
           {
             "fromScale": 2,
             "toScale": 4,
-            "maxRatio": 2.74,
+            "maxRatio": 4.579,
             "denominatorFloorBytes": 262144
           },
           {
             "fromScale": 1,
             "toScale": 4,
-            "maxRatio": 3.65,
+            "maxRatio": 10.508,
             "denominatorFloorBytes": 262144
           }
         ]

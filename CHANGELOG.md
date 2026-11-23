@@ -1,3 +1,26 @@
+## [2.0.31](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.30...markstream-vue@2.0.31) (2026-11-24)
+
+### Features
+
+* **code-block:** expose the `stream-diffs` editing API on the Vue 3 `CodeBlockNode` ref: `getSurface()`, `startEditing()`, `stopEditing()`, `undo()`, `redo()`, `applyEdits()`, `revealLine()`, `expandLine()`, `expandHunk()`, `setEditorActiveLine()`, and `get/setCodeScrollLeft()`. ([#852](https://github.com/Simon-He95/markstream-vue/pull/852))
+* **code-block:** add the same editing contract to `markstream-react`, `markstream-octane`, `markstream-solid`, `markstream-svelte`, `markstream-angular`, and `markstream-vue2` through each renderer's native handle (forwardRef, ref, callback ref, `bind:this`, component methods, `$refs`), backed by a framework-neutral contract in `markstream-core` with shared lifecycle, completion semantics, `getCode()` precedence, errors, navigation and scroll methods. Requires `stream-diffs >= 0.0.5`. ([#855](https://github.com/Simon-He95/markstream-vue/pull/855))
+
+### Bug Fixes
+
+* **parser:** keep inline HTML anchors whole when `html: false` runs together with `linkify`, keep earlier tag candidates when a nested candidate never closes, and bound the guard scan to one pass per candidate. ([#853](https://github.com/Simon-He95/markstream-vue/issues/853), [#854](https://github.com/Simon-He95/markstream-vue/pull/854))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.30`
+* `markstream-core@2.0.31`
+* `markstream-vue@2.0.31`
+* `markstream-react@2.0.31`
+* `markstream-octane@2.0.31`
+* `markstream-svelte@2.0.31`
+* `markstream-angular@2.0.31`
+* `markstream-vue2@2.0.31`
+* `markstream-solid@2.0.31`
+
 ## [2.0.30](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.29...markstream-vue@2.0.30) (2026-11-23)
 
 ### Bug Fixes

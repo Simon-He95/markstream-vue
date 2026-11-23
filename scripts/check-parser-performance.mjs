@@ -33,6 +33,15 @@ const absoluteTimingMultipliers = {
   finalFlushMs: { multiplier: 3, fixedSlackMs: 2 },
   streamTotalMs: { multiplier: 1.75, fixedSlackMs: 0 },
 }
+// `streamTotalMs` and `finalFlushMs` cover a whole parse, so their time cannot
+// grow slower than the input: a linear parser already measures close to the
+// scale ratio. Their measured growth is still machine dependent at small sizes
+// (a 2.5k-char sample spends a differing share of its time on fixed per-run
+// overhead), and a frozen budget under that ratio fails on an unchanged parser
+// on a different runner. Floor those two budgets at the scale ratio, so a
+// linear parser always passes and only growth beyond it is a regression. The
+// per-commit metrics stay flat with scale, so they keep their measured budget.
+const cumulativeTimingMetrics = new Set(['streamTotalMs', 'finalFlushMs'])
 
 function readArg(name) {
   const prefix = `${name}=`
@@ -418,12 +427,12 @@ function timeEnvironmentKey(environment) {
   ].join('|')
 }
 
-function createRatioBudget(scales, metric, fromScale, toScale, minimumSlack) {
+function createRatioBudget(scales, metric, fromScale, toScale, minimumSlack, minimumRatio = 1) {
   const measured = ratio(
     metricByScale(scales, toScale, metric),
     metricByScale(scales, fromScale, metric),
   )
-  return round(Math.max(measured * 1.5, measured + minimumSlack), 3)
+  return round(Math.max(measured * 1.5, measured + minimumSlack, minimumRatio), 3)
 }
 
 function createHeapGrowthBudget(scales, fromScale, toScale) {
@@ -481,7 +490,14 @@ function createBaseline(report) {
     ].map(([fromScale, toScale]) => ({
       fromScale,
       toScale,
-      maxRatio: createRatioBudget(referenceScales, metric, fromScale, toScale, 1),
+      maxRatio: createRatioBudget(
+        referenceScales,
+        metric,
+        fromScale,
+        toScale,
+        1,
+        cumulativeTimingMetrics.has(metric) ? toScale / fromScale : 1,
+      ),
     }))]))
     const absoluteTiming = Object.fromEntries(referenceScales.map(item => [item.scale, Object.fromEntries(
       timingMetrics.map((metric) => {

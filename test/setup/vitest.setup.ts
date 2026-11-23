@@ -32,6 +32,22 @@ if (!(globalThis as any).ResizeObserver) {
   ;(globalThis as any).ResizeObserver = ResizeObserverStub
 }
 
+// jsdom 24 does not implement constructable stylesheets, which @pierre/diffs
+// uses when stream-diffs mounts a File/FileDiff container.
+if (typeof CSSStyleSheet !== 'undefined' && typeof CSSStyleSheet.prototype.replaceSync !== 'function') {
+  Object.defineProperty(CSSStyleSheet.prototype, 'replaceSync', {
+    configurable: true,
+    value() {},
+  })
+}
+if (typeof ShadowRoot !== 'undefined' && !('adoptedStyleSheets' in ShadowRoot.prototype)) {
+  Object.defineProperty(ShadowRoot.prototype, 'adoptedStyleSheets', {
+    configurable: true,
+    get() { return [] },
+    set() {},
+  })
+}
+
 if (!(globalThis as any).btoa) {
   ;(globalThis as any).btoa = (input: string) => Buffer.from(input, 'utf-8').toString('base64')
 }

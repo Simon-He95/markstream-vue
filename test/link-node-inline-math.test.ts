@@ -38,4 +38,16 @@ describe('link text with inline math', () => {
     expect(wrapper.get('a.link-node').text()).toBe('the $x_1$ term')
     wrapper.unmount()
   })
+
+  it('keeps the formula inside the link from markdown source (#838)', async () => {
+    const wrapper = mount(NodeRenderer, {
+      props: {
+        content: 'See [the $x_1$ term](https://example.com) here.',
+      },
+    })
+    await flushAll()
+
+    expect(wrapper.get('a[href="https://example.com"]').text()).toBe('the $x_1$ term')
+    wrapper.unmount()
+  })
 })

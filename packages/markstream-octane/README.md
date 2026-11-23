@@ -32,6 +32,53 @@ Optional renderer features are peer dependencies. Install only the features used
 
 Enhanced code blocks resolve to `stream-diffs` automatically. Direct `CodeBlockNode` and top-level `NodeRenderer` both accept the shared `codeBlockOptions` / `CodeBlockOptions` contract; `maxHeight` and the single symmetric `padding` value use numeric CSS pixels. Use `codeBlockProps` for header and toolbar controls. Markstream keeps theme, code/language, streaming state, header, mounting, reveal, and disposal host-owned. Themes are registered names and `themes` is the `[dark, light]` pair. An old Monaco JSON theme is not accepted directly: first convert it to a Shiki `ThemeRegistration`, then call `registerCustomTheme(name, loader)` from `stream-diffs/pierre`; see the [coordinated 2.0 family migration guide](https://markstream.simonhe.me/guide/migration-2-0).
 
+### Editing API
+
+Pass a ref to `CodeBlockNode` to receive a `CodeBlockNodeHandle` (aliased as `CodeBlockNodeOctaneHandle`). Install `stream-diffs >= 0.0.5` first; the handle exposes editing, undo/redo, line reveal, and scrolling without reaching into the shadow DOM.
+
+```tsrx
+// App.tsrx
+import type { CodeBlockNodeHandle } from 'markstream-octane'
+import { CodeBlockNode } from 'markstream-octane'
+import { useRef } from 'octane'
+
+const block = useRef<CodeBlockNodeHandle | null>(null)
+const node = {
+  type: 'code_block',
+  language: 'ts',
+  code: 'const answer = 42',
+  raw: 'const answer = 42',
+}
+
+async function edit() {
+  const editor = await block.current?.startEditing({}, 'answer-draft')
+  console.log(editor?.getText())
+}
+
+export function EditableCode() {
+  return (
+    <>
+      <CodeBlockNode
+        ref={block}
+        node={node}
+        loading={false}
+        codeBlockOptions={{ onEditComplete: () => 'accept' }}
+      />
+      <button onClick={edit}>Edit</button>
+      <button onClick={() => block.current?.undo()}>Undo</button>
+    </>
+  )
+}
+```
+
+Editing requirements:
+
+- `startEditing()` waits for the finalized surface; it rejects with the shared core error while streaming or when the enhanced runtime is missing.
+- `stopEditing('complete')` installs edits by default. Return `'reject'` from `codeBlockOptions.onEditComplete` to restore the external input; return `'accept'` to keep the edit.
+- `getCode()` prefers the active editing file, then completed native File/FileDiff contents, then the current display code (trailing newline normalized).
+- Changing `node.code`, language, theme, or structural diff options recreates the surface and ends the session. Pass a stable `editStateKey` to `startEditing()` to carry a draft across recreation.
+- Refs are inert during SSR: the server renderer accepts the prop for shared TSX but leaves `ref.current` as `null`.
+
 ## Compiler setup
 
 Octane source components use the `.tsrx` extension. Add the Octane compiler to Vite:

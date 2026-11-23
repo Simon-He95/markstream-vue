@@ -142,5 +142,15 @@ export type { LanguageIconResolver } from './utils/languageIcon'
 export * from './workers/katexCdnWorker'
 export * from './workers/katexWorkerClient'
 export * from './workers/mermaidCdnWorker'
-
 export * from './workers/mermaidWorkerClient'
+
+export type {
+  CodeBlockEditHunkDirection,
+  CodeBlockEditingFile,
+  CodeBlockEditSide,
+  CodeBlockEditStopReason,
+  CodeBlockNodeEditingApi,
+  CodeBlockNodeEditingApi as CodeBlockNodeHandle,
+  StreamDiffsEditorLike,
+  StreamDiffsSurfaceLike,
+} from 'markstream-core'

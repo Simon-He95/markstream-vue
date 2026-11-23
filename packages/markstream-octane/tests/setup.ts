@@ -53,10 +53,13 @@ const streamDiffs = {
   getEditor: vi.fn(() => null),
   getEditorView: vi.fn(() => editorView),
   getDiffEditorView: vi.fn(() => editorView),
+  getSurface: vi.fn(() => null),
   cleanupEditor: vi.fn(),
   safeClean: vi.fn(),
   refreshDiffPresentation: vi.fn(),
   setTheme: vi.fn(async () => {}),
+  finalizeCode: vi.fn(async () => {}),
+  finalizeDiff: vi.fn(async () => {}),
 }
 
 streamDiffs.createCodeBlockRuntime.mockImplementation(() => streamDiffs)

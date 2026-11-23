@@ -89,7 +89,7 @@
     "@terrastruct/d2": ">=0.1.33",
     "katex": ">=0.16.22",
     "mermaid": ">=11",
-    "stream-diffs": ">=0.0.2",
+    "stream-diffs": ">=0.0.5",
     "svelte": ">=5 <6"
   },
   "peerDependenciesMeta": {
@@ -120,6 +120,7 @@
     "@types/node": "^18.19.130",
     "autoprefixer": "^10.5.4",
     "postcss-cli": "^11.0.1",
+    "stream-diffs": "0.0.5",
     "svelte": "^5.56.8",
     "svelte-check": "^4.7.4",
     "tailwindcss": "^3.4.19",

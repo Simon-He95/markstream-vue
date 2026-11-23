@@ -1,8 +1,10 @@
+import type { CodeBlockNodeEditingApi } from 'markstream-core'
 import type { VisibilityHandle } from '../../context/viewportPriority.tsrx'
 import type { CodeBlockNodeProps } from '../../types/component-props'
 import type { OctaneRefObject, OctaneStyle } from '../../types/octane'
 import * as Octane from 'octane'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'octane'
+import { applyDefaultCodeBlockEditComplete, createCodeBlockEditingApi } from 'markstream-core'
+import { useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'octane'
 import { useViewportPriority } from '../../context/viewportPriority.tsrx'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
@@ -23,6 +25,17 @@ export interface CodeBlockPreviewPayload {
 export interface CodeBlockNodeOctaneEvents {
   onCopy?: (code: string) => void
   onPreviewCode?: (payload: CodeBlockPreviewPayload) => void
+}
+
+/** Imperative handle exposed through an Octane ref. */
+export type CodeBlockNodeHandle = CodeBlockNodeEditingApi
+export type CodeBlockNodeOctaneHandle = CodeBlockNodeHandle
+export type CodeBlockNodeOctaneRef
+  = | OctaneRefObject<CodeBlockNodeHandle | null>
+    | ((handle: CodeBlockNodeHandle | null) => void)
+
+export type CodeBlockNodeOctaneProps = CodeBlockNodeProps & CodeBlockNodeOctaneEvents & {
+  ref?: CodeBlockNodeOctaneRef
 }
 
 type ResolvedProps = Required<Pick<
@@ -291,7 +304,7 @@ function shouldPreferPlainTextFallbackSurface(bg: string, fg: string, isPlainTex
     || (fgLuminance != null && fgLuminance > 190)
 }
 
-export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctaneEvents) {
+export function CodeBlockNode(rawProps: CodeBlockNodeOctaneProps) {
   const props = { ...DEFAULTS, ...rawProps } as ResolvedProps & CodeBlockNodeOctaneEvents
   const {
     node,
@@ -349,6 +362,15 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctane
   const [collapsed, setCollapsed] = useState(false)
   const [inlinePreviewOpen, setInlinePreviewOpen] = useState(false)
   const [languageIconsRevision, setLanguageIconsRevision] = useState(0)
+
+  const loadingRef = useRef(loading)
+  loadingRef.current = loading
+  const useFallbackRef = useRef(useFallback)
+  useFallbackRef.current = useFallback
+  const editorCreatedRef = useRef(editorCreated)
+  editorCreatedRef.current = editorCreated
+  const unmountedRef = useRef(false)
+  const displayCodeRef = useRef('')
 
   const { t } = useSafeI18n()
 
@@ -751,6 +773,11 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctane
       configuredUnsafeCSS,
     ].filter(Boolean).join('\n')
 
+    // `stopEditing('complete')` installs edits by default. Upstream restores
+    // the external input unless an `onEditComplete` handler accepts, so supply
+    // an accepting default while keeping `codeBlockOptions.onEditComplete`.
+    applyDefaultCodeBlockEditComplete(nextOptions)
+
     return nextOptions
   }, [isDark, preFallbackMetrics, requestedTheme, resolvedOptions, resolvedShowLineNumbers, syncEditorCssVars, themes])
 
@@ -795,7 +822,9 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctane
   }, [resolvedOptions, syncRuntimeOptions])
 
   useEffect(() => {
+    unmountedRef.current = false
     return () => {
+      unmountedRef.current = true
       editorLifecycleIdRef.current += 1
       cleanupRef.current?.()
       clearEditorHeightSyncBindings()
@@ -928,6 +957,8 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctane
       return node.updatedCode ?? node.code ?? ''
     return node.code ?? ''
   }, [node.code, node.diff, node.updatedCode])
+
+  displayCodeRef.current = resolvedCode
 
   const containerStyle = useMemo(() => {
     const fmt = (v: string | number | undefined) => {
@@ -1124,6 +1155,46 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeOctane
     createEditorPromiseRef.current = tracked
     return tracked
   }, [applyEditorHeight, bindDiffEditorHeightSync, clearEditorHeightSyncBindings, collapsed, expanded, languageId, prepareEditorReveal, resolvedOptions.fontSize, scheduleEditorHeightSync, shouldDelayEditor, syncEditorCssVars, syncRuntimeOptions, useFallback, viewportReady, waitForAnimationFrame])
+
+  const ensureEditingSurface = useCallback(async () => {
+    if (!loadingRef.current && editorHostRef.current) {
+      // Wait for an in-flight creation so `prepareForEditing()` runs against an
+      // attached file instead of a controller that is still mounting.
+      if (createEditorPromiseRef.current)
+        await createEditorPromiseRef.current
+      else if (!helpersRef.current?.getSurface?.() && !editorCreatedRef.current)
+        await ensureEditorCreation()
+    }
+
+    const helpers = helpersRef.current
+    const surface = helpers?.getSurface?.() ?? null
+    if (surface || loadingRef.current || !helpers)
+      return
+
+    if (latestNodeRef.current.diff) {
+      if (typeof helpers.finalizeDiff === 'function')
+        await Promise.resolve(helpers.finalizeDiff())
+    }
+    else if (typeof helpers.finalizeCode === 'function') {
+      await Promise.resolve(helpers.finalizeCode())
+    }
+  }, [ensureEditorCreation])
+
+  const ensureEditingSurfaceRef = useRef(ensureEditingSurface)
+  ensureEditingSurfaceRef.current = ensureEditingSurface
+
+  const editingApi = useMemo(() => createCodeBlockEditingApi({
+    // Read the live helper every call: reinstalling the runtime replaces the
+    // controller and a cached surface would go stale.
+    getSurface: () => helpersRef.current?.getSurface?.() ?? null,
+    ensureSurface: () => ensureEditingSurfaceRef.current(),
+    isLoading: () => loadingRef.current,
+    isFallback: () => useFallbackRef.current,
+    isUnmounted: () => unmountedRef.current,
+    getDisplayCode: () => displayCodeRef.current,
+  }), [])
+
+  useImperativeHandle(rawProps.ref, () => editingApi, [editingApi])
 
   useEffect(() => {
     syncRuntimeOptions()

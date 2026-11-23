@@ -242,6 +242,20 @@ export default Vue.extend({
 
 Direct `CodeBlockNode` and top-level `MarkdownRender` both accept `code-block-options`. The shared `CodeBlockOptions` type covers host-managed typography/layout plus supported File/FileDiff, interaction, annotation, and callback fields; `maxHeight` and the single symmetric `padding` value use numeric CSS pixels. Use `code-block-props` for header/toolbar controls. Theme values are registered names and `themes` is the `[dark, light]` pair. An old Monaco JSON theme is not accepted directly: first convert it to a Shiki `ThemeRegistration`, then call `registerCustomTheme(name, loader)` from `stream-diffs/pierre`; see the [coordinated 2.0 family migration guide](https://markstream.simonhe.me/guide/migration-2-0). Vue 2.6 apps need `@vue/composition-api`; see the Webpack 4 notes above if you use Vue CLI 4.
 
+### Editing through `$refs`
+
+`CodeBlockNode` exposes the shared `CodeBlockNodeEditingApi` on its public instance. Vue 2.6 has no `defineExpose`, so the methods are attached at runtime and the generated `.vue.d.ts` cannot infer them. Cast the ref to `CodeBlockNodeExposed` (exported from `markstream-vue2`):
+
+```ts
+import type { CodeBlockNodeExposed } from 'markstream-vue2'
+
+const codeBlock = this.$refs.codeBlock as unknown as CodeBlockNodeExposed
+const editor = await codeBlock.startEditing()
+// editor.getText(), codeBlock.getCode(), codeBlock.undo(), codeBlock.revealLine(...)
+```
+
+`getCode()` returns the current resolved code, including active edits and completed edit sessions. To opt out of the accepting default, return `'reject'` from `codeBlockOptions.onEditComplete`; omitting the callback accepts completed edits.
+
 ## Language-specific code block overrides
 
 You can also register a renderer for one fenced language directly:

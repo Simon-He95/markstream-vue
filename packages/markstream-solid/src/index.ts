@@ -1,5 +1,5 @@
 export { AdmonitionNode, BlockquoteNode, CheckboxNode, DefinitionListNode, EmojiNode, EmphasisNode, FallbackComponent, FootnoteAnchorNode, FootnoteNode, FootnoteReferenceNode, HardBreakNode, HeadingNode, HighlightNode, HtmlBlockNode, HtmlInlineNode, ImageNode, InlineCodeNode, InsertNode, LinkNode, ListItemNode, ListNode, MathBlockNode, MathInlineNode, ParagraphNode, ReferenceNode, StrikethroughNode, StrongNode, SubscriptNode, SuperscriptNode, TableNode, ThematicBreakNode, VmrContainerNode } from './components/BuiltinNodes'
-export type { SolidCodeBlockNodeProps } from './components/CodeBlockNode'
+export type { SolidCodeBlockNodeHandle, SolidCodeBlockNodeProps } from './components/CodeBlockNode'
 export { D2BlockNode, InfographicBlockNode, MermaidBlockNode } from './components/DiagramBlockNode'
 export { HtmlPreviewFrame } from './components/HtmlPreviewFrame'
 export type { HtmlPreviewFrameProps } from './components/HtmlPreviewFrame'

@@ -1,3 +1,4 @@
+export * from './code-block-editing'
 export * from './code-block-header'
 export { buildStreamDiffsSurfaceCSS } from './code-block-surface'
 export { disposeOwnedD2Instance } from './d2-worker'

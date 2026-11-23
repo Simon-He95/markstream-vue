@@ -192,6 +192,9 @@ Optional stream-diffs peer; otherwise native pre fallback. Header/copy/collapse/
 | `showHeader` | `boolean \| undefined` | — |
 | `showCopyButton` | `boolean \| undefined` | — |
 | `showExpandButton` | `boolean \| undefined` | — |
+| `ref` | `((handle: SolidCodeBlockNodeHandle \| null) => void) \| undefined` | `null` on cleanup |
+
+`SolidCodeBlockNodeHandle` exposes `getSurface()`, `isReadyToEdit()`, `isEditing()`, `startEditing(options?, editStateKey?)`, `stopEditing(reason?)`, `getEditor()`, `getEditingText()`, `getCode()`, `undo()`/`redo()`/`canUndo()`/`canRedo()`/`applyEdits()`, `focusEditor()`/`blurEditor()`, `revealLine(line, side?)`, `expandLine(target)`, `expandHunk(index, direction, override?)`, `setEditorActiveLine(line, options?)` and `getCodeScrollLeft()`/`setCodeScrollLeft(position)`. The handle is stable for the component lifetime and reads the live surface. `startEditing` waits for pending creation and preparation, and rejects with shared lifecycle errors while streaming, when no surface exists, or when `stream-diffs` is unavailable. `getCode()` prefers the active draft or installed native contents and normalizes one trailing line ending.
 
 ### PreCodeNode
 
@@ -208,7 +211,7 @@ No editor peer. Standalone line numbers default off; fenced wrappers enable them
 
 ### CodeBlockOptions
 
-Runtime fields are forwarded to stream-diffs. Font/theme/language/header, reveal/disposal and stream ownership stay with the host. Unset runtime fields use the installed runtime defaults; shared typography/layout details are in the code-block runtime guide.
+Runtime fields are forwarded to stream-diffs. Font/theme/language/header, reveal/disposal and stream ownership stay with the host. Unset runtime fields use the installed runtime defaults; shared typography/layout details are in the code-block runtime guide. `onEditComplete` defaults to accepting a completed edit; return `'reject'` to restore the external input.
 
 | Prop | Type | Required |
 | --- | --- | --- |
@@ -257,6 +260,7 @@ Runtime fields are forwarded to stream-diffs. Font/theme/language/header, reveal
 | `renderAnnotation` | `((...args: any[]) => unknown) \| undefined` | — |
 | `renderGutterUtility` | `((...args: any[]) => unknown) \| undefined` | — |
 | `onPostRender` | `((...args: any[]) => unknown) \| undefined` | — |
+| `onEditComplete` | `((...args: any[]) => "accept" \| "reject") \| undefined` | — |
 | `mergeConflict` | `boolean \| undefined` | — |
 | `lineAnnotations` | `unknown[] \| undefined` | — |
 | `onController` | `((controller: any) => void) \| undefined` | — |

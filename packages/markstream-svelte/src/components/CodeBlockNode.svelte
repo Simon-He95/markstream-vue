@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemeProp, CodeBlockThemes } from '../types/codeBlock'
+  import type { CodeBlockEditHunkDirection, CodeBlockEditSide, CodeBlockEditStopReason, StreamDiffsEditorLike, StreamDiffsSurfaceLike } from 'markstream-core'
   import type { NodeRendererCodeBlockProps, SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
+  import { applyDefaultCodeBlockEditComplete, createCodeBlockEditingApi } from 'markstream-core'
   import { onDestroy, onMount, tick } from 'svelte'
   import { useSafeI18n } from '../i18n/useSafeI18n'
   import { getStreamDiffsRuntime } from '../optional/streamDiffs'
@@ -162,6 +164,14 @@
   let updatedCode = $derived(getString((node as any)?.updatedCode))
   let nodeLoading = $derived((node as any)?.loading === true)
   let resolvedLoading = $derived(loading ?? nodeLoading)
+  const editingApi = createCodeBlockEditingApi({
+    getSurface: () => helpers?.getSurface?.() ?? null,
+    ensureSurface: () => ensureEditingSurface(),
+    isLoading: () => resolvedLoading,
+    isFallback: () => useFallback,
+    isUnmounted: () => !mounted,
+    getDisplayCode: () => code,
+  })
   let resolvedStream = $derived(stream ?? context?.codeBlockStream ?? true)
   let resolvedIsDark = $derived(isDark ?? context?.isDark ?? false)
   let resolvedThemes = $derived(context?.codeBlockThemes)
@@ -400,7 +410,7 @@
       : userOptions
     const configuredUnsafeCSS = typeof nativeOptions.unsafeCSS === 'string' ? nativeOptions.unsafeCSS : ''
 
-    return {
+    return applyDefaultCodeBlockEditComplete({
       overflow: 'wrap',
       ...nativeOptions,
       MAX_HEIGHT: expanded ? 900 : (resolvedCodeBlockOptions?.maxHeight ?? 500),
@@ -418,7 +428,7 @@ ${configuredUnsafeCSS}`.trim(),
         syncEditorGeometryVars()
         scheduleEditorHeightSync()
       },
-    }
+    })
   }
 
   function syncRuntimeOptions() {
@@ -531,6 +541,30 @@ ${configuredUnsafeCSS}`.trim(),
       if (mounted && lifecycleId === operationId)
         markEditorFallback(error)
     }
+  }
+
+  async function ensureEditingSurface() {
+    await tick()
+    if (createEditorPromise) {
+      try {
+        await createEditorPromise
+      }
+      catch {}
+    }
+    await ensureRuntime()
+    if (!mounted || useFallback || !helpers)
+      return
+    // A completed edit lives in the native surface. Re-syncing from props here
+    // would silently discard it before the next session starts.
+    if (helpers.getSurface?.())
+      return
+    if (createEditorPromise) {
+      try {
+        await createEditorPromise
+      }
+      catch {}
+    }
+    await syncEditor()
   }
 
   function hasRenderedEditorDom(kind: 'single' | 'diff') {
@@ -1102,6 +1136,90 @@ ${configuredUnsafeCSS}`.trim(),
 
   function showCopyTooltip(event: MouseEvent | FocusEvent) {
     showButtonTooltip(event, copied ? (t('common.copied') || 'Copied') : (t('common.copy') || 'Copy'))
+  }
+
+  export function getSurface(): StreamDiffsSurfaceLike | null {
+    return editingApi.getSurface()
+  }
+
+  export function isReadyToEdit(): boolean {
+    return editingApi.isReadyToEdit()
+  }
+
+  export function isEditing(): boolean {
+    return editingApi.isEditing()
+  }
+
+  export function startEditing(options?: Record<string, unknown>, editStateKey?: string): Promise<StreamDiffsEditorLike> {
+    return editingApi.startEditing(options, editStateKey)
+  }
+
+  export function stopEditing(reason?: CodeBlockEditStopReason): void {
+    editingApi.stopEditing(reason)
+  }
+
+  export function getEditor(): StreamDiffsEditorLike | null {
+    return editingApi.getEditor()
+  }
+
+  export function getEditingText(): string | null {
+    return editingApi.getEditingText()
+  }
+
+  export function undo(): void {
+    editingApi.undo()
+  }
+
+  export function redo(): void {
+    editingApi.redo()
+  }
+
+  export function canUndo(): boolean {
+    return editingApi.canUndo()
+  }
+
+  export function canRedo(): boolean {
+    return editingApi.canRedo()
+  }
+
+  export function applyEdits(edits: unknown[], updateHistory?: boolean): void {
+    editingApi.applyEdits(edits, updateHistory)
+  }
+
+  export function focusEditor(options?: Record<string, unknown>): void {
+    editingApi.focusEditor(options)
+  }
+
+  export function blurEditor(): void {
+    editingApi.blurEditor()
+  }
+
+  export function revealLine(lineNumber: number, side?: CodeBlockEditSide): boolean {
+    return editingApi.revealLine(lineNumber, side)
+  }
+
+  export function expandLine(target: unknown): void {
+    editingApi.expandLine(target)
+  }
+
+  export function expandHunk(hunkIndex: number, direction: CodeBlockEditHunkDirection, expansionLineCountOverride?: number): void {
+    editingApi.expandHunk(hunkIndex, direction, expansionLineCountOverride)
+  }
+
+  export function setEditorActiveLine(lineNumber: number | null, options?: Record<string, unknown>): void {
+    editingApi.setEditorActiveLine(lineNumber, options)
+  }
+
+  export function getCodeScrollLeft(): number {
+    return editingApi.getCodeScrollLeft()
+  }
+
+  export function setCodeScrollLeft(position: number): void {
+    editingApi.setCodeScrollLeft(position)
+  }
+
+  export function getCode(): string {
+    return editingApi.getCode()
   }
 </script>
 

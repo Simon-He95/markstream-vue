@@ -323,7 +323,7 @@
     "@terrastruct/d2": ">=0.1.33",
     "katex": ">=0.16.22",
     "mermaid": ">=11",
-    "stream-diffs": ">=0.0.2",
+    "stream-diffs": ">=0.0.5",
     "vue": ">=3.0.0",
     "vue-i18n": ">=9"
   },

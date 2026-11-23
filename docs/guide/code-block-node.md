@@ -248,7 +248,7 @@ function undo() {
 
 注意：
 
-- 编辑能力依赖 `stream-diffs >= 0.0.5`；旧版 runtime 不存在的方法会抛出明确错误，或返回 `null`/`false`。
+- 编辑能力依赖 `stream-diffs >= 0.0.5`；0.0.2–0.0.4 只能做只读渲染，编辑方法不存在时会抛出明确错误，或返回 `null`/`false`。
 - `stopEditing('complete')` 默认接受并保留编辑结果。如果要在完成时校验或拒绝，可在 `code-block-options` 中传 `onEditComplete(event)`，必须返回 `'reject'` 或 `'accept'`；没有返回值会被视为 `'reject'`，从而恢复外部输入。File 与 Diff 的事件结构不同：File 读取 `event.file`，Diff 读取 `event.newFile` / `event.fileDiff`，不要对 Diff 使用 `event.file.contents`。例如 `:code-block-options="{ onEditComplete: event => event.file.contents === saved ? 'reject' : 'accept' }"` 仅适用于 File。
 - `getCode()` 在活动会话中返回当前草稿，完成后返回安装后的编辑器内容；如果希望后续 props 更新时保留结果，File block 应把 `getCode()` 写回 `node.code`，Diff block 应写回 `node.updatedCode`。
 - `stopEditing('complete')` 只把结果安装到当前 surface。主题、`codeBlockOptions` 或结构变化会重建 surface，并从 `props.node` 重新读取内容；因此需要在这些更新之前把 `getCode()` 写回 node 数据。需要跨 surface 重建保留未完成的草稿时，把 `editStateKey` 传成稳定值。
@@ -367,6 +367,21 @@ The `themes` prop accepts exactly a `[dark, light]` pair. A former Monaco JSON t
 - The CodeBlock header API is documented in `docs/guide/codeblock-header.md` (examples for replacing header and custom loading placeholder).
 - `CodeBlockNode` and `MermaidBlockNode` intentionally use different `copy` event payloads: `CodeBlockNode` emits `copy(text: string)`, while `MermaidBlockNode` emits `copy(ev: MermaidBlockEvent<{ type: 'copy'; text: string }>)` (supports `preventDefault()`).
 - For large code blocks (tens of thousands of lines), Shiki tokenization runs on the main thread by default. To offload it to Web Workers, inject an upstream `@pierre/diffs` `WorkerPoolManager` via `setStreamDiffsWorkerPool(...)`; `CodeBlockNode` forwards it as the `workerManager` option and keeps the active theme in sync. Without an injected pool (or when the pool reports itself unavailable) the surface highlights on the main thread. See [Code Block Runtime](/guide/code-block-runtime) for the setup.
+
+## Cross-framework editing API
+
+`stream-diffs@0.0.5` exposes the same editing contract from every framework renderer. The method set, error behavior, completion semantics, and `getCode()` precedence are shared through `markstream-core`; only the way you acquire the component handle differs.
+
+| Package | Acquire the handle | Handle type |
+| --- | --- | --- |
+| `markstream-react` | `ref` via `React.forwardRef` | `CodeBlockNodeHandle` |
+| `markstream-octane` | `ref` prop + `useImperativeHandle` | `CodeBlockNodeHandle` |
+| `markstream-solid` | callback `ref` prop | `SolidCodeBlockNodeHandle` |
+| `markstream-svelte` | `bind:this` instance exports | `SvelteCodeBlockNodeExposed` |
+| `markstream-angular` | `@ViewChild(CodeBlockNodeComponent)` | `CodeBlockNodeHandle` |
+| `markstream-vue2` | `$refs` cast (Vue 2.6/2.7 compatible) | `CodeBlockNodeExposed` |
+
+All handles expose `getSurface()`, `isReadyToEdit()`, `isEditing()`, `startEditing()`, `stopEditing()`, `getEditor()`, `getEditingText()`, `getCode()`, undo/redo, `applyEdits()`, focus/blur, reveal/expand/active-line, and horizontal scroll. Call `startEditing()` after streaming finishes; `stopEditing('complete')` accepts edits by default, and hosts should write `getCode()` back to `node.code` (File) or `node.updatedCode` (Diff) before theme/options recreate the surface. See each package README for a framework-specific example.
 
 Try this — simple snapshot example (inline usage):
 

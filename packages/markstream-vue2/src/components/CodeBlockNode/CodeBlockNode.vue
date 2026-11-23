@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import type { StreamDiffsSurfaceLike } from 'markstream-core'
 import type { CodeBlockNode as ParsedCodeBlockNode } from 'stream-markdown-parser'
 import type { PropType } from 'vue-demi'
 import type { CodeBlockNodeProps, CodeBlockOptions, CodeBlockPreviewPayload, CodeBlockThemeProp, CodeBlockThemes } from '../../types/component-props'
+import { applyDefaultCodeBlockEditComplete, createCodeBlockEditingApi } from 'markstream-core'
 // Avoid static import of `stream-diffs` for types so the runtime bundle
 // doesn't get a reference. Define minimal local types we need here.
 import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onUnmounted, ref, watch } from 'vue-demi'
@@ -121,10 +123,12 @@ let updateDiffCode: (original: string, modified: string, lang: string) => void =
 let getEditor: () => any = () => null
 let getEditorView: () => any = () => ({ getModel: () => ({ getLineCount: () => 1 }), getOption: () => 14, updateOptions: () => {} })
 let getDiffEditorView: () => any = () => ({ getModel: () => ({ getLineCount: () => 1 }), getOption: () => 14, updateOptions: () => {} })
+let getStreamDiffsSurface: () => StreamDiffsSurfaceLike | null = () => null
 let cleanupEditor: () => void = () => {}
 let safeClean = () => {}
 let refreshDiffPresentation: () => void = () => {}
 let createEditorPromise: Promise<void> | null = null
+let runtimeInitializationPromise: Promise<void> | null = null
 let editorCreationGeneration = 0
 let detectLanguage: (code: string) => string = () => String(props.node.language ?? 'plaintext')
 let setTheme: (theme: any) => Promise<void> = async () => {}
@@ -206,6 +210,7 @@ function initializeRuntimeHelpers(factory: (options: Record<string, any>) => any
   getEditor = helpers.getEditor || getEditor
   getEditorView = helpers.getEditorView || getEditorView
   getDiffEditorView = helpers.getDiffEditorView || getDiffEditorView
+  getStreamDiffsSurface = helpers.getSurface || getStreamDiffsSurface
   cleanupEditor = helpers.cleanupEditor || cleanupEditor
   safeClean = helpers.safeClean || helpers.cleanupEditor || safeClean
   refreshDiffPresentation = helpers.refreshDiffPresentation || refreshDiffPresentation
@@ -216,7 +221,7 @@ function initializeRuntimeHelpers(factory: (options: Record<string, any>) => any
 
 // Defer client-only editor initialization to the browser to avoid SSR errors
 if (typeof window !== 'undefined') {
-  ;(async () => {
+  const pending = (async () => {
     try {
       const mod = await getStreamDiffsRuntime()
       // If mod is null, stream-diffs is not available
@@ -248,6 +253,11 @@ if (typeof window !== 'undefined') {
       usePreCodeRender.value = true
     }
   })()
+  const tracked = pending.finally(() => {
+    if (runtimeInitializationPromise === tracked)
+      runtimeInitializationPromise = null
+  })
+  runtimeInitializationPromise = tracked
 }
 
 const codeFontMin = 10
@@ -962,6 +972,43 @@ function ensureEditorCreation(el: HTMLElement) {
   return tracked
 }
 
+function resolveEditingDisplayCode() {
+  if (isDiff.value)
+    return String(props.node.updatedCode ?? props.node.code ?? '')
+  return String(props.node.code ?? '')
+}
+
+async function ensureEditingSurface() {
+  if (typeof window === 'undefined' || isUnmounted)
+    return
+  if (runtimeInitializationPromise)
+    await runtimeInitializationPromise
+  if (isUnmounted || props.loading)
+    return
+  if (createEditorPromise)
+    await createEditorPromise
+  else if (!getStreamDiffsSurface() && codeEditor.value && createEditor)
+    await ensureEditorCreation(codeEditor.value as HTMLElement)
+}
+
+const editingApi = createCodeBlockEditingApi({
+  getSurface: () => getStreamDiffsSurface(),
+  ensureSurface: () => ensureEditingSurface(),
+  isLoading: () => props.loading,
+  isFallback: () => usePreCodeRender.value,
+  isUnmounted: () => isUnmounted,
+  getDisplayCode: () => resolveEditingDisplayCode(),
+})
+
+// Vue 2.6's composition API has no `defineExpose`. Attach the shared API to
+// the public instance so `this.$refs.codeBlock` exposes the same methods in
+// Vue 2.6 and 2.7.
+const editingProxy = instance?.proxy as Record<string, unknown> | null | undefined
+if (editingProxy) {
+  for (const [key, value] of Object.entries(editingApi))
+    editingProxy[key] = value
+}
+
 // 延迟创建编辑器：仅在可见且准备就绪时创建，避免无意义的初始化
 const stopCreateEditorWatch = watch(
   () => [codeEditor.value, isDiff.value, props.stream, props.loading, runtimeReady.value, viewportReady.value] as const,
@@ -1261,6 +1308,7 @@ function buildRuntimeOptions() {
     : ''
   nextOptions.unsafeCSS = `[data-file], [data-diff] { --diffs-min-number-column-width-default: 2ch !important; }
 ${configuredUnsafeCSS}`.trim()
+  applyDefaultCodeBlockEditComplete(nextOptions)
 
   return nextOptions
 }

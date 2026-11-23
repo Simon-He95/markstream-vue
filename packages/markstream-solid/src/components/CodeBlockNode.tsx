@@ -1,8 +1,9 @@
+import type { CodeBlockNodeEditingApi } from 'markstream-core'
 import type { JSX } from 'solid-js'
 import type { NodeComponentProps } from '../customComponents'
 import type { StreamDiffsRuntimeHelpers } from '../optional/streamDiffs'
 import type { CodeBlockNodeProps, CodeBlockPreviewPayload } from '../types/component-props'
-import { buildStreamDiffsSurfaceCSS, estimateDiffStats, isDiffCodeBlock, preCodeThemeLooksDark, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
+import { applyDefaultCodeBlockEditComplete, buildStreamDiffsSurfaceCSS, createCodeBlockEditingApi, estimateDiffStats, isDiffCodeBlock, preCodeThemeLooksDark, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
 import { createEffect, createMemo, createSignal, mergeProps, onCleanup, onMount, Show, useContext } from 'solid-js'
 import { MarkstreamConfigContext } from '../configuration'
 import { useSafeI18n } from '../i18n/useSafeI18n'
@@ -18,11 +19,13 @@ import { PreCodeNode } from './PreCodeNode'
 import { ToolbarButton } from './ToolbarButton'
 import { useHeavyNodeVisibility } from './viewport'
 
+export type SolidCodeBlockNodeHandle = CodeBlockNodeEditingApi
 export type SolidCodeBlockNodeProps = CodeBlockNodeProps & Omit<NodeComponentProps, 'node'> & {
   headerLeft?: JSX.Element | (() => JSX.Element)
   headerRight?: JSX.Element | (() => JSX.Element)
   onCopy?: (code: string) => void
   onPreviewCode?: (payload: CodeBlockPreviewPayload) => void
+  ref?: (handle: SolidCodeBlockNodeHandle | null) => void
 }
 export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
   const props = mergeProps({ isShowPreview: true, showHeader: true, showCopyButton: true, showCollapseButton: true, showExpandButton: true, showFontSizeButtons: true, enableFontSizeControl: true, showPreviewButton: true }, () => ({
@@ -86,6 +89,16 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
       setStreamingHeight(height => Math.max(height, body.getBoundingClientRect().height))
   }
   const diff = createMemo(() => isDiffCodeBlock(props.node))
+  const editingHandle = createCodeBlockEditingApi({
+    getSurface: () => helpers?.getSurface?.() ?? null,
+    ensureSurface: () => ensureEditingSurface(),
+    isLoading: () => loading(),
+    isFallback: () => !helpers && !error() && resolved(),
+    isUnmounted: () => disposed,
+    getDisplayCode: () => diff()
+      ? String(props.node.updatedCode ?? props.node.code ?? '')
+      : String(props.node.code ?? ''),
+  })
   const original = createMemo(() => String(props.node.originalCode ?? ''))
   const updated = createMemo(() => String(props.node.updatedCode ?? '') || code())
   const stats = createMemo(() => diff() ? estimateDiffStats(original(), updated()) : undefined)
@@ -151,6 +164,7 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
     }
     for (const key of ['maxHeight', 'padding', 'tabSize', 'language', 'languages', 'onThemeChange', 'renderCustomHeader', 'renderHeaderMetadata', 'renderHeaderPrefix'])
       delete nextOptions[key]
+    applyDefaultCodeBlockEditComplete(nextOptions)
     for (const key of Object.keys(runtimeOptions))
       delete runtimeOptions[key]
     Object.assign(runtimeOptions, nextOptions)
@@ -237,6 +251,12 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
       setPreview(false)
   })
   onMount(() => {
+    props.ref?.(editingHandle)
+  })
+  onCleanup(() => {
+    props.ref?.(null)
+  })
+  onMount(() => {
     // Preserve measured streaming geometry when diffs fold or pre yields to the editor.
     let width = 0
     const observer = new ResizeObserver(([entry]) => {
@@ -268,6 +288,19 @@ export function CodeBlockNode(input: SolidCodeBlockNodeProps): JSX.Element {
     helpers?.cleanupEditor?.()
   })
   useNodeLifecycle(props, () => inViewport() && !resolved() && !collapsed(), () => container)
+  async function ensureEditingSurface() {
+    await work
+    if (disposed || loading())
+      return
+    if (helpers?.getSurface?.())
+      return
+    if (!helpers)
+      return
+    if (diff())
+      await helpers.finalizeDiff?.()
+    else
+      await helpers.finalizeCode?.()
+  }
   async function copy() {
     const source = props.node.code
     if (props.clipboardWriter) {

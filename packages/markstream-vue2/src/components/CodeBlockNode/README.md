@@ -24,3 +24,30 @@ Header override example:
 Docs and usage examples:
 - Docs: /guide/code-block-node
 - Header API: /guide/codeblock-header
+
+## Editing through `$refs`
+
+`CodeBlockNode` exposes the shared `CodeBlockNodeEditingApi` on its public instance. Vue 2.6 has no `defineExpose`, so the methods are attached at runtime and the generated `.vue.d.ts` cannot infer them. Cast the ref to `CodeBlockNodeExposed` (also exported from `markstream-vue2`):
+
+```vue
+<script lang="ts">
+import type { CodeBlockNodeExposed } from 'markstream-vue2'
+import { defineComponent } from 'vue-demi'
+
+export default defineComponent({
+  methods: {
+    async edit() {
+      const codeBlock = this.$refs.codeBlock as unknown as CodeBlockNodeExposed
+      const editor = await codeBlock.startEditing()
+      // editor.getText(), codeBlock.getCode(), codeBlock.undo(), codeBlock.revealLine(...)
+    },
+  },
+})
+</script>
+
+<template>
+  <CodeBlockNode ref="codeBlock" :node="node" :loading="false" />
+</template>
+```
+
+`getCode()` returns the current resolved code, including active edits and completed edit sessions. To opt out of the accepting default, return `'reject'` from `codeBlockOptions.onEditComplete`; omitting the callback accepts completed edits.

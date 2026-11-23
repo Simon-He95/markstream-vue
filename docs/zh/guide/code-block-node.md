@@ -284,6 +284,23 @@ const themes = [
 - `CodeBlockNode` 和 `MermaidBlockNode` 的 `copy` 事件 payload 不同：`CodeBlockNode` 触发 `copy(text: string)`，而 `MermaidBlockNode` 触发 `copy(ev: MermaidBlockEvent<{ type: 'copy'; text: string }>)`（支持 `preventDefault()`）。
 - 大代码块（数万行）默认在主线程做 Shiki 分词。要移到 Web Worker，可通过 `setStreamDiffsWorkerPool(...)` 注入上游 `@pierre/diffs` 的 `WorkerPoolManager`；`CodeBlockNode` 会把它作为 `workerManager` 选项转发，并保持主题同步。未注入 pool（或 pool 报告不可用）时自动回退主线程高亮。接入方式见 [Code Block Runtime](/zh/guide/code-block-runtime)。
 
+> 编辑能力依赖 `stream-diffs >= 0.0.5`；0.0.2–0.0.4 可以继续只读渲染，但没有编辑 API。
+
+## 跨框架编辑 API
+
+`stream-diffs@0.0.5` 在所有框架渲染器中暴露同一套编辑契约。方法名、错误行为、完成语义和 `getCode()` 的取值优先级通过 `markstream-core` 共享；区别只在如何拿到组件 handle。
+
+| 包 | 获取 handle | Handle 类型 |
+| --- | --- | --- |
+| `markstream-react` | `React.forwardRef` + `ref` | `CodeBlockNodeHandle` |
+| `markstream-octane` | `ref` prop + `useImperativeHandle` | `CodeBlockNodeHandle` |
+| `markstream-solid` | callback `ref` prop | `SolidCodeBlockNodeHandle` |
+| `markstream-svelte` | `bind:this` 实例导出 | `SvelteCodeBlockNodeExposed` |
+| `markstream-angular` | `@ViewChild(CodeBlockNodeComponent)` | `CodeBlockNodeHandle` |
+| `markstream-vue2` | `$refs` 类型断言（兼容 Vue 2.6/2.7） | `CodeBlockNodeExposed` |
+
+所有 handle 都提供 `getSurface()`、`isReadyToEdit()`、`isEditing()`、`startEditing()`、`stopEditing()`、`getEditor()`、`getEditingText()`、`getCode()`、undo/redo、`applyEdits()`、focus/blur、行定位/展开/active line 与横向滚动。`startEditing()` 必须在流式结束后调用；`stopEditing('complete')` 默认接受结果，应用层应在主题/选项重建 surface 前把 `getCode()` 写回 `node.code`（File）或 `node.updatedCode`（Diff）。各包 README 提供了对应框架的完整示例。
+
 快速尝试 — 简单的行内用法示例：
 
 ```vue

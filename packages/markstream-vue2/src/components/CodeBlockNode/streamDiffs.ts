@@ -1,4 +1,19 @@
+import type { CodeBlockNodeEditingApi } from 'markstream-core'
 import { preload } from '../NodeRenderer/preloadStreamDiffs'
+
+export type { StreamDiffsEditorLike, StreamDiffsSurfaceLike } from 'markstream-core'
+
+/**
+ * Public handle available through `this.$refs.codeBlock`. Vue 2.6 has no
+ * `defineExpose`, so the shared editing API is attached to the component
+ * instance at runtime; the generated `.vue.d.ts` cannot infer those manual
+ * methods. Cast the ref when you need the typed surface:
+ *
+ * ```ts
+ * const codeBlock = this.$refs.codeBlock as unknown as CodeBlockNodeExposed
+ * ```
+ */
+export type CodeBlockNodeExposed = CodeBlockNodeEditingApi
 
 let mod: any = null
 let importAttempted = false

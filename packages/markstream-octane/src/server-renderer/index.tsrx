@@ -967,7 +967,8 @@ export function PreCodeNode({ node, style }: PreCodeNodeProps) {
   )
 }
 
-export function CodeBlockNode(props: CodeBlockNodeProps) {
+// Refs are inert on the server; the prop is accepted so shared TSX can pass one.
+export function CodeBlockNode(props: CodeBlockNodeProps & { ref?: unknown }) {
   return renderStaticCodeShell('code-block-node', props.node, {
     showHeader: props.showHeader,
     fallback: 'code-block',

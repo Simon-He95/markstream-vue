@@ -199,6 +199,30 @@ describe('codeBlockNode editing API', () => {
     wrapper.unmount()
   })
 
+  it('uses updated diff code and strips one trailing line ending in fallback mode', async () => {
+    const runtime = helpers()
+    runtime.getSurface.mockReturnValue(null)
+    const wrapper = mount(DeferredCodeBlockNode, {
+      props: {
+        node: {
+          ...makeNode('const before = true\n', false),
+          diff: true,
+          originalCode: 'const before = true\n',
+          updatedCode: 'const after = true\n\n',
+        },
+        loading: false,
+        stream: false,
+        showHeader: false,
+      },
+    })
+    await flush()
+    observers.at(-1)?.emit()
+    await flush()
+    const vm = wrapper.findComponent(CodeBlockNode as any).vm as any
+    expect(vm.getCode()).toBe('const after = true\n')
+    wrapper.unmount()
+  })
+
   it('reports a clear error when no finalized surface exists', async () => {
     const runtime = helpers()
     runtime.getSurface.mockReturnValue(null)

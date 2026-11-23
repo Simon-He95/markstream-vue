@@ -68,6 +68,8 @@ export interface CodeBlockOptions {
   renderAnnotation?: (...args: any[]) => unknown
   renderGutterUtility?: (...args: any[]) => unknown
   onPostRender?: (...args: any[]) => unknown
+  /** Return `'accept'` to install edits when an edit session completes; return `'reject'` to restore the input. */
+  onEditComplete?: (...args: any[]) => 'accept' | 'reject'
   mergeConflict?: boolean
   lineAnnotations?: unknown[]
   onController?: (controller: any) => void

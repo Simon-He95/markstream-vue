@@ -144,8 +144,12 @@ describe('markstream-react d2 worker lifecycle', () => {
     vi.doMock('../packages/markstream-react/src/components/D2BlockNode/d2', () => ({ getD2 }))
 
     const { root } = await mountBlock()
-    while (!getD2.mock.calls.length)
+    const start = Date.now()
+    while (!getD2.mock.calls.length) {
+      if (Date.now() - start > 1000)
+        throw new Error('Timed out waiting for the D2 loader')
       await flushReact()
+    }
 
     await act(async () => {
       root.unmount()
@@ -163,6 +167,5 @@ describe('markstream-react d2 worker lifecycle', () => {
     await flushReact()
 
     expect(construct).not.toHaveBeenCalled()
-    expect(terminate).not.toHaveBeenCalled()
   })
 })

@@ -435,6 +435,7 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
   useEffect(() => {
     return () => {
       unmountedRef.current = true
+      isRenderingRef.current = false
       disposeOwnedD2Instance()
     }
   }, [disposeOwnedD2Instance])

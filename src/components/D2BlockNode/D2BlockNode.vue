@@ -121,10 +121,7 @@ const renderStyle = computed(() => {
 })
 
 let d2Instance: any | null = null
-let ownedD2Instance: (D2Instance & {
-  ready?: Promise<unknown>
-  worker?: Pick<Worker, 'terminate'>
-}) | undefined
+let ownedD2Instance: (D2Instance & D2WorkerOwner) | undefined
 let scheduled = false
 let unmounted = false
 let lastRenderAt = 0

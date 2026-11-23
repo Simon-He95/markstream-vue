@@ -121,6 +121,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run test:smoke:vue2-cjs
 
+      - name: Vue2 package tests (Ubuntu only)
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm --filter markstream-vue2 test
+
       - name: Build (Ubuntu only)
         if: matrix.os == 'ubuntu-latest'
         run: pnpm run build:parser && pnpm build

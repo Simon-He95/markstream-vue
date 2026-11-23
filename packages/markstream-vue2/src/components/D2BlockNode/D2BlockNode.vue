@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { D2WorkerOwner } from 'markstream-core'
+import type { D2Instance } from './d2'
+import { disposeOwnedD2Instance as releaseOwnedD2Instance } from 'markstream-core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue-demi'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -72,6 +75,7 @@ const renderStyle = computed(() => {
 
 const isClient = typeof window !== 'undefined'
 let d2Instance: any | null = null
+let ownedD2Instance: (D2Instance & D2WorkerOwner) | undefined
 let scheduled = false
 let unmounted = false
 let lastRenderAt = 0
@@ -249,23 +253,35 @@ async function ensureD2Instance() {
   if (d2Instance)
     return d2Instance
   const D2Ctor = await getD2()
-  if (!D2Ctor)
+  if (!D2Ctor || unmounted)
     return null
   if (typeof D2Ctor === 'function') {
     const inst = new D2Ctor()
-    if (inst && typeof inst.compile === 'function')
+    if (inst && typeof inst.compile === 'function') {
+      ownedD2Instance = inst
       d2Instance = inst
-    else if (typeof (D2Ctor as any).compile === 'function')
+    }
+    else if (typeof (D2Ctor as any).compile === 'function') {
+      releaseOwnedD2Instance(inst as D2WorkerOwner)
       d2Instance = D2Ctor
+    }
     return d2Instance
   }
   if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function') {
-    d2Instance = new D2Ctor.D2()
+    ownedD2Instance = new D2Ctor.D2()
+    d2Instance = ownedD2Instance
     return d2Instance
   }
   if (typeof D2Ctor.compile === 'function')
     d2Instance = D2Ctor
   return d2Instance
+}
+
+function disposeOwnedD2Instance() {
+  const instance = ownedD2Instance
+  ownedD2Instance = undefined
+  d2Instance = null
+  releaseOwnedD2Instance(instance)
 }
 
 async function renderDiagram() {
@@ -467,6 +483,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   unmounted = true
+  renderToken.value += 1
+  disposeOwnedD2Instance()
   if (throttleTimer != null) {
     clearTimeout(throttleTimer)
     throttleTimer = null

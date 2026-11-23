@@ -9,6 +9,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
+import { disposeOwnedD2Instance as releaseOwnedD2Instance } from 'markstream-core'
 import { getD2 } from '../../optional/d2'
 import { extractRenderedSvg, toSafeSvgMarkup } from '../../sanitizeSvg'
 import { createD2RenderSalt } from '../../utils/d2RenderSalt'
@@ -149,6 +150,7 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
   private destroyed = false
   private renderToken = 0
   private copyTimer: number | null = null
+  private ownedD2Instance: any = null
 
   get mergedProps() {
     return {
@@ -225,8 +227,15 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
   ngOnDestroy() {
     this.destroyed = true
     this.renderToken += 1
+    this.disposeOwnedD2Instance()
     if (this.copyTimer != null && typeof window !== 'undefined')
       window.clearTimeout(this.copyTimer)
+  }
+
+  private disposeOwnedD2Instance() {
+    const instance = this.ownedD2Instance
+    this.ownedD2Instance = null
+    releaseOwnedD2Instance(instance)
   }
 
   tooltipFor(text: string) {
@@ -295,13 +304,19 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
     this.rendering = true
     this.error = ''
     this.cdr.markForCheck()
+    let ownedInstance: any = null
 
     try {
       const D2Ctor = await getD2()
       if (!D2Ctor)
         throw new Error('D2 renderer is not available.')
+      if (this.destroyed || token !== this.renderToken)
+        return
 
-      const instance = createD2Instance(D2Ctor)
+      const created = createD2Instance(D2Ctor)
+      const instance = created.instance
+      ownedInstance = created.owned
+      this.ownedD2Instance = ownedInstance
       if (!instance || typeof instance.compile !== 'function' || typeof instance.render !== 'function')
         throw new TypeError('D2 instance is missing compile/render methods.')
 
@@ -345,6 +360,11 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
       this.syncSvgHost()
     }
     finally {
+      if (ownedInstance) {
+        if (this.ownedD2Instance === ownedInstance)
+          this.ownedD2Instance = null
+        releaseOwnedD2Instance(ownedInstance)
+      }
       if (token === this.renderToken) {
         this.rendering = false
         this.cdr.markForCheck()
@@ -370,20 +390,24 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 }
 
-function createD2Instance(D2Ctor: any) {
+function createD2Instance(D2Ctor: any): { instance: any | null, owned: any | null } {
   if (typeof D2Ctor === 'function') {
     const instance = new D2Ctor()
     if (instance && typeof instance.compile === 'function')
-      return instance
-    if (typeof D2Ctor.compile === 'function')
-      return D2Ctor
+      return { instance, owned: instance }
+    if (typeof D2Ctor.compile === 'function') {
+      releaseOwnedD2Instance(instance)
+      return { instance: D2Ctor, owned: null }
+    }
   }
 
-  if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function')
-    return new D2Ctor.D2()
+  if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function') {
+    const instance = new D2Ctor.D2()
+    return { instance, owned: instance }
+  }
 
   if (typeof D2Ctor?.compile === 'function')
-    return D2Ctor
+    return { instance: D2Ctor, owned: null }
 
-  return null
+  return { instance: null, owned: null }
 }

@@ -15,7 +15,6 @@ import {
   handleImageToken,
   handleLinkOpen,
 } from './link-image-recovery'
-import { hasEscapedMarkup } from './literal-text-helpers'
 import { parseMathInlineToken } from './math-inline-parser'
 import { parseReferenceToken } from './reference-parser'
 import { parseStrikethroughToken } from './strikethrough-parser'
@@ -23,23 +22,6 @@ import { parseStrongToken } from './strong-parser'
 import { parseSubscriptToken } from './subscript-parser'
 import { parseSuperscriptToken } from './superscript-parser'
 import { handleTextToken } from './text-token-handler'
-
-function stripTrailingLoadingParenMathOpener(state: InlineParseState, token: MarkdownToken) {
-  if (!state.currentTextNode || token.loading !== true || token.markup !== '\\(\\)')
-    return
-  const previousToken = state.tokens[state.index - 1]
-  if (!previousToken || previousToken.type !== 'text' || !hasEscapedMarkup(previousToken, '\\('))
-    return
-  if (!state.currentTextNode.content.endsWith('('))
-    return
-  state.currentTextNode.content = state.currentTextNode.content.slice(0, -1)
-  if (state.currentTextNode.raw.endsWith('('))
-    state.currentTextNode.raw = state.currentTextNode.raw.slice(0, -1)
-  if (!state.currentTextNode.content && state.result[state.result.length - 1] === state.currentTextNode) {
-    state.result.pop()
-    state.currentTextNode = null
-  }
-}
 
 export function dispatchInlineToken(state: InlineParseState, token: MarkdownToken) {
   switch (token.type) {
@@ -215,7 +197,6 @@ export function dispatchInlineToken(state: InlineParseState, token: MarkdownToke
       break
     }
     case 'math_inline': {
-      stripTrailingLoadingParenMathOpener(state, token)
       state.resetCurrentTextNode()
       // 可能遇到 math_inline text math_inline 的特殊情况，需要合并成一个
       if (!token.content && token.markup === '$' && state.tokens[state.index + 1]?.type === 'text' && state.tokens[state.index + 2]?.type === 'math_inline') {

@@ -86,6 +86,24 @@ const corpusDefinitions = [
       ].join('\n')
     },
   },
+  {
+    // Dollar-heavy prose with no valid formula: prices, ranges and a deposit
+    // rate, but no closing `$` that Pandoc would accept. Every `$` is a math
+    // opener candidate that has to be rejected, so this case covers the cost of
+    // the rejection path (no formula is produced at any scale).
+    id: 'currency-no-formula',
+    baseUnits: 8,
+    createUnit(index) {
+      return [
+        `#### Pricing block ${index}`,
+        '',
+        `District ${index} costs $1,20${index}.50 per night, or $450,000 for the whole block;`,
+        `the range $130–$375 and $312 + $98 = $308 keep showing up in the quotes,`,
+        `and a $2,000 deposit at 4% is mentioned without any closing dollar.`,
+        '',
+      ].join('\n')
+    },
+  },
 ]
 const benchmarkVersion = 'parser-performance-v1'
 const corpusManifest = corpusDefinitions.map(definition => ({

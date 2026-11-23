@@ -20,7 +20,11 @@ describe('issue #721 - strong followed by escaped-paren percent', () => {
     })
     expect(paragraph.children[1]).toMatchObject({
       type: 'text',
-      content: String.raw` (0.0002\%)`,
+      // CommonMark: an escaped punctuation character renders without its
+      // backslash. This used to keep the `\` because the `\(` opener swallowed
+      // the following text through the math rule; now `\(...\)` is one formula
+      // boundary and `\%` reaches the normal escape rule.
+      content: String.raw` (0.0002%)`,
     })
   })
 })

@@ -365,7 +365,10 @@ export function parseHtmlInlineCodeToken(
       : (fragment.innerTokens.length ? stringifyTokens(fragment.innerTokens) : '')
 
     const customChildren = fragment.innerTokens.length
-      ? parseInlineTokens(fragment.innerTokens, raw, pPreToken, options)
+      // Parse the children against the component's own source, not the line
+      // that contains the tags: mid-state recovery compares text tokens with
+      // `raw` (for example to tell an escaped `\*` from a `*` marker).
+      ? parseInlineTokens(fragment.innerTokens, sourceMeta?.inner ?? raw, pPreToken, options)
       : []
     return [
       {

@@ -70,8 +70,9 @@ describe('math inline edgecases', () => {
     const tokens = md.parse(content, {})
     const inlineChildren = tokens.flatMap((t: any) => (t.children ? t.children : []))
     const strongOpen = inlineChildren.find((c: any) => c && c.type === 'strong_open')
-    expect(strongOpen).toBeDefined()
-    expect(strongOpen.markup).toBe('__')
+    // `__` never closes, so it stays literal text like any other unclosed
+    // emphasis marker; only the streaming loading math is rendered.
+    expect(strongOpen).toBeUndefined()
 
     const math = inlineChildren.find((c: any) => c && c.type === 'math_inline')
     expect(math).toBeDefined()
@@ -88,8 +89,9 @@ describe('math inline edgecases', () => {
     const tokens = md.parse(content, {})
     const inlineChildren = tokens.flatMap((t: any) => (t.children ? t.children : []))
     const strongOpen = inlineChildren.find((c: any) => c && c.type === 'strong_open')
-    expect(strongOpen).toBeDefined()
-    expect(strongOpen.markup).toBe('**')
+    // `**` never closes, so it stays literal text like any other unclosed
+    // emphasis marker; only the streaming loading math is rendered.
+    expect(strongOpen).toBeUndefined()
 
     const math = inlineChildren.find((c: any) => c && c.type === 'math_inline')
     expect(math).toBeDefined()

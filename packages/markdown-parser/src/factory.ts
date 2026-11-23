@@ -5,7 +5,11 @@ import MarkdownIt from 'markdown-it-ts'
 import { getDefaultMathOptions } from './config'
 import { isUnsafeHtmlUrl } from './htmlTags'
 import { applyContainers } from './plugins/containers'
-import { applyFixHtmlInlineTokens } from './plugins/fixHtmlInline'
+import {
+  applyFixHtmlInlineTokens,
+  createInlineHtmlTagSet,
+  isInsideReconstructedInlineHtmlTag,
+} from './plugins/fixHtmlInline'
 import { applyFixIndentedCodeBlock } from './plugins/fixIndentedCodeBlock'
 import { applyFixLinkTokens } from './plugins/fixLinkTokens'
 import { applyFixListItem } from './plugins/fixListItem'
@@ -81,6 +85,30 @@ interface InlineRulerWithNamedRules {
 
 interface InlineStateLike {
   md?: MarkdownItInstance & { validateLink: (url: string) => boolean }
+}
+
+interface InlineLinkifyStateLike {
+  md?: MarkdownItInstance
+  src?: string
+  pos?: number
+  env?: { __markstreamCustomHtmlTags?: readonly unknown[] }
+}
+
+interface InlineHtmlTagScan {
+  src: string
+  cursor: number
+  /** Candidate `<` offsets before the current position, nearest last. */
+  starts: number[]
+  /** Lazily resolved `scanHtmlTag` result per candidate start. */
+  closeIndexes: Map<number, number | null>
+  exhausted: boolean
+}
+
+function isHtmlTagNameStart(source: string, lt: number) {
+  let code = source.charCodeAt(lt + 1)
+  if (code === 47)
+    code = source.charCodeAt(lt + 2)
+  return (code >= 65 && code <= 90) || (code >= 97 && code <= 122)
 }
 
 function inlineTokenMayNeedLinkify(token: Token, linkify: LinkifyLike) {
@@ -184,6 +212,85 @@ function applyLinkifyCandidateFilter(md: MarkdownItInstance) {
   })
 }
 
+/**
+ * markdown-it-ts linkifies absolute URLs while it tokenizes inline text. With
+ * raw HTML disabled an inline tag is still text at that point, so the URL in
+ * `<a href="https://…">` would be split off as a link and the tag could no
+ * longer be reconstructed as `html_inline`. Skip those URLs; the tag itself is
+ * emitted as `html_inline` right after inline parsing.
+ */
+function applyInlineLinkifyHtmlTagGuard(md: MarkdownItInstance, customHtmlTags?: readonly string[]) {
+  const ruler = md.inline.ruler as InlineRulerWithNamedRules
+  const original = ruler.getNamedRules?.().find(rule => rule.name === 'linkify')?.fn
+  if (typeof original !== 'function')
+    return
+
+  const configuredTagSet = createInlineHtmlTagSet(customHtmlTags)
+  const tagSetsByEnvTags = new WeakMap<readonly unknown[], Set<string>>()
+  const scans = new WeakMap<object, InlineHtmlTagScan>()
+
+  const resolveTagSet = (state: InlineLinkifyStateLike) => {
+    const envTags = state.env?.__markstreamCustomHtmlTags
+    if (!Array.isArray(envTags) || envTags.length === 0)
+      return configuredTagSet
+
+    let tagSet = tagSetsByEnvTags.get(envTags)
+    if (!tagSet) {
+      tagSet = createInlineHtmlTagSet(customHtmlTags, envTags)
+      tagSetsByEnvTags.set(envTags, tagSet)
+    }
+    return tagSet
+  }
+
+  ruler.at('linkify', (...args: any[]) => {
+    const state = args[0] as InlineLinkifyStateLike | undefined
+    const src = state?.src
+    const pos = state?.pos
+    if (!state || typeof src !== 'string' || typeof pos !== 'number' || state.md?.options?.html !== false)
+      return original(...args)
+
+    // Track the `<` candidates before `pos` once per inline token; linkified
+    // URLs are visited left to right, so this keeps the scan linear.
+    let scan = scans.get(state)
+    if (!scan || scan.src !== src) {
+      scan = { src, cursor: 0, starts: [], closeIndexes: new Map(), exhausted: false }
+      scans.set(state, scan)
+    }
+    if (pos < scan.cursor) {
+      // Defensive: a rewound position invalidates the forward cursor. Linkify
+      // itself is never applied inside a link label.
+      scan.cursor = 0
+      scan.starts = []
+      scan.closeIndexes.clear()
+      scan.exhausted = false
+    }
+
+    while (!scan.exhausted && scan.cursor < pos) {
+      const next = src.indexOf('<', scan.cursor)
+      if (next === -1) {
+        scan.exhausted = true
+        break
+      }
+      if (next >= pos) {
+        scan.cursor = pos
+        break
+      }
+      if (isHtmlTagNameStart(src, next)) {
+        scan.starts.push(next)
+      }
+      scan.cursor = next + 1
+    }
+
+    if (!scan.starts.length)
+      return original(...args)
+
+    if (isInsideReconstructedInlineHtmlTag(src, pos, scan.starts, resolveTagSet(state), scan.closeIndexes))
+      return false
+
+    return original(...args)
+  })
+}
+
 function applyInlineUrlValidation(md: MarkdownItInstance) {
   const ruler = md.inline.ruler as InlineRulerWithNamedRules
   const rules = ruler.getNamedRules?.()
@@ -269,6 +376,8 @@ export function factory(opts: FactoryOptions = {}): MarkdownItInstance {
   }
 
   applyInlineUrlValidation(md)
+
+  applyInlineLinkifyHtmlTagGuard(md, opts.customHtmlTags)
 
   applyLinkifyCandidateFilter(md)
 

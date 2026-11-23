@@ -335,7 +335,9 @@ function buildCommonHtmlTagSet(extraTags?: readonly string[]) {
   return set
 }
 
-const HTML_TAG_NAME_RE = /^([A-Z][\w-]*)/i
+// Sticky so the tag name is read in place: slicing the remaining source here
+// allocates the whole tail for every scanned `<`.
+const HTML_TAG_NAME_RE = /([A-Z][\w-]*)/iy
 const HTML_WHITESPACE_RE = /[\t\n\f\r ]/
 const HTML_ATTRIBUTE_NAME_START_RE = /[A-Z_:]/i
 
@@ -382,7 +384,8 @@ function scanHtmlTag(content: string, start: number, tagSet: Set<string>): Scann
       return null
   }
 
-  const nameMatch = content.slice(cursor).match(HTML_TAG_NAME_RE)
+  HTML_TAG_NAME_RE.lastIndex = cursor
+  const nameMatch = HTML_TAG_NAME_RE.exec(content)
   const rawName = nameMatch?.[1] ?? ''
   const tag = rawName.toLowerCase()
   if (!tag)
@@ -471,6 +474,74 @@ function findFirstIncompleteTag(content: string, tagSet: Set<string>) {
   }
 
   return first
+}
+
+/**
+ * Tag set used to reconstruct inline HTML, mirroring the rule context so code
+ * outside this plugin agrees on which tags become `html_inline`.
+ */
+export function createInlineHtmlTagSet(
+  customHtmlTags?: readonly string[],
+  envTags?: readonly unknown[],
+): Set<string> {
+  const names: string[] = []
+  for (const raw of customHtmlTags ?? []) {
+    const name = normalizeCustomHtmlTagName(String(raw ?? ''))
+    if (name)
+      names.push(name)
+  }
+  for (const raw of envTags ?? []) {
+    const name = normalizeCustomHtmlTagName(String(raw ?? ''))
+    if (name)
+      names.push(name)
+  }
+  return buildCommonHtmlTagSet(names)
+}
+
+/**
+ * Whether `pos` sits inside the source of a start tag this plugin will turn
+ * into `html_inline` (for example the `href` value of `<a href="…">`).
+ *
+ * `tagStarts` are candidate `<` offsets before `pos`, nearest last; entries
+ * that can never cover `pos` are dropped, and `closeIndexes` memoises the scan
+ * of the remaining ones so each candidate is scanned at most once.
+ *
+ * The check runs on the raw inline source, so a start tag that a softbreak or
+ * inline markup splits may still be guarded although token-level reconstruction
+ * cannot rebuild it; the URL then stays literal text, matching `linkify: false`.
+ */
+export function isInsideReconstructedInlineHtmlTag(
+  source: string,
+  pos: number,
+  tagStarts: number[],
+  tagSet: Set<string>,
+  closeIndexes: Map<number, number | null>,
+): boolean {
+  while (tagStarts.length) {
+    const start = tagStarts[tagStarts.length - 1]!
+    if (start >= pos) {
+      // Callers only record `<` offsets before `pos`.
+      break
+    }
+
+    let closeIndex = closeIndexes.get(start)
+    if (closeIndex === undefined) {
+      const scanned = scanHtmlTag(source, start, tagSet)
+      closeIndex = !scanned || scanned.closing ? null : scanned.closeIndex
+      closeIndexes.set(start, closeIndex)
+    }
+
+    if (closeIndex !== null && closeIndex >= pos)
+      return true
+
+    // `null` is not a reconstructed start tag, `-1` has no `>` at or after its
+    // `<`, and a smaller index ended before `pos`: none of them can span `pos`
+    // or any later position, so drop the candidate instead of rescanning it.
+    tagStarts.pop()
+    closeIndexes.delete(start)
+  }
+
+  return false
 }
 
 function splitTextToken(token: MarkdownToken, content: string) {
@@ -707,7 +778,9 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         customTagSet.add(name)
     }
 
-    const commonHtmlTags = buildCommonHtmlTagSet(Array.from(customTagSet))
+    // Same derivation the inline linkify guard uses, so both agree on which
+    // tags are reconstructed as `html_inline`.
+    const commonHtmlTags = createInlineHtmlTagSet(Array.from(customTagSet))
     const autoCloseInlineTagSet = new Set<string>(BASE_AUTO_CLOSE_INLINE_TAGS)
     for (const tag of customTagSet)
       autoCloseInlineTagSet.add(tag)

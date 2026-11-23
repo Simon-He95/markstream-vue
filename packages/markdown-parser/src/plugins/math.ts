@@ -319,10 +319,12 @@ function isPlainBracketMathLike(content: string) {
 interface InlineMathScan {
   /** End of the last formula this state emitted; a streaming tail counts `**` from here. */
   formulaEnd: number
-  /** Last unescaped `$`, `$$`, `\(` and `\)`. An unclosed opener with a later one of its kind is text. */
-  lastDelimiter?: Record<'$' | '$$' | '\\(' | '\\)', number>
+  /** Last unescaped `$`, `$$` and `\(`. An unclosed opener with a later one of its kind is text. */
+  lastDelimiter?: Record<'$' | '$$' | '\\(', number>
   /** `![...](...)` spans, plus a still-streaming one that runs to the end of the source. */
   imageRanges?: Array<[number, number]>
+  /** Last `\)` search: the first unescaped `\)` at or after `from` is at `at` (-1: none). */
+  parenClose?: { from: number, at: number }
 }
 
 const inlineMathScanCache = new WeakMap<MathInlineState, InlineMathScan>()
@@ -343,13 +345,12 @@ function lastUnescapedIndexOf(src: string, needle: string) {
   return index
 }
 
-function getLastDelimiter(s: MathInlineState, delimiter: '$' | '$$' | '\\(' | '\\)') {
+function getLastDelimiter(s: MathInlineState, delimiter: '$' | '$$' | '\\(') {
   const scan = getInlineMathScan(s)
   scan.lastDelimiter ??= {
     '$': lastUnescapedIndexOf(s.src, '$'),
     '$$': lastUnescapedIndexOf(s.src, '$$'),
     '\\(': lastUnescapedIndexOf(s.src, '\\('),
-    '\\)': lastUnescapedIndexOf(s.src, '\\)'),
   }
   return scan.lastDelimiter[delimiter]
 }
@@ -562,6 +563,20 @@ function findUnescapedDelimiter(src: string, delimiter: string, startIdx = 0) {
   }
 
   return -1
+}
+
+// TeX does not pair the plain parentheses inside `\(...\)`, so a formula ends
+// at its first unescaped `\)`: `\(x \in (0, 1]\)` closes at its own `\)`.
+// Openers are tried from left to right, so the last answer holds until `from`
+// passes it, and a search that found nothing answers every later one.
+function findInlineParenClose(s: MathInlineState, from: number) {
+  const scan = getInlineMathScan(s)
+  const last = scan.parenClose
+  if (last && from >= last.from && (last.at === -1 || from <= last.at))
+    return last.at
+  const at = findUnescapedDelimiter(s.src, '\\)', from)
+  scan.parenClose = { from, at }
+  return at
 }
 
 function countUnescapedDelimiter(
@@ -1077,11 +1092,10 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     let end: number
     if (open === '$')
       end = findSingleDollarClose(src, contentStart)
-    // With no `\)` left, skip a scan to the end of the source for every `\(`.
-    else if (open === '\\(' && getLastDelimiter(s, '\\)') < contentStart)
-      end = -1
-    else
+    else if (open === '$$')
       end = findMatchingClose(src, contentStart, open, close)
+    else
+      end = findInlineParenClose(s, contentStart)
     // A closer past `posMax` (e.g. after the end of a link label) belongs to
     // another range.
     if (end !== -1 && end + close.length > max)

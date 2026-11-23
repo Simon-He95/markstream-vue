@@ -1,12 +1,15 @@
 /**
  * Micro-benchmark: inline math on prose full of `$` that never forms a formula
- * (prices), and on prose with real inline formulas.
+ * (prices), on prose with real inline formulas, and on `\(...\)` formulas
+ * holding a half-open interval.
  *
  * The inline math rule runs at every `$` and `\` of a paragraph and has to
  * decide each one where it stands. A decision that looks at the rest of the
  * paragraph again for every `$` (rebuilding code-span or image ranges, scanning
  * to the end for a closer) costs O(dollars × paragraph length), which is
- * quadratic on a list of prices.
+ * quadratic on a list of prices. The same holds for a `\)` search that pairs
+ * plain parentheses: the `(` of `(0, 1]` takes the formula's `\)`, and every
+ * `\(` scans on to the end.
  *
  * The fixture below pins what the generated inputs parse to, so the timing is
  * known to measure rejected openers on one side and real formulas on the
@@ -34,6 +37,11 @@ function makePrices(count: number, seed = 0) {
 /** One paragraph with one `$...$` and one `\(...\)` formula per unit. */
 function makeFormulas(count: number, seed = 0) {
   return Array.from({ length: count }, (_, index) => `term ${seed}.${index} is $x_{${index}}$ and \\(y_{${index}}\\),`).join(' ')
+}
+
+/** One paragraph with one `\(x \in (a, b]\)` formula per unit. */
+function makeIntervals(count: number, seed = 0) {
+  return Array.from({ length: count }, (_, index) => `case ${seed}.${index} has \\(x \\in (${index}, ${index + 1}]\\),`).join(' ')
 }
 
 function countNodes(nodes: any[], type: string): number {
@@ -98,15 +106,20 @@ describe('inline math on dollar-heavy prose', () => {
       const formulas = parse(makeFormulas(40), final)
       expect(countNodes(formulas, 'math_inline')).toBe(80)
       expect(countNodes(formulas, 'paragraph')).toBe(1)
+
+      const intervals = parse(makeIntervals(40), final)
+      expect(countNodes(intervals, 'math_inline')).toBe(40)
+      expect(countNodes(intervals, 'paragraph')).toBe(1)
     }
   })
 
-  it('scales linearly with the number of `$` in a paragraph', () => {
+  it('scales linearly with the number of openers in a paragraph', () => {
     const small = 1600
     const results = {
       pricesFinal: equalVolumeRatio([0, 1, 2, 3].map(seed => makePrices(small, seed)), makePrices(small * 4), true),
       pricesStream: equalVolumeRatio([0, 1, 2, 3].map(seed => makePrices(small, seed)), makePrices(small * 4), false),
       formulasFinal: equalVolumeRatio([0, 1, 2, 3].map(seed => makeFormulas(small, seed)), makeFormulas(small * 4), true),
+      intervalsFinal: equalVolumeRatio([0, 1, 2, 3].map(seed => makeIntervals(small, seed)), makeIntervals(small * 4), true),
     }
     for (const [name, result] of Object.entries(results))
       console.log(`[dollar-scan-bench] ${name} ${small}x4=${result.smallMs.toFixed(1)}ms ${small * 4}=${result.largeMs.toFixed(1)}ms ratio=${result.ratio.toFixed(2)}x (equal volume)`)
@@ -117,5 +130,6 @@ describe('inline math on dollar-heavy prose', () => {
     expect(results.pricesFinal.ratio).toBeLessThan(3)
     expect(results.pricesStream.ratio).toBeLessThan(3)
     expect(results.formulasFinal.ratio).toBeLessThan(3)
+    expect(results.intervalsFinal.ratio).toBeLessThan(3)
   }, 120_000)
 })

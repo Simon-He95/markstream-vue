@@ -86,3 +86,19 @@ describe('issue #838 - inline math opens only where it starts', () => {
     expect(parse(markdown, false)).toBe(expected)
   })
 })
+
+describe('issue #838 - a `\\(` formula ends at its first unescaped `\\)`', () => {
+  it.each([
+    // The `(` of a half-open interval has no `)` and must not take the formula's
+    // `\)`, or the formula runs on into the next one.
+    ['for \\(x \\in (0, 1]\\) we have \\(f(x) > 0\\)', 'paragraph["for " math(\\(x \\in (0, 1]\\)) " we have " math(\\(f(x) > 0\\))]'],
+    // `(0, 1]` alone is not math-like and stays text; the formula after it still parses.
+    ['the set \\((0, 1]\\) and \\(x + y\\) here', 'paragraph["the set ((0, 1]) and " math(\\(x + y\\)) " here"]'],
+    ['range \\((0, \\pi]\\) here', 'paragraph["range " math(\\((0, \\pi]\\)) " here"]'],
+    // An escaped backslash before `)` is a TeX line break, not the closer.
+    ['\\(\\alpha \\\\) b\\) here', 'paragraph[math(\\(\\alpha \\\\) b\\)) " here"]'],
+  ])('closes %j at its own `\\)`', (markdown, expected) => {
+    expect(parse(markdown, true)).toBe(expected)
+    expect(parse(markdown, false)).toBe(expected)
+  })
+})

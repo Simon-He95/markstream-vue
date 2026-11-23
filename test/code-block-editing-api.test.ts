@@ -179,6 +179,11 @@ describe('codeBlockNode editing API', () => {
     vm.stopEditing('complete')
     expect(surface.stopEditing).toHaveBeenCalledWith('complete')
 
+    surface.isReadyToEdit.mockReturnValue(false)
+    surface.prepareForEditing = vi.fn(async () => {})
+    await vm.startEditing()
+    expect(surface.prepareForEditing).toHaveBeenCalledTimes(1)
+
     const runtimeOptions = runtime.createCodeBlockRuntime.mock.calls
       .map(([options]: [Record<string, any>]) => options)
       .find(options => options?.stream === false)
@@ -186,10 +191,10 @@ describe('codeBlockNode editing API', () => {
 
     surface.getEditingFile.mockReturnValue(undefined)
     surface.getResolvedFile.mockReturnValue(undefined)
-    surface.getNativeInstance = vi.fn(() => ({ file: { contents: 'completed native code' } }))
+    surface.getNativeInstance = vi.fn(() => ({ file: { contents: 'completed native code\n' } }))
     expect(vm.getCode()).toBe('completed native code')
 
-    surface.getNativeInstance = vi.fn(() => ({ fileDiff: { additionLines: ['completed diff code'] } }))
+    surface.getNativeInstance = vi.fn(() => ({ fileDiff: { additionLines: ['completed diff code\n'] } }))
     expect(vm.getCode()).toBe('completed diff code')
     wrapper.unmount()
   })
@@ -210,6 +215,7 @@ describe('codeBlockNode editing API', () => {
     expect(vm.getSurface()).toBeNull()
     expect(vm.isReadyToEdit()).toBe(false)
     await expect(vm.startEditing()).rejects.toThrow(/finish streaming/)
+    expect(() => vm.applyEdits([], false)).toThrow(/not ready for edits/)
     wrapper.unmount()
   })
 })

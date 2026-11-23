@@ -3743,9 +3743,15 @@ async function ensureEditableSurface() {
   if (usePreCodeRender.value)
     throw new Error('The enhanced code-block runtime is unavailable; install stream-diffs and keep it loaded before editing')
 
+  if (!props.loading && codeEditor.value) {
+    // `stream-diffs` exposes its surface before mount() finishes. Wait for the
+    // in-flight creation so prepareForEditing() runs against an attached file.
+    if (createEditorPromise)
+      await createEditorPromise
+    else if (!getStreamDiffsSurface() && !editorCreated.value)
+      await ensureEditorCreation(codeEditor.value)
+  }
   let surface = getStreamDiffsSurface()
-  if (!surface && !editorCreated.value && codeEditor.value && !props.loading)
-    await ensureEditorCreation(codeEditor.value)
   if (!surface && !props.loading) {
     if (isDiff.value)
       await finalizeDiff()
@@ -3803,11 +3809,11 @@ defineExpose<CodeBlockNodeExposed>({
   getCode: () => {
     const surface = getStreamDiffsSurface()
     const native = surface?.getNativeInstance?.()
-    return surface?.getEditingFile?.()?.contents
+    const code = surface?.getEditingFile?.()?.contents
       ?? native?.file?.contents
       ?? native?.fileDiff?.additionLines?.join('')
       ?? surface?.getResolvedFile?.()?.contents
-      ?? displayCode.value
+    return code == null ? displayCode.value : getDisplayCode(code)
   },
 })
 

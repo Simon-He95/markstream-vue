@@ -50,7 +50,7 @@ export interface StreamDiffsRuntimeOptions extends Record<string, unknown> {
   theme?: CodeBlockThemeProp
   themes?: CodeBlockThemes
   onThemeChange?: () => void
-  onEditComplete?: (...args: any[]) => 'accept' | 'reject' | void
+  onEditComplete?: (...args: any[]) => 'accept' | 'reject'
 }
 
 export interface StreamDiffsHelpers {

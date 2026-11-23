@@ -172,6 +172,8 @@ const node = {
 
 典型场景是在 AI 聊天里就地修正代码，或在 diff 评审中修改 additions 一侧。编辑态是 upstream Diffs 的原生 contenteditable 交互，键盘输入、选择、撤销/重做快捷键都由 Diffs 处理；这里暴露的是进入/退出、程序化编辑、导航和收尾能力。
 
+`CodeBlockNode` 是异步组件，模板 ref 请显式标注为 `CodeBlockNodeExposed`（如下例），不要依赖 `InstanceType` 自动推导编辑方法。
+
 ```vue
 <script setup lang="ts">
 import type { CodeBlockNodeExposed } from 'markstream-vue'
@@ -190,7 +192,7 @@ const saved = ref('')
 
 async function edit() {
   await block.value?.startEditing({
-    onChange: (event) => { draft.value = event.file.contents },
+    onChange: (event: { file: { contents: string } }) => { draft.value = event.file.contents },
   }, 'answer-draft')
 }
 
@@ -235,7 +237,7 @@ function undo() {
 | `getSurface()` | 返回 finalized `stream-diffs` controller（尚未完成时为 `null`）。 |
 | `isReadyToEdit()` / `isEditing()` | 是否可立即附加 editor / 是否有活动会话。 |
 | `startEditing(options?, editStateKey?)` | 附加 upstream Diffs editor，返回 editor；方法本身已处理 `prepareForEditing()`。 |
-| `stopEditing(reason?)` | `'complete'` 保留编辑结果，`'discard'` 回退。 |
+| `stopEditing(reason?)` | `'complete'` 安装到当前 surface，`'discard'` 回退。主题/选项重渲染前需先把 `getCode()` 写回 host 数据。 |
 | `getEditor()` / `getEditingText()` / `getCode()` | 读取 editor 或当前代码。 |
 | `undo()` / `redo()` / `canUndo()` / `canRedo()` / `applyEdits()` | 编辑历史与程序化修改。 |
 | `focusEditor()` / `blurEditor()` | 焦点控制。 |
@@ -247,9 +249,9 @@ function undo() {
 注意：
 
 - 编辑能力依赖 `stream-diffs >= 0.0.5`；旧版 runtime 不存在的方法会抛出明确错误，或返回 `null`/`false`。
-- `stopEditing('complete')` 默认接受并保留编辑结果。如果要在完成时校验或拒绝，可在 `code-block-options` 中传 `onEditComplete(event)`，返回 `'reject'` 即恢复外部输入；传 `'accept'` 则安装结果。例如 `:code-block-options="{ onEditComplete: event => event.file.contents === saved ? 'reject' : 'accept' }"`。
-- `getCode()` 在活动会话中返回当前草稿，完成后返回安装后的编辑器内容；如果希望后续 `props.node.code` 更新时保留结果，应用层仍需把 `getCode()` 写回自己的 node 数据。
-- `props.node.code`、语言、主题或结构变化会触发 surface 重建，从而结束编辑会话。需要保留草稿时，把 `editStateKey` 传成稳定值。
+- `stopEditing('complete')` 默认接受并保留编辑结果。如果要在完成时校验或拒绝，可在 `code-block-options` 中传 `onEditComplete(event)`，必须返回 `'reject'` 或 `'accept'`；没有返回值会被视为 `'reject'`，从而恢复外部输入。File 与 Diff 的事件结构不同：File 读取 `event.file`，Diff 读取 `event.newFile` / `event.fileDiff`，不要对 Diff 使用 `event.file.contents`。例如 `:code-block-options="{ onEditComplete: event => event.file.contents === saved ? 'reject' : 'accept' }"` 仅适用于 File。
+- `getCode()` 在活动会话中返回当前草稿，完成后返回安装后的编辑器内容；如果希望后续 props 更新时保留结果，File block 应把 `getCode()` 写回 `node.code`，Diff block 应写回 `node.updatedCode`。
+- `stopEditing('complete')` 只把结果安装到当前 surface。主题、`codeBlockOptions` 或结构变化会重建 surface，并从 `props.node` 重新读取内容；因此需要在这些更新之前把 `getCode()` 写回 node 数据。需要跨 surface 重建保留未完成的草稿时，把 `editStateKey` 传成稳定值。
 - 如果希望进入编辑时复用已渲染行，创建 surface 时传 `useTokenTransformer: true`；否则 upstream 会在首次附加时整块重绘。
 - `@pierre/diffs` 1.7 默认截断超过 1000 字符的单行并提供 "Show full line"；可用 `expandLine()` 展开，或传 `tokenizeMaxLineLength: 0` 关闭截断。
 - 注入 `setStreamDiffsWorkerPool` 的 pool 必须来自同版本 `@pierre/diffs`。旧 pool 会被忽略并回退到主线程高亮，不会让渲染崩溃。

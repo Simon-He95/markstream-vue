@@ -168,31 +168,48 @@ const node = {
 
 ## Editing API
 
-安装 `stream-diffs >= 0.0.5`（基于 `@pierre/diffs` 1.7）后，`CodeBlockNode` 通过组件 ref 暴露编辑、撤销/重做、行定位与展开能力。方法只在 block 结束流式并完成 finalized surface 后可用；`startEditing()` 会自动等待就绪状态。
+安装 `stream-diffs >= 0.0.5`（基于 `@pierre/diffs` 1.7）后，`CodeBlockNode` 通过组件 ref 暴露编辑、撤销/重做、行定位与展开能力。方法在 block 结束流式并完成 finalized surface 后可用；`startEditing()` 会在 surface 已存在时等待 `prepareForEditing()`，若 block 仍在流式则抛出明确错误。
+
+典型场景是在 AI 聊天里就地修正代码，或在 diff 评审中修改 additions 一侧。编辑态是 upstream Diffs 的原生 contenteditable 交互，键盘输入、选择、撤销/重做快捷键都由 Diffs 处理；这里暴露的是进入/退出、程序化编辑、导航和收尾能力。
 
 ```vue
 <script setup lang="ts">
 import type { CodeBlockNodeExposed } from 'markstream-vue'
 import { CodeBlockNode } from 'markstream-vue'
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 
 const block = ref<CodeBlockNodeExposed | null>(null)
-const node = {
-  type: 'code_block',
+const node = reactive({
+  type: 'code_block' as const,
   language: 'ts',
   code: 'const answer = 42',
   raw: 'const answer = 42',
-}
+})
+const draft = ref('')
+const saved = ref('')
 
 async function edit() {
-  const editor = await block.value.startEditing({
-    onChange: event => save(event.file),
+  await block.value?.startEditing({
+    onChange: (event) => { draft.value = event.file.contents },
   }, 'answer-draft')
-  console.log(editor.getText())
+}
+
+function save() {
+  const code = block.value?.getCode()
+  if (code != null) {
+    saved.value = code
+    node.code = code // 让后续 props 重渲染保留结果
+  }
+  block.value?.stopEditing('complete')
+}
+
+function cancel() {
+  draft.value = ''
+  block.value?.stopEditing('discard')
 }
 
 function undo() {
-  block.value.undo()
+  block.value?.undo()
 }
 </script>
 
@@ -200,6 +217,12 @@ function undo() {
   <CodeBlockNode ref="block" :node="node" :loading="false" />
   <button @click="edit">
     Edit
+  </button>
+  <button @click="save">
+    Save
+  </button>
+  <button @click="cancel">
+    Cancel
   </button>
   <button @click="undo">
     Undo
@@ -224,7 +247,8 @@ function undo() {
 注意：
 
 - 编辑能力依赖 `stream-diffs >= 0.0.5`；旧版 runtime 不存在的方法会抛出明确错误，或返回 `null`/`false`。
-- `stopEditing('complete')` 默认接受并保留编辑结果。如果要在完成时校验或拒绝，可在 `code-block-options` 中传 `onEditComplete(event)`，返回 `'reject'` 即恢复外部输入；传 `'accept'` 则安装结果。
+- `stopEditing('complete')` 默认接受并保留编辑结果。如果要在完成时校验或拒绝，可在 `code-block-options` 中传 `onEditComplete(event)`，返回 `'reject'` 即恢复外部输入；传 `'accept'` 则安装结果。例如 `:code-block-options="{ onEditComplete: event => event.file.contents === saved ? 'reject' : 'accept' }"`。
+- `getCode()` 在活动会话中返回当前草稿，完成后返回安装后的编辑器内容；如果希望后续 `props.node.code` 更新时保留结果，应用层仍需把 `getCode()` 写回自己的 node 数据。
 - `props.node.code`、语言、主题或结构变化会触发 surface 重建，从而结束编辑会话。需要保留草稿时，把 `editStateKey` 传成稳定值。
 - 如果希望进入编辑时复用已渲染行，创建 surface 时传 `useTokenTransformer: true`；否则 upstream 会在首次附加时整块重绘。
 - `@pierre/diffs` 1.7 默认截断超过 1000 字符的单行并提供 "Show full line"；可用 `expandLine()` 展开，或传 `tokenizeMaxLineLength: 0` 关闭截断。

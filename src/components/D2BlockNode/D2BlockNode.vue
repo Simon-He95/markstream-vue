@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { D2BlockNodeProps } from '../../types/component-props'
 import type { D2Instance } from './d2'
-import { toSafeSvgMarkup } from 'markstream-core'
+import { disposeOwnedD2Instance as releaseOwnedD2Instance, toSafeSvgMarkup } from 'markstream-core'
 import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useAttrs, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../composables/useSingletonTooltip'
@@ -330,15 +330,7 @@ function disposeOwnedD2Instance() {
   const instance = ownedD2Instance
   ownedD2Instance = undefined
   d2Instance = null
-  if (!instance)
-    return
-
-  // The SDK can assign its worker asynchronously during initialization.
-  const terminate = () => instance.worker?.terminate()
-  if (instance.worker)
-    terminate()
-  else
-    void instance.ready?.then(terminate, terminate)
+  releaseOwnedD2Instance(instance)
 }
 
 function isStaleRender(token: number) {

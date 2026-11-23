@@ -1,6 +1,6 @@
 import type { NodeRendererCodeBlockProps, NodeRendererD2Props, NodeRendererInfographicProps, NodeRendererMermaidProps } from './components/shared/node-helpers'
 import type { CodeBlockOptions, CodeBlockTheme, CodeBlockThemes } from './types/codeBlock'
-import { applyMermaidThemeDirective } from 'markstream-core'
+import { applyMermaidThemeDirective, disposeOwnedD2Instance } from 'markstream-core'
 import { toSafeMermaidSvgMarkup } from 'stream-markdown-parser'
 import { getD2 } from './optional/d2'
 import { getInfographic } from './optional/infographic'
@@ -542,8 +542,11 @@ async function renderD2(
     })
     pre.replaceWith(shell.wrapper)
 
+    let ownedInstance: any = null
     try {
-      const instance = createD2Instance(D2Ctor)
+      const created = createD2Instance(D2Ctor)
+      const instance = created.instance
+      ownedInstance = created.owned
       if (!instance || typeof instance.compile !== 'function' || typeof instance.render !== 'function')
         throw new TypeError('D2 instance is missing compile/render methods.')
 
@@ -585,6 +588,9 @@ async function renderD2(
     }
     catch {
       shell.wrapper.replaceWith(originalPre)
+    }
+    finally {
+      disposeOwnedD2Instance(ownedInstance)
     }
   }
 }
@@ -809,22 +815,26 @@ ${configuredUnsafeCSS}`.trim(),
   }
 }
 
-function createD2Instance(D2Ctor: any) {
+function createD2Instance(D2Ctor: any): { instance: any | null, owned: any | null } {
   if (typeof D2Ctor === 'function') {
     const instance = new D2Ctor()
     if (instance && typeof instance.compile === 'function')
-      return instance
-    if (typeof D2Ctor.compile === 'function')
-      return D2Ctor
+      return { instance, owned: instance }
+    if (typeof D2Ctor.compile === 'function') {
+      disposeOwnedD2Instance(instance)
+      return { instance: D2Ctor, owned: null }
+    }
   }
 
-  if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function')
-    return new D2Ctor.D2()
+  if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function') {
+    const instance = new D2Ctor.D2()
+    return { instance, owned: instance }
+  }
 
   if (typeof D2Ctor?.compile === 'function')
-    return D2Ctor
+    return { instance: D2Ctor, owned: null }
 
-  return null
+  return { instance: null, owned: null }
 }
 
 function resolveCodeLanguage(pre: HTMLElement, codeNode: HTMLElement) {

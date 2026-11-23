@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SvelteRenderableNode, SvelteRenderContext } from './shared/node-helpers'
+  import { disposeOwnedD2Instance as releaseOwnedD2Instance } from 'markstream-core'
   import { onDestroy, onMount, untrack } from 'svelte'
   import { useSafeI18n } from '../i18n/useSafeI18n'
   import { getD2 } from '../optional/d2'
@@ -75,6 +76,7 @@
   let collapsed = $state(false)
   let showSource = $state(false)
   let copyTimer: ReturnType<typeof setTimeout> | null = null
+  let ownedD2Instance: any = null
 
   let source = $derived(getString((node as any)?.code))
   let resolvedLoading = $derived(loading ?? (node as any)?.loading === true)
@@ -107,6 +109,9 @@
   onDestroy(() => {
     mounted = false
     renderToken += 1
+    const instance = ownedD2Instance
+    ownedD2Instance = null
+    releaseOwnedD2Instance(instance)
     if (copyTimer)
       clearTimeout(copyTimer)
   })
@@ -130,11 +135,15 @@
     lastSignature = signature
     rendering = true
     renderError = ''
+    let ownedInstance: any = null
     try {
       const D2Ctor = await getD2()
       if (!mounted || token !== renderToken)
         return
-      const instance = createD2Instance(D2Ctor)
+      const created = createD2Instance(D2Ctor)
+      const instance = created.instance
+      ownedInstance = created.owned
+      ownedD2Instance = ownedInstance
       if (!instance || typeof instance.compile !== 'function' || typeof instance.render !== 'function')
         throw new Error('D2 renderer is not available.')
 
@@ -170,6 +179,11 @@
       }
     }
     finally {
+      if (ownedInstance) {
+        if (ownedD2Instance === ownedInstance)
+          ownedD2Instance = null
+        releaseOwnedD2Instance(ownedInstance)
+      }
       if (token === renderToken) {
         rendering = false
         activeRenderSignature = ''
@@ -187,19 +201,23 @@
     return `${source}\n${resolvedIsDark}\n${themeId}\n${darkThemeId}`
   }
 
-  function createD2Instance(D2Ctor: any) {
+  function createD2Instance(D2Ctor: any): { instance: any | null, owned: any | null } {
     if (typeof D2Ctor === 'function') {
       const instance = new D2Ctor()
       if (instance && typeof instance.compile === 'function')
-        return instance
-      if (typeof D2Ctor.compile === 'function')
-        return D2Ctor
+        return { instance, owned: instance }
+      if (typeof D2Ctor.compile === 'function') {
+        releaseOwnedD2Instance(instance)
+        return { instance: D2Ctor, owned: null }
+      }
     }
-    if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function')
-      return new D2Ctor.D2()
+    if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function') {
+      const instance = new D2Ctor.D2()
+      return { instance, owned: instance }
+    }
     if (typeof D2Ctor?.compile === 'function')
-      return D2Ctor
-    return null
+      return { instance: D2Ctor, owned: null }
+    return { instance: null, owned: null }
   }
 
   async function copy() {

@@ -1,6 +1,8 @@
 import type { VisibilityHandle } from '../../context/viewportPriority'
 import type { D2BlockNodeProps } from '../../types/component-props'
+import type { D2Instance } from './d2'
 import clsx from 'clsx'
+import { disposeOwnedD2Instance as releaseOwnedD2Instance } from 'markstream-core'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useViewportPriority } from '../../context/viewportPriority'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
@@ -144,6 +146,10 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
 
   const renderTokenRef = useRef(0)
   const d2InstanceRef = useRef<any | null>(null)
+  const ownedD2InstanceRef = useRef<(D2Instance & {
+    ready?: Promise<unknown>
+    worker?: Pick<Worker, 'terminate'>
+  }) | null>(null)
   const scheduledRef = useRef(false)
   const unmountedRef = useRef(false)
   const lastRenderAtRef = useRef(0)
@@ -252,19 +258,30 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
       return null
     if (typeof D2Ctor === 'function') {
       const inst = new D2Ctor()
-      if (inst && typeof inst.compile === 'function')
+      if (inst && typeof inst.compile === 'function') {
+        ownedD2InstanceRef.current = inst
         d2InstanceRef.current = inst
-      else if (typeof (D2Ctor as any).compile === 'function')
+      }
+      else if (typeof (D2Ctor as any).compile === 'function') {
         d2InstanceRef.current = D2Ctor
+      }
       return d2InstanceRef.current
     }
     if (D2Ctor?.D2 && typeof D2Ctor.D2 === 'function') {
-      d2InstanceRef.current = new D2Ctor.D2()
+      ownedD2InstanceRef.current = new D2Ctor.D2()
+      d2InstanceRef.current = ownedD2InstanceRef.current
       return d2InstanceRef.current
     }
     if (typeof D2Ctor.compile === 'function')
       d2InstanceRef.current = D2Ctor
     return d2InstanceRef.current
+  }, [])
+
+  const disposeOwnedD2Instance = useCallback(() => {
+    const instance = ownedD2InstanceRef.current
+    ownedD2InstanceRef.current = null
+    d2InstanceRef.current = null
+    releaseOwnedD2Instance(instance)
   }, [])
 
   const renderDiagram = useCallback(async () => {
@@ -415,6 +432,10 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
     const raf = requestAnimationFrame(() => updateBodyMinHeight())
     return () => cancelAnimationFrame(raf)
   }, [showSourceFallback, svgMarkup, baseCode, updateBodyMinHeight])
+
+  useEffect(() => {
+    return () => disposeOwnedD2Instance()
+  }, [disposeOwnedD2Instance])
 
   useEffect(() => {
     unmountedRef.current = false

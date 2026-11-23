@@ -1,5 +1,7 @@
 export * from './code-block-header'
 export { buildStreamDiffsSurfaceCSS } from './code-block-surface'
+export { disposeOwnedD2Instance } from './d2-worker'
+export type { D2WorkerOwner } from './d2-worker'
 export * from './diff-preview'
 export { applyMermaidThemeDirective } from './mermaid-source'
 export { createPanGesture } from './pan-gesture'

@@ -21,9 +21,10 @@ describe('math followed by image bug', () => {
     expect(children[0].type).toBe('math_inline')
     expect((children[0] as { content: string }).content).toBe('5\\%')
 
-    // Second child should be text (space and newline)
+    // Second child is the soft line break. CommonMark drops the single space
+    // before it (two or more would make a hard break).
     expect(children[1].type).toBe('text')
-    expect((children[1] as { content: string }).content).toBe(' \n')
+    expect((children[1] as { content: string }).content).toBe('\n')
 
     // Third child should be image
     expect(children[2].type).toBe('image')

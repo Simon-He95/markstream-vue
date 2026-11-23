@@ -7,6 +7,7 @@ import { sanitizeAttrs } from '../../utils/htmlRenderer'
 import EmphasisNode from '../EmphasisNode/EmphasisNode.vue'
 import HtmlInlineNode from '../HtmlInlineNode'
 import ImageNode from '../ImageNode'
+import { MathInlineNodeAsync } from '../NodeRenderer/asyncComponent'
 import StrikethroughNode from '../StrikethroughNode'
 
 import StrongNode from '../StrongNode'
@@ -110,6 +111,7 @@ const nodeComponents = {
   emphasis: EmphasisNode,
   image: ImageNode,
   html_inline: HtmlInlineNode,
+  math_inline: MathInlineNodeAsync,
 }
 
 // forward any non-prop attributes (e.g. custom-id) to the rendered element

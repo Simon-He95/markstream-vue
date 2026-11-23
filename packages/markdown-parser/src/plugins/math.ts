@@ -9,6 +9,7 @@ interface MathInlineState {
   env?: Record<string, unknown>
   pending?: string
   pos: number
+  posMax: number
   push: (type: string, tag?: string, nesting?: number) => MarkdownToken
   src: string
 }
@@ -310,57 +311,64 @@ function isPlainBracketMathLike(content: string) {
   return true
 }
 
-// `mathInline` is tried by markdown-it at every inline position of a
-// paragraph, and it rescans the whole inline source each time. The expensive
-// inputs (code-span/image ranges and the math-opener positions) are pure
-// functions of the source, so they are computed ONCE per inline state and
-// reused across the rule's repeated invocations within that single parse.
-//
-// Keying the cache on the state object (WeakMap) scopes it to one inline
-// parse: the entry is released with the state after parsing, so full
-// paragraph sources are never retained across parses or parser instances.
-interface InlineScanState {
-  codeSpanRanges: Array<[number, number]>
-  imageRanges: Array<[number, number]>
-  /** Sorted indices of characters that can start a math opener (`$` or `\`). */
-  mathOpenerPositions: number[]
+// `mathInline` runs at every `$` and `\` of an inline source, so what it needs
+// to know about the rest of that source is computed at most once per inline
+// state, and only when a decision needs it: a paragraph full of prices pays
+// for one pass, not one pass per `$`. Keying the entry on the state (WeakMap)
+// scopes it to one inline parse, so sources are never retained across parses.
+interface InlineMathScan {
+  /** End of the last formula this state emitted; a streaming tail counts `**` from here. */
+  formulaEnd: number
+  /** Last unescaped `$`, `$$` and `\(`. An unclosed opener with a later one of its kind is text. */
+  lastDelimiter?: Record<'$' | '$$' | '\\(', number>
+  /** `![...](...)` spans, plus a still-streaming one that runs to the end of the source. */
+  imageRanges?: Array<[number, number]>
+  /** Last `\)` search: the first unescaped `\)` at or after `from` is at `at` (-1: none). */
+  parenClose?: { from: number, at: number }
 }
 
-const inlineScanStateCache = new WeakMap<MathInlineState, InlineScanState>()
+const inlineMathScanCache = new WeakMap<MathInlineState, InlineMathScan>()
 
-function getInlineScanState(s: MathInlineState): InlineScanState {
-  let entry = inlineScanStateCache.get(s)
-  if (entry)
-    return entry
-
-  const src = s.src
-  const allowLoading = s.env?.__markstreamFinal !== true
-  const mathOpenerPositions: number[] = []
-  for (let index = 0; index < src.length; index++) {
-    const char = src[index]
-    if (char === '$' || char === '\\')
-      mathOpenerPositions.push(index)
+function getInlineMathScan(s: MathInlineState): InlineMathScan {
+  let entry = inlineMathScanCache.get(s)
+  if (!entry) {
+    entry = { formulaEnd: 0 }
+    inlineMathScanCache.set(s, entry)
   }
-  entry = {
-    codeSpanRanges: buildCodeSpanRanges(src),
-    imageRanges: buildImageRanges(src, allowLoading),
-    mathOpenerPositions,
-  }
-  inlineScanStateCache.set(s, entry)
   return entry
 }
 
-function hasMathOpenerAtOrAfter(mathOpenerPositions: number[], pos: number): boolean {
+function lastUnescapedIndexOf(src: string, needle: string) {
+  let index = src.lastIndexOf(needle)
+  while (index > 0 && isEscapedAt(src, index))
+    index = src.lastIndexOf(needle, index - 1)
+  return index
+}
+
+function getLastDelimiter(s: MathInlineState, delimiter: '$' | '$$' | '\\(') {
+  const scan = getInlineMathScan(s)
+  scan.lastDelimiter ??= {
+    '$': lastUnescapedIndexOf(s.src, '$'),
+    '$$': lastUnescapedIndexOf(s.src, '$$'),
+    '\\(': lastUnescapedIndexOf(s.src, '\\('),
+  }
+  return scan.lastDelimiter[delimiter]
+}
+
+function isInsideImage(s: MathInlineState, allowIncomplete: boolean) {
+  const scan = getInlineMathScan(s)
+  const ranges = scan.imageRanges ??= s.src.includes('![') ? buildImageRanges(s.src, allowIncomplete) : []
+  // The ranges are sorted and do not overlap.
   let low = 0
-  let high = mathOpenerPositions.length
+  let high = ranges.length
   while (low < high) {
     const mid = (low + high) >> 1
-    if (mathOpenerPositions[mid]! < pos)
+    if (ranges[mid]![1] <= s.pos)
       low = mid + 1
     else
       high = mid
   }
-  return low < mathOpenerPositions.length
+  return low < ranges.length && ranges[low]![0] < s.pos
 }
 
 function buildCodeSpanRanges(src: string): Array<[number, number]> {
@@ -461,18 +469,19 @@ function buildDelimiterScan(src: string, open: string, close: string): (from: nu
   }
 }
 
-function buildImageRanges(src: string, allowIncomplete = false): Array<[number, number]> {
+/**
+ * The outer inline state only reaches a `$` inside `![...](...)` when the image
+ * rule did not take it: the destination is not valid, or, while a reply
+ * streams, it has not closed yet. Such a span stays text, as the image recovery
+ * expects; a formula in it would split a half image off the rest. A valid image
+ * never gets here, and its alt is parsed in a state of its own.
+ */
+function buildImageRanges(src: string, allowIncomplete: boolean): Array<[number, number]> {
   const ranges: Array<[number, number]> = []
   let closeLabel: ((from: number) => number) | null = null
   let closeDestination: ((from: number) => number) | null = null
-  let i = 0
-  while (i < src.length - 1) {
-    if (src[i] !== '!' || src[i + 1] !== '[') {
-      i++
-      continue
-    }
-
-    const start = i
+  let i = src.indexOf('![')
+  while (i !== -1) {
     closeLabel ??= buildDelimiterScan(src, '[', ']')
     // The label opens at `[`; the scan resumes right after it.
     const labelEnd = closeLabel(i + 2)
@@ -481,16 +490,16 @@ function buildImageRanges(src: string, allowIncomplete = false): Array<[number, 
       closeDestination ??= buildDelimiterScan(src, '(', ')')
       const destinationEnd = closeDestination(openParen + 1)
       if (destinationEnd !== -1) {
-        ranges.push([start, destinationEnd + 1])
-        i = destinationEnd + 1
+        ranges.push([i, destinationEnd + 1])
+        i = src.indexOf('![', destinationEnd + 1)
         continue
       }
       if (allowIncomplete) {
-        ranges.push([start, src.length])
+        ranges.push([i, src.length])
         break
       }
     }
-    i++
+    i = src.indexOf('![', i + 1)
   }
   return ranges
 }
@@ -554,6 +563,20 @@ function findUnescapedDelimiter(src: string, delimiter: string, startIdx = 0) {
   }
 
   return -1
+}
+
+// TeX does not pair the plain parentheses inside `\(...\)`, so a formula ends
+// at its first unescaped `\)`: `\(x \in (0, 1]\)` closes at its own `\)`.
+// Openers are tried from left to right, so the last answer holds until `from`
+// passes it, and a search that found nothing answers every later one.
+function findInlineParenClose(s: MathInlineState, from: number) {
+  const scan = getInlineMathScan(s)
+  const last = scan.parenClose
+  if (last && from >= last.from && (last.at === -1 || from <= last.at))
+    return last.at
+  const at = findUnescapedDelimiter(s.src, '\\)', from)
+  scan.parenClose = { from, at }
+  return at
 }
 
 function countUnescapedDelimiter(
@@ -951,18 +974,6 @@ export function getTolerantMathBlockBoundaryStreamKey(
   return null
 }
 
-function isLikelyCurrencyRangeDollar(content: string, nextChar?: string) {
-  const stripped = String(content ?? '').trim()
-  if (!stripped)
-    return false
-  // Currency ranges like "$2000~$5000" should remain plain text.
-  // We only gate when the content before closing "$" ends with a range marker
-  // and the following character continues with digits.
-  if (!/^\d[\d,.]*\s*[~～-]\s*$/.test(stripped))
-    return false
-  return /\d/.test(String(nextChar ?? ''))
-}
-
 function isLikelyCurrencyAmountStart(content: string, closed = false) {
   // A separate explicit formula must not supply TeX markers to a price span.
   const stripped = String(content ?? '').split('\\(', 1)[0].trimStart()
@@ -1009,597 +1020,135 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     s.push('paragraph_close', 'p', -1)
   }
 
-  // Inline rule for `\\(...\\)` and `$$...$$` and `$...$`
+  // Inline rule for `\(...\)`, `$$...$$` and `$...$`.
+  //
+  // Like any other markdown-it inline rule, it only decides whether a formula
+  // starts at `state.pos` and leaves the text around it to the other rules, so
+  // emphasis, links, escapes and hard breaks next to a formula are parsed by
+  // their own rules. `$` and `\` already end markdown-it's `text` rule, so this
+  // runs at each of them and returns after one char compare everywhere else.
+  //
+  // A single `$` follows Pandoc: the opening `$` is followed by a non-space, and
+  // the closing `$` is preceded by a non-space and not followed by a digit.
+  // Otherwise this `$` is text, and no later `$` is tried as its closer.
   const mathInline = (state: unknown, silent?: boolean) => {
     const s = state as MathInlineState
-    const strict = !!mathOpts?.strictDelimiters
-    const allowLoading = !s?.env?.__markstreamFinal
-
-    const preserveSpacesBeforeLineBreak = (src: string, start: number) => {
-      let end = start
-      while (end < src.length && (src[end] === ' ' || src[end] === '\t'))
-        end++
-
-      if (end === start)
-        return start
-
-      const hitsLineBreak = src[end] === '\n' || (src[end] === '\r' && src[end + 1] === '\n')
-      if (!hitsLineBreak)
-        return start
-
-      const text = src.slice(start, end)
-      const token = s.push('text', '', 0)
-      token.content = text
-      return end
-    }
-
-    if (/^\*[^*]+/.test(s.src)) {
-      return false
-    }
-
-    const pending = String(s.pending ?? '')
-    const currentStart = Math.max(0, s.pos - pending.length)
-    // Fast path: the opener decision (and the code-span/image ranges) is
-    // computed once per inline state. When there is no math opener at or
-    // after the scan start, this rule returns false immediately instead of
-    // re-scanning the whole source at every inline position.
-    const scan = getInlineScanState(s)
-    if (!hasMathOpenerAtOrAfter(scan.mathOpenerPositions, currentStart)) {
-      return false
-    }
-
-    if (s.src[s.pos] === '$') {
-      let dollarRunEnd = s.pos + 1
-      while (s.src[dollarRunEnd] === '$')
-        dollarRunEnd++
-
-      const dollarRunLength = dollarRunEnd - s.pos
-      const nextChar = s.src[dollarRunEnd]
-      if (dollarRunLength >= 3 && (!nextChar || /\s/.test(nextChar))) {
-        const token = s.push('text', '', 0)
-        token.content = s.src.slice(s.pos, dollarRunEnd)
-        s.pos = dollarRunEnd
-        return true
-      }
-    }
-
-    const delimiters: [string, string][] = [
-      ['$$', '$$'],
-      ['$', '$'],
-      // Support explicit TeX inline delimiters only: `\\(...\\)`
-      // NOTE: in source text authors must write the backslashes literally
-      // (e.g. `\\(...\\)`). Unescaped `\(...\)` cannot be reliably
-      // distinguished from ordinary parentheses and may not be parsed as math.
-      ['\\(', '\\)'],
-      // Do NOT treat plain parentheses as math delimiters. Using ['\(', '\)']
-      // accidentally becomes ['(', ')'] in JS/TS strings and over-matches
-      // regular text like "(0 <= t < S-1)", causing false math detection.
-    ]
-
-    let searchPos = currentStart
-    let preMathPos = currentStart
-    // Save the initial unconsumed position so $$ can rescan the current
-    // inline segment even after $ handling advances the cursor. Starting
-    // from absolute 0 can duplicate already-emitted text after hardbreaks.
-    const initialPos = currentStart
-    // We'll scan the entire inline source and tokenize all occurrences.
-    // Hoisted out of the delimiter loop: the ranges only depend on `src` and
-    // the loading flag, so they must not be rebuilt once per delimiter.
     const src = s.src
-    const { codeSpanRanges, imageRanges } = scan
-    // use findMatchingClose from util
-    for (const [open, close] of delimiters) {
-      let foundAny = false
-      // Reset searchPos for $$ to allow it to scan the full content
-      // even after $ rule has processed some text
-      if (open === '$$' && searchPos !== initialPos) {
-        searchPos = initialPos
-      }
-      // Guard against non-advancing loops: if we ever end up repeatedly
-      // matching the same opener at the same position, force `searchPos`
-      // to advance so the inline rule can't hang the UI.
-      let lastIndex = -1
-      let lastSearchPos = -1
-      let stallCount = 0
-      const pushText = (text: string) => {
-        // sanitize unexpected values
-        if (text === 'undefined' || text == null) {
-          text = ''
-        }
-        if (text === '\\') {
-          s.pos = s.pos + text.length
-          searchPos = s.pos
-          return
-        }
-        if (text === '\\)' || text === '\\(') {
-          const t = s.push('text_special', '', 0)
-          t.content = text === '\\)' ? ')' : '('
-          t.markup = text
-          s.pos = s.pos + text.length
-          searchPos = s.pos
-          return
-        }
+    const pos = s.pos
+    const max = s.posMax
+    const code = src.charCodeAt(pos)
+    if (code !== 0x24 /* $ */ && code !== 0x5C /* \ */)
+      return false
 
-        if (!text)
-          return
-
-        // When scanning $$...$$, also parse nested single-dollar $...$ math
-        // segments that appear in the surrounding text. Without this, mixing
-        // $ and $$ in one line can cause the $ segments to be emitted as plain
-        // text because this rule returns after the first successful delimiter
-        // pass.
-        if (open === '$$' && text.includes('$')) {
-          let localPos = 0
-          while (localPos < text.length) {
-            const dollarIndex = findNextUnescapedDollar(text, localPos)
-            if (dollarIndex === -1) {
-              const rest = text.slice(localPos)
-              if (rest) {
-                const t = s.push('text', '', 0)
-                t.content = rest
-                s.pos = s.pos + rest.length
-                searchPos = s.pos
-              }
-              break
-            }
-
-            // Skip "$$" occurrences; they belong to the $$ scanner.
-            if ((dollarIndex > 0 && text[dollarIndex - 1] === '$') || (dollarIndex + 1 < text.length && text[dollarIndex + 1] === '$')) {
-              const beforeSkip = text.slice(localPos, dollarIndex + 1)
-              if (beforeSkip) {
-                const t = s.push('text', '', 0)
-                t.content = beforeSkip
-                s.pos = s.pos + beforeSkip.length
-                searchPos = s.pos
-              }
-              localPos = dollarIndex + 1
-              continue
-            }
-
-            const before = text.slice(localPos, dollarIndex)
-            if (before) {
-              const t = s.push('text', '', 0)
-              t.content = before
-              s.pos = s.pos + before.length
-              searchPos = s.pos
-            }
-
-            const closingDollarIndex = findSingleDollarClose(text, dollarIndex + 1)
-            if (closingDollarIndex === -1) {
-              // No closing delimiter; treat the rest as text.
-              const rest = text.slice(dollarIndex)
-              const t = s.push('text', '', 0)
-              t.content = rest
-              s.pos = s.pos + rest.length
-              searchPos = s.pos
-              break
-            }
-
-            const content = text.slice(dollarIndex + 1, closingDollarIndex)
-            const hasBacktick = content.includes('`')
-            const isEmpty = !content || !content.trim()
-            const nextChar = text[closingDollarIndex + 1]
-            const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
-            const isCurrencyAmount = isLikelyCurrencyAmountStart(content, true)
-            const isPlaceholder = isLikelyPlaceholderDollar(content)
-            if (!hasBacktick && !isEmpty && !isCurrencyRange && !isCurrencyAmount && !isPlaceholder) {
-              const token = s.push('math_inline', 'math', 0)
-              token.content = normalizeStandaloneBackslashT(content, mathOpts)
-              token.markup = '$'
-              token.raw = `$${content}$`
-              token.loading = false
-              s.pos = s.pos + (closingDollarIndex - dollarIndex + 1)
-              searchPos = s.pos
-              localPos = closingDollarIndex + 1
-              continue
-            }
-
-            // Not valid math; emit '$' as text and continue.
-            const t = s.push('text', '', 0)
-            t.content = '$'
-            s.pos = s.pos + 1
-            searchPos = s.pos
-            localPos = dollarIndex + 1
-          }
-          return
-        }
-
-        // Check if text contains image syntax ![...](...)
-        // If so, parse and push the image token manually
-        const imageStart = text.indexOf('![')
-        if (imageStart !== -1) {
-          // Push text before the image syntax
-          if (imageStart > 0) {
-            const beforeImage = text.slice(0, imageStart)
-            const t = s.push('text', '', 0)
-            t.content = beforeImage
-            s.pos = s.pos + beforeImage.length
-            searchPos = s.pos
-          }
-
-          // Try to parse the image syntax: ![alt](src "title")
-          const imageText = text.slice(imageStart)
-          const imageMatch = imageText.match(/^!\[([^\]]*)\]\(([^)]+)\)/)
-          if (imageMatch) {
-            const [, alt, srcAndTitle] = imageMatch
-            // Parse src and optional title
-            const srcMatch = srcAndTitle.match(/^(\S+)(?:\s+"([^"]+)")?\s*$/)
-            const src = srcMatch ? srcMatch[1] : srcAndTitle
-            const title = srcMatch && srcMatch[2] ? srcMatch[2] : null
-
-            // Create image token
-            const token = s.push('image', 'img', 0)
-            token.attrs = [['src', src], ['alt', alt]]
-            if (title) {
-              token.attrs.push(['title', title])
-            }
-            token.content = alt
-            token.children = [{ type: 'text', content: alt, tag: '' }]
-            s.pos = s.pos + imageMatch[0].length
-            searchPos = s.pos
-
-            // Continue processing the remaining text after the image
-            const remainingText = text.slice(imageStart + imageMatch[0].length)
-            if (remainingText) {
-              // Recursively process the remaining text
-              pushText(remainingText)
-            }
-            return
-          }
-
-          // If image syntax is incomplete, push it as text and continue
-          const t = s.push('text', '', 0)
-          t.content = text
-          s.pos = s.pos + text.length
-          searchPos = s.pos
-          return
-        }
-
-        const t = s.push('text', '', 0)
-        t.content = text
-        s.pos = s.pos + text.length
-        searchPos = s.pos
-      }
-
-      while (true) {
-        if (searchPos >= src.length)
-          break
-        const index = src.indexOf(open, searchPos)
-        if (index === -1)
-          break
-        if (isEscapedAt(src, index)) {
-          searchPos = index + Math.max(1, open.length)
-          continue
-        }
-
-        const codeSpanAtIndex = findRangeAt(codeSpanRanges, index)
-        if (codeSpanAtIndex) {
-          searchPos = codeSpanAtIndex[1]
-          continue
-        }
-
-        const imageRangeAtIndex = findRangeAt(imageRanges, index)
-        if (imageRangeAtIndex) {
-          searchPos = imageRangeAtIndex[1]
-          continue
-        }
-
-        if (index === lastIndex && searchPos === lastSearchPos) {
-          stallCount++
-          if (stallCount > 2) {
-            searchPos = index + Math.max(1, open.length)
-            continue
-          }
-        }
-        else {
-          stallCount = 0
-          lastIndex = index
-          lastSearchPos = searchPos
-        }
-        // NOTE: historically this math rule also supported plain parentheses
-        // delimiters, so we avoided matching a "(" right after a link label
-        // like `[text](...)`. We no longer treat parentheses as math delimiters,
-        // and this rule scans the whole inline source (not only `state.pos`),
-        // so returning `false` here can break markdown-it's invariants and hang
-        // the parser after we already emitted tokens/advanced `state.pos`.
-        //
-        // Keep the link-guard only for the legacy "(" delimiter (currently unused).
-        if (open === '(' && index > 0) {
-          let i = index - 1
-          while (i >= 0 && src[i] === ' ')
-            i--
-          if (i >= 0 && src[i] === ']') {
-            searchPos = index + open.length
-            continue
-          }
-        }
-
-        // Skip $$ delimiters when processing $ delimiter to avoid conflicts
-        // The $$ rule will handle these separately
-        if (open === '$' && index > 0 && src[index - 1] === '$') {
-          searchPos = index + 1
-          continue
-        }
-        if (open === '$' && index < src.length - 1 && src[index + 1] === '$') {
-          searchPos = index + 2
-          continue
-        }
-        // 有可能遇到 \((\operatorname{span}\\{\boldsymbol{\alpha}\\})^\perp\)
-        // 这种情况，前面的 \( 是数学公式的开始，后面的 ( 是普通括号
-        // endIndex 需要找到与 open 对应的 close
-        // 不能简单地用 indexOf 找到第一个 close — 需要处理嵌套与转义字符
-        const endIdx = open === '$'
-          ? findSingleDollarClose(src, index + open.length)
-          : findMatchingClose(src, index + open.length, open, close)
-        if (endIdx === -1) {
-          // no matching close for this opener; skip forward
-          const content = src.slice(index + open.length)
-          if (content.includes(open)) {
-            searchPos = src.indexOf(open, index + open.length)
-            continue
-          }
-          if (endIdx === -1) {
-            // Do not treat segments containing inline code as math
-            const isCurrencyAmount = open === '$' && isLikelyCurrencyAmountStart(content)
-            if (allowLoading && !strict && !isCurrencyAmount && isMathLike(content) && !content.includes('`')) {
-              searchPos = index + open.length
-              foundAny = true
-              if (!silent) {
-                s.pending = ''
-                const toPushBefore = preMathPos ? src.slice(preMathPos, searchPos) : src.slice(0, searchPos)
-                const isStrongPrefix = countUnescapedStrong(toPushBefore) % 2 === 1
-
-                if (preMathPos) {
-                  pushText(src.slice(preMathPos, searchPos))
-                }
-                else {
-                  let text = src.slice(0, searchPos)
-                  if (text.endsWith(open))
-                    text = text.slice(0, text.length - open.length)
-                  pushText(text)
-                }
-                if (isStrongPrefix) {
-                  const strongMarker = findLastUnescapedStrongMarker(toPushBefore)?.marker ?? '**'
-                  const strongToken = s.push('strong_open', '', 0)
-                  strongToken.markup = strongMarker
-                  const token = s.push('math_inline', 'math', 0)
-                  token.content = normalizeStandaloneBackslashT(content, mathOpts)
-                  token.markup = open === '$$' ? '$$' : open === '\\(' ? '\\(\\)' : open === '$' ? '$' : '()'
-                  token.raw = `${open}${content}${close}`
-                  token.loading = true
-                  strongToken.content = content
-                  s.push('strong_close', '', 0)
-                }
-                else {
-                  const token = s.push('math_inline', 'math', 0)
-                  token.content = normalizeStandaloneBackslashT(content, mathOpts)
-                  token.markup = open === '$$' ? '$$' : open === '\\(' ? '\\(\\)' : open === '$' ? '$' : '()'
-                  token.raw = `${open}${content}${close}`
-                  token.loading = true
-                }
-                // consume the full inline source
-                s.pos = src.length
-              }
-              searchPos = src.length
-              preMathPos = searchPos
-            }
-            break
-          }
-        }
-        const content = src.slice(index + open.length, endIdx)
-        // Skip treating as math when the content contains inline-code backticks
-        // Always accept explicit dollar-delimited math ($...$) even if the
-        // heuristic deems it not math-like (to support cases like $H$, $CO_2$).
-        const hasBacktick = content.includes('`')
-        const isEmpty = !content || !content.trim()
-        const isDollar = open === '$'
-        const nextChar = src[endIdx + close.length]
-        const isCurrencyRange = isDollar && isLikelyCurrencyRangeDollar(content, nextChar)
-        const isCurrencyAmount = isDollar && isLikelyCurrencyAmountStart(content, true)
-        const isPlaceholder = isDollar && isLikelyPlaceholderDollar(content)
-        if (isCurrencyAmount || isCurrencyRange) {
-          // The candidate close may open the next price or a real formula.
-          // Leave the text to markdown-it so emphasis boundaries stay intact.
-          searchPos = index + open.length
-          continue
-        }
-        const shouldSkip = strict
-          ? (hasBacktick || isEmpty || isPlaceholder)
-          : (hasBacktick || isEmpty || isPlaceholder || (!isDollar && !isMathLike(content)))
-        if (shouldSkip) {
-          // push remaining text after last match
-          // not math-like; skip this match and continue scanning
-          searchPos = endIdx + close.length
-          const text = src.slice(s.pos, searchPos)
-          if (!s.pending) {
-            pushText(text)
-            // We consumed the skipped span as plain text; advance the "consumed"
-            // cursor so subsequent matches don't re-push this prefix.
-            preMathPos = searchPos
-          }
-          continue
-        }
-        foundAny = true
-
+    let open: '$' | '$$' | '\\('
+    if (code === 0x24) {
+      // The `$` just before this one was left as text (the first half of a
+      // `$$` that does not close), so this one cannot open a formula either.
+      // Pending text always ends at `pos`, so its last char is `src[pos - 1]`.
+      // Reading it from `pending` would flatten that growing string at every
+      // `$`, copying all the text before it each time.
+      if (s.pending && src.charCodeAt(pos - 1) === 0x24)
+        return false
+      let runEnd = pos + 1
+      while (runEnd < max && src.charCodeAt(runEnd) === 0x24)
+        runEnd++
+      if (runEnd - pos >= 3) {
         if (!silent) {
-          // push text before this math
-          const before = src.slice(s.pos - (s.pending ?? '').length, index)
-          // 如果 before 包含 单边的 ` ** 或 __ ，则直接跳过，交给 md 处理
-
-          // const m = before.match(/(^|[^\\])(`+|__|\*\*)/)
-          // if (m) {
-          //   // If there is an unclosed code/emphasis marker before the
-          //   // potential math opener, don't abort the whole inline rule
-          //   // (which can cause the parser to repeatedly re-run this rule
-          //   // leading to a loop). Instead skip this opener and continue
-          //   // scanning after it so other rules can handle the content.
-          //   searchPos = index + open.length
-          //   continue
-          // }
-
-          // If we already consumed some content, avoid duplicating the prefix
-          // Only push the portion from previous search position
-          const prevConsumed = src.slice(0, searchPos)
-          let toPushBefore = prevConsumed ? src.slice(preMathPos, index) : before
-          const isStrongPrefix = countUnescapedStrong(toPushBefore) % 2 === 1
-          if (index !== s.pos && isStrongPrefix) {
-            toPushBefore = s.pending + src.slice(s.pos, index)
-          }
-          const strongMarkerInfo = isStrongPrefix ? findLastUnescapedStrongMarker(toPushBefore) : null
-          const strongMarker = strongMarkerInfo?.marker ?? '**'
-
-          // strong prefix handling (preserve previous behavior)
-          if (s.pending !== toPushBefore) {
-            s.pending = ''
-            if (isStrongPrefix) {
-              if (strongMarkerInfo) {
-                const after = toPushBefore.slice(strongMarkerInfo.index + strongMarker.length)
-                pushText(toPushBefore.slice(0, strongMarkerInfo.index))
-                const strongToken = s.push('strong_open', '', 0)
-                strongToken.markup = strongMarker
-                const textToken = s.push('text', '', 0)
-                textToken.content = after
-                s.push('strong_close', '', 0)
-              }
-              else {
-                pushText(toPushBefore)
-              }
-            }
-            else {
-              pushText(toPushBefore)
-            }
-          }
-          if (isStrongPrefix) {
-            const strongToken = s.push('strong_open', '', 0)
-            strongToken.markup = strongMarker
-            const token = s.push('math_inline', 'math', 0)
-            token.content = normalizeStandaloneBackslashT(content, mathOpts)
-            token.markup = open === '$$' ? '$$' : open === '\\(' ? '\\(\\)' : open === '$' ? '$' : '()'
-            token.raw = `${open}${content}${close}`
-            token.loading = false
-            const raw = src.slice(endIdx + close.length)
-            const isBeforeClose = raw.startsWith(strongMarker)
-            if (isBeforeClose) {
-              s.push('strong_close', '', 0)
-            }
-            // Always advance cursor past the math span; otherwise when the math
-            // is at end-of-line (raw === ''), we'd loop forever on the same opener.
-            // 这里的 raw 可能还会有 math_inline, 应该交给后续的规则处理，直接 s.pos 到当前位置
-            s.pos = preserveSpacesBeforeLineBreak(src, endIdx + close.length)
-            searchPos = s.pos
-            preMathPos = searchPos
-            if (!isBeforeClose)
-              s.push('strong_close', '', 0)
-            // Leave the remaining inline suffix to markdown-it so later rules
-            // (for example superscript, footnotes, or strong/emphasis) can
-            // tokenize it normally instead of being collapsed into plain text.
-            return true
-          }
-          else {
-            const token = s.push('math_inline', 'math', 0)
-            token.content = normalizeStandaloneBackslashT(content, mathOpts)
-            token.markup = open === '$$' ? '$$' : open === '\\(' ? '\\(\\)' : open === '$' ? '$' : '()'
-            token.raw = `${open}${content}${close}`
-            token.loading = false
-          }
+          const token = s.push('text', '', 0)
+          token.content = src.slice(pos, runEnd)
         }
-
-        searchPos = preserveSpacesBeforeLineBreak(src, endIdx + close.length)
-        preMathPos = searchPos
-        s.pos = searchPos
-        // Do not consume the trailing suffix here. Returning now lets the
-        // inline parser continue from the end of the math token so adjacent
-        // markdown like `^[1]^`, `[^1]`, or `**strong**` is still parsed by
-        // the normal rules.
+        s.pos = runEnd
         return true
       }
-
-      if (foundAny) {
-        if (!silent) {
-          // Special handling for $$ rule: process remaining $ delimiters before pushing text
-          // This is needed because the $ rule won't run after we return true
-          if (open === '$$' && searchPos < src.length && src.slice(searchPos).includes('$')) {
-            // Find and process all $...$ patterns in the remaining text
-            let remainingPos = searchPos
-            while (true) {
-              if (remainingPos >= src.length)
-                break
-              const dollarIndex = findNextUnescapedDollar(src, remainingPos)
-              if (dollarIndex === -1)
-                break
-
-              // Skip $$ patterns
-              if (dollarIndex + 1 < src.length && src[dollarIndex + 1] === '$') {
-                remainingPos = dollarIndex + 2
-                continue
-              }
-              if (dollarIndex > 0 && src[dollarIndex - 1] === '$') {
-                remainingPos = dollarIndex + 1
-                continue
-              }
-
-              // Find matching closing $
-              const closingDollarIndex = findSingleDollarClose(src, dollarIndex + 1)
-              if (closingDollarIndex === -1)
-                break
-
-              // Valid $...$ pattern
-              const content = src.slice(dollarIndex + 1, closingDollarIndex)
-              const hasBacktick = content.includes('`')
-              const isEmpty = !content || !content.trim()
-              const nextChar = src[closingDollarIndex + 1]
-              const isCurrencyRange = isLikelyCurrencyRangeDollar(content, nextChar)
-              const isCurrencyAmount = isLikelyCurrencyAmountStart(content, true)
-              const isPlaceholder = isLikelyPlaceholderDollar(content)
-              // For explicit $...$ delimiters, accept non-empty content
-              // (e.g. "$H$", "$1$") even if the heuristic doesn't classify it
-              // as "math-like".
-              if (!hasBacktick && !isEmpty && !isCurrencyRange && !isCurrencyAmount && !isPlaceholder) {
-                // Push text before this $...$
-                const before = src.slice(searchPos, dollarIndex)
-                if (before) {
-                  pushText(before)
-                }
-                // Push the $ math token
-                const token = s.push('math_inline', 'math', 0)
-                token.content = normalizeStandaloneBackslashT(content, mathOpts)
-                token.markup = '$'
-                token.raw = `$${content}$`
-                token.loading = false
-                searchPos = closingDollarIndex + 1
-                remainingPos = closingDollarIndex + 1
-              }
-              else {
-                // Not valid math; emit '$' and continue scanning.
-                pushText('$')
-                remainingPos = dollarIndex + 1
-              }
-            }
-
-            // Push remaining text after all $...$ patterns
-            if (remainingPos < src.length) {
-              pushText(src.slice(remainingPos))
-            }
-          }
-          else {
-            // push remaining text after last match
-            if (searchPos < src.length)
-              pushText(src.slice(searchPos))
-          }
-
-          // consume the full inline source
-          s.pos = src.length
-        }
-        else {
-          // in silent mode, advance position past what we scanned
-          s.pos = searchPos
-        }
-
-        return true
-      }
+      open = runEnd - pos === 2 ? '$$' : '$'
+    }
+    else if (pos + 1 < max && src.charCodeAt(pos + 1) === 0x28 /* ( */) {
+      open = '\\('
+    }
+    else {
+      return false
     }
 
-    return false
+    const close = open === '\\(' ? '\\)' : open
+    const contentStart = pos + open.length
+    if (open === '$' && (contentStart >= max || /\s/.test(src[contentStart]!)))
+      return false
+
+    const allowLoading = !s.env?.__markstreamFinal
+    // Silent calls come from a label scan, which must still skip a formula so
+    // that a `]` inside it does not end the label.
+    if (!silent && isInsideImage(s, allowLoading))
+      return false
+
+    const strict = !!mathOpts?.strictDelimiters
+    const pushFormula = (content: string, loading: boolean) => {
+      const token = s.push('math_inline', 'math', 0)
+      token.content = normalizeStandaloneBackslashT(content, mathOpts)
+      token.markup = open === '\\(' ? '\\(\\)' : open
+      token.raw = `${open}${content}${close}`
+      token.loading = loading
+    }
+
+    let end: number
+    if (open === '$')
+      end = findSingleDollarClose(src, contentStart)
+    else if (open === '$$')
+      end = findMatchingClose(src, contentStart, open, close)
+    else
+      end = findInlineParenClose(s, contentStart)
+    // A closer past `posMax` (e.g. after the end of a link label) belongs to
+    // another range.
+    if (end !== -1 && end + close.length > max)
+      end = -1
+
+    if (end === -1) {
+      // An unclosed formula is drawn as a loading node only while streaming,
+      // only at the end of the whole inline source (not inside link text), and
+      // only from the last opener of its kind: an earlier one is text. In silent
+      // mode (a link label scan) it matches nothing, so it cannot hide the `]`.
+      if (silent || !allowLoading || strict || max !== src.length || getLastDelimiter(s, open) > pos)
+        return false
+      const tail = src.slice(contentStart, max)
+      if (tail.includes('`') || !isMathLike(tail) || (open === '$' && isLikelyCurrencyAmountStart(tail)))
+        return false
+      // An unclosed `**` / `__` before the formula is still being typed too;
+      // keep the formula inside it, as the streaming strong recovery expects.
+      const before = src.slice(getInlineMathScan(s).formulaEnd, pos)
+      const strongMarker = countUnescapedStrong(before) % 2 === 1
+        ? findLastUnescapedStrongMarker(before)?.marker ?? '**'
+        : null
+      if (strongMarker) {
+        const strongToken = s.push('strong_open', '', 0)
+        strongToken.markup = strongMarker
+        strongToken.content = tail
+      }
+      pushFormula(tail, true)
+      if (strongMarker)
+        s.push('strong_close', '', 0)
+      s.pos = max
+      return true
+    }
+
+    // Pandoc: a closing `$` is preceded by a non-space and not followed by a digit.
+    if (open === '$' && (/\s/.test(src[end - 1]!) || /\d/.test(src[end + 1] ?? '')))
+      return false
+    const content = src.slice(contentStart, end)
+    if (!content.trim() || content.includes('`'))
+      return false
+    if (open === '$') {
+      if (isLikelyPlaceholderDollar(content) || isLikelyCurrencyAmountStart(content, true))
+        return false
+    }
+    else if (!strict && !isMathLike(content)) {
+      return false
+    }
+
+    if (!silent) {
+      pushFormula(content, false)
+      getInlineMathScan(s).formulaEnd = end + close.length
+    }
+    s.pos = end + close.length
+    return true
   }
 
   // Block math rule similar to previous implementation

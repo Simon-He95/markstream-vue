@@ -74,6 +74,17 @@ describe('asterisk literal handling in nested contexts', () => {
     expect(collect(nodes as any, 'emphasis').length).toBe(0)
   })
 
+  it.each([true, false])('keeps escaped strong delimiters literal at the start of custom tag content (final=%s)', (final) => {
+    const tags = ['thinking']
+    const md = getMarkdown(`asterisk-literal-custom-tag-start-${final}`, { customHtmlTags: tags })
+    const markdown = '<thinking>\\*\\*literal\\*\\* and **real**</thinking>'
+    const nodes = parseMarkdownToStructure(markdown, md, { customHtmlTags: tags, final })
+
+    expect(collect(nodes as any, 'thinking').length).toBe(1)
+    expect(textIncludes(nodes, '**literal** and ')).toBe(true)
+    expect(collect(nodes as any, 'strong').length).toBe(1)
+  })
+
   it('keeps escaped single asterisk literal after custom tag close inside table cells', () => {
     const tags = ['my_component']
     const md = getMarkdown('asterisk-literal-custom-table', { customHtmlTags: tags })

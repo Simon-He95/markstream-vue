@@ -18,9 +18,11 @@ describe('issue #721 - strong followed by escaped-paren percent', () => {
       type: 'strong',
       children: [{ type: 'text', content: 'A' }],
     })
+    // `0.0002\%` is not math, so `\(` and `\)` stay text. Every backslash here
+    // escapes ASCII punctuation, which CommonMark renders without the backslash.
     expect(paragraph.children[1]).toMatchObject({
       type: 'text',
-      content: String.raw` (0.0002\%)`,
+      content: ' (0.0002%)',
     })
   })
 })

@@ -43,8 +43,6 @@ import { parseTextToken } from './text-parser'
 
 // Precompiled regexes used frequently in inline parsing
 const STRIKETHROUGH_RE = /~~[^~]/
-const INLINE_REPARSE_MARKER_RE = /[[_*^~]/
-
 function isCurrentStreamToken(state: InlineParseState, token: MarkdownToken) {
   return token === state.tokens[state.index]
 }
@@ -438,46 +436,6 @@ function handleInlineCodeContent(state: InlineParseState, content: string, _toke
   return true
 }
 
-// One inline parse keeps its token members for its whole lifetime
-// (`ensureWorkingTokens` only copies the array to rewrite entries), so "does
-// this run contain math" is cached per parse instead of re-scanned for every
-// text token: that scan is O(tokens), which made a paragraph with many text
-// tokens quadratic.
-const mathInlineCache = new WeakMap<InlineParseState, boolean>()
-
-function hasMathInlineToken(state: InlineParseState) {
-  const cached = mathInlineCache.get(state)
-  if (cached !== undefined)
-    return cached
-  const has = state.tokens.some(token => token?.type === 'math_inline')
-  mathInlineCache.set(state, has)
-  return has
-}
-
-function tryReparseCollapsedInlineText(state: InlineParseState, rawContent: string): ParsedNode[] | null {
-  const md = state.options.markdownIt
-  if (!md)
-    return null
-  if (state.tokens.length <= 1 || !hasMathInlineToken(state))
-    return null
-  if (!INLINE_REPARSE_MARKER_RE.test(rawContent))
-    return null
-  const reparsed = md.parseInline(rawContent, { __markstreamFinal: !!state.options?.final }) as unknown as MarkdownToken[]
-  if (!Array.isArray(reparsed) || reparsed.length === 0)
-    return null
-  const inlineToken = reparsed.find(token => token?.type === 'inline')
-  const children = (inlineToken?.children ?? [])
-    .filter(child => !(child?.type === 'text' && String(child.content ?? '') === ''))
-  if (!children.length)
-    return null
-  if (!children.some(child => child?.type !== 'text'))
-    return null
-  if (children.length === 1 && children[0]?.type === 'text' && String(children[0].content ?? '') === rawContent)
-    return null
-  const reparsedNodes = state.parseInlineTokens(children, rawContent, state.pPreToken, state.options)
-  return reparsedNodes.length ? reparsedNodes : null
-}
-
 function commitTextNode(state: InlineParseState, content: string, token: MarkdownToken, preToken?: MarkdownToken, nextToken?: MarkdownToken, markerFlags = getInlineTextMarkerFlags(content)) {
   const textNode = parseTextToken({ ...token, content })
   if (state.currentTextNode) {
@@ -619,14 +577,6 @@ function handleTextTokenPart(state: InlineParseState, token: MarkdownToken): str
   if ((markerFlags & INLINE_TEXT_MARKER_OPEN_BRACKET) !== 0
     && (state.tokens[state.index + 1]?.type !== 'link_open' || isMarkdownLinkBeforeLinkifiedUrl(state, content))
     && handleInlineLinkContent(state, content, token)) {
-    return
-  }
-  const reparsedNodes = tryReparseCollapsedInlineText(state, rawContent)
-  if (reparsedNodes) {
-    state.resetCurrentTextNode()
-    for (const node of reparsedNodes)
-      state.pushParsed(node)
-    state.index++
     return
   }
   const handled = handleEmphasisAndStrikethrough(state, content, token)

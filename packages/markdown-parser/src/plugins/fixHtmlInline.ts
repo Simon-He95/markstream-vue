@@ -501,25 +501,56 @@ export function createInlineHtmlTagSet(
 /**
  * Whether `pos` sits inside the source of a start tag this plugin will turn
  * into `html_inline` (for example the `href` value of `<a href="…">`).
- * `tagStarts` are candidate `<` offsets before `pos`, nearest last.
+ *
+ * `tagStarts` are candidate `<` offsets before `pos`, nearest last; entries
+ * that can never cover `pos` are dropped, and `closeIndexes` memoises the scan
+ * of the remaining ones so each candidate is scanned at most once.
+ *
+ * The check runs on the raw inline source, so a start tag that a softbreak or
+ * inline markup splits may still be guarded although token-level reconstruction
+ * cannot rebuild it; the URL then stays literal text, matching `linkify: false`.
  */
 export function isInsideReconstructedInlineHtmlTag(
   source: string,
   pos: number,
-  tagStarts: readonly number[],
+  tagStarts: number[],
   tagSet: Set<string>,
+  closeIndexes: Map<number, number | null>,
 ): boolean {
-  for (let i = tagStarts.length - 1; i >= 0; i--) {
-    const start = tagStarts[i]
-    if (start === undefined || start >= pos)
-      continue
+  while (tagStarts.length) {
+    const start = tagStarts[tagStarts.length - 1]!
+    if (start >= pos) {
+      // Callers only record `<` offsets before `pos`.
+      break
+    }
 
-    const scanned = scanHtmlTag(source, start, tagSet)
-    if (!scanned || scanned.closing)
-      continue
+    let closeIndex = closeIndexes.get(start)
+    if (closeIndex === undefined) {
+      const scanned = scanHtmlTag(source, start, tagSet)
+      closeIndex = !scanned || scanned.closing ? null : scanned.closeIndex
+      closeIndexes.set(start, closeIndex)
+    }
 
-    if (scanned.closeIndex >= pos)
+    if (closeIndex === null) {
+      tagStarts.pop()
+      closeIndexes.delete(start)
+      continue
+    }
+
+    if (closeIndex === -1) {
+      // No `>` at or after this `<`, so no candidate at or before it can span
+      // `pos`; stop rescanning the whole suffix for every later URL.
+      tagStarts.length = 0
+      closeIndexes.clear()
+      return false
+    }
+
+    if (closeIndex >= pos)
       return true
+
+    // The tag ended before `pos`, so it cannot cover any later position either.
+    tagStarts.pop()
+    closeIndexes.delete(start)
   }
 
   return false
@@ -759,7 +790,9 @@ export function applyFixHtmlInlineTokens(md: MarkdownIt, options: FixHtmlInlineO
         customTagSet.add(name)
     }
 
-    const commonHtmlTags = buildCommonHtmlTagSet(Array.from(customTagSet))
+    // Same derivation the inline linkify guard uses, so both agree on which
+    // tags are reconstructed as `html_inline`.
+    const commonHtmlTags = createInlineHtmlTagSet(Array.from(customTagSet))
     const autoCloseInlineTagSet = new Set<string>(BASE_AUTO_CLOSE_INLINE_TAGS)
     for (const tag of customTagSet)
       autoCloseInlineTagSet.add(tag)

@@ -97,11 +97,12 @@ interface InlineLinkifyStateLike {
 interface InlineHtmlTagScan {
   src: string
   cursor: number
+  /** Candidate `<` offsets before the current position, nearest last. */
   starts: number[]
+  /** Lazily resolved `scanHtmlTag` result per candidate start. */
+  closeIndexes: Map<number, number | null>
   exhausted: boolean
 }
-
-const INLINE_HTML_TAG_SCAN_HISTORY = 8
 
 function isHtmlTagNameStart(source: string, lt: number) {
   let code = source.charCodeAt(lt + 1)
@@ -252,13 +253,15 @@ function applyInlineLinkifyHtmlTagGuard(md: MarkdownItInstance, customHtmlTags?:
     // URLs are visited left to right, so this keeps the scan linear.
     let scan = scans.get(state)
     if (!scan || scan.src !== src) {
-      scan = { src, cursor: 0, starts: [], exhausted: false }
+      scan = { src, cursor: 0, starts: [], closeIndexes: new Map(), exhausted: false }
       scans.set(state, scan)
     }
     if (pos < scan.cursor) {
-      // Link labels rewind the inline position.
+      // Defensive: a rewound position invalidates the forward cursor. Linkify
+      // itself is never applied inside a link label.
       scan.cursor = 0
       scan.starts = []
+      scan.closeIndexes.clear()
       scan.exhausted = false
     }
 
@@ -274,8 +277,6 @@ function applyInlineLinkifyHtmlTagGuard(md: MarkdownItInstance, customHtmlTags?:
       }
       if (isHtmlTagNameStart(src, next)) {
         scan.starts.push(next)
-        if (scan.starts.length > INLINE_HTML_TAG_SCAN_HISTORY)
-          scan.starts.shift()
       }
       scan.cursor = next + 1
     }
@@ -283,7 +284,7 @@ function applyInlineLinkifyHtmlTagGuard(md: MarkdownItInstance, customHtmlTags?:
     if (!scan.starts.length)
       return original(...args)
 
-    if (isInsideReconstructedInlineHtmlTag(src, pos, scan.starts, resolveTagSet(state)))
+    if (isInsideReconstructedInlineHtmlTag(src, pos, scan.starts, resolveTagSet(state), scan.closeIndexes))
       return false
 
     return original(...args)

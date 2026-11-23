@@ -84,6 +84,25 @@ describe('issue 853: inline HTML anchors with html disabled and linkify enabled'
     expect(children.some((child: any) => child.type === 'link')).toBe(false)
   })
 
+  it('guards a start tag whose attributes contain many tag-like fragments', () => {
+    const source = `<a title="${'<b '.repeat(12)}" href="https://example.com/page">t</a>`
+    const children = childrenOf(source, htmlOff)
+
+    expect(children.map((child: any) => child.type)).toEqual(['link'])
+    expect(children[0].href).toBe('https://example.com/page')
+    expect(children[0].text).toBe('t')
+    expect(children[0].markup).toBe('html')
+  })
+
+  it('guards a start tag that holds several URLs', () => {
+    const source = 'See <a title="https://one.test" data-x="https://two.test" href="https://three.test">t</a>.'
+    const children = childrenOf(source, htmlOff)
+
+    expect(children.map((child: any) => child.type)).toEqual(['text', 'link', 'text'])
+    expect(children[1].href).toBe('https://three.test')
+    expect(children[1].markup).toBe('html')
+  })
+
   it('keeps the open tag whole while streaming', () => {
     const md = getMarkdown('issue-853-stream', { markdownItOptions: htmlOff })
     const nodes = parseMarkdownToStructure(

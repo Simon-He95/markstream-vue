@@ -11,6 +11,7 @@ import HtmlInlineNode from '../HtmlInlineNode'
 import ImageNode from '../ImageNode'
 import InlineCodeNode from '../InlineCodeNode'
 import NodeChildRenderer from '../NodeChildRenderer'
+import { MathInlineNodeAsync } from '../NodeRenderer/asyncComponent'
 import StrikethroughNode from '../StrikethroughNode'
 import StrongNode from '../StrongNode'
 import TextNode from '../TextNode'
@@ -60,6 +61,7 @@ const nodeComponents = computed(() => ({
   image: ImageNode,
   html_inline: HtmlInlineNode,
   inline_code: InlineCodeNode,
+  math_inline: MathInlineNodeAsync,
   ...customComponents.value,
 }))
 

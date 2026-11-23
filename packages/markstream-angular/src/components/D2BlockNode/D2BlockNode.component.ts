@@ -310,6 +310,8 @@ export class D2BlockNodeComponent implements AfterViewInit, OnChanges, OnDestroy
       const D2Ctor = await getD2()
       if (!D2Ctor)
         throw new Error('D2 renderer is not available.')
+      if (this.destroyed || token !== this.renderToken)
+        return
 
       const created = createD2Instance(D2Ctor)
       const instance = created.instance

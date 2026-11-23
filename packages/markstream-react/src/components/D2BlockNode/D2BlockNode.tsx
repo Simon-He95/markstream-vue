@@ -1,3 +1,4 @@
+import type { D2WorkerOwner } from 'markstream-core'
 import type { VisibilityHandle } from '../../context/viewportPriority'
 import type { D2BlockNodeProps } from '../../types/component-props'
 import type { D2Instance } from './d2'
@@ -146,10 +147,7 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
 
   const renderTokenRef = useRef(0)
   const d2InstanceRef = useRef<any | null>(null)
-  const ownedD2InstanceRef = useRef<(D2Instance & {
-    ready?: Promise<unknown>
-    worker?: Pick<Worker, 'terminate'>
-  }) | null>(null)
+  const ownedD2InstanceRef = useRef<(D2Instance & D2WorkerOwner) | null>(null)
   const scheduledRef = useRef(false)
   const unmountedRef = useRef(false)
   const lastRenderAtRef = useRef(0)
@@ -254,7 +252,7 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
     if (d2InstanceRef.current)
       return d2InstanceRef.current
     const D2Ctor = await getD2()
-    if (!D2Ctor)
+    if (!D2Ctor || unmountedRef.current)
       return null
     if (typeof D2Ctor === 'function') {
       const inst = new D2Ctor()
@@ -263,6 +261,7 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
         d2InstanceRef.current = inst
       }
       else if (typeof (D2Ctor as any).compile === 'function') {
+        releaseOwnedD2Instance(inst as D2WorkerOwner)
         d2InstanceRef.current = D2Ctor
       }
       return d2InstanceRef.current
@@ -434,7 +433,10 @@ export function D2BlockNode(rawProps: D2BlockNodeProps) {
   }, [showSourceFallback, svgMarkup, baseCode, updateBodyMinHeight])
 
   useEffect(() => {
-    return () => disposeOwnedD2Instance()
+    return () => {
+      unmountedRef.current = true
+      disposeOwnedD2Instance()
+    }
   }, [disposeOwnedD2Instance])
 
   useEffect(() => {

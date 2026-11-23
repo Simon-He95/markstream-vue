@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { D2WorkerOwner } from 'markstream-core'
 import type { D2BlockNodeProps } from '../../types/component-props'
 import type { D2Instance } from './d2'
 import { disposeOwnedD2Instance as releaseOwnedD2Instance, toSafeSvgMarkup } from 'markstream-core'
@@ -312,6 +313,7 @@ async function ensureD2Instance() {
       d2Instance = inst
     }
     else if (typeof (D2Ctor as any).compile === 'function') {
+      releaseOwnedD2Instance(inst as D2WorkerOwner)
       d2Instance = D2Ctor
     }
     return d2Instance

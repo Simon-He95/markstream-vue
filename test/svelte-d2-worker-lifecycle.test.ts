@@ -58,6 +58,7 @@ describe('markstream-svelte d2 worker lifecycle', () => {
     expect(terminate).toHaveBeenCalledOnce()
 
     await unmount(instance)
+    expect(terminate).toHaveBeenCalledOnce()
   })
 
   it.each(['resolves', 'rejects'])('terminates a late worker when the block is destroyed while initialization %s', async (result) => {

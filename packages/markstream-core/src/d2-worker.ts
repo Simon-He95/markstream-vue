@@ -23,7 +23,7 @@ export function disposeOwnedD2Instance(instance: D2WorkerOwner | null | undefine
       instance.worker?.terminate?.()
     }
     catch {
-      // Cleanup runs during unmount; a failing loader must not abort it.
+      // Cleanup runs during unmount; a failing terminate must not abort it.
     }
   }
 

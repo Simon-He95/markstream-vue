@@ -130,4 +130,39 @@ describe('markstream-react d2 worker lifecycle', () => {
 
     expect(terminate).not.toHaveBeenCalled()
   })
+
+  it('does not construct an instance when the loader resolves after unmount', async () => {
+    ;(globalThis as any).IS_REACT_ACT_ENVIRONMENT = true
+    vi.stubGlobal('IntersectionObserver', undefined as any)
+    const terminate = vi.fn()
+    const construct = vi.fn()
+    const getD2 = vi.fn()
+    let resolveLoader: ((constructor: any) => void) | undefined
+    getD2.mockImplementation(() => new Promise((resolve) => {
+      resolveLoader = resolve
+    }))
+    vi.doMock('../packages/markstream-react/src/components/D2BlockNode/d2', () => ({ getD2 }))
+
+    const { root } = await mountBlock()
+    while (!getD2.mock.calls.length)
+      await flushReact()
+
+    await act(async () => {
+      root.unmount()
+    })
+    resolveLoader?.(class {
+      worker = { terminate }
+
+      constructor() {
+        construct()
+      }
+
+      compile = () => ({ diagram: {} })
+      render = render
+    })
+    await flushReact()
+
+    expect(construct).not.toHaveBeenCalled()
+    expect(terminate).not.toHaveBeenCalled()
+  })
 })

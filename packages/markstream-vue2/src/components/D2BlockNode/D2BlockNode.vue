@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { D2WorkerOwner } from 'markstream-core'
 import type { D2Instance } from './d2'
 import { disposeOwnedD2Instance as releaseOwnedD2Instance } from 'markstream-core'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue-demi'
@@ -74,10 +75,7 @@ const renderStyle = computed(() => {
 
 const isClient = typeof window !== 'undefined'
 let d2Instance: any | null = null
-let ownedD2Instance: (D2Instance & {
-  ready?: Promise<unknown>
-  worker?: Pick<Worker, 'terminate'>
-}) | undefined
+let ownedD2Instance: (D2Instance & D2WorkerOwner) | undefined
 let scheduled = false
 let unmounted = false
 let lastRenderAt = 0
@@ -255,7 +253,7 @@ async function ensureD2Instance() {
   if (d2Instance)
     return d2Instance
   const D2Ctor = await getD2()
-  if (!D2Ctor)
+  if (!D2Ctor || unmounted)
     return null
   if (typeof D2Ctor === 'function') {
     const inst = new D2Ctor()
@@ -264,6 +262,7 @@ async function ensureD2Instance() {
       d2Instance = inst
     }
     else if (typeof (D2Ctor as any).compile === 'function') {
+      releaseOwnedD2Instance(inst as D2WorkerOwner)
       d2Instance = D2Ctor
     }
     return d2Instance

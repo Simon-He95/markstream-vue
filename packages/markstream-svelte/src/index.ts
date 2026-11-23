@@ -146,6 +146,7 @@ export type {
   CodeBlockThemePair,
   CodeBlockThemeProp,
   CodeBlockThemes,
+  SvelteCodeBlockNodeExposed,
 } from './types/codeBlock'
 export {
   getLanguageIcon,

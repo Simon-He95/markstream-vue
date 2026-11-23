@@ -1,6 +1,8 @@
 'use client'
 
+import type { CodeBlockNodeHandle, CodeBlockNodeReactEvents } from './components/CodeBlockNode/CodeBlockNode'
 import type { D2Loader } from './components/D2BlockNode/d2'
+import type { CodeBlockNodeProps } from './types/component-props'
 import React, { useEffect, useState } from 'react'
 import { AdmonitionNode as ClientAdmonitionNode } from './components/AdmonitionNode/AdmonitionNode'
 import { BlockquoteNode as ClientBlockquoteNode } from './components/BlockquoteNode/BlockquoteNode'
@@ -54,26 +56,29 @@ import {
 } from './customComponents'
 import { AdmonitionNode as ServerAdmonitionNode, BlockquoteNode as ServerBlockquoteNode, CheckboxNode as ServerCheckboxNode, CodeBlockNode as ServerCodeBlockNode, D2BlockNode as ServerD2BlockNode, DefinitionListNode as ServerDefinitionListNode, EmojiNode as ServerEmojiNode, EmphasisNode as ServerEmphasisNode, FallbackComponent as ServerFallbackComponent, FootnoteAnchorNode as ServerFootnoteAnchorNode, FootnoteNode as ServerFootnoteNode, FootnoteReferenceNode as ServerFootnoteReferenceNode, HardBreakNode as ServerHardBreakNode, HeadingNode as ServerHeadingNode, HighlightNode as ServerHighlightNode, HtmlBlockNode as ServerHtmlBlockNode, HtmlInlineNode as ServerHtmlInlineNode, HtmlPreviewFrame as ServerHtmlPreviewFrame, ImageNode as ServerImageNode, InfographicBlockNode as ServerInfographicBlockNode, InlineCodeNode as ServerInlineCodeNode, InsertNode as ServerInsertNode, LinkNode as ServerLinkNode, ListItemNode as ServerListItemNode, ListNode as ServerListNode, MathBlockNode as ServerMathBlockNode, MathInlineNode as ServerMathInlineNode, MermaidBlockNode as ServerMermaidBlockNode, NodeRenderer as ServerNodeRenderer, ParagraphNode as ServerParagraphNode, PreCodeNode as ServerPreCodeNode, ReferenceNode as ServerReferenceNode, StrikethroughNode as ServerStrikethroughNode, StrongNode as ServerStrongNode, SubscriptNode as ServerSubscriptNode, SuperscriptNode as ServerSuperscriptNode, TableNode as ServerTableNode, TextNode as ServerTextNode, ThematicBreakNode as ServerThematicBreakNode, Tooltip as ServerTooltip, VmrContainerNode as ServerVmrContainerNode } from './server-renderer'
 
+function renderServerComponentWithDisabledSyncKatex<P>(
+  ServerComponent: React.ComponentType<P>,
+  props: P,
+) {
+  const globalKey = '__MARKSTREAM_REACT_DISABLE_SYNC_KATEX__'
+  const globalState = globalThis as Record<string, unknown>
+  const previousValue = globalState[globalKey]
+  globalState[globalKey] = true
+  try {
+    return (ServerComponent as unknown as (props: P) => React.ReactElement | null)(props)
+  }
+  finally {
+    if (previousValue === undefined)
+      delete globalState[globalKey]
+    else
+      globalState[globalKey] = previousValue
+  }
+}
+
 function createNextEntryComponent<P>(
   ClientComponent: React.ComponentType<P>,
   ServerComponent: React.ComponentType<P>,
 ) {
-  function renderServerComponentWithDisabledSyncKatex(props: P) {
-    const globalKey = '__MARKSTREAM_REACT_DISABLE_SYNC_KATEX__'
-    const globalState = globalThis as Record<string, unknown>
-    const previousValue = globalState[globalKey]
-    globalState[globalKey] = true
-    try {
-      return (ServerComponent as unknown as (props: P) => React.ReactElement | null)(props)
-    }
-    finally {
-      if (previousValue === undefined)
-        delete globalState[globalKey]
-      else
-        globalState[globalKey] = previousValue
-    }
-  }
-
   function MarkstreamNextEntryComponent(props: P) {
     const [mounted, setMounted] = useState(false)
 
@@ -82,7 +87,7 @@ function createNextEntryComponent<P>(
     }, [])
 
     if (!mounted)
-      return renderServerComponentWithDisabledSyncKatex(props)
+      return renderServerComponentWithDisabledSyncKatex(ServerComponent, props)
 
     return React.createElement(ClientComponent, props)
   }
@@ -92,10 +97,40 @@ function createNextEntryComponent<P>(
   return MarkstreamNextEntryComponent
 }
 
+/**
+ * Next-safe wrapper for components that expose an imperative handle. The ref is
+ * only attached once the client component takes over after hydration; the
+ * server-rendered first pass stays identical to `createNextEntryComponent`.
+ */
+function createNextEntryForwardRefComponent<P, R>(
+  ClientComponent: React.ForwardRefExoticComponent<React.PropsWithoutRef<P> & React.RefAttributes<R>>,
+  ServerComponent: React.ComponentType<P>,
+) {
+  const MarkstreamNextEntryComponent = React.forwardRef<R, P>((props, ref) => {
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+      setMounted(true)
+    }, [])
+
+    if (!mounted)
+      return renderServerComponentWithDisabledSyncKatex(ServerComponent, props as P)
+
+    return React.createElement(ClientComponent, { ...props, ref } as any)
+  })
+
+  MarkstreamNextEntryComponent.displayName = `MarkstreamNextEntry(${ClientComponent.displayName || ClientComponent.name || 'Component'})`
+
+  return MarkstreamNextEntryComponent
+}
+
 export const AdmonitionNode = createNextEntryComponent(ClientAdmonitionNode, ServerAdmonitionNode)
 export const BlockquoteNode = createNextEntryComponent(ClientBlockquoteNode, ServerBlockquoteNode)
 export const CheckboxNode = createNextEntryComponent(ClientCheckboxNode, ServerCheckboxNode)
-export const CodeBlockNode = createNextEntryComponent(ClientCodeBlockNode, ServerCodeBlockNode)
+export const CodeBlockNode = createNextEntryForwardRefComponent<
+  CodeBlockNodeProps & CodeBlockNodeReactEvents,
+  CodeBlockNodeHandle
+>(ClientCodeBlockNode, ServerCodeBlockNode)
 export const ReactCodeBlockNode = CodeBlockNode
 export const HtmlPreviewFrame = createNextEntryComponent(ClientHtmlPreviewFrame, ServerHtmlPreviewFrame)
 export const D2BlockNode = createNextEntryComponent(ClientD2BlockNode, ServerD2BlockNode)

@@ -192,6 +192,9 @@ export function Heading(props: ComponentProps<typeof HeadingNode>) {
 | `showHeader` | `boolean \| undefined` | — |
 | `showCopyButton` | `boolean \| undefined` | — |
 | `showExpandButton` | `boolean \| undefined` | — |
+| `ref` | `((handle: SolidCodeBlockNodeHandle \| null) => void) \| undefined` | cleanup 时传 `null` |
+
+`SolidCodeBlockNodeHandle` 提供 `getSurface()`、`isReadyToEdit()`、`isEditing()`、`startEditing(options?, editStateKey?)`、`stopEditing(reason?)`、`getEditor()`、`getEditingText()`、`getCode()`、`undo()`/`redo()`/`canUndo()`/`canRedo()`/`applyEdits()`、`focusEditor()`/`blurEditor()`、`revealLine(line, side?)`、`expandLine(target)`、`expandHunk(index, direction, override?)`、`setEditorActiveLine(line, options?)` 与 `getCodeScrollLeft()`/`setCodeScrollLeft(position)`。handle 在组件生命周期内保持稳定，并读取当前 surface。`startEditing` 会等待创建与 prepare 完成；流式输出中、surface 不存在或未安装 `stream-diffs` 时抛出共享生命周期错误。`getCode()` 优先返回活动草稿或已安装的原生内容，并规范化一个行尾换行。
 
 ### PreCodeNode
 
@@ -208,7 +211,7 @@ export function Heading(props: ComponentProps<typeof HeadingNode>) {
 
 ### CodeBlockOptions
 
-字段转发 stream-diffs；字体/主题/语言/单一头部、显示/销毁与流生命周期由宿主控制。未设置字段沿用所安装运行时默认值，排版布局规则见代码运行时指南。
+字段转发 stream-diffs；字体/主题/语言/单一头部、显示/销毁与流生命周期由宿主控制。未设置字段沿用所安装运行时默认值，排版布局规则见代码运行时指南。`onEditComplete` 默认接受完成的编辑；返回 `'reject'` 可恢复外部输入。
 
 | 参数 | 类型 | 必需 |
 | --- | --- | --- |
@@ -257,6 +260,7 @@ export function Heading(props: ComponentProps<typeof HeadingNode>) {
 | `renderAnnotation` | `((...args: any[]) => unknown) \| undefined` | — |
 | `renderGutterUtility` | `((...args: any[]) => unknown) \| undefined` | — |
 | `onPostRender` | `((...args: any[]) => unknown) \| undefined` | — |
+| `onEditComplete` | `((...args: any[]) => "accept" \| "reject") \| undefined` | — |
 | `mergeConflict` | `boolean \| undefined` | — |
 | `lineAnnotations` | `unknown[] \| undefined` | — |
 | `onController` | `((controller: any) => void) \| undefined` | — |

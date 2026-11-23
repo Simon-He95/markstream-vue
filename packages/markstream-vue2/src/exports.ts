@@ -54,6 +54,7 @@ import './workers/katexRenderer.worker?worker'
 import './workers/mermaidParser.worker?worker'
 import './index.css'
 
+export type { CodeBlockNodeExposed } from './components/CodeBlockNode/streamDiffs'
 export type { D2Loader } from './components/D2BlockNode/d2'
 export type { KatexLoader } from './components/MathInlineNode/katex'
 export type { MermaidLoader } from './components/MermaidBlockNode/mermaid'

@@ -66,6 +66,25 @@ pnpm add katex mermaid stream-diffs @terrastruct/d2 @antv/infographic
 
 Direct `CodeBlockNode` and top-level `MarkdownRender` both accept `codeBlockOptions`. It covers host-managed typography/layout and supported File/FileDiff, interaction, annotation, and callback fields; `maxHeight` and the single symmetric `padding` value use numeric CSS pixels. Use `codeBlockProps` for header/toolbar controls. Theme values are registered names and `themes` is the `[dark, light]` pair. An old Monaco JSON theme is not accepted directly: first convert it to a Shiki `ThemeRegistration`, then call `registerCustomTheme(name, loader)` from `stream-diffs/pierre`; see the [coordinated 2.0 family migration guide](https://markstream.simonhe.me/guide/migration-2-0). When `stream-diffs` is not installed, the block renders as a plain `<pre>`.
 
+### Editing handle
+
+`CodeBlockNode` exposes the shared editing methods as instance exports. Type the `bind:this` value explicitly as `SvelteCodeBlockNodeExposed`; the generated component instance is not inferred across the package boundary.
+
+```svelte
+<script lang="ts">
+  import type { SvelteCodeBlockNodeExposed } from 'markstream-svelte'
+  import { CodeBlockNode } from 'markstream-svelte'
+
+  let codeBlock: SvelteCodeBlockNodeExposed
+</script>
+
+<CodeBlockNode bind:this={codeBlock} {node} {codeBlockOptions} />
+
+<button onclick={() => codeBlock.startEditing().then(() => codeBlock.stopEditing('complete'))}>Edit</button>
+```
+
+The handle exposes `getSurface()`, `isReadyToEdit()`, `isEditing()`, `startEditing(options?, editStateKey?)`, `stopEditing(reason?)`, `getEditor()`, `getEditingText()`, `getCode()`, `undo()`/`redo()`/`canUndo()`/`canRedo()`/`applyEdits()`, `focusEditor()`/`blurEditor()`, `revealLine(line, side?)`, `expandLine(target)`, `expandHunk(index, direction, override?)`, `setEditorActiveLine(line, options?)` and `getCodeScrollLeft()`/`setCodeScrollLeft(position)`. `startEditing` waits for the current editor creation and runtime setup, and rejects with shared lifecycle errors while streaming, before the surface exists, or when `stream-diffs` is unavailable. `getCode()` prefers the active draft or installed native contents and normalizes one trailing line ending. `codeBlockOptions.onEditComplete` defaults to accepting a completed edit; return `'reject'` to restore the external input.
+
 ## Basic Usage
 
 ```svelte

@@ -1,3 +1,5 @@
+import type { StreamDiffsSurfaceLike } from 'markstream-core'
+
 let streamDiffsModule: any = null
 let importAttempted = false
 let pendingImport: Promise<StreamDiffsRuntimeModule | null> | null = null
@@ -14,6 +16,7 @@ export interface StreamDiffsRuntimeHelpers {
   getEditorView?: () => unknown
   getDiffEditorView?: () => unknown
   refreshDiffPresentation?: () => unknown
+  getSurface?: () => StreamDiffsSurfaceLike | null
 }
 
 export interface StreamDiffsRuntimeModule {

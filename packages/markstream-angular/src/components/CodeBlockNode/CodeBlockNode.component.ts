@@ -1,4 +1,5 @@
 import type { AfterViewInit, ElementRef, OnChanges, OnDestroy } from '@angular/core'
+import type { CodeBlockEditHunkDirection, CodeBlockEditSide, CodeBlockEditStopReason, CodeBlockNodeEditingApi, StreamDiffsEditorLike, StreamDiffsSurfaceLike } from 'markstream-core'
 import type { CodeBlockOptions, CodeBlockTheme } from '../../types/codeBlock'
 import type { AngularRenderableNode, AngularRenderContext, NodeRendererCodeBlockProps } from '../shared/node-helpers'
 import { CommonModule } from '@angular/common'
@@ -10,6 +11,7 @@ import {
   Input,
   ViewChild,
 } from '@angular/core'
+import { applyDefaultCodeBlockEditComplete, createCodeBlockEditingApi } from 'markstream-core'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { getStreamDiffsRuntime } from '../../optional/streamDiffs'
 import { getLanguageIcon, languageMap, normalizeLanguageIdentifier, resolveLanguageId } from '../../utils/languageIcon'
@@ -36,6 +38,7 @@ interface StreamDiffsHelpers {
   safeClean?: () => void
   getEditorView?: () => any
   getDiffEditorView?: () => any
+  getSurface?: () => StreamDiffsSurfaceLike | null
   setTheme?: (theme?: CodeBlockTheme) => Promise<unknown> | unknown
 }
 
@@ -299,6 +302,7 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
   fontSize = defaultCodeFontSize
 
   private helpers: StreamDiffsHelpers | null = null
+  private editingApi: CodeBlockNodeEditingApi | null = null
   private runtimeOptions: Record<string, any> | null = null
   private createPromise: Promise<void> | null = null
   private syncPromise: Promise<void> | null = null
@@ -628,6 +632,92 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
     return this.resolvedShowTooltips ? text : null
   }
 
+  // Shared editing API. Consumers reach these through `@ViewChild`, so they
+  // must remain public methods on the component class.
+  getSurface(): StreamDiffsSurfaceLike | null {
+    return this.helpers?.getSurface?.() ?? null
+  }
+
+  isReadyToEdit(): boolean {
+    return this.getEditingApi().isReadyToEdit()
+  }
+
+  isEditing(): boolean {
+    return this.getEditingApi().isEditing()
+  }
+
+  startEditing(options?: Record<string, unknown>, editStateKey?: string): Promise<StreamDiffsEditorLike> {
+    return this.getEditingApi().startEditing(options, editStateKey)
+  }
+
+  stopEditing(reason?: CodeBlockEditStopReason): void {
+    this.getEditingApi().stopEditing(reason)
+  }
+
+  getEditor(): StreamDiffsEditorLike | null {
+    return this.getEditingApi().getEditor()
+  }
+
+  getEditingText(): string | null {
+    return this.getEditingApi().getEditingText()
+  }
+
+  undo(): void {
+    this.getEditingApi().undo()
+  }
+
+  redo(): void {
+    this.getEditingApi().redo()
+  }
+
+  canUndo(): boolean {
+    return this.getEditingApi().canUndo()
+  }
+
+  canRedo(): boolean {
+    return this.getEditingApi().canRedo()
+  }
+
+  applyEdits(edits: unknown[], updateHistory?: boolean): void {
+    this.getEditingApi().applyEdits(edits, updateHistory)
+  }
+
+  focusEditor(options?: Record<string, unknown>): void {
+    this.getEditingApi().focusEditor(options)
+  }
+
+  blurEditor(): void {
+    this.getEditingApi().blurEditor()
+  }
+
+  revealLine(lineNumber: number, side?: CodeBlockEditSide): boolean {
+    return this.getEditingApi().revealLine(lineNumber, side)
+  }
+
+  expandLine(target: unknown): void {
+    this.getEditingApi().expandLine(target)
+  }
+
+  expandHunk(hunkIndex: number, direction: CodeBlockEditHunkDirection, expansionLineCountOverride?: number): void {
+    this.getEditingApi().expandHunk(hunkIndex, direction, expansionLineCountOverride)
+  }
+
+  setEditorActiveLine(lineNumber: number | null, options?: Record<string, unknown>): void {
+    this.getEditingApi().setEditorActiveLine(lineNumber, options)
+  }
+
+  getCodeScrollLeft(): number {
+    return this.getEditingApi().getCodeScrollLeft()
+  }
+
+  setCodeScrollLeft(position: number): void {
+    this.getEditingApi().setCodeScrollLeft(position)
+  }
+
+  getCode(): string {
+    return this.getEditingApi().getCode()
+  }
+
   toggleCollapsed() {
     this.collapsed = !this.collapsed
     this.inlinePreviewOpen = false
@@ -722,6 +812,28 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
     ) {
       this.fontSize = this.defaultFontSize
     }
+  }
+
+  private getEditingApi(): CodeBlockNodeEditingApi {
+    return this.editingApi ??= createCodeBlockEditingApi({
+      getSurface: () => this.getSurface(),
+      ensureSurface: () => this.ensureEditingSurface(),
+      isLoading: () => this.resolvedLoading,
+      isFallback: () => this.useFallback,
+      isUnmounted: () => this.destroyed,
+      getDisplayCode: () => this.resolvedCode,
+    })
+  }
+
+  private async ensureEditingSurface() {
+    if (this.resolvedLoading || this.destroyed)
+      return
+    if (this.syncPromise) {
+      await this.syncPromise
+      return
+    }
+    if (!this.getSurface())
+      await this.syncEditorState()
   }
 
   private async syncEditorState() {
@@ -869,7 +981,7 @@ export class CodeBlockNodeComponent implements AfterViewInit, OnChanges, OnDestr
         ? defaultCodeLineHeight
         : Math.max(12, Math.round(runtimeFontSize * 1.5)))
 
-    return {
+    const nextOptions = {
       overflow: 'wrap',
       ...nativeOptions,
       stream: false,
@@ -889,6 +1001,8 @@ ${configuredUnsafeCSS}`.trim(),
         this.scheduleDeferredHeightSync()
       },
     }
+    applyDefaultCodeBlockEditComplete(nextOptions)
+    return nextOptions
   }
 
   private async recreateEditor(kind: 'single' | 'diff', streamMode: boolean) {

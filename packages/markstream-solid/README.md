@@ -61,6 +61,17 @@ For immediate full DOM rendering, pass `final`, `smoothStreaming={false}`, `batc
 
 HTML preview uses a body Portal and an iframe with an empty sandbox by default. `htmlPreviewAllowScripts` opts into `allow-scripts`; `htmlPreviewSandbox` explicitly overrides it. An `onHandleArtifactClick` callback receives HTML/SVG artifact payloads instead of opening built-in preview. Standalone `CodeBlockNode` also supports `onPreviewCode`, `headerLeft` and `headerRight`.
 
+A standalone `CodeBlockNode` accepts a callback `ref` that receives a stable `SolidCodeBlockNodeHandle` (and `null` on cleanup). It exposes `getSurface()`, `isReadyToEdit()`, `isEditing()`, `startEditing(options?, editStateKey?)`, `stopEditing(reason?)`, `getEditor()`, `getEditingText()`, `getCode()`, `undo()`/`redo()`/`canUndo()`/`canRedo()`/`applyEdits()`, `focusEditor()`/`blurEditor()`, `revealLine()`, `expandLine()`, `expandHunk()`, `setEditorActiveLine()` and `getCodeScrollLeft()`/`setCodeScrollLeft()`. `getCode()` prefers the active draft or installed native contents and normalizes one trailing line ending. `startEditing` throws a shared lifecycle error while streaming, before the surface exists, or when the optional runtime is unavailable. Pass `codeBlockOptions.onEditComplete` to reject a completed edit; the default accepts and keeps the result.
+
+```tsx
+let codeBlock: SolidCodeBlockNodeHandle | null
+<CodeBlockNode
+  node={node}
+  ref={(value) => { codeBlock = value }}
+/>
+codeBlock?.startEditing().then(() => codeBlock?.stopEditing('complete'))
+```
+
 `mermaidProps`, `d2Props` and `infographicProps` control the corresponding source/preview toolbars. Mermaid and infographic support zoom/pan/fullscreen; all three provide copy, SVG export and collapse. Mermaid copy/export/modal/mode events are cancelable. Stream updates retain the previous preview until a new one is ready, and canceled work cannot replace newer output.
 
 Install optional peers as needed: `stream-diffs` for enhanced code/diffs, `katex` plus `katex/dist/katex.min.css` for math, `mermaid`, `@terrastruct/d2`, or `@antv/infographic`. Enable infographic before mounting with `enableInfographic(() => import('@antv/infographic'))`. Worker clients, CDN helpers and worker subpaths are exported; host-owned highlighting pools use `setStreamDiffsWorkerPool`.

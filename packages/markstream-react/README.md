@@ -183,6 +183,53 @@ export function CodeBlock() {
 
 Direct `CodeBlockNode` and top-level `MarkdownRender` both accept `codeBlockOptions`. The shared `CodeBlockOptions` type covers host-managed typography/layout plus supported File/FileDiff, interaction, annotation, and callback fields; `maxHeight` and the single symmetric `padding` value use numeric CSS pixels. Keep header/toolbar controls in `codeBlockProps`. Theme values are registered names: use `darkTheme` / `lightTheme` for the active names and `themes` for the `[dark, light]` pair to preload. An old Monaco JSON theme is not accepted directly: first convert it to a Shiki `ThemeRegistration`, then call `registerCustomTheme(name, loader)` from `stream-diffs/pierre`; see the [coordinated 2.0 family migration guide](https://markstream.simonhe.me/guide/migration-2-0).
 
+### Editing API
+
+`CodeBlockNode` is a `React.forwardRef` component. Install `stream-diffs >= 0.0.5` and hold a `CodeBlockNodeHandle` (aliased as `CodeBlockNodeReactHandle`) to drive editing, undo/redo, line reveal, and scrolling without reaching into the shadow DOM:
+
+```tsx
+import type { CodeBlockNodeHandle } from 'markstream-react'
+import { CodeBlockNode } from 'markstream-react'
+import { useRef } from 'react'
+
+const block = useRef<CodeBlockNodeHandle>(null)
+const node = {
+  type: 'code_block',
+  language: 'ts',
+  code: 'const answer = 42',
+  raw: 'const answer = 42',
+}
+
+export function EditableCode() {
+  async function edit() {
+    const editor = await block.current?.startEditing({}, 'answer-draft')
+    console.log(editor?.getText())
+  }
+
+  return (
+    <>
+      <CodeBlockNode
+        ref={block}
+        node={node}
+        loading={false}
+        codeBlockOptions={{ onEditComplete: () => 'accept' }}
+      />
+      <button onClick={edit}>Edit</button>
+      <button onClick={() => block.current?.undo()}>Undo</button>
+    </>
+  )
+}
+```
+
+Editing requirements:
+
+- `startEditing()` waits for the finalized `stream-diffs` surface; it rejects with the shared core error while the block is still streaming or when the runtime is missing.
+- `stopEditing('complete')` installs edits by default. Provide `codeBlockOptions.onEditComplete` returning `'reject'` to restore the external input, or `'accept'` to keep the edit. The handler must return one of those strings.
+- `getCode()` prefers the active editing file, then completed native File/FileDiff contents, then the current display code (trailing newline normalized).
+- Changing `node.code`, the language, the theme, or structural diff options recreates the surface and ends an edit session; pass a stable `editStateKey` to `startEditing()` when a draft must survive.
+- `revealLine()`, `expandLine()`, and `expandHunk()` need the enhanced surface; they return `false`/no-op when it is unavailable.
+- `<CodeBlockNode>` imported from `markstream-react/next` forwards the same ref after hydration; the server-rendered first pass keeps the ref at `null`.
+
 ## Tailwind
 
 Non-Tailwind projects should import the precompiled CSS:

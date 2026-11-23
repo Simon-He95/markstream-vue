@@ -127,8 +127,10 @@ export declare function LinkNode(props: NodeComponentProps<LinkNodeProps['node']
     animationIteration?: string | number;
 }): import("octane/jsx-runtime").Octane.JSX.Element;
 export declare function ImageNode(rawProps: ImageNodeProps): import("octane/jsx-runtime").Octane.JSX.Element | null;
-export declare function PreCodeNode({ node }: PreCodeNodeProps): import("octane/jsx-runtime").Octane.JSX.Element;
-export declare function CodeBlockNode(props: CodeBlockNodeProps): import("octane/jsx-runtime").Octane.JSX.Element;
+export declare function PreCodeNode({ node, style }: PreCodeNodeProps): import("octane/jsx-runtime").Octane.JSX.Element;
+export declare function CodeBlockNode(props: CodeBlockNodeProps & {
+    ref?: unknown;
+}): import("octane/jsx-runtime").Octane.JSX.Element;
 export declare function MermaidBlockNode(props: MermaidBlockNodeProps): import("octane/jsx-runtime").Octane.JSX.Element;
 export declare function D2BlockNode(props: D2BlockNodeProps): import("octane/jsx-runtime").Octane.JSX.Element;
 export declare function InfographicBlockNode(props: InfographicBlockNodeProps): import("octane/jsx-runtime").Octane.JSX.Element;

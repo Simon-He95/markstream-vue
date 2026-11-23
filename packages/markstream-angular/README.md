@@ -82,6 +82,34 @@ class CodeBlockComponent {
 
 Direct component state goes through the `props` input. Both direct `CodeBlockNode` props and top-level `MarkstreamAngularComponent` props accept `codeBlockOptions`; it covers host-managed typography/layout and supported File/FileDiff, interaction, annotation, and callback fields. `maxHeight` and the single symmetric `padding` value use numeric CSS pixels. Use `codeBlockProps` for header/toolbar controls. Theme values are registered names and `themes` is the `[dark, light]` pair. An old Monaco JSON theme is not accepted directly: first convert it to a Shiki `ThemeRegistration`, then call `registerCustomTheme(name, loader)` from `stream-diffs/pierre`; see the [coordinated 2.0 family migration guide](https://markstream.simonhe.me/guide/migration-2-0).
 
+### Editing through `@ViewChild`
+
+`CodeBlockNode` exposes the shared `CodeBlockNodeEditingApi` as public methods. Read the live instance through `@ViewChild`; `startEditing()` waits for the finalized surface and returns the upstream `stream-diffs` editor:
+
+```ts
+import type { CodeBlockNodeEditingApi } from 'markstream-angular'
+import { Component, ViewChild } from '@angular/core'
+import { CodeBlockNode } from 'markstream-angular'
+
+@Component({
+  selector: 'app-editable-code',
+  standalone: true,
+  imports: [CodeBlockNode],
+  template: `<markstream-angular-code-block-node #codeBlock [node]="node" [props]="props" />`,
+})
+class EditableCodeComponent {
+  @ViewChild('codeBlock') codeBlock!: CodeBlockNode
+
+  async edit() {
+    const api = this.codeBlock as CodeBlockNodeEditingApi
+    const editor = await api.startEditing()
+    // editor.getText(), api.getCode(), api.undo(), api.revealLine(...)
+  }
+}
+```
+
+`getCode()` returns the current resolved code, including active edits and completed edit sessions. To opt out of the accepting default, return `'reject'` from `codeBlockOptions.onEditComplete`; omitting the callback accepts completed edits.
+
 ## Quick Start
 
 Import the stylesheet once in your Angular app entry:

@@ -1,6 +1,8 @@
+import type { CodeBlockNodeEditingApi } from 'markstream-core'
 import type { VisibilityHandle } from '../../context/viewportPriority'
 import type { CodeBlockNodeProps } from '../../types/component-props'
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { applyDefaultCodeBlockEditComplete, createCodeBlockEditingApi } from 'markstream-core'
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useViewportPriority } from '../../context/viewportPriority'
 import { useSafeI18n } from '../../i18n/useSafeI18n'
 import { hideTooltip, showTooltipForAnchor } from '../../tooltip/singletonTooltip'
@@ -23,6 +25,10 @@ export interface CodeBlockNodeReactEvents {
   onCopy?: (code: string) => void
   onPreviewCode?: (payload: CodeBlockPreviewPayload) => void
 }
+
+/** Imperative handle exposed through a React ref. */
+export type CodeBlockNodeHandle = CodeBlockNodeEditingApi
+export type CodeBlockNodeReactHandle = CodeBlockNodeHandle
 
 type ResolvedProps = Required<Pick<
   CodeBlockNodeProps,
@@ -267,7 +273,7 @@ function resolveCodeBlockHeader(raw: string, displayLanguage: string, isDiff: bo
   }
 }
 
-export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactEvents) {
+export const CodeBlockNode = forwardRef<CodeBlockNodeHandle, CodeBlockNodeProps & CodeBlockNodeReactEvents>((rawProps, ref) => {
   const props = { ...DEFAULTS, ...rawProps } as ResolvedProps & CodeBlockNodeReactEvents
   const {
     node,
@@ -324,6 +330,15 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
   const [collapsed, setCollapsed] = useState(false)
   const [inlinePreviewOpen, setInlinePreviewOpen] = useState(false)
   const [languageIconsRevision, setLanguageIconsRevision] = useState(0)
+
+  const loadingRef = useRef(loading)
+  loadingRef.current = loading
+  const useFallbackRef = useRef(useFallback)
+  useFallbackRef.current = useFallback
+  const editorCreatedRef = useRef(editorCreated)
+  editorCreatedRef.current = editorCreated
+  const unmountedRef = useRef(false)
+  const displayCodeRef = useRef('')
 
   const { t } = useSafeI18n()
 
@@ -714,6 +729,11 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
       configuredUnsafeCSS,
     ].filter(Boolean).join('\n')
 
+    // `stopEditing('complete')` installs edits by default. Upstream restores
+    // the external input unless an `onEditComplete` handler accepts, so supply
+    // an accepting default while keeping `codeBlockOptions.onEditComplete`.
+    applyDefaultCodeBlockEditComplete(nextOptions)
+
     return nextOptions
   }, [effectiveShowLineNumbers, isDark, preFallbackMetrics, requestedTheme, resolvedRuntimeOptions, syncEditorCssVars, themes])
 
@@ -758,7 +778,9 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
   }, [resolvedRuntimeOptions, syncRuntimeOptions])
 
   useEffect(() => {
+    unmountedRef.current = false
     return () => {
+      unmountedRef.current = true
       editorLifecycleIdRef.current += 1
       cleanupRef.current?.()
       clearEditorHeightSyncBindings()
@@ -890,6 +912,8 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
       return node.updatedCode ?? node.code ?? ''
     return node.code ?? ''
   }, [node.code, node.diff, node.updatedCode])
+
+  displayCodeRef.current = resolvedCode
 
   const containerStyle = useMemo(() => {
     const fmt = (v: string | number | undefined) => {
@@ -1067,6 +1091,47 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
     createEditorPromiseRef.current = tracked
     return tracked
   }, [applyEditorHeight, bindDiffEditorHeightSync, collapsed, expanded, runtimeLanguage, scheduleEditorHeightSync, shouldDelayEditor, syncEditorCssVars, syncRuntimeOptions, useFallback, viewportReady])
+
+  const ensureEditingSurface = useCallback(async () => {
+    if (!loadingRef.current && editorHostRef.current) {
+      // `stream-diffs` exposes its surface before `mount()` finishes. Await the
+      // in-flight creation so `prepareForEditing()` runs against an attached
+      // file instead of racing a half-mounted controller.
+      if (createEditorPromiseRef.current)
+        await createEditorPromiseRef.current
+      else if (!helpersRef.current?.getSurface?.() && !editorCreatedRef.current)
+        await ensureEditorCreation()
+    }
+
+    const helpers = helpersRef.current
+    const surface = helpers?.getSurface?.() ?? null
+    if (surface || loadingRef.current || !helpers)
+      return
+
+    if (latestNodeRef.current.diff) {
+      if (typeof helpers.finalizeDiff === 'function')
+        await Promise.resolve(helpers.finalizeDiff())
+    }
+    else if (typeof helpers.finalizeCode === 'function') {
+      await Promise.resolve(helpers.finalizeCode())
+    }
+  }, [ensureEditorCreation])
+
+  const ensureEditingSurfaceRef = useRef(ensureEditingSurface)
+  ensureEditingSurfaceRef.current = ensureEditingSurface
+
+  const editingApi = useMemo(() => createCodeBlockEditingApi({
+    // Read the live helper every call: the runtime may be reinstalled when the
+    // language/options change, and a cached surface would go stale.
+    getSurface: () => helpersRef.current?.getSurface?.() ?? null,
+    ensureSurface: () => ensureEditingSurfaceRef.current(),
+    isLoading: () => loadingRef.current,
+    isFallback: () => useFallbackRef.current,
+    isUnmounted: () => unmountedRef.current,
+    getDisplayCode: () => displayCodeRef.current,
+  }), [])
+
+  useImperativeHandle(ref, () => editingApi, [editingApi])
 
   useEffect(() => {
     syncRuntimeOptions()
@@ -1656,6 +1721,8 @@ export function CodeBlockNode(rawProps: CodeBlockNodeProps & CodeBlockNodeReactE
       <span className="sr-only" aria-live="polite" role="status">{copied ? (t('common.copied') || 'Copied') : ''}</span>
     </div>
   )
-}
+})
+
+CodeBlockNode.displayName = 'CodeBlockNode'
 
 export default CodeBlockNode

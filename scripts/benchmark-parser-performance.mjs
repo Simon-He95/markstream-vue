@@ -86,6 +86,25 @@ const corpusDefinitions = [
       ].join('\n')
     },
   },
+  {
+    // Prices, not formulas: every `$` is a candidate opener that has to be
+    // rejected, which is the shape the inline math rule is slowest on.
+    id: 'currency-prose',
+    baseUnits: 8,
+    createUnit(index) {
+      return [
+        `### Pricing ${index}`,
+        '',
+        `Plan ${index} costs $${index + 5} a month or $${(index + 5) * 10} a year, and extra seats are $${index + 2}.50 each after the first $${index + 1},000 of usage.`,
+        '',
+        `- **Starter:** from $${index + 9} to $${index + 19} per seat, with $${index + 3} add-ons`,
+        `- **Team:** $${index + 29}/seat, budgets of $${index}k–$${index + 3}k, *about* $${index + 7} saved`,
+        '',
+        `> Refunds of $${index + 4} or less take 3 days; anything above $${index + 40} needs approval.`,
+        '',
+      ].join('\n')
+    },
+  },
 ]
 const benchmarkVersion = 'parser-performance-v1'
 const corpusManifest = corpusDefinitions.map(definition => ({

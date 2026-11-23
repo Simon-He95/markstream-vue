@@ -103,6 +103,18 @@ describe('issue 853: inline HTML anchors with html disabled and linkify enabled'
     expect(children[1].markup).toBe('html')
   })
 
+  it('guards a start tag whose quoted value ends on a tag-like fragment', () => {
+    // The inner `<b q` reports no closing `>` once its own quote state is
+    // applied, so the outer `<a …>` must still be found.
+    const source = 'See <a title="x<b q" href="https://example.com/page">t</a>.'
+    const children = childrenOf(source, htmlOff)
+
+    expect(children.map((child: any) => child.type)).toEqual(['text', 'link', 'text'])
+    expect(children[1].href).toBe('https://example.com/page')
+    expect(children[1].text).toBe('t')
+    expect(children[1].markup).toBe('html')
+  })
+
   it('keeps the open tag whole while streaming', () => {
     const md = getMarkdown('issue-853-stream', { markdownItOptions: htmlOff })
     const nodes = parseMarkdownToStructure(

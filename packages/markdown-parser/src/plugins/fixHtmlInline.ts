@@ -531,24 +531,12 @@ export function isInsideReconstructedInlineHtmlTag(
       closeIndexes.set(start, closeIndex)
     }
 
-    if (closeIndex === null) {
-      tagStarts.pop()
-      closeIndexes.delete(start)
-      continue
-    }
-
-    if (closeIndex === -1) {
-      // No `>` at or after this `<`, so no candidate at or before it can span
-      // `pos`; stop rescanning the whole suffix for every later URL.
-      tagStarts.length = 0
-      closeIndexes.clear()
-      return false
-    }
-
-    if (closeIndex >= pos)
+    if (closeIndex !== null && closeIndex >= pos)
       return true
 
-    // The tag ended before `pos`, so it cannot cover any later position either.
+    // `null` is not a reconstructed start tag, `-1` has no `>` at or after its
+    // `<`, and a smaller index ended before `pos`: none of them can span `pos`
+    // or any later position, so drop the candidate instead of rescanning it.
     tagStarts.pop()
     closeIndexes.delete(start)
   }

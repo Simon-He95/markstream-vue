@@ -1,3 +1,34 @@
+## [2.0.30](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.29...markstream-vue@2.0.30) (2026-11-23)
+
+### Bug Fixes
+
+* **parser:** only open inline math where a formula actually starts, end a `\(` formula at its first unescaped `\)`, and render inline math inside link text instead of leaving it as source. ([#850](https://github.com/Simon-He95/markstream-vue/pull/850))
+* **parser:** parse custom tag children against the tag's own source, so escaped delimiters at the start of the content stay literal instead of being read as real emphasis. ([#850](https://github.com/Simon-He95/markstream-vue/pull/850))
+* **parser:** keep fenced and indented code blocks inside footnotes as code blocks while streaming and in the final parse, and isolate footnote code from the surrounding linkify context. ([#843](https://github.com/Simon-He95/markstream-vue/pull/843))
+* **parser:** resolve reference definitions declared inside HTML wrapper fragments, and keep inherited references stable while streaming. ([#842](https://github.com/Simon-He95/markstream-vue/pull/842))
+* **d2:** release D2 workers owned by a renderer when it unmounts, stop creating diagram instances after the view is gone, and clear the in-flight render flag on dispose, across Vue 3, Vue 2, React, Octane, Solid, Svelte, and Angular. ([#847](https://github.com/Simon-He95/markstream-vue/pull/847), [#848](https://github.com/Simon-He95/markstream-vue/pull/848))
+
+### Performance
+
+* **parser:** reuse stable reference definitions while parsing the streaming tail instead of rebuilding them per append. ([#845](https://github.com/Simon-He95/markstream-vue/pull/845))
+* **parser:** floor cumulative timing growth budgets at the input ratio so shared CI runners separate linear from quadratic growth instead of failing on noise. ([#851](https://github.com/Simon-He95/markstream-vue/pull/851))
+
+### Dependencies
+
+* Upgrade `markdown-it-ts` to `^1.1.8`. ([#840](https://github.com/Simon-He95/markstream-vue/pull/840))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.29`
+* `markstream-core@2.0.30`
+* `markstream-vue@2.0.30`
+* `markstream-react@2.0.30`
+* `markstream-octane@2.0.30`
+* `markstream-svelte@2.0.30`
+* `markstream-angular@2.0.30`
+* `markstream-vue2@2.0.30`
+* `markstream-solid@2.0.30`
+
 ## [2.0.29](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.28...markstream-vue@2.0.29) (2026-11-20)
 
 ### Bug Fixes

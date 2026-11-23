@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { enhanceRenderedHtml } from '../packages/markstream-svelte/src/enhanceRenderedHtml'
+import { enableD2 } from '../packages/markstream-svelte/src/optional/d2'
 
 const { cleanupEditor, createDiffEditor, createEditor, setTheme, codeBlockRuntimeOptions } = vi.hoisted(() => ({
   cleanupEditor: vi.fn(),
@@ -40,6 +41,10 @@ vi.mock('../packages/markstream-svelte/src/optional/streamDiffs', () => ({
 }))
 
 describe('markstream-svelte enhanceRenderedHtml', () => {
+  afterEach(() => {
+    enableD2()
+  })
+
   it('hydrates encoded diff pairs through createDiffEditor', async () => {
     cleanupEditor.mockClear()
     createDiffEditor.mockClear()
@@ -162,5 +167,27 @@ describe('markstream-svelte enhanceRenderedHtml', () => {
     expect(root.querySelector('pre[data-markstream-code-block="1"]')?.textContent).toContain('const value = 1')
     expect(root.querySelector('[title="tooltip"]')).not.toBeNull()
     requestAnimationFrame.mockRestore()
+  })
+
+  it('releases the d2 worker it constructed for an enhanced block', async () => {
+    const terminate = vi.fn()
+    enableD2(() => class MockD2 {
+      worker = { terminate }
+
+      compile() {
+        return { diagram: {} }
+      }
+
+      render() {
+        return { svg: '<svg data-d2="1"><text>a</text></svg>' }
+      }
+    })
+    const root = document.createElement('div')
+    root.innerHTML = '<pre data-markstream-code-block="1"><code class="language-d2">a -> b</code></pre>'
+
+    await enhanceRenderedHtml(root, { final: true })
+
+    expect(root.querySelector('[data-markstream-d2="1"]')?.innerHTML).toContain('data-d2="1"')
+    expect(terminate).toHaveBeenCalledOnce()
   })
 })

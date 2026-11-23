@@ -408,6 +408,10 @@ Prefer the unified code-block `theme` prop for new integrations. When you render
 
 Theme values are registered names: direct `CodeBlockNode.theme` accepts a fixed string or `{ dark, light }`, and `themes` is the `[dark, light]` pair to load. A former Monaco JSON theme object is not renamed directly; call `registerCustomTheme` from `stream-diffs/pierre`, then pass the registered name.
 
+Bundlers must understand package `exports`: `@pierre/diffs` 1.7 is ESM-first, so Vite, Webpack 5, and Vue CLI 5 work, while Webpack 4 / Vue CLI 4 leave enhanced blocks on the plain `<pre>` fallback. Ordinary fallback rendering still works there.
+
+With `stream-diffs >= 0.0.5` (the `@pierre/diffs` 1.7 build) installed, a direct `CodeBlockNode` ref exposes the finalized surface and an opt-in editing API: `getSurface()`, `startEditing(options?, editStateKey?)`, `stopEditing()`, `undo()`, `redo()`, `applyEdits()`, `revealLine()`, `expandLine()`, `expandHunk()`, `setEditorActiveLine()`, and `get/setCodeScrollLeft()`. `startEditing()` waits for the surface to finish streaming and for `prepareForEditing()`; it returns the upstream Diffs editor. See [CodeBlockNode → Editing API](./docs/guide/code-block-node.md#editing-api).
+
 `code-block-props` forwards user-facing code block props only. Structural renderer keys such as `node`, `key`, `ref`, `ctx`, `renderNode`, `indexKey`, `__proto__`, `prototype`, and `constructor` are ignored.
 
 Language icons use the built-in `material` theme by default. For new integrations, inspect or switch icon themes with the exported helpers before `app.mount()`. The legacy `app.use(VueRendererMarkdown, { iconTheme })` option still works in 1.x, but prefer helpers because icon configuration is process-global state.

@@ -63,6 +63,7 @@ const streamDiffsHelpers = {
   getEditor: vi.fn(() => null),
   getEditorView: vi.fn(() => editorView),
   getDiffEditorView: vi.fn(() => diffEditorView),
+  getSurface: vi.fn(() => null),
   cleanupEditor: vi.fn(() => {}),
   safeClean: vi.fn(() => {}),
   refreshDiffPresentation: vi.fn(() => {}),

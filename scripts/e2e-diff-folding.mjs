@@ -315,7 +315,7 @@ async function runControlledScenario(context, baseUrl) {
   const pair = buildScenario()
   const markdown = buildDiffMarkdown(pair)
   const page = await context.newPage()
-  const url = `${baseUrl}/test#data=raw:${encodeURIComponent(markdown)}`
+  const url = `${baseUrl}/test?diffLayout=side-by-side#data=raw:${encodeURIComponent(markdown)}`
 
   await page.goto(url, { waitUntil: 'networkidle' })
   await page.waitForSelector('.code-block-container.is-diff[data-markstream-enhanced="true"] .stream-diffs-shell', { timeout: 20000 })

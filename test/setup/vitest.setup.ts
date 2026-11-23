@@ -32,6 +32,14 @@ if (!(globalThis as any).ResizeObserver) {
   ;(globalThis as any).ResizeObserver = ResizeObserverStub
 }
 
+// jsdom 24 implements constructable stylesheets but not replaceSync, which
+// @pierre/diffs uses when stream-diffs mounts a File/FileDiff container.
+if (typeof CSSStyleSheet !== 'undefined' && typeof CSSStyleSheet.prototype.replaceSync !== 'function') {
+  Object.defineProperty(CSSStyleSheet.prototype, 'replaceSync', {
+    configurable: true,
+    value() {},
+  })
+}
 if (!(globalThis as any).btoa) {
   ;(globalThis as any).btoa = (input: string) => Buffer.from(input, 'utf-8').toString('base64')
 }
@@ -63,6 +71,7 @@ const streamDiffsHelpers = {
   getEditor: vi.fn(() => null),
   getEditorView: vi.fn(() => editorView),
   getDiffEditorView: vi.fn(() => diffEditorView),
+  getSurface: vi.fn(() => null),
   cleanupEditor: vi.fn(() => {}),
   safeClean: vi.fn(() => {}),
   refreshDiffPresentation: vi.fn(() => {}),

@@ -77,6 +77,11 @@ const MarkstreamVirtualTimeline = definePublicAsyncComponent<MarkstreamVirtualTi
 )
 
 // Export centralized props interfaces so they appear in package d.ts
+export type {
+  CodeBlockNodeExposed,
+  StreamDiffsEditorLike,
+  StreamDiffsSurfaceLike,
+} from './components/CodeBlockNode/streamDiffs'
 export {
   clearStreamDiffsWorkerPool,
   getStreamDiffsWorkerPool,

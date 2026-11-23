@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { CodeBlockNodeProps, CodeBlockPreviewPayload, CodeBlockTheme, CodeBlockThemeProp } from '../../types/component-props'
-import type { StreamDiffsDiffEditorViewLike, StreamDiffsDisposableLike, StreamDiffsEditorViewLike, StreamDiffsModule, StreamDiffsNamespaceLike, StreamDiffsRuntimeOptions } from './streamDiffs'
+import type { CodeBlockNodeExposed, StreamDiffsDiffEditorViewLike, StreamDiffsDisposableLike, StreamDiffsEditorLike, StreamDiffsEditorViewLike, StreamDiffsModule, StreamDiffsNamespaceLike, StreamDiffsRuntimeOptions, StreamDiffsSurfaceLike } from './streamDiffs'
 import { buildStreamDiffsSurfaceCSS, DEFAULT_PRE_CODE_FONT_SIZE, DEFAULT_PRE_CODE_LINE_HEIGHT, estimateDiffStats, isDiffCodeBlock, preCodeThemeLooksDark, resolveCodeBlockHeader, resolveDiffHideUnchangedRegionsOption, resolvePreCodeThemeName, resolvePreCodeThemePalette, resolvePreCodeVisualOptions } from 'markstream-core'
 import { computed, getCurrentInstance, inject, nextTick, onBeforeUnmount, onMounted, onUnmounted, ref, shallowRef, useAttrs, watch } from 'vue'
 import { useSafeI18n } from '../../composables/useSafeI18n'
@@ -227,6 +227,7 @@ let finalizeDiff: () => Promise<unknown> | unknown = () => {}
 let getEditor: () => StreamDiffsNamespaceLike | null = () => null
 let getEditorView: () => StreamDiffsEditorViewLike | null = () => ({ getModel: () => ({ getLineCount: () => 1 }), getOption: () => 14, updateOptions: () => {} })
 let getDiffEditorView: () => StreamDiffsDiffEditorViewLike | null = () => ({ getModel: () => ({ getLineCount: () => 1 }), getOption: () => 14, updateOptions: () => {} })
+let getStreamDiffsSurface: () => StreamDiffsSurfaceLike | null = () => null
 let cleanupEditor: () => void = () => {}
 let safeClean = () => {}
 let refreshDiffPresentation: () => Promise<unknown> | unknown = () => {}
@@ -487,6 +488,7 @@ function initializeStreamDiffsHelpers(mod: StreamDiffsModule) {
   getEditor = helpers.getEditor || getEditor
   getEditorView = helpers.getEditorView || getEditorView
   getDiffEditorView = helpers.getDiffEditorView || getDiffEditorView
+  getStreamDiffsSurface = helpers.getSurface || getStreamDiffsSurface
   cleanupEditor = helpers.cleanupEditor || cleanupEditor
   safeClean = helpers.safeClean || helpers.cleanupEditor || safeClean
   refreshDiffPresentation = helpers.refreshDiffPresentation || refreshDiffPresentation
@@ -3288,6 +3290,13 @@ function buildStreamDiffsRuntimeOptions() {
     },
   } as StreamDiffsRuntimeOptions
 
+  // `stopEditing('complete')` installs edits by default. Upstream restores the
+  // external input when no `onEditComplete` handler accepts, so supply an
+  // accepting default while still letting `codeBlockOptions.onEditComplete`
+  // validate or reject a completed draft.
+  if (typeof nextOptions.onEditComplete !== 'function')
+    nextOptions.onEditComplete = () => 'accept'
+
   const fontFamily = resolveRuntimeFontFamily()
   if (fontFamily)
     nextOptions.fontFamily ??= fontFamily
@@ -3727,6 +3736,86 @@ function stopExpandAutoResize() {
     expandRafId = null
   }
 }
+
+async function ensureEditableSurface() {
+  if (typeof window === 'undefined' || isUnmounted)
+    throw new Error('CodeBlockNode is not mounted')
+  if (usePreCodeRender.value)
+    throw new Error('The enhanced code-block runtime is unavailable; install stream-diffs and keep it loaded before editing')
+
+  if (!props.loading && codeEditor.value) {
+    // `stream-diffs` exposes its surface before mount() finishes. Wait for the
+    // in-flight creation so prepareForEditing() runs against an attached file.
+    if (createEditorPromise)
+      await createEditorPromise
+    else if (!getStreamDiffsSurface() && !editorCreated.value)
+      await ensureEditorCreation(codeEditor.value)
+  }
+  let surface = getStreamDiffsSurface()
+  if (!surface && !props.loading) {
+    if (isDiff.value)
+      await finalizeDiff()
+    else
+      await finalizeCode()
+    surface = getStreamDiffsSurface()
+  }
+  if (!surface)
+    throw new Error(props.loading ? 'Wait for the code block to finish streaming before editing' : 'The code block surface is not ready')
+  if (surface.isReadyToEdit?.() === false && surface.prepareForEditing)
+    await surface.prepareForEditing()
+  return surface
+}
+
+function getEditingSurfaceOrThrow(capability: string) {
+  const surface = getStreamDiffsSurface()
+  if (!surface)
+    throw new Error(`The code block surface is not ready for ${capability}`)
+  return surface
+}
+
+defineExpose<CodeBlockNodeExposed>({
+  getSurface: () => getStreamDiffsSurface(),
+  isReadyToEdit: () => Boolean(getStreamDiffsSurface()?.isReadyToEdit?.()),
+  isEditing: () => Boolean(getStreamDiffsSurface()?.isEditing?.()),
+  async startEditing(options?: Record<string, unknown>, editStateKey?: string): Promise<StreamDiffsEditorLike> {
+    const surface = await ensureEditableSurface()
+    if (!surface.startEditing)
+      throw new Error('The installed stream-diffs version does not expose editing; upgrade stream-diffs')
+    return surface.startEditing(options, editStateKey)
+  },
+  stopEditing(reason?: 'discard' | 'complete') {
+    getStreamDiffsSurface()?.stopEditing?.(reason)
+  },
+  getEditor: () => getStreamDiffsSurface()?.getEditor?.() ?? null,
+  getEditingText: () => getStreamDiffsSurface()?.getEditingText?.() ?? null,
+  undo: () => getStreamDiffsSurface()?.undo?.(),
+  redo: () => getStreamDiffsSurface()?.redo?.(),
+  canUndo: () => Boolean(getStreamDiffsSurface()?.canUndo?.()),
+  canRedo: () => Boolean(getStreamDiffsSurface()?.canRedo?.()),
+  applyEdits(edits: unknown[], updateHistory?: boolean) {
+    const surface = getEditingSurfaceOrThrow('edits')
+    if (!surface.applyEdits)
+      throw new Error('The installed stream-diffs version does not expose editing; upgrade stream-diffs')
+    surface.applyEdits(edits, updateHistory)
+  },
+  focusEditor: (options?: Record<string, unknown>) => getStreamDiffsSurface()?.focusEditor?.(options),
+  blurEditor: () => getStreamDiffsSurface()?.blurEditor?.(),
+  revealLine: (lineNumber: number, side?: 'additions' | 'deletions') => getStreamDiffsSurface()?.revealLine?.(lineNumber, side) ?? false,
+  expandLine: (target: unknown) => getStreamDiffsSurface()?.expandLine?.(target),
+  expandHunk: (hunkIndex: number, direction: 'up' | 'down' | 'both', expansionLineCountOverride?: number) => getStreamDiffsSurface()?.expandHunk?.(hunkIndex, direction, expansionLineCountOverride),
+  setEditorActiveLine: (lineNumber: number | null, options?: Record<string, unknown>) => getStreamDiffsSurface()?.setEditorActiveLine?.(lineNumber, options),
+  getCodeScrollLeft: () => getStreamDiffsSurface()?.getCodeScrollLeft?.() ?? 0,
+  setCodeScrollLeft: (position: number) => getStreamDiffsSurface()?.setCodeScrollLeft?.(position),
+  getCode: () => {
+    const surface = getStreamDiffsSurface()
+    const native = surface?.getNativeInstance?.()
+    const code = surface?.getEditingFile?.()?.contents
+      ?? native?.file?.contents
+      ?? native?.fileDiff?.additionLines?.join('')
+      ?? surface?.getResolvedFile?.()?.contents
+    return code == null ? displayCode.value : getDisplayCode(code)
+  },
+})
 
 onUnmounted(() => {
   // Ensure any RAF loops are stopped and editor resources are released

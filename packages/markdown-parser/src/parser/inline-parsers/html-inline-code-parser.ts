@@ -365,7 +365,7 @@ export function parseHtmlInlineCodeToken(
       : (fragment.innerTokens.length ? stringifyTokens(fragment.innerTokens) : '')
 
     const customChildren = fragment.innerTokens.length
-      ? parseInlineTokens(fragment.innerTokens, raw, pPreToken, options)
+      ? parseInlineTokens(fragment.innerTokens, sourceMeta?.inner ?? raw, pPreToken, options)
       : []
     return [
       {

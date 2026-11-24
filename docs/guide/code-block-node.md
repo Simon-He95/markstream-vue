@@ -385,13 +385,13 @@ Runnable demos (start the dev server from the repository root, then open the URL
 
 | Demo | Command | URL | What it shows |
 | --- | --- | --- | --- |
-| Raw `stream-diffs` | `pnpm play` | http://localhost:3333/codeblock-editing-demo | `createDiffSurface()` mounted directly into DOM; File and Diff surfaces with start/apply/undo/redo/complete/discard |
-| React 18 | `pnpm play:react18` | http://localhost:4174/editing-api.html | Direct `CodeBlockNode` via `ref`, full editing handle and status |
-| Octane | `pnpm play:octane` | http://localhost:4176/editing-api.html | Direct `CodeBlockNode` via `ref`, full editing handle and status |
-| Solid | `pnpm play:solid` | http://localhost:4178/codeblock-editing-demo | Direct `CodeBlockNode` via callback `ref` |
-| Svelte | `pnpm play:svelte` | http://localhost:4176/codeblock-editing-demo | Direct `CodeBlockNode` via `bind:this` |
-| Angular | `pnpm play:angular` | http://127.0.0.1:4175/codeblock-editing | Direct `CodeBlockNode` via `@ViewChild` |
-| Vue 2 | `pnpm play:vue2` | http://localhost:3334/codeblock-editing | Direct `CodeBlockNode` via `$refs` cast |
+| Raw `stream-diffs` | `pnpm play` | `http://localhost:3333/codeblock-editing-demo` | `createDiffSurface()` mounted directly into DOM; File and Diff surfaces with start/apply/undo/redo/complete/discard |
+| React 18 | `pnpm play:react18` | `http://localhost:4174/editing-api.html` | Direct `CodeBlockNode` via `ref`, full editing handle and status |
+| Octane | `pnpm play:octane` | `http://localhost:4176/editing-api.html` | Direct `CodeBlockNode` via `ref`, full editing handle and status |
+| Solid | `pnpm play:solid` | `http://localhost:4178/codeblock-editing-demo` | Direct `CodeBlockNode` via callback `ref` |
+| Svelte | `pnpm play:svelte` | `http://localhost:4176/codeblock-editing-demo` | Direct `CodeBlockNode` via `bind:this` |
+| Angular | `pnpm play:angular` | `http://127.0.0.1:4175/codeblock-editing` | Direct `CodeBlockNode` via `@ViewChild` |
+| Vue 2 | `pnpm play:vue2` | `http://localhost:3334/codeblock-editing` | Direct `CodeBlockNode` via `$refs` cast |
 
 Octane and Svelte both default to port 4176, so run those two demos one at a time. Each demo exposes Start editing, Apply edit, Undo, Redo, Complete, Discard, and Reset plus a live action log. Framework demos also show the public handle's `isReadyToEdit()`, `isEditing()`, surface kind, and `getCode()`; the raw demo shows the underlying surface's native code. Every demo displays the finalized content received by `onEditComplete`, so you can confirm the hook payload before accepting. Use them to reproduce bugs against the real `stream-diffs@0.0.5` runtime.
 

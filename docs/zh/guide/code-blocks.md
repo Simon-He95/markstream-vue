@@ -33,6 +33,14 @@ npm i stream-diffs
 - `CodeBlockShell` 负责标题和操作栏，内部 `data-diffs-header` 会被关闭，File surface 不会再渲染第二行标题。
 - 这个集成不需要 worker plugin，也不需要额外 CSS import。运行时与预热说明见 [/zh/guide/code-block-runtime](/zh/guide/code-block-runtime)。
 
+### 流式代码块只高亮一次（设计如此）
+
+代码围栏仍在流式输出时，代码块渲染共享的纯文本 `PreCodeBlock`：主题背景、前景色、行号 gutter 与行号都正常，但没有 token 颜色。语法高亮只在围栏结束、且代码块进入或接近可视区域后执行一次；在屏幕外完成的代码块会在滚动进入范围时再高亮。
+
+这是刻意设计，不是渲染回归。对不断增长的围栏在每个 chunk 上重新 tokenize，开销远大于收益；而且未写完的行没有稳定语法可上色。因此流式过程中看到纯文本、settle 之后才有颜色，属于预期行为。
+
+真正需要警惕的是相反形态的回归：已经显示过高亮 token 的代码块又退回纯文本。`pnpm test:e2e:codeblock-highlight-stability` 正是对这种回退报错。
+
 ### 配置
 
 可以在 `MarkdownRender` / `NodeRenderer` 顶层或直接挂载的 `CodeBlockNode` 上使用与 renderer 无关的 `codeBlockOptions`。六个框架 adapter 都导出相同的 `CodeBlockOptions` 公开类型。

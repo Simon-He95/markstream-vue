@@ -24,11 +24,22 @@ beforeEach(() => {
   state.available = true
 })
 
-async function settle() {
-  for (let i = 0; i < 8; i++) {
-    await nextTick()
-    await Promise.resolve()
-    await new Promise<void>(resolve => setTimeout(resolve, 0))
+async function flushRender() {
+  await nextTick()
+  await Promise.resolve()
+  await Promise.resolve()
+  await new Promise<void>(resolve => setTimeout(resolve, 0))
+}
+
+// The unavailable notice is produced by a render that scheduleRender() defers to
+// requestAnimationFrame, which is slower than a fixed number of microtask/timer
+// hops on some platforms. Poll the observable state instead of counting hops.
+async function waitForD2UnavailableNotice(wrapper: ReturnType<typeof mount>, timeout = 1000) {
+  const start = Date.now()
+  while (!wrapper.find('.d2-error').exists()) {
+    if (Date.now() - start > timeout)
+      throw new Error('Timed out waiting for the D2 unavailable notice')
+    await flushRender()
   }
 }
 
@@ -54,7 +65,7 @@ describe('d2 block runtime availability', () => {
       attachTo: document.body,
     })
 
-    await settle()
+    await waitForD2UnavailableNotice(wrapper)
 
     const style = wrapper.get('.d2-block-body').attributes('style') || ''
     expect(style).not.toContain('445px')

@@ -12,6 +12,12 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    rollupOptions: {
+      input: {
+        'main': path.resolve(__dirname, 'index.html'),
+        'editing-api': path.resolve(__dirname, 'editing-api.html'),
+      },
+    },
   },
   server: {
     port: 4176,
@@ -25,5 +31,8 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['stream-diffs'],
+    // Loaded lazily by stream-diffs/@pierre/diffs when an edit session starts.
+    // Prebundle it for CJS interop even though stream-diffs stays unbundled.
+    include: ['@pierre/diffs > lru_map'],
   },
 })

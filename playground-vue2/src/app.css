@@ -26,6 +26,12 @@ body {
   gap: 1rem;
 }
 
+.header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .title {
   font-size: 1.6rem;
   font-weight: 700;

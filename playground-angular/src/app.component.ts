@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common'
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core'
 import { MarkstreamAngularComponent } from 'markstream-angular'
 import { streamContent } from '../../playground/src/const/markdown'
+import { CodeBlockEditingDemoComponent } from './codeblock-editing-demo.component'
 import { LineNumberHandoffCheckComponent } from './line-number-handoff-check.component'
 import { TestPageComponent } from './test-page.component'
 import { TestSandboxComponent } from './test-sandbox.component'
@@ -36,14 +37,20 @@ function readNumericInput(event: Event, fallback: number) {
 @Component({
   selector: 'playground-angular-root',
   standalone: true,
-  imports: [CommonModule, MarkstreamAngularComponent, LineNumberHandoffCheckComponent, TestPageComponent, TestSandboxComponent],
+  imports: [CommonModule, CodeBlockEditingDemoComponent, MarkstreamAngularComponent, LineNumberHandoffCheckComponent, TestPageComponent, TestSandboxComponent],
   template: `
-    <app-angular-test-sandbox *ngIf="isSandboxPage(); else nonSandbox" />
+    <app-codeblock-editing-demo
+      *ngIf="isCodeBlockEditingDemo(); else nonEditingDemo"
+      (navigateHome)="goHome()"
+    />
 
-    <ng-template #nonSandbox>
-      <app-line-number-handoff-check *ngIf="isLineNumberHandoffCheck(); else nonHandoff" />
+    <ng-template #nonEditingDemo>
+      <app-angular-test-sandbox *ngIf="isSandboxPage(); else nonSandbox" />
 
-      <ng-template #nonHandoff>
+      <ng-template #nonSandbox>
+        <app-line-number-handoff-check *ngIf="isLineNumberHandoffCheck(); else nonHandoff" />
+
+        <ng-template #nonHandoff>
         <app-angular-test-page
           *ngIf="isTestPage(); else home"
           (navigateHome)="goHome()"
@@ -54,12 +61,18 @@ function readNumericInput(event: Event, fallback: number) {
           <header class="header">
             <div class="header-main">
               <div class="title">markstream-angular playground</div>
-              <button type="button" class="btn" (click)="goToTest()">
-                Open /test
-              </button>
+              <div class="header-actions">
+                <button type="button" class="btn" (click)="goToTest()">
+                  Open /test
+                </button>
+                <button type="button" class="btn ghost" (click)="goToCodeBlockEditing()">
+                  Open /codeblock-editing
+                </button>
+              </div>
             </div>
             <div class="sub">
-              Angular playground with streaming demo, standalone /test regression lab, and isolated /test-sandbox.
+              Angular playground with streaming demo, standalone /test regression lab, isolated /test-sandbox,
+              and a direct CodeBlockNode editing demo at /codeblock-editing.
             </div>
           </header>
 
@@ -132,6 +145,7 @@ function readNumericInput(event: Event, fallback: number) {
         </ng-template>
       </ng-template>
     </ng-template>
+    </ng-template>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -158,7 +172,13 @@ export class AppComponent implements OnInit, OnDestroy {
   readonly isTestPage = computed(() => this.currentPath() === '/test')
   readonly isSandboxPage = computed(() => this.currentPath() === '/test-sandbox')
   readonly isLineNumberHandoffCheck = computed(() => this.currentPath() === '/line-number-handoff-check')
-  readonly isStandalonePage = computed(() => this.isTestPage() || this.isSandboxPage() || this.isLineNumberHandoffCheck())
+  readonly isCodeBlockEditingDemo = computed(() => this.currentPath() === '/codeblock-editing')
+  readonly isStandalonePage = computed(() =>
+    this.isTestPage()
+    || this.isSandboxPage()
+    || this.isLineNumberHandoffCheck()
+    || this.isCodeBlockEditingDemo(),
+  )
 
   private timer: number | null = null
 
@@ -187,6 +207,10 @@ export class AppComponent implements OnInit, OnDestroy {
 
   goToTest() {
     this.navigate('/test')
+  }
+
+  goToCodeBlockEditing() {
+    this.navigate('/codeblock-editing')
   }
 
   goHome() {

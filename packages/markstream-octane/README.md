@@ -79,6 +79,8 @@ Editing requirements:
 - Changing `node.code`, language, theme, or structural diff options recreates the surface and ends the session. Pass a stable `editStateKey` to `startEditing()` to carry a draft across recreation.
 - Refs are inert during SSR: the server renderer accepts the prop for shared TSX but leaves `ref.current` as `null`.
 
+**Playground:** [playground-octane/src/editing-api](../../playground-octane/src/editing-api/README.md) — run `pnpm play:octane` and open <http://localhost:4176/editing-api.html>.
+
 ## Compiler setup
 
 Octane source components use the `.tsrx` extension. Add the Octane compiler to Vite:

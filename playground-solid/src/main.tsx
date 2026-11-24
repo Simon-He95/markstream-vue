@@ -10,6 +10,9 @@ document.getElementById('playground-intro')!.remove()
 if (location.pathname === '/component-parity') {
   void import('./ComponentParity').then(module => render(() => <module.default />, document.getElementById('root')!))
 }
+else if (location.pathname === '/codeblock-editing-demo') {
+  void import('./CodeBlockEditingDemo').then(module => render(() => <module.default />, document.getElementById('root')!))
+}
 else if (location.pathname === '/line-number-handoff-check') {
   void import('./HandoffCheck').then(module => render(() => <module.default />, document.getElementById('root')!))
 }

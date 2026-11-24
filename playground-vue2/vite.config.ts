@@ -37,6 +37,10 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['stream-diffs'],
+    // stream-diffs/edit reaches this CommonJS default export through
+    // @pierre/diffs. Prebundle it so Vite dev can interop with the raw ESM
+    // module graph used by the CodeBlock editing API.
+    include: ['@pierre/diffs > lru_map'],
   },
   resolve: {
     dedupe: ['vue'],

@@ -85,6 +85,8 @@ Direct `CodeBlockNode` and top-level `MarkdownRender` both accept `codeBlockOpti
 
 The handle exposes `getSurface()`, `isReadyToEdit()`, `isEditing()`, `startEditing(options?, editStateKey?)`, `stopEditing(reason?)`, `getEditor()`, `getEditingText()`, `getCode()`, `undo()`/`redo()`/`canUndo()`/`canRedo()`/`applyEdits()`, `focusEditor()`/`blurEditor()`, `revealLine(line, side?)`, `expandLine(target)`, `expandHunk(index, direction, override?)`, `setEditorActiveLine(line, options?)` and `getCodeScrollLeft()`/`setCodeScrollLeft(position)`. `startEditing` waits for the current editor creation and runtime setup, and rejects with shared lifecycle errors while streaming, before the surface exists, or when `stream-diffs` is unavailable. `getCode()` prefers the active draft or installed native contents and normalizes one trailing line ending. `codeBlockOptions.onEditComplete` defaults to accepting a completed edit; return `'reject'` to restore the external input.
 
+Local playground demo: http://localhost:4176/codeblock-editing-demo (run `pnpm play:svelte`). It mounts a direct `CodeBlockNode`, exercises start/apply/undo/redo/complete/discard/reset, and shows the live surface status.
+
 ## Basic Usage
 
 ```svelte

@@ -1,6 +1,7 @@
 <script>
 import MarkdownRender, { setCustomComponents } from 'markstream-vue2'
 import { streamContent } from '../../playground/src/const/markdown'
+import CodeBlockEditingDemo from './components/CodeBlockEditingDemo.vue'
 import LineNumberHandoffCheck from './components/LineNumberHandoffCheck.vue'
 import TestLab from './components/TestLab.vue'
 import ThinkingNode from './components/ThinkingNode.vue'
@@ -11,6 +12,7 @@ setCustomComponents('vue2-demo', { thinking: ThinkingNode })
 export default {
   name: 'Vue2Playground',
   components: {
+    CodeBlockEditingDemo,
     LineNumberHandoffCheck,
     MarkdownRender,
     TestLab,
@@ -32,8 +34,11 @@ export default {
     isLineNumberHandoffCheck() {
       return this.normalizePath(this.currentPath) === '/line-number-handoff-check'
     },
+    isCodeBlockEditingDemo() {
+      return this.normalizePath(this.currentPath) === '/codeblock-editing'
+    },
     isStandaloneCheckPage() {
-      return this.isTestPage || this.isLineNumberHandoffCheck
+      return this.isTestPage || this.isLineNumberHandoffCheck || this.isCodeBlockEditingDemo
     },
     totalLength() {
       return markdownSource.length
@@ -103,6 +108,9 @@ export default {
     goToTest() {
       this.navigate('/test')
     },
+    goToCodeBlockEditing() {
+      this.navigate('/codeblock-editing')
+    },
     goHome() {
       this.navigate('/')
     },
@@ -150,7 +158,8 @@ export default {
 </script>
 
 <template>
-  <TestLab v-if="isTestPage" @navigate-home="goHome" />
+  <CodeBlockEditingDemo v-if="isCodeBlockEditingDemo" @navigate-home="goHome" />
+  <TestLab v-else-if="isTestPage" @navigate-home="goHome" />
   <LineNumberHandoffCheck v-else-if="isLineNumberHandoffCheck" />
 
   <div v-else class="page">
@@ -159,12 +168,17 @@ export default {
         <div class="title">
           markstream-vue2 playground
         </div>
-        <button type="button" class="btn" @click="goToTest">
-          Open /test
-        </button>
+        <div class="header-actions">
+          <button type="button" class="btn" @click="goToTest">
+            Open /test
+          </button>
+          <button type="button" class="btn ghost" @click="goToCodeBlockEditing">
+            Open /codeblock-editing
+          </button>
+        </div>
       </div>
       <div class="sub">
-        Vue 2.6 demo: streaming markdown into the renderer
+        Vue 2.6 demo: streaming markdown into the renderer, with a direct CodeBlockNode editing demo at /codeblock-editing.
       </div>
     </header>
 

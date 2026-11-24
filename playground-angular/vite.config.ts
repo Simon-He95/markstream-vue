@@ -91,6 +91,10 @@ export default defineConfig({
       'katex',
       'katex/contrib/mhchem',
       'katex/dist/contrib/mhchem',
+      // stream-diffs/edit reaches this CommonJS default export through
+      // @pierre/diffs. Prebundle it so Vite dev can interop with the raw ESM
+      // module graph used by the CodeBlock editing API.
+      '@pierre/diffs > lru_map',
       'mermaid',
     ],
     exclude: ['stream-diffs'],

@@ -1,3 +1,28 @@
+## [2.0.32](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.31...markstream-vue@2.0.32) (2026-11-24)
+
+
+### Bug Fixes
+
+* **ci:** harden docs deploy and LCP sampling ([015d7c7](https://github.com/Simon-He95/markstream-vue/commit/015d7c7cff15d428af942ad8ab2789d1a4954c59))
+* **ci:** raise docs heap for parity checks ([5ce1ca2](https://github.com/Simon-He95/markstream-vue/commit/5ce1ca2fe2b05748564ba0ebbd613534d66d0662))
+
+
+### Features
+
+* **playground:** add code block editing API demos ([81741d5](https://github.com/Simon-He95/markstream-vue/commit/81741d533089a103b21e7a8e4b385801285b0737))
+
+### Coordinated Stable Versions
+
+* `stream-markdown-parser@1.2.31`
+* `markstream-core@2.0.32`
+* `markstream-vue@2.0.32`
+* `markstream-react@2.0.32`
+* `markstream-octane@2.0.32`
+* `markstream-svelte@2.0.32`
+* `markstream-angular@2.0.32`
+* `markstream-vue2@2.0.32`
+* `markstream-solid@2.0.32`
+
 ## [2.0.31](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.30...markstream-vue@2.0.31) (2026-11-24)
 
 ### Features

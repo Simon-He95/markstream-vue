@@ -33,6 +33,14 @@ npm i stream-diffs
 - `CodeBlockShell` owns the title and action bar. The inner `data-diffs-header` is disabled so File surfaces do not render a second header.
 - No worker plugin or extra CSS import is required for this integration. See also: [/guide/code-block-runtime](/guide/code-block-runtime) for runtime and preload details.
 
+### Streaming blocks highlight once, by design
+
+While a fence is still streaming, the block renders the shared plain `PreCodeBlock`: themed background, foreground, gutter, and line numbers, but no token colors. Syntax highlighting runs once, after the fence closes and the block is in or near the viewport; a block that finishes off-screen is highlighted when it scrolls into range.
+
+This is deliberate, not a rendering regression. Re-tokenizing a growing fence on every chunk costs more than it returns, and an unfinished line has no stable grammar to color. Expect plain text mid-stream and colors after it settles.
+
+The regression worth watching for is the opposite shape: a block that already showed token colors falling back to plain text. `pnpm test:e2e:codeblock-highlight-stability` fails on exactly that transition.
+
 ### Configuration
 
 Use the renderer-neutral `codeBlockOptions` prop on either `MarkdownRender` / `NodeRenderer` or a directly mounted `CodeBlockNode`. The same public `CodeBlockOptions` type is exported by all six framework adapters.

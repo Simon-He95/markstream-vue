@@ -46,7 +46,7 @@ export default defineConfig({
         this.emitFile({ type: 'asset', fileName: url.slice(1), source: readFileSync(file) })
     },
     writeBundle(options) {
-      for (const route of ['component-parity', 'line-number-handoff-check'])
+      for (const route of ['component-parity', 'line-number-handoff-check', 'codeblock-editing-demo'])
         copyFileSync(resolve(options.dir!, 'index.html'), resolve(options.dir!, `${route}.html`))
     },
   }],
@@ -62,5 +62,7 @@ export default defineConfig({
     ],
     dedupe: ['solid-js', 'vue', 'katex', 'mermaid', 'stream-diffs', '@antv/infographic', '@terrastruct/d2'],
   },
-  optimizeDeps: { exclude: ['stream-diffs', 'stream-markdown-parser'] },
+  // The editing demo lazy-imports the Pierre editor from `stream-diffs`.
+  // Pre-bundle it so its CommonJS dependencies resolve with a default export.
+  optimizeDeps: { include: ['@pierre/diffs/edit'], exclude: ['stream-diffs', 'stream-markdown-parser'] },
 })

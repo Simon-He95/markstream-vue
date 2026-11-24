@@ -1,11 +1,19 @@
 import { mount } from 'svelte'
-import App from './App.svelte'
 import 'katex/dist/katex.min.css'
 import 'markstream-svelte/index.css'
 import './styles.css'
 
-const app = mount(App, {
-  target: document.getElementById('app')!,
-})
+// `/codeblock-editing-demo` is a permanent playground route:
+// http://localhost:4176/codeblock-editing-demo (run with `pnpm play:svelte`).
+const isEditingDemo = location.pathname === '/codeblock-editing-demo'
 
-export default app
+async function bootstrap() {
+  const component = isEditingDemo
+    ? (await import('./CodeBlockEditingDemo.svelte')).default
+    : (await import('./App.svelte')).default
+  return mount(component, {
+    target: document.getElementById('app')!,
+  })
+}
+
+export default bootstrap()

@@ -1,3 +1,4 @@
+import { copyFileSync } from 'node:fs'
 import path from 'node:path'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'
@@ -46,10 +47,19 @@ export default defineConfig({
     ],
   },
   optimizeDeps: {
-    include: ['mermaid'],
+    // The editing demo lazy-imports the Pierre editor from `stream-diffs`.
+    // Pre-bundle it so its CommonJS dependencies resolve with a default export.
+    include: ['mermaid', '@pierre/diffs/edit'],
     exclude: ['stream-diffs', 'stream-markdown-parser'],
   },
   plugins: [
     svelte(),
+    {
+      name: 'markstream-svelte-editing-demo-route',
+      writeBundle(options) {
+        // Keep the direct demo route addressable in the static build too.
+        copyFileSync(path.resolve(options.dir!, 'index.html'), path.resolve(options.dir!, 'codeblock-editing-demo.html'))
+      },
+    },
   ],
 })

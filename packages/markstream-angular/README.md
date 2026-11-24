@@ -110,6 +110,8 @@ class EditableCodeComponent {
 
 `getCode()` returns the current resolved code, including active edits and completed edit sessions. To opt out of the accepting default, return `'reject'` from `codeBlockOptions.onEditComplete`; omitting the callback accepts completed edits.
 
+Try the permanent playground demo: run `pnpm play:angular` from the repository root and open [http://127.0.0.1:4175/codeblock-editing](http://127.0.0.1:4175/codeblock-editing). It mounts a direct non-loading TypeScript `CodeBlockNode` on real `stream-diffs@0.0.5`, with Start editing, Apply edit, Undo, Redo, Complete, Discard, Reset, live status, and an action/error log.
+
 ## Quick Start
 
 Import the stylesheet once in your Angular app entry:

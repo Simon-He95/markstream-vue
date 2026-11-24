@@ -299,6 +299,20 @@ const themes = [
 | `markstream-angular` | `@ViewChild(CodeBlockNodeComponent)` | `CodeBlockNodeHandle` |
 | `markstream-vue2` | `$refs` 类型断言（兼容 Vue 2.6/2.7） | `CodeBlockNodeExposed` |
 
+可运行的 demo：在仓库根目录启动对应开发服务器后打开 URL。
+
+| Demo | 命令 | URL | 展示内容 |
+| --- | --- | --- | --- |
+| 底层 `stream-diffs` | `pnpm play` | http://localhost:3333/codeblock-editing-demo | 把 `createDiffSurface()` 直接挂到 DOM；File/Diff 两种 surface 均支持 start/apply/undo/redo/complete/discard |
+| React 18 | `pnpm play:react18` | http://localhost:4174/editing-api.html | 通过 `ref` 直接使用 `CodeBlockNode` 的完整编辑句柄与状态 |
+| Octane | `pnpm play:octane` | http://localhost:4176/editing-api.html | 通过 `ref` 直接使用 `CodeBlockNode` |
+| Solid | `pnpm play:solid` | http://localhost:4178/codeblock-editing-demo | 通过 callback `ref` 直接使用 `CodeBlockNode` |
+| Svelte | `pnpm play:svelte` | http://localhost:4176/codeblock-editing-demo | 通过 `bind:this` 直接使用 `CodeBlockNode` |
+| Angular | `pnpm play:angular` | http://127.0.0.1:4175/codeblock-editing | 通过 `@ViewChild` 直接使用 `CodeBlockNode` |
+| Vue 2 | `pnpm play:vue2` | http://localhost:3334/codeblock-editing | 通过 `$refs` 强转直接使用 `CodeBlockNode` |
+
+Octane 和 Svelte 默认都占用 4176 端口，请分开启动。每个 demo 都提供 Start editing、Apply edit、Undo、Redo、Complete、Discard、Reset 和实时操作日志。框架 demo 会展示公开 handle 的 `isReadyToEdit()`、`isEditing()`、surface kind 和 `getCode()`；底层 demo 展示 surface 的 native code。每个 demo 都会显示 `onEditComplete` 收到的最终内容，可在接受前核对钩子负载，直接对着真实 `stream-diffs@0.0.5` 运行时复现问题。
+
 所有 handle 都提供 `getSurface()`、`isReadyToEdit()`、`isEditing()`、`startEditing()`、`stopEditing()`、`getEditor()`、`getEditingText()`、`getCode()`、undo/redo、`applyEdits()`、focus/blur、行定位/展开/active line 与横向滚动。`startEditing()` 必须在流式结束后调用；`stopEditing('complete')` 默认接受结果，应用层应在主题/选项重建 surface 前把 `getCode()` 写回 `node.code`（File）或 `node.updatedCode`（Diff）。各包 README 提供了对应框架的完整示例。
 
 快速尝试 — 简单的行内用法示例：

@@ -230,6 +230,8 @@ Editing requirements:
 - `revealLine()`, `expandLine()`, and `expandHunk()` need the enhanced surface; they return `false`/no-op when it is unavailable.
 - `<CodeBlockNode>` imported from `markstream-react/next` forwards the same ref after hydration; the server-rendered first pass keeps the ref at `null`.
 
+**Playground:** [playground-react18/src/editing-api](../../playground-react18/src/editing-api/README.md) — run `pnpm play:react18` and open <http://localhost:4174/editing-api.html>.
+
 ## Tailwind
 
 Non-Tailwind projects should import the precompiled CSS:

@@ -63,6 +63,8 @@ HTML preview uses a body Portal and an iframe with an empty sandbox by default. 
 
 A standalone `CodeBlockNode` accepts a callback `ref` that receives a stable `SolidCodeBlockNodeHandle` (and `null` on cleanup). It exposes `getSurface()`, `isReadyToEdit()`, `isEditing()`, `startEditing(options?, editStateKey?)`, `stopEditing(reason?)`, `getEditor()`, `getEditingText()`, `getCode()`, `undo()`/`redo()`/`canUndo()`/`canRedo()`/`applyEdits()`, `focusEditor()`/`blurEditor()`, `revealLine()`, `expandLine()`, `expandHunk()`, `setEditorActiveLine()` and `getCodeScrollLeft()`/`setCodeScrollLeft()`. `getCode()` prefers the active draft or installed native contents and normalizes one trailing line ending. `startEditing` throws a shared lifecycle error while streaming, before the surface exists, or when the optional runtime is unavailable. Pass `codeBlockOptions.onEditComplete` to reject a completed edit; the default accepts and keeps the result.
 
+Local playground demo: http://localhost:4178/codeblock-editing-demo (run `pnpm play:solid`). It mounts a direct `CodeBlockNode`, exercises start/apply/undo/redo/complete/discard/reset, and shows the live surface status.
+
 ```tsx
 let codeBlock: SolidCodeBlockNodeHandle | null
 <CodeBlockNode

@@ -256,6 +256,8 @@ const editor = await codeBlock.startEditing()
 
 `getCode()` returns the current resolved code, including active edits and completed edit sessions. To opt out of the accepting default, return `'reject'` from `codeBlockOptions.onEditComplete`; omitting the callback accepts completed edits.
 
+Try the permanent playground demo: run `pnpm play:vue2` from the repository root and open [http://localhost:3334/codeblock-editing](http://localhost:3334/codeblock-editing). It mounts a direct non-loading TypeScript `CodeBlockNode` on real `stream-diffs@0.0.5`, with Start editing, Apply edit, Undo, Redo, Complete, Discard, Reset, live status, and an action/error log.
+
 ## Language-specific code block overrides
 
 You can also register a renderer for one fenced language directly:

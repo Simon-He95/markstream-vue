@@ -37,6 +37,10 @@ jobs:
 
       - name: Build docs for GitHub Pages
         run: pnpm docs:build:gh:ci
+        env:
+          # VitePress with the GitHub Pages base path can exceed Node's 2 GB
+          # default heap while rendering the full docs bundle.
+          NODE_OPTIONS: --max-old-space-size=6144
 
       - name: Disable Jekyll on Pages artifact
         run: touch docs/.vitepress/dist/.nojekyll

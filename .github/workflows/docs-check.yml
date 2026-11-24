@@ -7,6 +7,9 @@ on:
 jobs:
   build-docs:
     runs-on: ubuntu-latest
+    env:
+      # VitePress can exceed Node's 2 GB default heap while rendering the docs.
+      NODE_OPTIONS: --max-old-space-size=6144
     steps:
       - uses: actions/checkout@v4
       - name: Install pnpm

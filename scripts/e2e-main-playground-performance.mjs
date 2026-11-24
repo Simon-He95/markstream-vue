@@ -368,7 +368,7 @@ async function frameStatsSince(page, stateName, baseline) {
   return frameStatsFromDeltas(await frameDeltasSince(page, stateName, baseline))
 }
 
-async function collectMetrics(page) {
+async function collectMetrics(page, paintAttempt = 1) {
   const rootSelector = '.chatbot-messages'
   await page.goto('/?benchmark=1', { waitUntil: 'load' })
   const initialFrameBaseline = await frameBaseline(page, '__mainPlaygroundPerf')
@@ -436,6 +436,15 @@ async function collectMetrics(page) {
   }, initialFrameStats)
   initial.parsePerformance = cloneParsePerformance(initial.parsePerformance)
   initial.layoutReads = normalizeLayoutReadPerformance(initial.layoutReads)
+
+  // Chrome occasionally drops the paint/LCP entries for an otherwise healthy
+  // headless run. Retry the page load once before failing the release gate, so
+  // a missing measurement is not reported as a performance regression.
+  if (!(initial.lcpMs > 0) && paintAttempt < 2) {
+    console.warn('[e2e-main-playground-performance] no LCP entry observed; retrying page load once')
+    return collectMetrics(page, paintAttempt + 1)
+  }
+
   const fullScrollParsePerformanceBaseline = cloneParsePerformance(initial.parsePerformance)
   await resetLayoutReadPerformance(page)
 

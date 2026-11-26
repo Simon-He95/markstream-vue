@@ -89,7 +89,7 @@ describe('issue #859 - an explicit \\(...\\) pair is math', () => {
     }
     // A short formula is still math, and it is predicted at the opener while
     // streaming instead of flipping at the closer.
-    for (const content of ['3', 'xx', 'dx', 'n!', '60\u00b0', '(0,1]', 'x + y']) {
+    for (const content of ['3', 'xx', 'dx', 'n!', '60\u00B0', '(0,1]', 'x + y']) {
       const markdown = `inline ${D} ${content} ${D} here`
       expect(parse(markdown, true)).toBe(`paragraph["inline " math(${JSON.stringify(` ${content} `)}) " here"]`)
       // Without the closer it is already predicted as math, not text.

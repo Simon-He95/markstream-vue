@@ -536,13 +536,13 @@ function isInlineDoubleDollarMath(content: string) {
   if (isMathLike(content))
     return true
   const stripped = content.trim()
-  if (!stripped || !/[A-Za-z0-9]/.test(stripped) || /\s/.test(stripped))
+  if (!stripped || !/[a-z0-9]/i.test(stripped) || /\s/.test(stripped))
     return false
   // A bare word of three or more letters is prose (`and`, `Bistro`), not a
   // variable. Math function names (`sin`, `sum`, ...) already pass isMathLike.
-  if (/^[A-Za-z]{3,}$/.test(stripped))
+  if (/^[a-z]{3,}$/i.test(stripped))
     return false
-  return /^[A-Za-z0-9\\{}()[\]^_+\-*/=<>.,;:!?'"\u00b0%]+$/.test(stripped)
+  return /^[\w\\{}()[\]^+\-*/=<>.,;:!?'"\u00B0%]+$/.test(stripped)
 }
 
 function findNextUnescapedDollar(src: string, startIdx: number) {
@@ -1157,10 +1157,13 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
       // prose ("adasd $$ dasdsa") must stay text instead of a perpetual
       // loading spinner. `$$` uses the same predicate as its closed form, so
       // `$$3` / `$$xx` are predicted as math instead of flipping at the closer.
-      if (tail.includes('`')
+      if (
+        tail.includes('`')
         || (open === '$' && !isMathLike(tailForCheck))
-        || (open === '$$' && !isInlineDoubleDollarMath(tailForCheck)))
+        || (open === '$$' && !isInlineDoubleDollarMath(tailForCheck))
+      ) {
         return false
+      }
       if (open === '$' && isLikelyCurrencyAmountStart(tail))
         return false
       if (/^\s*!\[/.test(tail))

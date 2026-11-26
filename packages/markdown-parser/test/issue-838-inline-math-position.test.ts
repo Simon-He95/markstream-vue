@@ -92,8 +92,9 @@ describe('issue #838 - a `\\(` formula ends at its first unescaped `\\)`', () =>
     // The `(` of a half-open interval has no `)` and must not take the formula's
     // `\)`, or the formula runs on into the next one.
     ['for \\(x \\in (0, 1]\\) we have \\(f(x) > 0\\)', 'paragraph["for " math(\\(x \\in (0, 1]\\)) " we have " math(\\(f(x) > 0\\))]'],
-    // `(0, 1]` alone is not math-like and stays text; the formula after it still parses.
-    ['the set \\((0, 1]\\) and \\(x + y\\) here', 'paragraph["the set ((0, 1]) and " math(\\(x + y\\)) " here"]'],
+    // The pair is math because `\(...\)` is an explicit delimiter (#859); it
+    // must still end at its own `\)` and not run into the next formula.
+    ['the set \\((0, 1]\\) and \\(x + y\\) here', 'paragraph["the set " math(\\((0, 1]\\)) " and " math(\\(x + y\\)) " here"]'],
     ['range \\((0, \\pi]\\) here', 'paragraph["range " math(\\((0, \\pi]\\)) " here"]'],
     // An escaped backslash before `)` is a TeX line break, not the closer.
     ['\\(\\alpha \\\\) b\\) here', 'paragraph[math(\\(\\alpha \\\\) b\\)) " here"]'],

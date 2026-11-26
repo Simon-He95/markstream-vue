@@ -63,10 +63,12 @@ A single `$` follows Pandoc's rule: the opening `$` must be followed by a non-sp
 
 Currency amounts such as `**$312** and **$289**` or `$210 + $98 = $308` stay as text, including while streaming. An unfinished numeric span such as `$210 +` waits for an operand before becoming loading math. Closed formulas such as `$1$`, `$2 + 3 = 5$`, and `$1,000 + x$` still render as math. For ambiguous text, escape currency dollars as `\$` or use explicit TeX parenthesis delimiters for formulas.
 
-Important: when writing source Markdown, always use literal (escaped) backslashes
-for TeX parenthesis delimiters. Write `\\(...\\)` rather than `\(...\)` so
-the parser can reliably detect inline TeX delimiters. Unescaped `\(...\)`
-cannot be distinguished from ordinary parentheses and may not be parsed as math.
+`\(...\)` is an explicit TeX delimiter: the delimiter decides, not the content.
+`\(3\)`, `\(dx\)` and `\(n!\)` are all math, and while streaming an unclosed
+`\(` is predicted as math so the node does not flip between text and math.
+A literal parenthesis is just `(` — `\(` and `\)` are no longer read as
+CommonMark escapes. If you need that legacy meaning, set
+`inlineParenDelimiter: 'escape'` in `mathOptions`.
 
 ```ts
 // Try snippet to demonstrate KaTeX usage

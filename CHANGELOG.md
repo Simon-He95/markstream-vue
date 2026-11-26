@@ -2475,7 +2475,7 @@ See [Migrating to 2.0](https://markstream.simonhe.me/guide/migration-2-0) for re
 
 ### BREAKING CHANGES
 
-* plain ( ... ) is no longer treated as inline math. Use \(...\) or $...$ for inline formulas.
+* plain ( ... ) is no longer treated as inline math. Use `\(...\)` or `$...$` for inline formulas.
 
 
 

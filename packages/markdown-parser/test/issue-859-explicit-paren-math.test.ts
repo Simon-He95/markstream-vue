@@ -87,11 +87,14 @@ describe('issue #859 - an explicit \\(...\\) pair is math', () => {
       expect(parse(markdown, true)).toBe(`paragraph[${JSON.stringify(markdown)}]`)
       expect(parse(markdown, false)).toBe(`paragraph[${JSON.stringify(markdown)}]`)
     }
-    // A short formula is still math: the delimiter gate keeps `isMathLike`
-    // and only widens it to bare tokens inside explicit `$$`.
+    // A short formula is still math, and it is predicted at the opener while
+    // streaming instead of flipping at the closer.
     for (const content of ['3', 'xx', 'dx', 'n!', '60\u00b0', '(0,1]', 'x + y']) {
       const markdown = `inline ${D} ${content} ${D} here`
       expect(parse(markdown, true)).toBe(`paragraph["inline " math(${JSON.stringify(` ${content} `)}) " here"]`)
+      // Without the closer it is already predicted as math, not text.
+      const pending = `inline ${D} ${content}`
+      expect(parse(pending, false)).toBe(`paragraph["inline " math(${JSON.stringify(` ${content}`)},loading)]`)
     }
   })
 })

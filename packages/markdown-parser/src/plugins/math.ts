@@ -1153,10 +1153,13 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         tailForCheck = tailForCheck.slice(0, -1)
       // A `\(...\)` tail is predicted as math without a content gate: that is
       // the whole point of the fix, and gating it made `\(dx` show as text
-      // until the closer arrived. `$` and `$$` keep the gate: a bare `$$` in
+      // until the closer arrived. `$` and `$$` keep a gate: a bare `$$` in
       // prose ("adasd $$ dasdsa") must stay text instead of a perpetual
-      // loading spinner.
-      if (tail.includes('`') || ((open === '$' || open === '$$') && !isMathLike(tailForCheck)))
+      // loading spinner. `$$` uses the same predicate as its closed form, so
+      // `$$3` / `$$xx` are predicted as math instead of flipping at the closer.
+      if (tail.includes('`')
+        || (open === '$' && !isMathLike(tailForCheck))
+        || (open === '$$' && !isInlineDoubleDollarMath(tailForCheck)))
         return false
       if (open === '$' && isLikelyCurrencyAmountStart(tail))
         return false

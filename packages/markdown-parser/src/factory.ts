@@ -23,7 +23,7 @@ export interface FactoryOptions extends Record<string, unknown> {
   markdownItOptions?: Record<string, unknown>
   enableMath?: boolean
   enableContainers?: boolean
-  mathOptions?: { commands?: string[], escapeExclamation?: boolean }
+  mathOptions?: MathOptions
   /**
    * Custom HTML-like tag names that should participate in streaming mid-state
    * suppression and be emitted as custom nodes (e.g. ['thinking']).

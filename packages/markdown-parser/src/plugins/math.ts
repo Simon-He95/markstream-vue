@@ -514,6 +514,37 @@ function isEscapedAt(src: string, index: number) {
   return backslashes % 2 === 1
 }
 
+// TeX cannot nest `\(...\)`, so a second unescaped `\(` inside the content
+// means the opener belongs to a later formula. Without this guard a stray `\(`
+// merges with the next real formula (`text \( a = b, see \(x\) end`).
+function hasUnescapedOpenParen(src: string, from: number, to: number) {
+  let index = src.indexOf('\\(', from)
+  while (index !== -1 && index < to) {
+    if (!isEscapedAt(src, index))
+      return true
+    index = src.indexOf('\\(', index + 1)
+  }
+  return false
+}
+
+// Inline `$$...$$` is not a bare delimiter like `\(...\)`: two price tiers in
+// one paragraph (`Cafe Luna ($$) and Bistro Max ($$)`, `$$, $$`) would pair up
+// and turn the prose between them into a formula. Keep the content gate, but
+// widen it just enough for the short formulas that `isMathLike` rejects:
+// `$$xx$$`, `$$3$$`, `$$dx$$`, `$$n!$$`, `$$60°$$`, `$$(0,1]$$`.
+function isInlineDoubleDollarMath(content: string) {
+  if (isMathLike(content))
+    return true
+  const stripped = content.trim()
+  if (!stripped || !/[a-z0-9]/i.test(stripped) || /\s/.test(stripped))
+    return false
+  // A bare word of three or more letters is prose (`and`, `Bistro`), not a
+  // variable. Math function names (`sin`, `sum`, ...) already pass isMathLike.
+  if (/^[a-z]{3,}$/i.test(stripped))
+    return false
+  return /^[\w\\{}()[\]^+\-*/=<>.,;:!?'"\u00B0%]+$/.test(stripped)
+}
+
 function findNextUnescapedDollar(src: string, startIdx: number) {
   let searchPos = startIdx
 
@@ -1063,6 +1094,10 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
       open = runEnd - pos === 2 ? '$$' : '$'
     }
     else if (pos + 1 < max && src.charCodeAt(pos + 1) === 0x28 /* ( */) {
+      // Compatibility valve for sources that rely on `\(` as a CommonMark
+      // escape. The default is `math`: the delimiter decides, not the content.
+      if (mathOpts?.inlineParenDelimiter === 'escape')
+        return false
       open = '\\('
     }
     else {
@@ -1109,7 +1144,29 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
       if (silent || !allowLoading || strict || max !== src.length || getLastDelimiter(s, open) > pos)
         return false
       const tail = src.slice(contentStart, max)
-      if (tail.includes('`') || !isMathLike(tail) || (open === '$' && isLikelyCurrencyAmountStart(tail)))
+      // A trailing lone `\\` is the first half of the closer (`\\)`) still
+      // arriving. Checking it as content made `\(x` -> `\(x\\` -> `\(x\\)`
+      // flip loading -> text -> math.
+      let tailForCheck = tail.endsWith('\\') && !tail.endsWith('\\\\') ? tail.slice(0, -1) : tail
+      // Same for the first half of a `$$` closer.
+      if (open === '$$' && tailForCheck.endsWith('$') && !tailForCheck.endsWith('$$'))
+        tailForCheck = tailForCheck.slice(0, -1)
+      // A `\(...\)` tail is predicted as math without a content gate: that is
+      // the whole point of the fix, and gating it made `\(dx` show as text
+      // until the closer arrived. `$` and `$$` keep a gate: a bare `$$` in
+      // prose ("adasd $$ dasdsa") must stay text instead of a perpetual
+      // loading spinner. `$$` uses the same predicate as its closed form, so
+      // `$$3` / `$$xx` are predicted as math instead of flipping at the closer.
+      if (
+        tail.includes('`')
+        || (open === '$' && !isMathLike(tailForCheck))
+        || (open === '$$' && !isInlineDoubleDollarMath(tailForCheck))
+      ) {
+        return false
+      }
+      if (open === '$' && isLikelyCurrencyAmountStart(tail))
+        return false
+      if (/^\s*!\[/.test(tail))
         return false
       // An unclosed `**` / `__` before the formula is still being typed too;
       // keep the formula inside it, as the streaming strong recovery expects.
@@ -1122,7 +1179,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         strongToken.markup = strongMarker
         strongToken.content = tail
       }
-      pushFormula(tail, true)
+      pushFormula(tailForCheck, true)
       if (strongMarker)
         s.push('strong_close', '', 0)
       s.pos = max
@@ -1139,7 +1196,11 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
       if (isLikelyPlaceholderDollar(content) || isLikelyCurrencyAmountStart(content, true))
         return false
     }
-    else if (!strict && !isMathLike(content)) {
+    else if (open === '\\(') {
+      if (hasUnescapedOpenParen(src, contentStart, end))
+        return false
+    }
+    else if (!strict && !isInlineDoubleDollarMath(content)) {
       return false
     }
 
@@ -1391,7 +1452,7 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     const hasMarkdownPrefix = /^\s*!\[/.test(content)
     const looksMath = tolerantBoundary
       ? !hasMarkdownPrefix && isTolerantMathBlockContent(content)
-      : openDelim === '$$' ? !hasMarkdownPrefix : (openDelim === '[' ? isPlainBracketMathLike(content) : isMathLike(content))
+      : openDelim === '$$' || openDelim === '\\[' ? !hasMarkdownPrefix : (openDelim === '[' ? isPlainBracketMathLike(content) : isMathLike(content))
     if (!looksMath)
       return false
 
@@ -1401,8 +1462,15 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
     if (prefixBeforeOpen)
       pushInlineParagraph(s, prefixBeforeOpen, startLine)
 
+    // An unclosed block tail may end with the first half of `\\]`; keeping it
+    // would flash a TeX line break inside the pending formula.
+    let blockContent = !found && content.endsWith('\\') && !content.endsWith('\\\\')
+      ? content.slice(0, -1)
+      : content
+    if (!found && openDelim === '$$' && blockContent.endsWith('$') && !blockContent.endsWith('$$'))
+      blockContent = blockContent.slice(0, -1)
     const token = s.push('math_block', 'math', 0)
-    token.content = normalizeStandaloneBackslashT(content)
+    token.content = normalizeStandaloneBackslashT(blockContent)
     token.markup
       = openDelim === '$$' ? '$$' : openDelim === '[' ? '[]' : '\\[\\]'
     token.raw = `${openDelim}${content}${content.startsWith('\n') ? '\n' : ''}${closeDelim}`

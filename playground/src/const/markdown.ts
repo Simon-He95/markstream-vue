@@ -300,7 +300,7 @@ app.on('activate', () => {
 }
 \`\`\`
 
-4. Create chat components \\(diversified languages\\):
+4. Create chat components (diversified languages):
 
 \`\`\`python:src/server/app.py
 from fastapi import FastAPI
@@ -321,7 +321,7 @@ def echo(msg: Message):
     return {"reply": f"Echo: {msg.text}"}
 \`\`\`
 
-5. Create a native module example \\(C++\\):
+5. Create a native module example (C++):
 
 \`\`\`cpp:src/native/compute.cpp
 #include <bits/stdc++.h>

@@ -13,16 +13,21 @@ describe('issue #721 - strong followed by escaped-paren percent', () => {
 
     const paragraph = nodes![0]
     expect(paragraph.type).toBe('paragraph')
-    expect(paragraph.children).toHaveLength(2)
+    expect(paragraph.children).toHaveLength(3)
     expect(paragraph.children[0]).toMatchObject({
       type: 'strong',
       children: [{ type: 'text', content: 'A' }],
     })
-    // `0.0002\%` is not math, so `\(` and `\)` stay text. Every backslash here
-    // escapes ASCII punctuation, which CommonMark renders without the backslash.
     expect(paragraph.children[1]).toMatchObject({
       type: 'text',
-      content: ' (0.0002%)',
+      content: ' ',
+    })
+    // `\(...\)` is an explicit TeX delimiter, so it is math regardless of the
+    // content (see #859). `\%` stays escaped inside the formula; the stack
+    // overflow this test guards is unrelated to how the pair is classified.
+    expect(paragraph.children[2]).toMatchObject({
+      type: 'math_inline',
+      content: '0.0002\\%',
     })
   })
 })

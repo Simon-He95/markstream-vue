@@ -573,7 +573,12 @@ export function stripPendingExplicitMathTail(markdown: string, runtime: ParserRu
 
   const stripped = content.trim()
   const weakSingleVariable = /^(?:[a-z]|pi)$/i.test(stripped)
-  if (isMathLike(content) && !weakSingleVariable)
+  // Evidence only starts a deferred block prediction; it never cancels one.
+  // A digit or a TeX escape means a display formula is being typed even when
+  // the content is otherwise short (`\[\n3`), so the block appears as soon
+  // as the evidence arrives instead of waiting for `\]`.
+  const explicitEvidence = /\d|\\[{}$%&_#,]/.test(content)
+  if ((isMathLike(content) || explicitEvidence) && !weakSingleVariable)
     return markdown
 
   return markdown.slice(0, openOffset)

@@ -1,3 +1,10 @@
+interface MathOptions {
+    commands?: readonly string[];
+    escapeExclamation?: boolean;
+    strictDelimiters?: boolean;
+    inlineParenDelimiter?: 'math' | 'escape';
+}
+declare function setDefaultMathOptions(opts: MathOptions | undefined): void;
 interface MarkdownItOptions extends Record<string, unknown> {
     [key: string]: unknown;
     html?: boolean;
@@ -109,10 +116,7 @@ interface FactoryOptions extends Record<string, unknown> {
     markdownItOptions?: Record<string, unknown>;
     enableMath?: boolean;
     enableContainers?: boolean;
-    mathOptions?: {
-        commands?: string[];
-        escapeExclamation?: boolean;
-    };
+    mathOptions?: MathOptions;
     customHtmlTags?: readonly string[];
     enableFixIndentedCodeBlock?: boolean;
     cjkFriendly?: boolean;
@@ -453,12 +457,6 @@ interface ParseOptions {
 declare function parseInlineTokens(tokens: MarkdownToken[], raw?: string, pPreToken?: MarkdownToken, options?: ParseOptions): ParsedNode[];
 declare function processTokens(tokens: MarkdownToken[], options?: ParseOptions): ParsedNode[];
 declare function parseMarkdownToStructure(markdown: string, md: MarkdownIt, options?: ParseOptions): ParsedNode[];
-interface MathOptions {
-    commands?: readonly string[];
-    escapeExclamation?: boolean;
-    strictDelimiters?: boolean;
-}
-declare function setDefaultMathOptions(opts: MathOptions | undefined): void;
 declare function isHtmlLikeTagName(tag: string): boolean;
 declare function normalizeCustomHtmlTagName(value: unknown): string;
 declare function normalizeCustomHtmlTags(tags?: readonly string[]): string[];

@@ -527,6 +527,24 @@ function hasUnescapedOpenParen(src: string, from: number, to: number) {
   return false
 }
 
+// Inline `$$...$$` is not a bare delimiter like `\(...\)`: two price tiers in
+// one paragraph (`Cafe Luna ($$) and Bistro Max ($$)`, `$$, $$`) would pair up
+// and turn the prose between them into a formula. Keep the content gate, but
+// widen it just enough for the short formulas that `isMathLike` rejects:
+// `$$xx$$`, `$$3$$`, `$$dx$$`, `$$n!$$`, `$$60°$$`, `$$(0,1]$$`.
+function isInlineDoubleDollarMath(content: string) {
+  if (isMathLike(content))
+    return true
+  const stripped = content.trim()
+  if (!stripped || !/[A-Za-z0-9]/.test(stripped) || /\s/.test(stripped))
+    return false
+  // A bare word of three or more letters is prose (`and`, `Bistro`), not a
+  // variable. Math function names (`sin`, `sum`, ...) already pass isMathLike.
+  if (/^[A-Za-z]{3,}$/.test(stripped))
+    return false
+  return /^[A-Za-z0-9\\{}()[\]^_+\-*/=<>.,;:!?'"\u00b0%]+$/.test(stripped)
+}
+
 function findNextUnescapedDollar(src: string, startIdx: number) {
   let searchPos = startIdx
 
@@ -1173,9 +1191,11 @@ export function applyMath(md: MarkdownIt, mathOpts?: MathOptions) {
         return false
     }
     else if (open === '\\(') {
-      // `$$...$$` is unconditional: it has no competing meaning like `\(` does.
       if (hasUnescapedOpenParen(src, contentStart, end))
         return false
+    }
+    else if (!strict && !isInlineDoubleDollarMath(content)) {
+      return false
     }
 
     if (!silent) {

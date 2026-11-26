@@ -76,4 +76,22 @@ describe('issue #859 - an explicit \\(...\\) pair is math', () => {
     expect(shape(parseMarkdownToStructure('value \\(3\\) here', md, { final: true }) as any[]))
       .toBe('paragraph["value (3) here"]')
   })
+
+  it('keeps price tiers as text but reads short inline double-dollar math', () => {
+    const D = '$'.repeat(2)
+    // Two price tiers in one paragraph must not pair up as math.
+    for (const markdown of [
+      `Cafe Luna (${D}) and Bistro Max (${D})`,
+      `Price tiers: ${D}, ${D}, and ${D}$.`,
+    ]) {
+      expect(parse(markdown, true)).toBe(`paragraph[${JSON.stringify(markdown)}]`)
+      expect(parse(markdown, false)).toBe(`paragraph[${JSON.stringify(markdown)}]`)
+    }
+    // A short formula is still math: the delimiter gate keeps `isMathLike`
+    // and only widens it to bare tokens inside explicit `$$`.
+    for (const content of ['3', 'xx', 'dx', 'n!', '60\u00b0', '(0,1]', 'x + y']) {
+      const markdown = `inline ${D} ${content} ${D} here`
+      expect(parse(markdown, true)).toBe(`paragraph["inline " math(${JSON.stringify(` ${content} `)}) " here"]`)
+    }
+  })
 })

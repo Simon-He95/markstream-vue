@@ -1,3 +1,14 @@
+## [2.0.33](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.32...markstream-vue@2.0.33) (2026-11-26)
+
+
+### Bug Fixes
+
+* **parser:** keep inline `$$` price tiers as text ([80958c2](https://github.com/Simon-He95/markstream-vue/commit/80958c2105d3377c967ec7b7d3106b11c2465d4c))
+* **parser:** make explicit \(...\) math and stabilize streaming math ([bf94947](https://github.com/Simon-He95/markstream-vue/commit/bf94947e1eba4a4093fe8aa8035052a12835f4cd)), closes [#859](https://github.com/Simon-He95/markstream-vue/issues/859)
+* **parser:** predict inline $$ short formulas at the opener ([33a930c](https://github.com/Simon-He95/markstream-vue/commit/33a930c934ccb362041b700f0e4eaf38e3097d9c))
+
+
+
 ## [2.0.32](https://github.com/Simon-He95/markstream-vue/compare/markstream-vue@2.0.31...markstream-vue@2.0.32) (2026-11-24)
 
 

@@ -11,7 +11,7 @@
     "katex": "^0.16.47",
     "markstream-vue2": "workspace:*",
     "mermaid": "^11.16.0",
-    "stream-diffs": "0.0.5",
+    "stream-diffs": "0.0.6",
     "vue": "2.7.16",
     "vue-demi": "^0.14.10"
   },

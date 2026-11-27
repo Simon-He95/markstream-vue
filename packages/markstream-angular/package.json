@@ -115,7 +115,7 @@
     "@types/node": "^18.19.130",
     "ng-packagr": "^20.3.2",
     "rollup": "^3.30.0",
-    "stream-diffs": "0.0.5",
+    "stream-diffs": "0.0.6",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
     "vite-plugin-dts": "^4.5.4"

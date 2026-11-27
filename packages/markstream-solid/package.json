@@ -145,7 +145,7 @@
     "postcss-cli": "^11.0.1",
     "postcss-import": "^15.1.0",
     "solid-js": "^1.9.0",
-    "stream-diffs": "0.0.5",
+    "stream-diffs": "0.0.6",
     "typescript": "^5.9.3",
     "vite": "^7.3.6",
     "vite-plugin-solid": "^2.11.0",

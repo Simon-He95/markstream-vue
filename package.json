@@ -355,7 +355,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
-    "@pierre/diffs": "^1.7.1",
+    "@pierre/diffs": "^1.7.2",
     "@shikijs/vitepress-twoslash": "^4.3.1",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/node": "^18.19.130",
@@ -385,7 +385,7 @@
     "rollup-plugin-dts": "^5.3.1",
     "rollup-plugin-visualizer": "^6.0.11",
     "semver": "^7.8.5",
-    "stream-diffs": "0.0.5",
+    "stream-diffs": "0.0.6",
     "streamdown": "2.5.0",
     "tailwindcss": "^3.4.19",
     "terser": "^5.49.0",

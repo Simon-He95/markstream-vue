@@ -52,8 +52,8 @@ importers:
         specifier: ^5.4.1
         version: 5.4.1(@vue/compiler-sfc@3.5.25)(eslint-plugin-react-refresh@0.4.26(eslint@9.39.5(jiti@1.21.7)))(eslint@9.39.5(jiti@1.21.7))(typescript@5.9.3)(vitest@4.1.10)
       '@pierre/diffs':
-        specifier: ^1.7.1
-        version: 1.7.1(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^1.7.2
+        version: 1.7.2(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@shikijs/vitepress-twoslash':
         specifier: ^4.3.1
         version: 4.3.1(@nuxt/kit@3.20.1(magicast@0.5.2))(typescript@5.9.3)
@@ -142,8 +142,8 @@ importers:
         specifier: ^7.8.5
         version: 7.8.5
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       streamdown:
         specifier: 2.5.0
         version: 2.5.0(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -276,8 +276,8 @@ importers:
         specifier: ^3.30.0
         version: 3.30.0
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -361,8 +361,8 @@ importers:
         specifier: ^6.0.11
         version: 6.0.11(rolldown@1.2.0)(rollup@3.30.0)
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
@@ -431,8 +431,8 @@ importers:
         specifier: ^6.0.11
         version: 6.0.11(rolldown@1.2.0)(rollup@3.30.0)
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       tailwindcss:
         specifier: ^3.4.19
         version: 3.4.19(tsx@4.23.1)(yaml@2.9.0)
@@ -483,8 +483,8 @@ importers:
         specifier: ^1.9.0
         version: 1.9.18
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -538,8 +538,8 @@ importers:
         specifier: ^11.0.1
         version: 11.0.1(jiti@2.7.0)(postcss@8.5.24)(tsx@4.23.1)
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       svelte:
         specifier: ^5.56.8
         version: 5.56.8(@typescript-eslint/types@8.65.0)
@@ -605,8 +605,8 @@ importers:
         specifier: ^6.0.11
         version: 6.0.11(rolldown@1.2.0)(rollup@3.30.0)
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@2.7.16)
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@2.7.16)
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -729,8 +729,8 @@ importers:
         specifier: ^7.8.2
         version: 7.8.2
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
     devDependencies:
       '@types/node':
         specifier: ^18.19.130
@@ -770,7 +770,7 @@ importers:
         version: 18.3.1(react@18.3.1)
       stream-diffs:
         specifier: latest
-        version: 0.0.2(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.5.25(typescript@5.9.3))
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.5.25(typescript@5.9.3))
     devDependencies:
       '@types/node':
         specifier: ^18.19.130
@@ -813,7 +813,7 @@ importers:
         version: 19.2.4(react@19.2.4)
       stream-diffs:
         specifier: latest
-        version: 0.0.2(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vue@3.5.25(typescript@5.9.3))
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vue@3.5.25(typescript@5.9.3))
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
@@ -859,7 +859,7 @@ importers:
         version: 4.5.1(@babel/plugin-proposal-decorators@7.28.6(@babel/core@7.29.7))(@babel/plugin-syntax-jsx@7.27.1(@babel/core@7.29.7))(@babel/plugin-syntax-typescript@7.29.7(@babel/core@7.29.7))(@parcel/watcher@2.5.6)(@types/node@24.13.3)(@vue/compiler-sfc@3.5.25)(commander@14.0.3)(db0@0.3.4)(esbuild@0.28.0)(eslint@9.39.5(jiti@2.7.0))(ioredis@5.10.1)(less@4.6.7)(lightningcss@1.33.0)(magicast@0.5.2)(meow@13.2.0)(optionator@0.9.4)(oxc-parser@0.140.0)(pinia@3.0.4(typescript@5.9.3)(vue@3.5.25(typescript@5.9.3)))(rollup-plugin-visualizer@7.0.1(rolldown@1.2.0)(rollup@4.60.4))(rollup@4.60.4)(sass@1.101.0)(srvx@0.11.22)(terser@5.49.0)(tsx@4.23.1)(typescript@5.9.3)(vite@8.1.5(@types/node@24.13.3)(esbuild@0.28.0)(jiti@2.7.0)(less@4.6.7)(sass@1.101.0)(terser@5.49.0)(tsx@4.23.1)(yaml@2.9.0))(vue-tsc@2.2.12(typescript@5.9.3))(webpack@4.47.0)(yaml@2.9.0)
       stream-diffs:
         specifier: latest
-        version: 0.0.2(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       vue-i18n:
         specifier: ^11.4.8
         version: 11.4.8(vue@3.5.25(typescript@5.9.3))
@@ -1054,8 +1054,8 @@ importers:
         specifier: '>=11.16.0'
         version: 11.16.0
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3))
       stream-markdown-parser:
         specifier: workspace:*
         version: link:../packages/markdown-parser
@@ -1088,8 +1088,8 @@ importers:
         specifier: ^11.16.0
         version: 11.16.0
       stream-diffs:
-        specifier: 0.0.5
-        version: 0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@2.7.16)
+        specifier: 0.0.6
+        version: 0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@2.7.16)
       vue:
         specifier: 2.7.16
         version: 2.7.16
@@ -3996,14 +3996,8 @@ packages:
     resolution: {integrity: sha512-tmmZ3lQxAe/k/+rNnXQRawJ4NjxO2hqiOLTHvWchtGZULp4RyFeh6aU4XdOYBFe2KE1oShQTv4AblOs2iOrNnQ==}
     engines: {node: '>= 10.0.0'}
 
-  '@pierre/diffs@1.2.12':
-    resolution: {integrity: sha512-pY/gmgWL03WnagqCyCnBi3QtRXUv4hCIY6FYqd5b1ZGaoI6a4Bsji8j+yRl2RfzPh/8Hf19rCl1GE80G6a1cLQ==}
-    peerDependencies:
-      react: ^18.3.1 || ^19.0.0
-      react-dom: ^18.3.1 || ^19.0.0
-
-  '@pierre/diffs@1.7.1':
-    resolution: {integrity: sha512-saKteoCq9tWbRqLruIixV6sKgxIcY0OK6RkKcr8lYv7r4iJhXQJbmVPN3VBmjBHivgMIG2Att6tV/AOXXzEvvg==}
+  '@pierre/diffs@1.7.2':
+    resolution: {integrity: sha512-zMYTBWK4srIYKoKMTSwCVWxbgpJT8UXJ2v5ONTXBbzDSDYpOCpgqfoyQexDWo6FH9RDicZvkeZwIbiTrBBSJ2Q==}
     peerDependencies:
       react: ^18.3.1 || ^19.0.0
       react-dom: ^18.3.1 || ^19.0.0
@@ -4013,39 +4007,15 @@ packages:
       react-dom:
         optional: true
 
-  '@pierre/highlights@0.5.2':
-    resolution: {integrity: sha512-CV+yFa8dodaU3w7U42FR+AfoavrsfcH0/n3rckDu1A/UXan1Dzo6OdM/MPOAAsGM/EbKhDxD6k+qMcNUtnLfsg==}
+  '@pierre/highlights@0.6.0':
+    resolution: {integrity: sha512-5RhenEkZxlcsw2hrDaYlGyT6ERfQgHSvZxRg/ByZ11SVkoWuAwDMozL7HxUfUnOVyShD5WKMxqiakg8S/8Fi7A==}
 
   '@pierre/patches@0.0.1':
     resolution: {integrity: sha512-NycJQVQNuqmBdr7u1LsUcmkiIz1fRm9xhWZyRbm21oJYd0MVVCa45t9Lsuj5IKrTMBonxOuh4LMv+R3BpL4bmQ==}
 
-  '@pierre/theme@1.1.0':
-    resolution: {integrity: sha512-GC2OWTAfTIIWWYhPCygwG8t2EtePQkRfON4MI2rwIkJylmiyqIttJID2dCL8sUD8cNdEvYkEyfEHHKMeCiDLoQ==}
-    engines: {vscode: ^1.0.0}
-
   '@pierre/theme@2.1.0':
     resolution: {integrity: sha512-GIE3AD8eqUlZN2sFrMmp9gt+rNZsT+EhrdwB0KmLcwkqunrp2jU2j14SeAb64Ol/srWo4rHyNaWf20+bPzFbvg==}
     engines: {vscode: ^1.0.0}
-
-  '@pierre/theming@0.0.2':
-    resolution: {integrity: sha512-QM1M4stXfnzfaE8I8YbjXSApV8c+2dBsXJj8eYg9WTpBR/cTmCZIcfGnN4p13iRrYu2Br/R/OJfEL7uR8Qjctw==}
-    peerDependencies:
-      '@pierre/theme': ^1.1.0
-      '@shikijs/themes': ^3.0.0 || ^4.0.0
-      react: ^18.3.1 || ^19.0.0
-      react-dom: ^18.3.1 || ^19.0.0
-      shiki: ^3.0.0 || ^4.0.0
-    peerDependenciesMeta:
-      '@pierre/theme':
-        optional: true
-      '@shikijs/themes':
-        optional: true
-      react:
-        optional: true
-      react-dom:
-        optional: true
-      shiki:
-        optional: true
 
   '@pierre/theming@1.0.2':
     resolution: {integrity: sha512-RmXLLqtx31UGcR8kZyO5hGAQ1EXz6loT1Cu0BFAGsbnBboIxp2BlomkLfWyvdT4WZXnBGyu25onL1gKpFQuSUw==}
@@ -4662,10 +4632,6 @@ packages:
 
   '@shikijs/transformers@2.5.0':
     resolution: {integrity: sha512-SI494W5X60CaUwgi8u4q4m4s3YAFSxln3tzNjOSYqq54wlVgz0/NbbXEb3mdLbqMBztcmS7bVTaEd2w0qMmfeg==}
-
-  '@shikijs/transformers@4.3.1':
-    resolution: {integrity: sha512-z6ir0bGDgWcF2FduktEfPgIsdOtIlDiLAjFBgBzE42Q9xHbkkIXZtORHzlLVB71iZP9elEcqKg6keajvOUwE2A==}
-    engines: {node: '>=20'}
 
   '@shikijs/twoslash@4.3.1':
     resolution: {integrity: sha512-xK8inH/gK++1V4rTxrwCwjvaNwkkJ7oDjOIpdqONVxIpAFnVC3gzqjH5KiXGTelUcxpUJ3PtOKWct1YQ0kAloA==}
@@ -12940,16 +12906,8 @@ packages:
   stream-browserify@2.0.2:
     resolution: {integrity: sha512-nX6hmklHs/gr2FuxYDltq8fJA1GDlxKQCz8O/IM4atRqBH8OORmBNgfvW5gG10GT/qQ9u0CzIvr2X5Pkt6ntqg==}
 
-  stream-diffs@0.0.2:
-    resolution: {integrity: sha512-mYH+kBCmrN2ebVPNkvQIFUSPemFxUPPPk+NT4H/wEzZ9NCt5Eaa8OE05f/1MA5HofZ64LYbTOliQTU6VghHeVA==}
-    peerDependencies:
-      vue: 3.5.25
-    peerDependenciesMeta:
-      vue:
-        optional: true
-
-  stream-diffs@0.0.5:
-    resolution: {integrity: sha512-cjR31urlo6i2VeJevhN46GHR8GNzKZZ3dX6Cx/l6D1SMvrsOMSVitN1QOsltpWHnjwwH5Bcu8RqJvVlUAwSXyw==}
+  stream-diffs@0.0.6:
+    resolution: {integrity: sha512-xPbefFgp7feiAt4QGjWr+DoHowkNEHWwgE6F02lNtHw5O7pNdJh4Fq3UU4bBeMkmD9OHoddrzhC+ApLKOZQXXw==}
     peerDependencies:
       vue: 3.5.25
     peerDependenciesMeta:
@@ -18089,51 +18047,41 @@ snapshots:
       '@parcel/watcher-win32-ia32': 2.5.6
       '@parcel/watcher-win32-x64': 2.5.6
 
-  '@pierre/diffs@1.2.12(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
+  '@pierre/diffs@1.7.2(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@pierre/theme': 1.1.0
-      '@pierre/theming': 0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(shiki@4.3.1)
-      '@shikijs/transformers': 4.3.1
+      '@pierre/highlights': 0.6.0
+      '@pierre/patches': 0.0.1
+      '@pierre/theme': 2.1.0
+      '@pierre/theming': 1.0.2(@pierre/theme@2.1.0)(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(shiki@4.3.1)
       diff: 9.0.0
       hast-util-to-html: 9.0.5
       lru_map: 0.4.1
+      shiki: 4.3.1
+    optionalDependencies:
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
-      shiki: 4.3.1
     transitivePeerDependencies:
       - '@shikijs/themes'
 
-  '@pierre/diffs@1.2.12(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
+  '@pierre/diffs@1.7.2(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)':
     dependencies:
-      '@pierre/theme': 1.1.0
-      '@pierre/theming': 0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(shiki@4.3.1)
-      '@shikijs/transformers': 4.3.1
+      '@pierre/highlights': 0.6.0
+      '@pierre/patches': 0.0.1
+      '@pierre/theme': 2.1.0
+      '@pierre/theming': 1.0.2(@pierre/theme@2.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(shiki@4.3.1)
       diff: 9.0.0
       hast-util-to-html: 9.0.5
       lru_map: 0.4.1
+      shiki: 4.3.1
+    optionalDependencies:
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
-      shiki: 4.3.1
     transitivePeerDependencies:
       - '@shikijs/themes'
 
-  '@pierre/diffs@1.2.12(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
+  '@pierre/diffs@1.7.2(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
     dependencies:
-      '@pierre/theme': 1.1.0
-      '@pierre/theming': 0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.3.1)
-      '@shikijs/transformers': 4.3.1
-      diff: 9.0.0
-      hast-util-to-html: 9.0.5
-      lru_map: 0.4.1
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
-      shiki: 4.3.1
-    transitivePeerDependencies:
-      - '@shikijs/themes'
-
-  '@pierre/diffs@1.7.1(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
-    dependencies:
-      '@pierre/highlights': 0.5.2
+      '@pierre/highlights': 0.6.0
       '@pierre/patches': 0.0.1
       '@pierre/theme': 2.1.0
       '@pierre/theming': 1.0.2(@pierre/theme@2.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.3.1)
@@ -18147,36 +18095,26 @@ snapshots:
     transitivePeerDependencies:
       - '@shikijs/themes'
 
-  '@pierre/highlights@0.5.2': {}
+  '@pierre/highlights@0.6.0': {}
 
   '@pierre/patches@0.0.1': {}
 
-  '@pierre/theme@1.1.0': {}
-
   '@pierre/theme@2.1.0': {}
 
-  '@pierre/theming@0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(shiki@4.3.1)':
+  '@pierre/theming@1.0.2(@pierre/theme@2.1.0)(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(shiki@4.3.1)':
     optionalDependencies:
-      '@pierre/theme': 1.1.0
+      '@pierre/theme': 2.1.0
       '@shikijs/themes': 4.3.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
       shiki: 4.3.1
 
-  '@pierre/theming@0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(shiki@4.3.1)':
+  '@pierre/theming@1.0.2(@pierre/theme@2.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(shiki@4.3.1)':
     optionalDependencies:
-      '@pierre/theme': 1.1.0
+      '@pierre/theme': 2.1.0
       '@shikijs/themes': 4.3.1
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
-      shiki: 4.3.1
-
-  '@pierre/theming@0.0.2(@pierre/theme@1.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.3.1)':
-    optionalDependencies:
-      '@pierre/theme': 1.1.0
-      '@shikijs/themes': 4.3.1
-      react: 19.2.8
-      react-dom: 19.2.8(react@19.2.8)
       shiki: 4.3.1
 
   '@pierre/theming@1.0.2(@pierre/theme@2.1.0)(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(shiki@4.3.1)':
@@ -18648,11 +18586,6 @@ snapshots:
     dependencies:
       '@shikijs/core': 2.5.0
       '@shikijs/types': 2.5.0
-
-  '@shikijs/transformers@4.3.1':
-    dependencies:
-      '@shikijs/core': 4.3.1
-      '@shikijs/types': 4.3.1
 
   '@shikijs/twoslash@4.3.1(typescript@5.9.3)':
     dependencies:
@@ -28995,9 +28928,9 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 2.3.8
 
-  stream-diffs@0.0.2(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.5.25(typescript@5.9.3)):
+  stream-diffs@0.0.6(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(vue@3.5.25(typescript@5.9.3)):
     dependencies:
-      '@pierre/diffs': 1.2.12(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@pierre/diffs': 1.7.2(@shikijs/themes@4.3.1)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     optionalDependencies:
       vue: 3.5.25(typescript@5.9.3)
     transitivePeerDependencies:
@@ -29005,9 +28938,9 @@ snapshots:
       - react
       - react-dom
 
-  stream-diffs@0.0.2(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vue@3.5.25(typescript@5.9.3)):
+  stream-diffs@0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vue@3.5.25(typescript@5.9.3)):
     dependencies:
-      '@pierre/diffs': 1.2.12(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@pierre/diffs': 1.7.2(@shikijs/themes@4.3.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     optionalDependencies:
       vue: 3.5.25(typescript@5.9.3)
     transitivePeerDependencies:
@@ -29015,19 +28948,9 @@ snapshots:
       - react
       - react-dom
 
-  stream-diffs@0.0.2(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3)):
+  stream-diffs@0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@2.7.16):
     dependencies:
-      '@pierre/diffs': 1.2.12(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
-    optionalDependencies:
-      vue: 3.5.25(typescript@5.9.3)
-    transitivePeerDependencies:
-      - '@shikijs/themes'
-      - react
-      - react-dom
-
-  stream-diffs@0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@2.7.16):
-    dependencies:
-      '@pierre/diffs': 1.7.1(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@pierre/diffs': 1.7.2(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     optionalDependencies:
       vue: 2.7.16
     transitivePeerDependencies:
@@ -29035,9 +28958,9 @@ snapshots:
       - react
       - react-dom
 
-  stream-diffs@0.0.5(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3)):
+  stream-diffs@0.0.6(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(vue@3.5.25(typescript@5.9.3)):
     dependencies:
-      '@pierre/diffs': 1.7.1(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+      '@pierre/diffs': 1.7.2(@shikijs/themes@4.3.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
     optionalDependencies:
       vue: 3.5.25(typescript@5.9.3)
     transitivePeerDependencies:

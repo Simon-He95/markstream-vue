@@ -355,7 +355,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.4.1",
-    "@pierre/diffs": "^1.7.1",
+    "@pierre/diffs": "^1.7.2",
     "@shikijs/vitepress-twoslash": "^4.3.1",
     "@types/markdown-it-emoji": "^3.0.1",
     "@types/node": "^18.19.130",

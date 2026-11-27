@@ -66,8 +66,8 @@ function createCodeBlock(lineCount = 120) {
   } as any
 }
 
-function makeSameShapeContent(seed: string) {
-  return Array.from({ length: 120 }, (_, index) => {
+function makeSameShapeContent(seed: string, count = 120) {
+  return Array.from({ length: count }, (_, index) => {
     return [
       `## ${seed} heading ${index}`,
       `${seed} paragraph ${index} `.repeat(8),
@@ -1331,7 +1331,7 @@ describe('node renderer virtual-scroll coordination', () => {
     wrapper.unmount()
   })
 
-  it('does not auto-virtualize a default smooth chat stream when final flips before visible catches up', async () => {
+  it('does not auto-virtualize a default smooth chat stream when final flips before visible catches up', { timeout: 30_000, retry: process.platform === 'win32' ? 1 : 0 }, async () => {
     const frames: FrameRequestCallback[] = []
     let nextFrameId = 1
     vi.stubGlobal('requestAnimationFrame', ((callback: FrameRequestCallback) => {
@@ -1355,15 +1355,35 @@ describe('node renderer virtual-scroll coordination', () => {
 
     await flushAll()
     await wrapper.setProps({ indexKey: 'stream-message-final' })
-    await wrapper.setProps({ content: makeSameShapeContent('stream') })
-    await wrapper.setProps({ final: true })
 
+    // The reveal/batch pipeline schedules its continuation on real timers (16ms
+    // batch delay plus a 32-120ms commit-measurement fallback), so polling with
+    // `setTimeout(0)` made this loop advance in wall-clock time and pushed the
+    // case against the 10s default timeout. Fake the timers before the content
+    // arrives so every scheduled step below is driven by the fake clock: each
+    // iteration fires one queued frame and advances past the batch delay, so
+    // progress no longer depends on the machine's clock.
     const baseline = performance.now()
-    for (let step = 1; step <= 520 && frames.length > 0; step++) {
-      const callback = frames.shift()!
-      callback(baseline + step * 80)
-      await new Promise(resolve => setTimeout(resolve, 0))
-      await nextTick()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] })
+    try {
+      // 60 blocks parse into 120 nodes: still 2.4x the auto-virtualize live-node
+      // threshold, but half the per-commit render work of the 120-block fixture.
+      // Every batch commit re-renders the whole node list, so this keeps the case
+      // well clear of the timeout on slower Windows runners.
+      await wrapper.setProps({ content: makeSameShapeContent('stream', 60) })
+      await wrapper.setProps({ final: true })
+
+      for (let step = 1; step <= 520 && frames.length > 0; step++) {
+        const callback = frames.shift()!
+        callback(baseline + step * 80)
+        await vi.advanceTimersByTimeAsync(16)
+        await nextTick()
+      }
+      // Let a batch or commit-measurement timeout queued by the last frame settle.
+      await vi.advanceTimersByTimeAsync(1000)
+    }
+    finally {
+      vi.useRealTimers()
     }
 
     await flushAll()
